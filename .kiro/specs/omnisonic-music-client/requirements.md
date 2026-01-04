@@ -2,113 +2,137 @@
 
 ## Introduction
 
-OmniSonic is a cross-platform music client that provides a unified interface for managing and playing music from multiple Subsonic/Navidrome servers. The system aggregates content from multiple sources, provides offline capabilities through intelligent caching, and delivers a premium user experience with smooth animations and high-performance audio playback.
+Omnisonic is a cross-platform music streaming client that provides a unified music collection experience across multiple Subsonic-compatible servers. The application features a modern Spotify-like interface and intelligent deduplication to create a seamless music library from diverse sources.
 
 ## Glossary
 
-- **OmniSonic**: The unified music client application
-- **Subsonic_Server**: A music server implementing the Subsonic API protocol (v1.16.1+)
-- **Unified_View**: A deduplicated presentation layer that combines content from multiple servers
-- **Smart_Cache**: An LRU-based local storage system for streamed audio files
-- **Pinned_Content**: User-selected content downloaded for permanent offline access
-- **Metadata_Sync**: The process of downloading and indexing music metadata from configured servers
-- **Gapless_Playback**: Seamless audio transition between tracks without silence
-- **Hero_Animation**: Shared element transitions between UI screens
+- **Subsonic_API**: The REST API specification for Subsonic-compatible music servers (https://www.subsonic.org/pages/api.jsp)
+- **Music_Server**: A Subsonic-compatible server instance that hosts music content
+- **Unified_Collection**: The aggregated music library combining content from all connected servers
+- **Deduplication_Engine**: The system component that identifies and manages duplicate tracks across servers
+- **Cross_Platform_Client**: The application running on macOS, iOS, Windows, Android, and Linux
+- **Spotify_UI**: The modern, card-based interface design pattern similar to Spotify's user experience
+- **Track_Metadata**: Song information including title, artist, album, duration, and audio format
+- **Server_Connection**: An authenticated connection to a Music_Server with stored credentials
 
 ## Requirements
 
-### Requirement 1
+### Requirement 1: Multi-Server Connection Management
 
-**User Story:** As a music enthusiast, I want to connect to multiple music servers, so that I can access my entire music collection from different sources in one application.
-
-#### Acceptance Criteria
-
-1. WHEN a user adds server credentials (URL, username, password/token), THE OmniSonic SHALL validate the connection and store the configuration securely
-2. WHEN multiple servers are configured, THE OmniSonic SHALL authenticate with each server independently
-3. WHEN server authentication fails, THE OmniSonic SHALL display specific error messages and allow credential correction
-4. WHERE a server supports token-based authentication, THE OmniSonic SHALL prefer tokens over password authentication
-5. WHEN a user removes a server configuration, THE OmniSonic SHALL remove associated cached content and metadata
-
-### Requirement 2
-
-**User Story:** As a user with music spread across multiple servers, I want to see a unified library view, so that I can browse my collection without worrying about which server hosts what content.
+**User Story:** As a music enthusiast, I want to connect to multiple Subsonic servers, so that I can access my entire music collection from different sources in one application.
 
 #### Acceptance Criteria
 
-1. WHEN the application starts or sync is requested, THE OmniSonic SHALL download metadata from all configured servers and store it locally
-2. WHEN duplicate artists exist across servers, THE OmniSonic SHALL display them as a single entry in the unified view
-3. WHEN viewing an artist with content from multiple servers, THE OmniSonic SHALL show all albums from all sources
-4. WHERE MusicBrainz IDs are available, THE OmniSonic SHALL use them for intelligent content merging
-5. WHEN displaying merged content, THE OmniSonic SHALL indicate the source server for each item
+1. WHEN a user adds a new server connection, THE Cross_Platform_Client SHALL validate the server URL and authenticate using Subsonic_API credentials
+2. WHEN server credentials are provided, THE Cross_Platform_Client SHALL test the connection and store encrypted credentials locally
+3. WHEN a server becomes unavailable, THE Cross_Platform_Client SHALL mark it as offline and continue operating with available servers
+4. THE Cross_Platform_Client SHALL support at least 10 simultaneous server connections
+5. WHEN server settings are modified, THE Cross_Platform_Client SHALL update the connection and re-sync metadata
 
-### Requirement 3
+### Requirement 2: Unified Music Collection Aggregation
 
-**User Story:** As a mobile user, I want high-quality audio playback with smooth transitions, so that I can enjoy an uninterrupted listening experience.
-
-#### Acceptance Criteria
-
-1. WHEN playing audio files, THE OmniSonic SHALL support MP3, FLAC, AAC, OGG, and Opus formats
-2. WHEN transitioning between tracks in an album or playlist, THE OmniSonic SHALL provide gapless playback
-3. WHERE network conditions require it, THE OmniSonic SHALL request transcoded audio from the server
-4. WHEN ReplayGain metadata is available, THE OmniSonic SHALL apply volume normalization
-5. WHEN the user adjusts equalizer settings, THE OmniSonic SHALL apply real-time audio processing
-
-### Requirement 4
-
-**User Story:** As a user with limited data or unreliable connectivity, I want intelligent caching and offline capabilities, so that I can access my music without constant internet connection.
+**User Story:** As a user with music spread across multiple servers, I want to see all my music in one unified library, so that I can browse and play content without worrying about which server hosts what.
 
 #### Acceptance Criteria
 
-1. WHEN streaming audio, THE OmniSonic SHALL automatically cache files using LRU eviction with configurable size limits
-2. WHEN a user explicitly downloads content, THE OmniSonic SHALL mark it as pinned and exclude it from automatic cache cleanup
-3. WHEN offline mode is enabled, THE OmniSonic SHALL display only locally available content
-4. WHEN cache storage approaches the configured limit, THE OmniSonic SHALL remove least recently used non-pinned files
-5. WHEN network connectivity is lost during playback, THE OmniSonic SHALL continue playing cached content seamlessly
+1. WHEN servers are connected, THE Cross_Platform_Client SHALL fetch all music metadata using Subsonic_API and create a Unified_Collection
+2. WHEN new content is detected on any server, THE Cross_Platform_Client SHALL automatically update the Unified_Collection
+3. THE Cross_Platform_Client SHALL maintain server source information for each track while presenting a unified view
+4. WHEN a user searches the collection, THE Cross_Platform_Client SHALL search across all connected servers simultaneously
+5. THE Cross_Platform_Client SHALL sync metadata changes from servers within 5 minutes of detection
 
-### Requirement 5
+### Requirement 3: Intelligent Music Deduplication
 
-**User Story:** As a user who values aesthetics and performance, I want a fluid and responsive interface, so that I can navigate my large music library smoothly.
-
-#### Acceptance Criteria
-
-1. WHEN scrolling through lists with thousands of items, THE OmniSonic SHALL maintain 60+ FPS performance through list virtualization
-2. WHEN navigating between screens, THE OmniSonic SHALL use hero animations for album artwork transitions
-3. WHEN displaying album artwork, THE OmniSonic SHALL show thumbnails in lists and high-resolution images only in detailed views
-4. WHEN the current track changes, THE OmniSonic SHALL update the dynamic color theme based on album artwork
-5. WHEN switching between light, dark, and OLED themes, THE OmniSonic SHALL apply changes immediately without restart
-
-### Requirement 6
-
-**User Story:** As a driver, I want automotive integration, so that I can safely control music playback while driving.
+**User Story:** As a user with the same songs on multiple servers, I want the application to automatically detect and manage duplicates, so that I see each unique song only once in my library.
 
 #### Acceptance Criteria
 
-1. WHEN connected to CarPlay or Android Auto, THE OmniSonic SHALL provide a simplified grid/list interface
-2. WHEN using automotive interface, THE OmniSonic SHALL display quick access to recent, favorites, and offline content
-3. WHEN voice commands are issued, THE OmniSonic SHALL respond to basic playback controls
-4. WHEN displaying content in automotive mode, THE OmniSonic SHALL comply with platform safety templates
-5. WHEN automotive connection is lost, THE OmniSonic SHALL seamlessly continue playback on the device
+1. WHEN tracks with identical metadata are found across servers, THE Deduplication_Engine SHALL identify them as duplicates
+2. WHEN duplicates are detected, THE Cross_Platform_Client SHALL display only one entry in the Unified_Collection
+3. THE Deduplication_Engine SHALL use track title, artist, album, and duration for duplicate detection
+4. WHEN playing a deduplicated track, THE Cross_Platform_Client SHALL select the best available source based on audio quality and server availability
+5. WHEN a user manually marks tracks as duplicates or unique, THE Cross_Platform_Client SHALL respect these preferences
 
-### Requirement 7
+### Requirement 4: Cross-Platform Audio Streaming
 
-**User Story:** As a privacy-conscious user, I want my data to remain secure and private, so that my listening habits and credentials are protected.
-
-#### Acceptance Criteria
-
-1. WHEN storing server credentials, THE OmniSonic SHALL use secure storage mechanisms provided by the platform
-2. WHEN the application runs, THE OmniSonic SHALL not transmit telemetry or usage data to third parties
-3. WHEN syncing metadata, THE OmniSonic SHALL communicate only with user-configured servers
-4. WHEN caching content, THE OmniSonic SHALL store files in application-private directories
-5. WHEN the user uninstalls the application, THE OmniSonic SHALL ensure all cached content and credentials are removed
-
-### Requirement 8
-
-**User Story:** As a user with a large music collection, I want background synchronization, so that my library stays up-to-date without manual intervention.
+**User Story:** As a user on different devices, I want to stream music seamlessly across all platforms, so that I can enjoy my music collection anywhere.
 
 #### Acceptance Criteria
 
-1. WHEN the application is backgrounded, THE OmniSonic SHALL periodically sync new content from configured servers
-2. WHEN new content is discovered during background sync, THE OmniSonic SHALL update the local metadata database
-3. WHEN background sync encounters errors, THE OmniSonic SHALL retry with exponential backoff
-4. WHEN device battery is low, THE OmniSonic SHALL reduce background sync frequency
-5. WHEN user disables background sync, THE OmniSonic SHALL respect the setting and sync only on manual request
+1. WHEN a user selects a track, THE Cross_Platform_Client SHALL stream audio using the Subsonic_API stream endpoint
+2. THE Cross_Platform_Client SHALL support common audio formats including MP3, FLAC, OGG, and AAC
+3. WHEN network conditions change, THE Cross_Platform_Client SHALL adapt streaming quality automatically
+4. THE Cross_Platform_Client SHALL implement gapless playback between tracks in playlists and albums
+5. WHEN a server becomes unavailable during playback, THE Cross_Platform_Client SHALL attempt to continue playback from an alternative server hosting the same track
+
+### Requirement 5: Modern Spotify-Like User Interface
+
+**User Story:** As a modern music app user, I want an intuitive and visually appealing interface similar to Spotify, so that I can navigate my music collection effortlessly.
+
+#### Acceptance Criteria
+
+1. THE Cross_Platform_Client SHALL implement a card-based layout for albums, artists, and playlists similar to Spotify_UI
+2. WHEN displaying music content, THE Cross_Platform_Client SHALL show high-quality album artwork, artist images, and metadata
+3. THE Cross_Platform_Client SHALL provide smooth animations and transitions between views
+4. WHEN users interact with the interface, THE Cross_Platform_Client SHALL respond within 100ms for optimal user experience
+5. THE Cross_Platform_Client SHALL adapt the interface layout for different screen sizes and orientations on all supported platforms
+
+### Requirement 6: Advanced Music Discovery and Navigation
+
+**User Story:** As a music lover, I want powerful search and discovery features, so that I can easily find and explore music in my collection.
+
+#### Acceptance Criteria
+
+1. WHEN a user searches, THE Cross_Platform_Client SHALL provide real-time search results across tracks, albums, artists, and playlists
+2. THE Cross_Platform_Client SHALL implement filtering by genre, year, server source, and audio quality
+3. WHEN browsing artists, THE Cross_Platform_Client SHALL display artist information, albums, and related tracks
+4. THE Cross_Platform_Client SHALL provide recently played, most played, and recently added smart collections
+5. WHEN viewing albums, THE Cross_Platform_Client SHALL show complete track listings with durations and track numbers
+
+### Requirement 7: Playlist and Queue Management
+
+**User Story:** As a music organizer, I want to create and manage playlists and playback queues, so that I can curate my listening experience.
+
+#### Acceptance Criteria
+
+1. WHEN a user creates a playlist, THE Cross_Platform_Client SHALL allow adding tracks from any connected server
+2. THE Cross_Platform_Client SHALL support playlist creation, editing, deletion, and reordering
+3. WHEN managing the play queue, THE Cross_Platform_Client SHALL allow adding, removing, and reordering tracks
+4. THE Cross_Platform_Client SHALL persist playlists locally and sync them across user devices when possible
+5. WHEN a playlist contains unavailable tracks, THE Cross_Platform_Client SHALL skip them and continue playback
+
+### Requirement 8: Offline Capability and Caching
+
+**User Story:** As a mobile user, I want to cache music for offline listening, so that I can enjoy my music without an internet connection.
+
+#### Acceptance Criteria
+
+1. WHEN a user marks content for offline access, THE Cross_Platform_Client SHALL download and cache the audio files locally
+2. THE Cross_Platform_Client SHALL manage cache size limits and automatically remove old cached content when storage is full
+3. WHEN offline, THE Cross_Platform_Client SHALL provide access to all cached music with full playback functionality
+4. THE Cross_Platform_Client SHALL sync offline content preferences across devices when connectivity is restored
+5. WHEN cache management is needed, THE Cross_Platform_Client SHALL prioritize recently accessed and user-favorited content
+
+### Requirement 9: Cross-Platform Synchronization
+
+**User Story:** As a multi-device user, I want my playback state and preferences synchronized across all my devices, so that I can seamlessly continue listening on different platforms.
+
+#### Acceptance Criteria
+
+1. WHEN playback state changes, THE Cross_Platform_Client SHALL sync current track, position, and queue across devices
+2. THE Cross_Platform_Client SHALL synchronize user preferences, playlists, and favorites across all platforms
+3. WHEN switching devices, THE Cross_Platform_Client SHALL allow users to continue playback from where they left off
+4. THE Cross_Platform_Client SHALL handle sync conflicts by prioritizing the most recent changes
+5. WHEN network connectivity is restored, THE Cross_Platform_Client SHALL automatically sync pending changes
+
+### Requirement 10: Performance and Resource Management
+
+**User Story:** As a performance-conscious user, I want the application to run efficiently on all platforms, so that it doesn't impact my device's performance or battery life.
+
+#### Acceptance Criteria
+
+1. THE Cross_Platform_Client SHALL start up within 3 seconds on all supported platforms
+2. WHEN streaming music, THE Cross_Platform_Client SHALL use no more than 100MB of RAM during normal operation
+3. THE Cross_Platform_Client SHALL implement efficient image caching to minimize network requests for album artwork
+4. WHEN running in the background, THE Cross_Platform_Client SHALL minimize CPU usage and optimize battery consumption
+5. THE Cross_Platform_Client SHALL handle large music collections (100,000+ tracks) without performance degradation

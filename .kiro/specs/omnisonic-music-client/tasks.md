@@ -1,308 +1,322 @@
-# Implementation Plan
+# Implementation Plan: Omnisonic Music Client
 
-- [ ] 1. Set up project structure and core dependencies
-  - Create Flutter project with Clean Architecture folder structure
-  - Add core dependencies: drift, just_audio, audio_service, flutter_secure_storage, fast_check
-  - Configure platform-specific settings for audio playback (Android manifest, iOS info.plist)
-  - Set up BLoC state management architecture
-  - _Requirements: 1.1, 3.1, 7.1_
+## Overview
 
-- [ ] 2. Implement core data models and database schema
-  - [ ] 2.1 Create Drift database schema with tables for servers, artists, albums, tracks, cache entries
-    - Define all database tables with proper relationships and indexes
-    - Implement foreign key constraints and cascade operations
-    - _Requirements: 2.1, 2.2, 4.1_
+This implementation plan breaks down the Omnisonic cross-platform music client into discrete, manageable tasks. The approach follows clean architecture principles with Flutter/Dart, implementing core functionality first, then adding advanced features like deduplication and synchronization. Each task builds incrementally toward a fully functional music streaming application with Spotify-like UI and multi-server support.
 
-  - [ ] 2.2 Write property test for database schema integrity
-    - **Property 1: Server Configuration Management**
-    - **Validates: Requirements 1.1, 1.2, 1.3, 1.4**
+## Tasks
 
-  - [ ] 2.3 Create entity models for Artist, Album, Track, Server, and Cache
-    - Implement data classes with proper serialization
-    - Add validation methods for data integrity
-    - _Requirements: 2.1, 2.5_
+- [x] 1. Project Setup and Core Architecture
+  - Create Flutter project with proper directory structure following clean architecture
+  - Set up dependency injection using get_it
+  - Configure build systems for all target platforms (iOS, Android, macOS, Windows, Linux)
+  - Set up basic routing and navigation structure
+  - _Requirements: 1.1, 5.1, 10.1_
 
-  - [ ] 2.4 Write unit tests for entity models
-    - Test model validation and serialization
-    - Test edge cases for data parsing
-    - _Requirements: 2.1, 2.5_
+- [x] 2. Core Domain Layer Implementation
+  - [x] 2.1 Define core entities and value objects
+    - Create Track, Album, Artist, MusicServer, Playlist entities
+    - Implement AudioQuality, ServerStatus, and other value objects
+    - Add entity validation and equality methods
+    - _Requirements: 2.1, 3.1, 7.1_
 
-- [ ] 3. Implement server management and authentication
-  - [ ] 3.1 Create ServerRepository with secure credential storage
-    - Implement server configuration CRUD operations
-    - Use flutter_secure_storage for credential management
-    - _Requirements: 1.1, 7.1_
+  - [ ]* 2.2 Write property test for core entities
+    - **Property 1: Entity validation consistency**
+    - **Validates: Requirements 2.1, 3.1**
 
-  - [ ] 3.2 Implement Subsonic API client with authentication
-    - Create HTTP client with proper authentication handling
-    - Support both password and token-based authentication
-    - Implement API error handling and retry logic
-    - _Requirements: 1.2, 1.3, 1.4_
+  - [x] 2.3 Create repository interfaces
+    - Define MusicRepository, ServerRepository, PlaybackRepository interfaces
+    - Add Result type for error handling
+    - Create abstract use case base class
+    - _Requirements: 1.1, 2.1, 4.1_
 
-  - [ ] 3.3 Write property test for server cleanup consistency
-    - **Property 2: Server Cleanup Consistency**
-    - **Validates: Requirements 1.5**
+- [x] 3. Subsonic API Integration
+  - [x] 3.1 Implement Subsonic API client
+    - Create HTTP client with authentication (token-based and legacy)
+    - Implement core API endpoints (ping, getAlbums, getArtists, stream)
+    - Add request/response models for Subsonic API
+    - Handle API versioning and compatibility
+    - _Requirements: 1.1, 1.2, 4.1_
 
-  - [ ] 3.4 Write unit tests for authentication flows
-    - Test successful and failed authentication scenarios
-    - Test credential storage and retrieval
+  - [ ]* 3.2 Write property test for API client
+    - **Property 1: Server Connection Validation**
+    - **Validates: Requirements 1.1, 1.2**
+
+  - [x] 3.3 Implement server connection management
+    - Create server validation and authentication logic
+    - Add encrypted credential storage using flutter_secure_storage
+    - Implement connection testing and status monitoring
     - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 4. Implement metadata synchronization and unified content view
-  - [ ] 4.1 Create metadata sync service
-    - Implement parallel syncing from multiple servers
-    - Handle incremental updates and full syncs
-    - _Requirements: 2.1_
+  - [ ]* 3.4 Write property test for server management
+    - **Property 3: Multi-Server Capacity**
+    - **Validates: Requirements 1.4**
 
-  - [ ] 4.2 Implement content deduplication and merging logic
-    - Create artist/album matching algorithms using name and MusicBrainz ID
-    - Implement unified view aggregation
-    - _Requirements: 2.2, 2.3, 2.4_
+- [x] 4. Local Data Layer Implementation
+  - [x] 4.1 Set up local database with Drift
+    - Create database schema for servers, tracks, albums, artists, playlists
+    - Implement database migrations and versioning
+    - Add database access objects (DAOs)
+    - _Requirements: 2.3, 7.4, 8.1_
 
-  - [ ] 4.3 Write property test for unified content aggregation
-    - **Property 3: Unified Content Aggregation**
-    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
+  - [x] 4.2 Implement local data sources
+    - Create local data sources for each entity type
+    - Add caching logic for metadata and images
+    - Implement offline data access patterns
+    - _Requirements: 8.1, 8.3, 10.3_
 
-  - [ ] 4.4 Create MusicRepository with unified content access
-    - Implement search and filtering across unified content
-    - Add source attribution for merged content
-    - _Requirements: 2.5_
+  - [ ]* 4.3 Write property test for data persistence
+    - **Property 23: Playlist Persistence and Sync**
+    - **Validates: Requirements 7.4**
 
-  - [ ] 4.5 Write unit tests for content merging
-    - Test deduplication algorithms
-    - Test source attribution preservation
-    - _Requirements: 2.2, 2.3, 2.4, 2.5_
+- [x] 5. Repository Implementations
+  - [x] 5.1 Implement MusicRepository
+    - Create repository combining remote and local data sources
+    - Add metadata synchronization logic
+    - Implement unified collection aggregation
+    - Handle server availability and failover
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 5. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+  - [ ]* 5.2 Write property test for music repository
+    - **Property 5: Unified Collection Synchronization**
+    - **Validates: Requirements 2.1, 2.2, 2.5**
 
-- [ ] 6. Implement audio engine and playback system
-  - [ ] 6.1 Set up just_audio with audio_service integration
-    - Configure background audio playback
-    - Set up media session and notification controls
-    - _Requirements: 3.1, 3.2_
+  - [x] 5.3 Implement ServerRepository
+    - Add server CRUD operations
+    - Implement connection monitoring and status updates
+    - Add server configuration management
+    - _Requirements: 1.1, 1.3, 1.5_
 
-  - [ ] 6.2 Create AudioPlayer service with gapless playback
-    - Implement playlist management with just_audio
-    - Configure gapless playback settings
-    - _Requirements: 3.2_
+  - [ ]* 5.4 Write property test for server repository
+    - **Property 2: Server Fault Tolerance**
+    - **Validates: Requirements 1.3**
 
-  - [ ] 6.3 Write property test for gapless playback continuity
-    - **Property 5: Gapless Playback Continuity**
-    - **Validates: Requirements 3.2**
+- [x] 6. Checkpoint - Core Data Layer Complete
+  - Ensure all tests pass, verify basic data operations work
+  - Test server connections and metadata fetching
+  - Ask the user if questions arise.
 
-  - [ ] 6.4 Implement audio format support and transcoding requests
-    - Add support for MP3, FLAC, AAC, OGG, Opus formats
-    - Implement adaptive streaming based on network conditions
-    - _Requirements: 3.1, 3.3_
+- [x] 7. Deduplication Engine Implementation
+  - [x] 7.1 Implement duplicate detection algorithm
+    - Create similarity scoring based on title, artist, album, duration
+    - Add fuzzy matching for slight variations in metadata
+    - Implement duplicate grouping and representative selection
+    - _Requirements: 3.1, 3.2, 3.3_
 
-  - [ ] 6.5 Write property test for audio format support
-    - **Property 4: Audio Format and Playback Support**
-    - **Validates: Requirements 3.1, 3.3, 3.4**
+  - [ ]* 7.2 Write property test for deduplication
+    - **Property 8: Duplicate Detection Algorithm**
+    - **Validates: Requirements 3.1, 3.2, 3.3**
 
-  - [ ] 6.6 Implement ReplayGain and equalizer support
-    - Add ReplayGain volume normalization
-    - Create equalizer engine with real-time processing
-    - _Requirements: 3.4, 3.5_
+  - [x] 7.3 Implement source selection logic
+    - Add quality-based source ranking (FLAC > MP3, etc.)
+    - Implement server availability checking
+    - Create fallback logic for unavailable sources
+    - _Requirements: 3.4, 4.5_
 
-  - [ ] 6.7 Write property test for real-time audio processing
-    - **Property 6: Real-time Audio Processing**
-    - **Validates: Requirements 3.5**
+  - [ ]* 7.4 Write property test for source selection
+    - **Property 9: Optimal Source Selection**
+    - **Validates: Requirements 3.4**
 
-  - [ ] 6.8 Write unit tests for audio playback features
-    - Test playback controls and state management
-    - Test audio session handling
-    - _Requirements: 3.1, 3.2, 3.4, 3.5_
+- [x] 8. Audio Playback System
+  - [x] 8.1 Implement audio player using just_audio
+    - Create playback service with play, pause, stop, seek functionality
+    - Add support for multiple audio formats (MP3, FLAC, OGG, AAC)
+    - Implement gapless playback between tracks
+    - Handle audio focus and interruptions
+    - _Requirements: 4.1, 4.2, 4.4_
 
-- [ ] 7. Implement caching and offline functionality
-  - [ ] 7.1 Create cache management system with LRU eviction
-    - Implement configurable cache size limits
-    - Create LRU eviction algorithm for non-pinned content
-    - _Requirements: 4.1, 4.4_
+  - [ ]* 8.2 Write property test for audio playback
+    - **Property 11: Audio Streaming Initiation**
+    - **Validates: Requirements 4.1, 4.2**
 
-  - [ ] 7.2 Implement content pinning and offline mode
-    - Add explicit download/pin functionality
-    - Create offline mode filtering
-    - _Requirements: 4.2, 4.3_
+  - [x] 8.3 Implement adaptive streaming
+    - Add network condition monitoring
+    - Implement quality adaptation based on bandwidth
+    - Create buffering and preloading strategies
+    - _Requirements: 4.3_
 
-  - [ ] 7.3 Write property test for intelligent cache management
-    - **Property 7: Intelligent Cache Management**
-    - **Validates: Requirements 4.1, 4.2, 4.4**
-
-  - [ ] 7.4 Write property test for offline mode filtering
-    - **Property 8: Offline Mode Filtering**
+  - [ ]* 8.4 Write property test for adaptive streaming
+    - **Property 12: Adaptive Streaming Quality**
     - **Validates: Requirements 4.3**
 
-  - [ ] 7.5 Implement network connectivity handling
-    - Add network state monitoring
-    - Implement seamless offline playback continuation
-    - _Requirements: 4.5_
+- [x] 9. Use Cases Implementation
+  - [x] 9.1 Implement core use cases
+    - SyncMusicCollectionUseCase for metadata synchronization
+    - PlayTrackUseCase for track playback with server selection
+    - SearchMusicUseCase for cross-server search
+    - ManagePlaylistUseCase for playlist operations
+    - _Requirements: 2.1, 2.4, 4.1, 7.1_
 
-  - [ ] 7.6 Write property test for playback continuity during network loss
-    - **Property 9: Playback Continuity During Network Loss**
-    - **Validates: Requirements 4.5**
+  - [ ]* 9.2 Write property test for use cases
+    - **Property 7: Cross-Server Search**
+    - **Validates: Requirements 2.4**
 
-  - [ ] 7.7 Write unit tests for cache operations
-    - Test cache storage and retrieval
-    - Test pinning and unpinning operations
-    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+- [x] 10. Checkpoint - Core Business Logic Complete
+  - Ensure all core functionality works end-to-end
+  - Test playback, search, and basic playlist operations
+  - Ask the user if questions arise.
 
-- [ ] 8. Implement core UI components and navigation
-  - [ ] 8.1 Create main app structure with BLoC state management
-    - Set up navigation and routing
-    - Implement main screen layout with bottom navigation
-    - _Requirements: 5.1_
+- [x] 11. State Management and ViewModels
+  - [x] 11.1 Implement ViewModels using ChangeNotifier
+    - Create MusicLibraryViewModel for collection state
+    - Add PlaybackViewModel for player state
+    - Implement ServerManagementViewModel for server connections
+    - Create PlaylistViewModel for playlist management
+    - _Requirements: 5.4, 6.1, 7.2_
 
-  - [ ] 8.2 Implement artist, album, and track list screens
-    - Create virtualized lists for performance
-    - Add search and filtering functionality
-    - _Requirements: 5.1_
+  - [x] 11.2 Add BLoC for complex state flows
+    - Implement SyncBloc for background synchronization
+    - Create SearchBloc for real-time search results
+    - Add PlaybackBloc for complex playback state management
+    - _Requirements: 2.5, 6.1, 9.1_
 
-  - [ ] 8.3 Create player UI with hero animations
-    - Implement mini-player and full-screen player
-    - Add hero animations for album artwork transitions
-    - _Requirements: 5.2_
+- [x] 12. User Interface Implementation
+  - [x] 12.1 Create core UI components
+    - Implement card-based layouts for albums, artists, playlists
+    - Create reusable components (TrackTile, AlbumCard, ArtistCard)
+    - Add navigation structure with bottom navigation
+    - Implement responsive design for different screen sizes
+    - _Requirements: 5.1, 5.2, 5.5_
 
-  - [ ] 8.4 Write property test for UI animation consistency
-    - **Property 10: UI Animation Consistency**
-    - **Validates: Requirements 5.2**
+  - [ ]* 12.2 Write property test for UI components
+    - **Property 15: Content Display Completeness**
+    - **Validates: Requirements 5.2, 6.3, 6.5**
 
-  - [ ] 8.5 Implement adaptive image loading and caching
-    - Create thumbnail and high-resolution image handling
-    - Implement image caching with cached_network_image
-    - _Requirements: 5.3_
+  - [x] 12.3 Implement main screens
+    - Create Home screen with smart collections
+    - Add Library screen with albums, artists, tracks views
+    - Implement Search screen with real-time results
+    - Create Now Playing screen with playback controls
+    - _Requirements: 5.1, 6.1, 6.4_
 
-  - [ ] 8.6 Write property test for adaptive image resolution
-    - **Property 11: Adaptive Image Resolution**
-    - **Validates: Requirements 5.3**
+  - [ ]* 12.4 Write property test for search functionality
+    - **Property 18: Real-Time Search Results**
+    - **Validates: Requirements 6.1**
 
-  - [ ] 8.7 Write unit tests for UI components
-    - Test widget rendering and interactions
-    - Test navigation flows
-    - _Requirements: 5.2, 5.3_
+- [x] 13. Advanced UI Features
+  - [x] 13.1 Implement playlist management UI
+    - Create playlist creation and editing screens
+    - Add drag-and-drop reordering for tracks
+    - Implement playlist sharing and export features
+    - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 9. Implement theming and visual polish
-  - [ ] 9.1 Create dynamic theming system
-    - Implement Material 3 and Cupertino adaptive theming
-    - Add dynamic color extraction from album artwork
-    - _Requirements: 5.4_
+  - [x] 13.2 Add server management interface
+    - Create server setup and configuration screens
+    - Implement server status monitoring UI
+    - Add server testing and troubleshooting tools
+    - _Requirements: 1.1, 1.2, 1.5_
 
-  - [ ] 9.2 Write property test for dynamic theme updates
-    - **Property 12: Dynamic Theme Updates**
-    - **Validates: Requirements 5.4**
+  - [ ]* 13.3 Write property test for playlist operations
+    - **Property 21: Comprehensive Playlist Operations**
+    - **Validates: Requirements 7.1, 7.2, 7.3**
 
-  - [ ] 9.3 Implement theme switching functionality
-    - Add light, dark, and OLED theme options
-    - Ensure immediate theme application without restart
-    - _Requirements: 5.5_
+- [x] 14. Offline and Caching System
+  - [x] 14.1 Implement offline content management
+    - Create download manager for offline content
+    - Add cache size management and cleanup
+    - Implement priority-based cache eviction
+    - _Requirements: 8.1, 8.2, 8.5_
 
-  - [ ] 9.4 Write property test for immediate theme application
-    - **Property 13: Immediate Theme Application**
-    - **Validates: Requirements 5.5**
+  - [ ]* 14.2 Write property test for caching system
+    - **Property 25: Offline Content Caching**
+    - **Validates: Requirements 8.1, 8.2**
 
-  - [ ] 9.5 Write unit tests for theming system
-    - Test theme generation and application
-    - Test theme persistence and restoration
-    - _Requirements: 5.4, 5.5_
+  - [x] 14.3 Add offline mode functionality
+    - Implement offline detection and UI adaptation
+    - Create offline-only views and navigation
+    - Add offline playback with cached content
+    - _Requirements: 8.3_
 
-- [ ] 10. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+  - [ ]* 14.4 Write property test for offline functionality
+    - **Property 26: Offline Functionality Access**
+    - **Validates: Requirements 8.3**
 
-- [ ] 11. Implement automotive integration
-  - [ ] 11.1 Create CarPlay and Android Auto interfaces
-    - Implement simplified automotive UI templates
-    - Add quick access to recent, favorites, and offline content
-    - _Requirements: 6.1, 6.2_
+- [ ] 15. Cross-Device Synchronization
+  - [ ] 15.1 Implement sync service
+    - Create cloud sync backend integration (Firebase/Supabase)
+    - Add conflict resolution for concurrent changes
+    - Implement incremental sync for efficiency
+    - _Requirements: 9.1, 9.2, 9.4_
 
-  - [ ] 11.2 Implement voice command handling
-    - Add basic playback voice command support
-    - Integrate with platform voice recognition systems
-    - _Requirements: 6.3_
+  - [ ]* 15.2 Write property test for synchronization
+    - **Property 28: Cross-Device Synchronization**
+    - **Validates: Requirements 9.1, 9.2, 9.4**
 
-  - [ ] 11.3 Write property test for voice command response
-    - **Property 14: Voice Command Response**
-    - **Validates: Requirements 6.3**
+  - [ ] 15.3 Add playback continuity across devices
+    - Implement playback state persistence
+    - Create device handoff functionality
+    - Add automatic sync on connectivity restoration
+    - _Requirements: 9.3, 9.5_
 
-  - [ ] 11.4 Implement automotive connection management
-    - Handle connection and disconnection events
-    - Ensure playback continuity during transitions
-    - _Requirements: 6.5_
+  - [ ]* 15.4 Write property test for playback continuity
+    - **Property 29: Playback Continuity Across Devices**
+    - **Validates: Requirements 9.3**
 
-  - [ ] 11.5 Write property test for automotive playback continuity
-    - **Property 15: Automotive Playback Continuity**
-    - **Validates: Requirements 6.5**
+- [ ] 16. Performance Optimization
+  - [ ] 16.1 Optimize app startup and performance
+    - Implement lazy loading for large collections
+    - Add image caching and optimization
+    - Optimize database queries and indexing
+    - _Requirements: 10.1, 10.3, 10.5_
 
-  - [ ] 11.6 Write unit tests for automotive features
-    - Test automotive UI rendering
-    - Test connection state management
-    - _Requirements: 6.1, 6.2, 6.5_
+  - [ ]* 16.2 Write property test for performance requirements
+    - **Property 31: Performance Requirements**
+    - **Validates: Requirements 10.1, 10.2, 10.4**
 
-- [ ] 12. Implement privacy and security features
-  - [ ] 12.1 Enhance secure credential storage
-    - Implement comprehensive secure storage for all sensitive data
-    - Add credential encryption and secure deletion
-    - _Requirements: 7.1_
+  - [ ] 16.3 Add memory and battery optimization
+    - Implement efficient background processing
+    - Add memory leak detection and prevention
+    - Optimize for battery usage during playback
+    - _Requirements: 10.2, 10.4_
 
-  - [ ] 12.2 Implement privacy compliance measures
-    - Ensure no telemetry transmission to third parties
-    - Restrict network communication to configured servers only
-    - Implement secure file storage in private directories
-    - _Requirements: 7.2, 7.3, 7.4_
+- [ ] 17. Platform-Specific Features
+  - [ ] 17.1 Add platform integrations
+    - Implement media controls for each platform
+    - Add system notifications for playback
+    - Create platform-specific UI adaptations
+    - _Requirements: 5.5, 4.1_
 
-  - [ ] 12.3 Write property test for privacy and security compliance
-    - **Property 16: Privacy and Security Compliance**
-    - **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+  - [ ] 17.2 Implement platform-specific optimizations
+    - Add iOS background app refresh handling
+    - Implement Android foreground service for playback
+    - Create desktop-specific keyboard shortcuts
+    - _Requirements: 4.1, 10.4_
 
-  - [ ] 12.4 Write unit tests for security features
-    - Test credential storage and retrieval security
-    - Test network communication restrictions
-    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+- [ ] 18. Testing and Quality Assurance
+  - [ ] 18.1 Comprehensive integration testing
+    - Create end-to-end test scenarios
+    - Add cross-platform compatibility tests
+    - Implement performance regression tests
+    - _Requirements: All requirements_
 
-- [ ] 13. Implement background synchronization
-  - [ ] 13.1 Create background sync service
-    - Implement periodic metadata synchronization
-    - Add battery and network optimization
-    - _Requirements: 8.1, 8.4_
+  - [ ]* 18.2 Write remaining property tests
+    - Complete all 33 correctness properties from design
+    - Add edge case and error condition tests
+    - Implement property test generators for domain objects
 
-  - [ ] 13.2 Implement sync error handling and retry logic
-    - Add exponential backoff for failed sync attempts
-    - Implement database update handling for new content
-    - _Requirements: 8.2, 8.3_
+- [ ] 19. Final Integration and Polish
+  - [ ] 19.1 Final integration and bug fixes
+    - Integrate all components and resolve conflicts
+    - Fix any remaining bugs and performance issues
+    - Add final UI polish and animations
+    - _Requirements: All requirements_
 
-  - [ ] 13.3 Add user controls for background sync
-    - Implement settings to enable/disable background sync
-    - Respect user preferences for sync behavior
-    - _Requirements: 8.5_
+  - [ ] 19.2 Documentation and deployment preparation
+    - Create user documentation and help system
+    - Prepare app store listings and screenshots
+    - Set up CI/CD pipelines for all platforms
+    - _Requirements: All requirements_
 
-  - [ ] 13.4 Write property test for background sync management
-    - **Property 17: Background Sync Management**
-    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+- [ ] 20. Final Checkpoint - Complete Application
+  - Ensure all tests pass and requirements are met
+  - Verify cross-platform functionality
+  - Ask the user if questions arise.
 
-  - [ ] 13.5 Write unit tests for background sync
-    - Test sync scheduling and execution
-    - Test error handling and retry mechanisms
-    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+## Notes
 
-- [ ] 14. Final integration and polish
-  - [ ] 14.1 Implement comprehensive error handling
-    - Add user-friendly error messages throughout the app
-    - Implement graceful degradation for network issues
-    - _Requirements: All_
-
-  - [ ] 14.2 Add performance optimizations
-    - Optimize database queries for large libraries
-    - Implement memory management for audio playback
-    - _Requirements: 5.1_
-
-  - [ ] 14.3 Create app settings and preferences
-    - Implement user preferences for cache size, audio quality, themes
-    - Add server management UI
-    - _Requirements: All_
-
-  - [ ] 14.4 Write integration tests for complete user workflows
-    - Test end-to-end user scenarios
-    - Test cross-component interactions
-    - _Requirements: All_
-
-- [ ] 15. Final Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation and user feedback
+- Property tests validate universal correctness properties
+- Unit tests validate specific examples and edge cases
+- The implementation follows clean architecture principles throughout

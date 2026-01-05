@@ -145,15 +145,15 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i331.PlaylistRepository>(),
           gh<_i331.MusicRepository>(),
         ));
+    gh.factory<_i1063.SearchMusicUseCase>(() => _i1063.SearchMusicUseCase(
+          gh<_i331.MusicRepository>(),
+          gh<_i331.ServerRepository>(),
+        ));
     gh.factory<_i882.SyncMusicCollectionUseCase>(
         () => _i882.SyncMusicCollectionUseCase(
               gh<_i331.MusicRepository>(),
               gh<_i331.ServerRepository>(),
             ));
-    gh.factory<_i1063.SearchMusicUseCase>(() => _i1063.SearchMusicUseCase(
-          gh<_i331.MusicRepository>(),
-          gh<_i331.ServerRepository>(),
-        ));
     gh.factory<_i409.SyncBloc>(() => _i409.SyncBloc(
           gh<_i503.SyncMusicCollectionUseCase>(),
           gh<_i331.ServerRepository>(),
@@ -163,11 +163,11 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i331.MusicRepository>(),
           gh<_i331.ServerRepository>(),
         ));
-    gh.factory<_i984.PlaybackViewModel>(() => _i984.PlaybackViewModel(
+    gh.factory<_i725.PlaybackBloc>(() => _i725.PlaybackBloc(
           gh<_i331.PlaybackRepository>(),
           gh<_i503.PlayTrackUseCase>(),
         ));
-    gh.factory<_i725.PlaybackBloc>(() => _i725.PlaybackBloc(
+    gh.factory<_i984.PlaybackViewModel>(() => _i984.PlaybackViewModel(
           gh<_i331.PlaybackRepository>(),
           gh<_i503.PlayTrackUseCase>(),
         ));

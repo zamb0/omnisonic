@@ -41,7 +41,7 @@ dependencies:
   audio_service: ^0.18.15
   
   # Secure Storage
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^10.0.0
   
   # Network & Connectivity
   connectivity_plus: ^6.1.0

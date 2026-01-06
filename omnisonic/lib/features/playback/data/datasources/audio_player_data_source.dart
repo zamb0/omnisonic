@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
-import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
 import 'adaptive_streaming_service.dart';
+import 'platform_audio_player.dart';
 
-/// Data source for audio playback using just_audio with adaptive streaming
+/// Data source for audio playback using platform-specific audio players
 class AudioPlayerDataSource {
   AudioPlayerDataSource({
     AdaptiveStreamingService? adaptiveStreamingService,
@@ -17,7 +17,7 @@ class AudioPlayerDataSource {
     _init();
   }
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final PlatformAudioPlayer _audioPlayer = PlatformAudioPlayer();
   final AdaptiveStreamingService _adaptiveStreamingService;
   final BehaviorSubject<PlaybackState> _playbackStateController = 
       BehaviorSubject<PlaybackState>.seeded(_getInitialState());
@@ -50,8 +50,8 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       
       // Report buffering status to adaptive streaming service
-      final isBuffering = playerState.processingState == ProcessingState.buffering ||
-                         playerState.processingState == ProcessingState.loading;
+      final isBuffering = playerState == PlayerState.buffering ||
+                         playerState == PlayerState.loading;
       _adaptiveStreamingService.reportBufferingStatus(isBuffering);
     });
 
@@ -66,15 +66,15 @@ class AudioPlayerDataSource {
     });
 
     // Handle playback completion
-    _audioPlayer.processingStateStream.listen((processingState) {
-      if (processingState == ProcessingState.completed) {
+    _audioPlayer.playerStateStream.listen((processingState) {
+      if (processingState == PlayerState.completed) {
         _handleTrackCompletion();
       }
     });
 
     // Listen to buffer position for adaptive streaming
-    _audioPlayer.bufferedPositionStream.listen((bufferedPosition) {
-      _reportBufferHealth(bufferedPosition);
+    _audioPlayer.positionStream.listen((position) {
+      _reportBufferHealth(position);
     });
 
     // Listen to adaptive quality changes
@@ -359,17 +359,14 @@ class AudioPlayerDataSource {
     );
     
     // Use cached file if available, otherwise stream from URL with optimal quality
-    AudioSource audioSource;
     if (track.isCached && track.cachePath != null) {
-      audioSource = AudioSource.file(track.cachePath!);
+      await _audioPlayer.setFilePath(track.cachePath!);
     } else {
       // In a real implementation, you would modify the stream URL to request the optimal quality
       // For now, we use the original URL but could add quality parameters
       final streamUrl = _buildStreamUrlWithQuality(track.streamUrl, optimalQuality);
-      audioSource = AudioSource.uri(Uri.parse(streamUrl));
+      await _audioPlayer.setUrl(streamUrl);
     }
-    
-    await _audioPlayer.setAudioSource(audioSource);
   }
 
   /// Builds a stream URL with quality parameters

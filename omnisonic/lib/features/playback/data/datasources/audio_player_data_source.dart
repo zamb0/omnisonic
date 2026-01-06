@@ -358,13 +358,19 @@ class AudioPlayerDataSource {
       (quality) => quality,
     );
     
+    print('Loading track: ${track.title}');
+    print('Track original quality: ${track.quality}');
+    print('Selected playback quality: $optimalQuality');
+    
     // Use cached file if available, otherwise stream from URL with optimal quality
     if (track.isCached && track.cachePath != null) {
       await _audioPlayer.setFilePath(track.cachePath!);
+      print('Playing from cache: ${track.cachePath}');
     } else {
       // In a real implementation, you would modify the stream URL to request the optimal quality
       // For now, we use the original URL but could add quality parameters
       final streamUrl = _buildStreamUrlWithQuality(track.streamUrl, optimalQuality);
+      print('Streaming from URL with quality params');
       await _audioPlayer.setUrl(streamUrl);
     }
   }
@@ -383,17 +389,23 @@ class AudioPlayerDataSource {
     switch (quality) {
       case AudioQuality.low:
         queryParams['maxBitRate'] = '128';
+        queryParams['format'] = 'mp3';
         break;
       case AudioQuality.medium:
         queryParams['maxBitRate'] = '192';
+        queryParams['format'] = 'mp3';
         break;
       case AudioQuality.high:
         queryParams['maxBitRate'] = '320';
+        queryParams['format'] = 'mp3';
         break;
       case AudioQuality.lossless:
       case AudioQuality.ultra:
-        // Don't limit bitrate for lossless
+        // Request original format without transcoding for lossless
         queryParams.remove('maxBitRate');
+        queryParams.remove('format');
+        // Some Subsonic servers use 'raw' to indicate no transcoding
+        queryParams['format'] = 'raw';
         break;
     }
     

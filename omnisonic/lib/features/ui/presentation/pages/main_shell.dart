@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
-import '../widgets/mini_player.dart';
+import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 
 /// Main shell widget that provides the bottom navigation structure
 class MainShell extends StatelessWidget {
@@ -19,7 +19,9 @@ class MainShell extends StatelessWidget {
       body: Column(
         children: [
           Expanded(child: child),
-          const MiniPlayer(),
+          AnimatedNowPlayingBar(
+            onTap: () => context.go(AppRouter.nowPlaying),
+          ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigation(context),

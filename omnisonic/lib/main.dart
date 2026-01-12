@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/routing/app_router.dart';
+import 'core/design_system/theme.dart';
 
 // ViewModels
 import 'features/music/presentation/viewmodels/music_library_view_model.dart';
@@ -59,10 +60,9 @@ class OmnisonicApp extends StatelessWidget {
       ],
       child: MaterialApp.router(
         title: 'Omnisonic',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
+        theme: OmnisonicTheme.lightTheme,
+        darkTheme: OmnisonicTheme.darkTheme,
+        themeMode: ThemeMode.system,
         routerConfig: AppRouter.router,
       ),
     );

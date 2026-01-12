@@ -16,17 +16,17 @@ class AdaptiveStreamingService {
 
   final Connectivity _connectivity = Connectivity();
   final BehaviorSubject<NetworkCondition> _networkConditionController = 
-      BehaviorSubject<NetworkCondition>.seeded(NetworkCondition.good);
+      BehaviorSubject<NetworkCondition>.seeded(NetworkCondition.excellent);
   final BehaviorSubject<AudioQuality> _recommendedQualityController = 
-      BehaviorSubject<AudioQuality>.seeded(AudioQuality.high);
+      BehaviorSubject<AudioQuality>.seeded(AudioQuality.lossless);
 
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   Timer? _bandwidthTestTimer;
   Timer? _bufferMonitorTimer;
 
   // Network monitoring state
-  NetworkCondition _currentCondition = NetworkCondition.good;
-  AudioQuality _currentRecommendedQuality = AudioQuality.high;
+  NetworkCondition _currentCondition = NetworkCondition.excellent;
+  AudioQuality _currentRecommendedQuality = AudioQuality.lossless;
   double _estimatedBandwidth = 0.0; // Mbps
   int _bufferHealth = 100; // Percentage
   bool _isBuffering = false;
@@ -34,8 +34,8 @@ class AdaptiveStreamingService {
   // Adaptive streaming configuration
   static const Duration _bandwidthTestInterval = Duration(seconds: 30);
   static const Duration _bufferMonitorInterval = Duration(seconds: 5);
-  static const int _minBufferHealthPercent = 20;
-  static const int _goodBufferHealthPercent = 60;
+  static const int _minBufferHealthPercent = 10;  // More lenient - was 20
+  static const int _goodBufferHealthPercent = 40; // More lenient - was 60
 
   void _init() {
     // Monitor connectivity changes
@@ -166,31 +166,28 @@ class AdaptiveStreamingService {
   void _updateRecommendedQuality() {
     AudioQuality newQuality;
     
-    // Base quality on network condition
+    // Base quality on network condition - start higher
     switch (_currentCondition) {
       case NetworkCondition.excellent:
         newQuality = AudioQuality.lossless;
         break;
       case NetworkCondition.good:
-        newQuality = AudioQuality.high;
+        newQuality = AudioQuality.high;  // Keep high quality on good connections
         break;
       case NetworkCondition.fair:
-        newQuality = AudioQuality.medium;
+        newQuality = AudioQuality.high;  // Still use high on fair - was medium
         break;
       case NetworkCondition.poor:
-        newQuality = AudioQuality.low;
+        newQuality = AudioQuality.medium; // Use medium on poor - was low
         break;
       case NetworkCondition.offline:
         // Don't change quality when offline - use cached content
         return;
     }
     
-    // Adjust based on buffer health
+    // Only adjust based on buffer health if it's critically low
     if (_bufferHealth < _minBufferHealthPercent) {
-      // Buffer is critically low, reduce quality aggressively
-      newQuality = _reduceQuality(newQuality, 2);
-    } else if (_bufferHealth < _goodBufferHealthPercent) {
-      // Buffer is low, reduce quality moderately
+      // Buffer is critically low, reduce quality by 1 step only
       newQuality = _reduceQuality(newQuality, 1);
     }
     
@@ -216,7 +213,8 @@ class AdaptiveStreamingService {
     final newIndex = AudioQuality.values.indexOf(newQuality);
     final qualityDifference = (currentIndex - newIndex).abs();
     
-    return qualityDifference >= 1 || _bufferHealth < _minBufferHealthPercent;
+    // Require at least 2 steps difference to change quality, unless buffer is critical
+    return qualityDifference >= 2 || _bufferHealth < _minBufferHealthPercent;
   }
 
   /// Checks buffer health (this would integrate with the actual audio player)
@@ -225,9 +223,9 @@ class AdaptiveStreamingService {
     // In a real app, this would check the actual buffer status from the audio player
     
     if (_isBuffering) {
-      _bufferHealth = max(0, _bufferHealth - 10);
+      _bufferHealth = max(0, _bufferHealth - 5);  // Slower degradation - was 10
     } else {
-      _bufferHealth = min(100, _bufferHealth + 5);
+      _bufferHealth = min(100, _bufferHealth + 10); // Faster recovery - was 5
     }
     
     // Update quality if buffer health changed significantly

@@ -39,6 +39,7 @@ dependencies:
   # Audio Playback
   just_audio: ^0.9.42
   audio_service: ^0.18.15
+  audioplayers: ^6.1.0
   
   # Secure Storage
   flutter_secure_storage: ^10.0.0

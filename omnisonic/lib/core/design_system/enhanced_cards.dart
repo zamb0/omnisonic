@@ -192,11 +192,12 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
         _buildAlbumArt(artSize, artSize),
-        const SizedBox(height: OmnisonicSpacing.md),
-        _buildAlbumInfo(),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        Flexible(
+          child: _buildAlbumInfo(),
+        ),
       ],
     );
   }
@@ -254,14 +255,14 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
           style: context.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
-          maxLines: 2,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         if (widget.showArtist) ...[
-          const SizedBox(height: OmnisonicSpacing.xs),
+          const SizedBox(height: 2),
           Text(
             widget.album.artist,
-            style: context.textTheme.bodyMedium?.copyWith(
+            style: context.textTheme.bodySmall?.copyWith(
               color: context.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             maxLines: 1,
@@ -269,11 +270,12 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
           ),
         ],
         if (widget.album.trackCount != null) ...[
-          const SizedBox(height: OmnisonicSpacing.xs),
+          const SizedBox(height: 2),
           Text(
             '${widget.album.trackCount} track${widget.album.trackCount != 1 ? 's' : ''}',
             style: context.textTheme.bodySmall?.copyWith(
               color: context.colorScheme.onSurface.withValues(alpha: 0.6),
+              fontSize: 11,
             ),
           ),
         ],

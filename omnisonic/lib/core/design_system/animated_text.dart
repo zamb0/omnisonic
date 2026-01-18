@@ -5,7 +5,7 @@ import 'animation_manager.dart';
 class AnimatedText extends StatefulWidget {
   final String text;
   final TextStyle? style;
-  final AnimationType animationType;
+  final TextAnimationType animationType;
   final Duration? duration;
   final Curve? curve;
   final bool autoStart;
@@ -18,7 +18,7 @@ class AnimatedText extends StatefulWidget {
     this.text, {
     super.key,
     this.style,
-    this.animationType = AnimationType.fadeIn,
+    this.animationType = TextAnimationType.fadeIn,
     this.duration,
     this.curve,
     this.autoStart = true,
@@ -86,57 +86,57 @@ class _AnimatedTextState extends State<AnimatedText>
   
   Duration _getDefaultDuration() {
     switch (widget.animationType) {
-      case AnimationType.fadeIn:
-      case AnimationType.fadeOut:
+      case TextAnimationType.fadeIn:
+      case TextAnimationType.fadeOut:
         return AnimationManager.normalDuration;
-      case AnimationType.slideUp:
-      case AnimationType.slideDown:
-      case AnimationType.slideLeft:
-      case AnimationType.slideRight:
+      case TextAnimationType.slideUp:
+      case TextAnimationType.slideDown:
+      case TextAnimationType.slideLeft:
+      case TextAnimationType.slideRight:
         return AnimationManager.normalDuration;
-      case AnimationType.scaleIn:
-      case AnimationType.scaleOut:
+      case TextAnimationType.scaleIn:
+      case TextAnimationType.scaleOut:
         return AnimationManager.fastDuration;
-      case AnimationType.bounce:
+      case TextAnimationType.bounce:
         return AnimationManager.slowDuration;
-      case AnimationType.typewriter:
+      case TextAnimationType.typewriter:
         return Duration(milliseconds: widget.text.length * 50);
-      case AnimationType.shimmer:
+      case TextAnimationType.shimmer:
         return const Duration(milliseconds: 1500);
     }
   }
   
   Curve _getDefaultCurve() {
     switch (widget.animationType) {
-      case AnimationType.fadeIn:
-      case AnimationType.fadeOut:
+      case TextAnimationType.fadeIn:
+      case TextAnimationType.fadeOut:
         return AnimationManager.standardCurve;
-      case AnimationType.slideUp:
-      case AnimationType.slideDown:
-      case AnimationType.slideLeft:
-      case AnimationType.slideRight:
+      case TextAnimationType.slideUp:
+      case TextAnimationType.slideDown:
+      case TextAnimationType.slideLeft:
+      case TextAnimationType.slideRight:
         return AnimationManager.slideOutCurve;
-      case AnimationType.scaleIn:
-      case AnimationType.scaleOut:
+      case TextAnimationType.scaleIn:
+      case TextAnimationType.scaleOut:
         return AnimationManager.springCurve;
-      case AnimationType.bounce:
+      case TextAnimationType.bounce:
         return Curves.elasticOut;
-      case AnimationType.typewriter:
+      case TextAnimationType.typewriter:
         return Curves.linear;
-      case AnimationType.shimmer:
+      case TextAnimationType.shimmer:
         return Curves.linear;
     }
   }
   
   Offset _getSlideBegin() {
     switch (widget.animationType) {
-      case AnimationType.slideUp:
+      case TextAnimationType.slideUp:
         return const Offset(0, 1);
-      case AnimationType.slideDown:
+      case TextAnimationType.slideDown:
         return const Offset(0, -1);
-      case AnimationType.slideLeft:
+      case TextAnimationType.slideLeft:
         return const Offset(1, 0);
-      case AnimationType.slideRight:
+      case TextAnimationType.slideRight:
         return const Offset(-1, 0);
       default:
         return Offset.zero;
@@ -145,11 +145,11 @@ class _AnimatedTextState extends State<AnimatedText>
   
   double _getScaleBegin() {
     switch (widget.animationType) {
-      case AnimationType.scaleIn:
+      case TextAnimationType.scaleIn:
         return 0.0;
-      case AnimationType.scaleOut:
+      case TextAnimationType.scaleOut:
         return 1.2;
-      case AnimationType.bounce:
+      case TextAnimationType.bounce:
         return 0.0;
       default:
         return 1.0;
@@ -177,34 +177,34 @@ class _AnimatedTextState extends State<AnimatedText>
   @override
   Widget build(BuildContext context) {
     switch (widget.animationType) {
-      case AnimationType.fadeIn:
-      case AnimationType.fadeOut:
+      case TextAnimationType.fadeIn:
+      case TextAnimationType.fadeOut:
         return FadeTransition(
           opacity: _animation,
           child: _buildText(),
         );
       
-      case AnimationType.slideUp:
-      case AnimationType.slideDown:
-      case AnimationType.slideLeft:
-      case AnimationType.slideRight:
+      case TextAnimationType.slideUp:
+      case TextAnimationType.slideDown:
+      case TextAnimationType.slideLeft:
+      case TextAnimationType.slideRight:
         return SlideTransition(
           position: _slideAnimation,
           child: _buildText(),
         );
       
-      case AnimationType.scaleIn:
-      case AnimationType.scaleOut:
-      case AnimationType.bounce:
+      case TextAnimationType.scaleIn:
+      case TextAnimationType.scaleOut:
+      case TextAnimationType.bounce:
         return ScaleTransition(
           scale: _scaleAnimation,
           child: _buildText(),
         );
       
-      case AnimationType.typewriter:
+      case TextAnimationType.typewriter:
         return _buildTypewriterText();
       
-      case AnimationType.shimmer:
+      case TextAnimationType.shimmer:
         return _buildShimmerText();
     }
   }
@@ -274,7 +274,7 @@ class _AnimatedTextState extends State<AnimatedText>
 }
 
 /// Animation types for text animations
-enum AnimationType {
+enum TextAnimationType {
   fadeIn,
   fadeOut,
   slideUp,

@@ -210,7 +210,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
           'Fade In Text',
-          animationType: AnimationType.fadeIn,
+          animationType: TextAnimationType.fadeIn,
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('fade_$_showAnimations'),
         ),
@@ -221,7 +221,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
           'Slide Up Text',
-          animationType: AnimationType.slideUp,
+          animationType: TextAnimationType.slideUp,
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('slide_$_showAnimations'),
         ),
@@ -232,7 +232,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
           'Scale In Text',
-          animationType: AnimationType.scaleIn,
+          animationType: TextAnimationType.scaleIn,
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('scale_$_showAnimations'),
         ),
@@ -243,7 +243,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
           'Bounce Text',
-          animationType: AnimationType.bounce,
+          animationType: TextAnimationType.bounce,
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('bounce_$_showAnimations'),
         ),
@@ -254,7 +254,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
           'This text appears character by character',
-          animationType: AnimationType.typewriter,
+          animationType: TextAnimationType.typewriter,
           style: OmnisonicTypography.bodyLarge,
           key: ValueKey('typewriter_$_showAnimations'),
         ),
@@ -268,7 +268,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           padding: OmnisonicInsets.allSm,
           child: AnimatedText(
             'Shimmer Effect Text',
-            animationType: AnimationType.shimmer,
+            animationType: TextAnimationType.shimmer,
             style: OmnisonicTypography.titleMedium.copyWith(
               color: Colors.grey[400],
             ),

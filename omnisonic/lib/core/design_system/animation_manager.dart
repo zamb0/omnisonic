@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'accessibility_preferences.dart';
 import 'adaptive_performance.dart';
-import 'gesture_feedback.dart';
+import 'platform_optimizations.dart';
 
 /// Animation priority levels for coordination
 enum AnimationPriority {
@@ -620,7 +620,7 @@ class AnimationManager {
       await _accessibilityPreferences.triggerHapticFeedback(type);
     } else {
       // Force haptic feedback regardless of user settings
-      await OmnisonicGestureFeedback.hapticFeedback(type);
+      await PlatformOptimizations().triggerHapticFeedback(type);
     }
   }
   

@@ -208,7 +208,6 @@ class _PlatformButtonState extends State<PlatformButton>
         }
         return platformTheme.elevation;
       }),
-      mouseCursor: WidgetStateProperty.all(platformTheme.interactiveCursor),
     );
   }
 }
@@ -335,7 +334,6 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
       tooltip: widget.tooltip,
       style: IconButton.styleFrom(
         minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
-        mouseCursor: platformTheme.interactiveCursor,
       ),
     );
     

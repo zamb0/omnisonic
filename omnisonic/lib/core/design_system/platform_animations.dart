@@ -236,7 +236,7 @@ class PlatformAnimationCurves {
       case PlatformType.ios:
         return Curves.easeOut;
       case PlatformType.android:
-        return Curves.fastOutLinearIn;
+        return Curves.fastOutSlowIn;
       case PlatformType.web:
         return Curves.easeOutQuart;
       case PlatformType.macos:
@@ -388,7 +388,7 @@ class PlatformListAnimations {
         return SizeTransition(
           sizeFactor: CurvedAnimation(
             parent: animation,
-            curve: Curves.fastOutLinearIn,
+            curve: Curves.fastOutSlowIn,
           ),
           child: FadeTransition(
             opacity: animation,

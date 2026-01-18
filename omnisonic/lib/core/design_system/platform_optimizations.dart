@@ -138,7 +138,7 @@ class PlatformOptimizations {
   }
 
   /// Get platform-appropriate cursor for interactive elements
-  SystemMouseCursor get interactiveCursor {
+  MouseCursor get interactiveCursor {
     if (supportsHover) {
       return SystemMouseCursors.click;
     }

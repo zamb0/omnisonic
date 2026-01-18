@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show lerpDouble;
 import 'platform_optimizations.dart';
 import 'platform_animations.dart';
 
@@ -14,7 +15,7 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
   final PlatformAnimationCurves animationCurves;
   final bool supportsHover;
   final bool supportsHaptics;
-  final SystemMouseCursor interactiveCursor;
+  final MouseCursor interactiveCursor;
 
   const PlatformThemeExtension({
     required this.touchTargetSize,
@@ -59,7 +60,7 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
     PlatformAnimationCurves? animationCurves,
     bool? supportsHover,
     bool? supportsHaptics,
-    SystemMouseCursor? interactiveCursor,
+    MouseCursor? interactiveCursor,
   }) {
     return PlatformThemeExtension(
       touchTargetSize: touchTargetSize ?? this.touchTargetSize,
@@ -148,7 +149,6 @@ class PlatformButtonStyles {
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
       elevation: platformTheme.elevation,
-      mouseCursor: platformTheme.interactiveCursor,
     );
   }
 
@@ -160,7 +160,6 @@ class PlatformButtonStyles {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
-      mouseCursor: platformTheme.interactiveCursor,
     );
   }
 
@@ -172,7 +171,6 @@ class PlatformButtonStyles {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
-      mouseCursor: platformTheme.interactiveCursor,
     );
   }
 
@@ -181,7 +179,6 @@ class PlatformButtonStyles {
     
     return IconButton.styleFrom(
       minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
-      mouseCursor: platformTheme.interactiveCursor,
     );
   }
 }
@@ -242,7 +239,7 @@ class PlatformInputDecorations {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
-        borderWidth: 2.0,
+        borderSide: const BorderSide(width: 2.0),
       ),
     );
   }
@@ -250,11 +247,12 @@ class PlatformInputDecorations {
 
 /// Utility function to add platform theme extension to ThemeData
 ThemeData addPlatformExtensions(ThemeData theme) {
+  final extensions = <ThemeExtension<dynamic>>[
+    PlatformThemeExtension.forCurrentPlatform(),
+  ];
+  
   return theme.copyWith(
-    extensions: <ThemeExtension<dynamic>>[
-      ...theme.extensions.values,
-      PlatformThemeExtension.forCurrentPlatform(),
-    ],
+    extensions: extensions,
     pageTransitionsTheme: PageTransitionsTheme(
       builders: {
         for (final platform in TargetPlatform.values)

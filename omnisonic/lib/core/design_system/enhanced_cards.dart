@@ -10,7 +10,6 @@ import 'animation_manager.dart';
 import 'micro_interactions.dart';
 import 'accessibility.dart';
 import 'accessibility_preferences.dart';
-import 'gesture_feedback.dart';
 import 'platform_optimizations.dart';
 import 'platform_theme_extensions.dart';
 
@@ -71,7 +70,13 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       parent: _animationController,
       curve: AnimationManager.hoverCurve,
     ));
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     
+    // Initialize color animation here since it needs Theme.of(context)
     _colorAnimation = ColorTween(
       begin: null,
       end: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),

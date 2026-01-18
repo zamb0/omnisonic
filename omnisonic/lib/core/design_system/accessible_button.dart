@@ -3,7 +3,7 @@ import 'accessibility.dart';
 import 'accessibility_preferences.dart';
 import 'animation_manager.dart';
 import 'spacing.dart';
-import 'gesture_feedback.dart';
+import 'platform_optimizations.dart';
 
 /// Accessible button component with WCAG compliance and reduced motion support
 class AccessibleButton extends StatefulWidget {

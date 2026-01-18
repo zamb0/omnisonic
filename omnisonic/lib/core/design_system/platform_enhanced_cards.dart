@@ -21,7 +21,7 @@ class PlatformEnhancedAlbumCard extends StatefulWidget {
   final double? width;
   final bool showArtist;
   final bool isSelected;
-  final CardLayout layout;
+  final PlatformCardLayout layout;
 
   const PlatformEnhancedAlbumCard({
     super.key,
@@ -31,7 +31,7 @@ class PlatformEnhancedAlbumCard extends StatefulWidget {
     this.width,
     this.showArtist = true,
     this.isSelected = false,
-    this.layout = CardLayout.grid,
+    this.layout = PlatformCardLayout.grid,
   });
 
   @override
@@ -283,11 +283,11 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
   
   double _getDefaultWidth() {
     switch (widget.layout) {
-      case CardLayout.grid:
+      case PlatformCardLayout.grid:
         return 160;
-      case CardLayout.list:
+      case PlatformCardLayout.list:
         return double.infinity;
-      case CardLayout.compact:
+      case PlatformCardLayout.compact:
         return 120;
     }
   }
@@ -467,7 +467,7 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
 }
 
 /// Card layout options
-enum CardLayout {
+enum PlatformCardLayout {
   grid,
   list,
   compact,

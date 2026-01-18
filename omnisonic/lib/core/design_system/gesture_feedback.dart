@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'platform_optimizations.dart';
 
 /// Comprehensive gesture feedback system for the Omnisonic design system.
 /// Provides visual and haptic feedback for user interactions.
@@ -222,13 +223,8 @@ class OmnisonicGestureFeedback {
   }
 }
 
-/// Enum for different types of haptic feedback
-enum HapticFeedbackType {
-  light,
-  medium,
-  heavy,
-  selection,
-}
+// HapticFeedbackType is now imported from platform_optimizations.dart
+// to avoid duplication
 
 /// Enum for component states
 enum ComponentState {

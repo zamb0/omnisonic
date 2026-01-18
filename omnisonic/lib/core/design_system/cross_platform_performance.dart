@@ -8,9 +8,9 @@ import 'platform_optimizations.dart';
 /// Cross-platform animation performance monitor
 /// Implements Requirements: 9.1, 9.2, 9.3, 9.4, 9.5
 class CrossPlatformPerformanceMonitor {
-  static const CrossPlatformPerformanceMonitor _instance = CrossPlatformPerformanceMonitor._internal();
+  static final CrossPlatformPerformanceMonitor _instance = CrossPlatformPerformanceMonitor._internal();
   factory CrossPlatformPerformanceMonitor() => _instance;
-  const CrossPlatformPerformanceMonitor._internal();
+  CrossPlatformPerformanceMonitor._internal();
 
   final List<FrameTimingInfo> _frameTimings = [];
   final List<AnimationPerformanceMetric> _animationMetrics = [];

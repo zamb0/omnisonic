@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'gesture_feedback.dart';
+import 'platform_optimizations.dart';
 
 /// Accessibility preferences manager for respecting user settings
 class OmnisonicAccessibilityPreferences extends ChangeNotifier {
@@ -126,7 +126,7 @@ class OmnisonicAccessibilityPreferences extends ChangeNotifier {
   /// Trigger haptic feedback if enabled
   Future<void> triggerHapticFeedback([HapticFeedbackType type = HapticFeedbackType.light]) async {
     if (_hapticFeedbackEnabled) {
-      await OmnisonicGestureFeedback.hapticFeedback(type);
+      await PlatformOptimizations().triggerHapticFeedback(type);
     }
   }
   

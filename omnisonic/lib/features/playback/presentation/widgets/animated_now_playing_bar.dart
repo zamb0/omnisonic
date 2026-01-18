@@ -33,19 +33,28 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
-  late AnimationController _progressController;
   late AnimationController _pulseController;
   
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _progressAnimation;
   late Animation<double> _pulseAnimation;
 
   Track? _previousTrack;
+  bool _previousIsPlaying = false;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Listen to playback changes only once
+    final playbackViewModel = Provider.of<PlaybackViewModel>(context);
+    _handleTrackChange(playbackViewModel.currentTrack);
+    _handlePlaybackStateChange(playbackViewModel.isPlaying);
   }
 
   void _initializeAnimations() {
@@ -63,20 +72,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       curve: AnimationManager.standardCurve,
     ));
 
-    // Progress animation for the progress bar
-    _progressController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeInOut,
-    ));
-
     // Pulse animation for playing state
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1200),
@@ -84,7 +79,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
     
     _pulseAnimation = Tween<double>(
-      begin: 0.8,
+      begin: 0.95,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _pulseController,
@@ -95,7 +90,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   @override
   void dispose() {
     _slideController.dispose();
-    _progressController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -114,16 +108,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 
   void _handlePlaybackStateChange(bool isPlaying) {
+    if (_previousIsPlaying == isPlaying) return;
+    
+    _previousIsPlaying = isPlaying;
     if (isPlaying) {
       _pulseController.repeat(reverse: true);
     } else {
       _pulseController.stop();
       _pulseController.reset();
     }
-  }
-
-  void _handleProgressChange(double progress) {
-    _progressController.animateTo(progress);
   }
 
   @override
@@ -133,11 +126,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         final currentTrack = playbackViewModel.currentTrack;
         final isPlaying = playbackViewModel.isPlaying;
         final progress = playbackViewModel.progress;
-
-        // Handle state changes
-        _handleTrackChange(currentTrack);
-        _handlePlaybackStateChange(isPlaying);
-        _handleProgressChange(progress);
 
         if (currentTrack == null) {
           return const SizedBox.shrink();
@@ -174,7 +162,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       ),
                       child: Row(
                         children: [
-                          _buildAlbumArtwork(currentTrack),
+                          _buildAlbumArtwork(currentTrack, isPlaying),
                           const SizedBox(width: OmnisonicSpacing.md),
                           Expanded(
                             child: _buildTrackInfo(currentTrack),
@@ -199,21 +187,46 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       top: 0,
       left: 0,
       right: 0,
-      child: AnimatedBuilder(
-        animation: _progressAnimation,
-        builder: (context, child) {
-          return LinearProgressIndicator(
-            value: _progressAnimation.value,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-            minHeight: 2,
-          );
-        },
+      child: LinearProgressIndicator(
+        value: progress,
+        backgroundColor: Colors.white.withOpacity(0.2),
+        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+        minHeight: 2,
       ),
     );
   }
 
-  Widget _buildAlbumArtwork(Track track) {
+  Widget _buildAlbumArtwork(Track track, bool isPlaying) {
+    // Only animate when playing
+    if (!isPlaying) {
+      return Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: track.coverArtUrl != null
+              ? Image.network(
+                  track.coverArtUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildFallbackArtwork();
+                  },
+                )
+              : _buildFallbackArtwork(),
+        ),
+      );
+    }
+    
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {

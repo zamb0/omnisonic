@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audio_service/audio_service.dart' hide PlaybackState;
 
@@ -10,6 +11,7 @@ import '../repositories/playback_repository_impl.dart';
 import 'audio_player_data_source.dart';
 import 'audio_service_handler.dart';
 import 'audio_focus_manager.dart';
+import 'mpris_handler.dart';
 
 /// High-level playback service that coordinates all audio components
 class PlaybackService {
@@ -17,13 +19,16 @@ class PlaybackService {
     required AudioPlayerDataSource audioPlayerDataSource,
     required AudioServiceHandler audioServiceHandler,
     required AudioFocusManager audioFocusManager,
+    required MprisHandler mprisHandler,
   })  : _audioPlayerDataSource = audioPlayerDataSource,
         _audioServiceHandler = audioServiceHandler,
-        _audioFocusManager = audioFocusManager;
+        _audioFocusManager = audioFocusManager,
+        _mprisHandler = mprisHandler;
 
   final AudioPlayerDataSource _audioPlayerDataSource;
   final AudioServiceHandler _audioServiceHandler;
   final AudioFocusManager _audioFocusManager;
+  final MprisHandler _mprisHandler;
 
   late StreamSubscription<PlaybackState> _playbackStateSubscription;
   bool _isInitialized = false;
@@ -38,24 +43,32 @@ class PlaybackService {
     if (_isInitialized) return;
 
     try {
-      print('🎵 Initializing AudioService for media notifications...');
-      // Initialize audio service for background playback
-      await AudioService.init(
-        builder: () => _audioServiceHandler,
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.omnisonic.audio',
-          androidNotificationChannelName: 'Omnisonic Audio',
-          androidNotificationChannelDescription: 'Audio playback controls',
-          androidNotificationOngoing: false,
-          androidStopForegroundOnPause: false,
-          androidNotificationIcon: 'drawable/ic_notification',
-          androidShowNotificationBadge: true,
-          fastForwardInterval: Duration(seconds: 10),
-          rewindInterval: Duration(seconds: 10),
-        ),
-      );
+      // audio_service only supports Android, iOS, macOS, and Windows
+      // Skip initialization on Linux and Web
+      if (!Platform.isLinux) {
+        print('🎵 Initializing AudioService for media notifications...');
+        // Initialize audio service for background playback
+        await AudioService.init(
+          builder: () => _audioServiceHandler,
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.omnisonic.audio',
+            androidNotificationChannelName: 'Omnisonic Audio',
+            androidNotificationChannelDescription: 'Audio playback controls',
+            androidNotificationOngoing: false,
+            androidStopForegroundOnPause: false,
+            androidNotificationIcon: 'drawable/ic_notification',
+            androidShowNotificationBadge: true,
+            fastForwardInterval: Duration(seconds: 10),
+            rewindInterval: Duration(seconds: 10),
+          ),
+        );
 
-      print('✅ AudioService initialized successfully');
+        print('✅ AudioService initialized successfully');
+      } else {
+        print('ℹ️  Skipping AudioService on Linux - using MPRIS instead');
+        // Initialize MPRIS on Linux
+        await _mprisHandler.initialize();
+      }
 
       // Listen to playback state for gapless playback management
       _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {

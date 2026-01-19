@@ -56,6 +56,8 @@ import 'package:omnisonic/features/playback/data/datasources/audio_player_data_s
     as _i516;
 import 'package:omnisonic/features/playback/data/datasources/audio_service_handler.dart'
     as _i648;
+import 'package:omnisonic/features/playback/data/datasources/mpris_handler.dart'
+    as _i670;
 import 'package:omnisonic/features/playback/data/datasources/playback_service.dart'
     as _i48;
 import 'package:omnisonic/features/playback/presentation/bloc/playback_bloc.dart'
@@ -105,6 +107,8 @@ extension GetItInjectableX on _i174.GetIt {
         () => appModule.audioServiceHandler(gh<_i516.AudioPlayerDataSource>()));
     gh.lazySingleton<_i463.AudioFocusManager>(
         () => appModule.audioFocusManager(gh<_i516.AudioPlayerDataSource>()));
+    gh.lazySingleton<_i670.MprisHandler>(
+        () => appModule.mprisHandler(gh<_i516.AudioPlayerDataSource>()));
     gh.lazySingleton<_i995.PlaybackRepository>(
         () => appModule.playbackRepository(gh<_i516.AudioPlayerDataSource>()));
     gh.lazySingleton<_i632.ServerConnectionService>(
@@ -122,6 +126,7 @@ extension GetItInjectableX on _i174.GetIt {
           gh<_i516.AudioPlayerDataSource>(),
           gh<_i648.AudioServiceHandler>(),
           gh<_i463.AudioFocusManager>(),
+          gh<_i670.MprisHandler>(),
         ));
     gh.lazySingleton<_i253.ServerStatusMonitor>(() =>
         appModule.serverStatusMonitor(gh<_i632.ServerConnectionService>()));

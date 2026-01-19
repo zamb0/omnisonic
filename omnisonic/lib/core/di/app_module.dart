@@ -24,6 +24,7 @@ import '../../features/playback/data/datasources/audio_player_data_source.dart';
 import '../../features/playback/data/datasources/audio_service_handler.dart';
 import '../../features/playback/data/datasources/audio_focus_manager.dart';
 import '../../features/playback/data/datasources/adaptive_streaming_service.dart';
+import '../../features/playback/data/datasources/mpris_handler.dart';
 import '../../features/playback/data/datasources/playback_service.dart';
 import '../usecases/sync_music_collection_use_case.dart';
 import '../usecases/search_music_use_case.dart';
@@ -119,14 +120,21 @@ abstract class AppModule {
   ) => AudioFocusManager(audioPlayerDataSource: audioPlayerDataSource);
 
   @lazySingleton
+  MprisHandler mprisHandler(
+    AudioPlayerDataSource audioPlayerDataSource,
+  ) => MprisHandler(audioPlayerDataSource: audioPlayerDataSource);
+
+  @lazySingleton
   PlaybackService playbackService(
     AudioPlayerDataSource audioPlayerDataSource,
     AudioServiceHandler audioServiceHandler,
     AudioFocusManager audioFocusManager,
+    MprisHandler mprisHandler,
   ) => PlaybackService(
         audioPlayerDataSource: audioPlayerDataSource,
         audioServiceHandler: audioServiceHandler,
         audioFocusManager: audioFocusManager,
+        mprisHandler: mprisHandler,
       );
 
   // Repository implementations

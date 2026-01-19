@@ -56,7 +56,7 @@ class PlaybackService {
             androidNotificationChannelDescription: 'Audio playback controls',
             androidNotificationOngoing: false,
             androidStopForegroundOnPause: false,
-            androidNotificationIcon: 'drawable/ic_notification',
+            androidNotificationIcon: 'mipmap/ic_launcher',
             androidShowNotificationBadge: true,
             fastForwardInterval: Duration(seconds: 10),
             rewindInterval: Duration(seconds: 10),
@@ -72,7 +72,6 @@ class PlaybackService {
 
       // Listen to playback state for gapless playback management
       _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {
-        print('🎵 Playback state changed: isPlaying=${state.isPlaying}, track=${state.currentTrack?.title}');
         _handlePlaybackStateForGapless(state);
       });
 

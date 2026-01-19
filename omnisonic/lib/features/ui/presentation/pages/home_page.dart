@@ -21,7 +21,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MusicLibraryViewModel>().refreshSmartCollections();
+      if (mounted) {
+        context.read<MusicLibraryViewModel>().refreshSmartCollections();
+      }
     });
   }
 

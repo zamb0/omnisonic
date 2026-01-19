@@ -156,8 +156,6 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
 
   /// Updates the media session with current playback state
   void _updateMediaSession(PlaybackState state) {
-    print('📱 Updating media session: isPlaying=${state.isPlaying}, track=${state.currentTrack?.title}, queue=${state.queue.length} tracks, currentIndex=${state.currentIndex}');
-    
     final controls = <MediaControl>[];
     
     // Always show skip buttons if there's a queue
@@ -202,7 +200,6 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
     // Update media item if there's a current track
     if (state.currentTrack != null) {
       final mediaItem = _trackToMediaItem(state.currentTrack!);
-      print('📱 Setting media item: ${mediaItem.title} by ${mediaItem.artist}');
       this.mediaItem.add(mediaItem);
     }
   }

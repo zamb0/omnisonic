@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 
 import '../../../../core/design_system/design_system.dart';
@@ -312,7 +313,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             icon: const Icon(
               Icons.keyboard_arrow_down,
               color: Colors.white,

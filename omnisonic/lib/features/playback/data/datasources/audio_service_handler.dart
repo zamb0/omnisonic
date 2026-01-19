@@ -156,10 +156,15 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
 
   /// Updates the media session with current playback state
   void _updateMediaSession(PlaybackState state) {
+    print('📱 Updating media session: isPlaying=${state.isPlaying}, track=${state.currentTrack?.title}, queue=${state.queue.length} tracks, currentIndex=${state.currentIndex}');
+    
     final controls = <MediaControl>[];
     
-    // Add previous control if available
-    if (state.hasPrevious) {
+    // Always show skip buttons if there's a queue
+    final hasQueue = state.queue.isNotEmpty && state.queue.length > 1;
+    
+    // Add previous control
+    if (hasQueue) {
       controls.add(MediaControl.skipToPrevious);
     }
     
@@ -170,13 +175,10 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
       controls.add(MediaControl.play);
     }
     
-    // Add next control if available
-    if (state.hasNext) {
+    // Add next control
+    if (hasQueue) {
       controls.add(MediaControl.skipToNext);
     }
-    
-    // Add stop control
-    controls.add(MediaControl.stop);
 
     // Update playback state
     playbackState.add(playbackState.value.copyWith(
@@ -186,7 +188,9 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
         MediaAction.seekForward,
         MediaAction.seekBackward,
       },
-      androidCompactActionIndices: state.isPlaying ? [0, 1, 2] : [0, 1, 2],
+      androidCompactActionIndices: hasQueue 
+          ? [0, 1, 2]  // Show all three: previous, play/pause, next
+          : [0],  // Show only play/pause
       processingState: _mapProcessingState(state),
       playing: state.isPlaying,
       updatePosition: state.position,
@@ -197,7 +201,9 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
 
     // Update media item if there's a current track
     if (state.currentTrack != null) {
-      mediaItem.add(_trackToMediaItem(state.currentTrack!));
+      final mediaItem = _trackToMediaItem(state.currentTrack!);
+      print('📱 Setting media item: ${mediaItem.title} by ${mediaItem.artist}');
+      this.mediaItem.add(mediaItem);
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection_container.dart';
 import 'core/routing/app_router.dart';
 import 'core/design_system/theme.dart';
+import 'features/playback/data/datasources/playback_service.dart';
 
 // ViewModels
 import 'features/music/presentation/viewmodels/music_library_view_model.dart';
@@ -22,6 +23,11 @@ void main() async {
   
   // Initialize dependency injection
   await configureDependencies();
+  
+  // Initialize audio service for background playback
+  // This ensures media notifications work on Android
+  final playbackService = getIt<PlaybackService>();
+  await playbackService.initialize();
   
   runApp(const OmnisonicApp());
 }

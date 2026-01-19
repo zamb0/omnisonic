@@ -19,9 +19,7 @@ class PlaybackService {
     required AudioFocusManager audioFocusManager,
   })  : _audioPlayerDataSource = audioPlayerDataSource,
         _audioServiceHandler = audioServiceHandler,
-        _audioFocusManager = audioFocusManager {
-    _init();
-  }
+        _audioFocusManager = audioFocusManager;
 
   final AudioPlayerDataSource _audioPlayerDataSource;
   final AudioServiceHandler _audioServiceHandler;
@@ -30,36 +28,47 @@ class PlaybackService {
   late StreamSubscription<PlaybackState> _playbackStateSubscription;
   bool _isInitialized = false;
 
+  /// Public method to initialize the service (should be called at app startup)
+  Future<void> initialize() async {
+    await _init();
+  }
+
   /// Initializes the playback service
   Future<void> _init() async {
     if (_isInitialized) return;
 
     try {
+      print('🎵 Initializing AudioService for media notifications...');
       // Initialize audio service for background playback
       await AudioService.init(
         builder: () => _audioServiceHandler,
-        config: AudioServiceConfig(
+        config: const AudioServiceConfig(
           androidNotificationChannelId: 'com.omnisonic.audio',
           androidNotificationChannelName: 'Omnisonic Audio',
           androidNotificationChannelDescription: 'Audio playback controls',
-          androidNotificationOngoing: true,
+          androidNotificationOngoing: false,
           androidStopForegroundOnPause: false,
           androidNotificationIcon: 'drawable/ic_notification',
+          androidShowNotificationBadge: true,
           fastForwardInterval: Duration(seconds: 10),
           rewindInterval: Duration(seconds: 10),
         ),
       );
 
+      print('✅ AudioService initialized successfully');
+
       // Listen to playback state for gapless playback management
       _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {
+        print('🎵 Playback state changed: isPlaying=${state.isPlaying}, track=${state.currentTrack?.title}');
         _handlePlaybackStateForGapless(state);
       });
 
       _isInitialized = true;
+      print('✅ Audio service initialized successfully');
     } catch (e) {
       // If audio service initialization fails, continue without it
       // The app can still function with basic playback
-      print('Warning: Audio service initialization failed: $e');
+      print('⚠️ Warning: Audio service initialization failed: $e');
       _isInitialized = true;
     }
   }

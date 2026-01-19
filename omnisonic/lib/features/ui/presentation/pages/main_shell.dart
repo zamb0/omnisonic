@@ -32,12 +32,8 @@ class MainShell extends StatelessWidget {
     final currentIndex = _calculateSelectedIndex(context);
     
     return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (index) => _onItemTapped(index, context),
-      selectedItemColor: Theme.of(context).primaryColor,
-      unselectedItemColor: Colors.grey[600],
-      elevation: 8,
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),

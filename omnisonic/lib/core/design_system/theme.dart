@@ -197,6 +197,25 @@ class OmnisonicTheme {
         circularTrackColor: OmnisonicColors.lightColorScheme.outline,
       ),
       
+      // Bottom Navigation Bar Theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: OmnisonicColors.lightColorScheme.surface,
+        selectedItemColor: OmnisonicColors.lightColorScheme.primary,
+        unselectedItemColor: OmnisonicColors.lightColorScheme.onSurface.withValues(alpha: 0.6),
+        selectedIconTheme: IconThemeData(
+          color: OmnisonicColors.lightColorScheme.primary,
+          size: OmnisonicIconSizes.navigation,
+        ),
+        unselectedIconTheme: IconThemeData(
+          color: OmnisonicColors.lightColorScheme.onSurface.withValues(alpha: 0.6),
+          size: OmnisonicIconSizes.navigation,
+        ),
+        selectedLabelStyle: OmnisonicTypography.labelSmall,
+        unselectedLabelStyle: OmnisonicTypography.labelSmall,
+        type: BottomNavigationBarType.fixed,
+        elevation: OmnisonicElevation.appBar,
+      ),
+      
       // Extensions
       extensions: const [
         OmnisonicColorExtension.light,
@@ -394,6 +413,25 @@ class OmnisonicTheme {
         color: OmnisonicColors.darkColorScheme.primary,
         linearTrackColor: OmnisonicColors.darkColorScheme.outline,
         circularTrackColor: OmnisonicColors.darkColorScheme.outline,
+      ),
+      
+      // Bottom Navigation Bar Theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: OmnisonicColors.darkColorScheme.surface,
+        selectedItemColor: OmnisonicColors.darkColorScheme.primary,
+        unselectedItemColor: OmnisonicColors.darkColorScheme.onSurface.withValues(alpha: 0.6),
+        selectedIconTheme: IconThemeData(
+          color: OmnisonicColors.darkColorScheme.primary,
+          size: OmnisonicIconSizes.navigation,
+        ),
+        unselectedIconTheme: IconThemeData(
+          color: OmnisonicColors.darkColorScheme.onSurface.withValues(alpha: 0.6),
+          size: OmnisonicIconSizes.navigation,
+        ),
+        selectedLabelStyle: OmnisonicTypography.labelSmall,
+        unselectedLabelStyle: OmnisonicTypography.labelSmall,
+        type: BottomNavigationBarType.fixed,
+        elevation: OmnisonicElevation.appBar,
       ),
       
       // Extensions

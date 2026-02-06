@@ -6,10 +6,15 @@ import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/widgets.dart';
+import '../models/library_tab.dart';
+import '../models/library_sort_state.dart';
+import '../models/sort_option.dart';
+import '../services/library_sort_service.dart';
+import '../services/track_actions.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/animation_utils.dart';
 
-/// Library page displaying albums, artists, and tracks
+/// Library page displaying albums, artists, tracks, and playlists
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
 
@@ -17,28 +22,23 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
-enum SortOption {
-  alphabetical,
-  recentlyAdded,
-}
-
 class _LibraryPageState extends State<LibraryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  SortOption _albumsSortOption = SortOption.alphabetical;
-  SortOption _artistsSortOption = SortOption.alphabetical;
-  SortOption _tracksSortOption = SortOption.alphabetical;
-  SortOption _playlistsSortOption = SortOption.alphabetical;
+  late LibrarySortState _sortState;
+  late TrackActions _trackActions;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    
-    // Load initial data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Data is already loaded via the ViewModel's initialization
-    });
+    _tabController = TabController(length: LibraryTab.count, vsync: this);
+    _sortState = LibrarySortState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _trackActions = TrackActions(context);
   }
 
   @override
@@ -69,12 +69,9 @@ class _LibraryPageState extends State<LibraryPage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Albums', icon: Icon(Icons.album)),
-            Tab(text: 'Artists', icon: Icon(Icons.person)),
-            Tab(text: 'Tracks', icon: Icon(Icons.music_note)),
-            Tab(text: 'Playlists', icon: Icon(Icons.playlist_play)),
-          ],
+          tabs: LibraryTab.values
+              .map((tab) => Tab(text: tab.label, icon: Icon(tab.icon)))
+              .toList(),
         ),
       ),
       body: TabBarView(
@@ -109,7 +106,8 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
-        final sortedAlbums = _getSortedAlbums(albums);
+        final sortOption = _sortState.getOption(LibraryTab.albums);
+        final sortedAlbums = LibrarySortService.sortAlbums(albums, sortOption);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -149,7 +147,8 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
-        final sortedArtists = _getSortedArtists(artists);
+        final sortOption = _sortState.getOption(LibraryTab.artists);
+        final sortedArtists = LibrarySortService.sortArtists(artists, sortOption);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -189,7 +188,8 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
-        final sortedTracks = _getSortedTracks(tracks);
+        final sortOption = _sortState.getOption(LibraryTab.tracks);
+        final sortedTracks = LibrarySortService.sortTracks(tracks, sortOption);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -205,8 +205,11 @@ class _LibraryPageState extends State<LibraryPage>
                     return TrackTile(
                       track: track,
                       showTrackNumber: false,
-                      onTap: () => _onTrackTapped(track, tracks, index),
-                      onMorePressed: () => _showTrackOptions(track),
+                      onTap: () => _onTrackTapped(track, sortedTracks, index),
+                      onMorePressed: () => _trackActions.showOptions(
+                        track,
+                        onPlayNow: () => _onTrackTapped(track, sortedTracks, index),
+                      ),
                     );
                   },
                 ),
@@ -239,7 +242,8 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
-        final sortedPlaylists = _getSortedPlaylists(playlists);
+        final sortOption = _sortState.getOption(LibraryTab.playlists);
+        final sortedPlaylists = LibrarySortService.sortPlaylists(playlists, sortOption);
 
         return RefreshIndicator(
           onRefresh: viewModel.refreshPlaylists,
@@ -371,114 +375,6 @@ class _LibraryPageState extends State<LibraryPage>
     context.go('/playlist-detail?id=${playlist.id}');
   }
 
-  void _showTrackOptions(Track track) {
-    AnimationUtils.showCustomBottomSheet(
-      context: context,
-      builder: (context) => _buildTrackOptionsSheet(track),
-    );
-  }
-
-  Widget _buildTrackOptionsSheet(Track track) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.play_arrow),
-            title: const Text('Play Now'),
-            onTap: () {
-              Navigator.pop(context);
-              _onTrackTapped(track, [track], 0);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.queue_music),
-            title: const Text('Add to Queue'),
-            onTap: () {
-              Navigator.pop(context);
-              context.read<PlaybackViewModel>().addToQueue(track);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Added to queue')),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.playlist_add),
-            title: const Text('Add to Playlist'),
-            onTap: () {
-              Navigator.pop(context);
-              // TODO: Implement add to playlist
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Add to playlist - Coming soon')),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text('Track Info'),
-            onTap: () {
-              Navigator.pop(context);
-              _showTrackInfo(track);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTrackInfo(Track track) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(track.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Artist', track.artist),
-            _buildInfoRow('Album', track.album),
-            _buildInfoRow('Duration', _formatDuration(track.duration)),
-            if (track.year != null) _buildInfoRow('Year', track.year.toString()),
-            if (track.genre != null) _buildInfoRow('Genre', track.genre!),
-            _buildInfoRow('Quality', track.quality.toString()),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
   void _syncLibrary() {
     context.read<MusicLibraryViewModel>().syncCollection();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -486,135 +382,19 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  List<Album> _getSortedAlbums(List<Album> albums) {
-    final sorted = List<Album>.from(albums);
-    switch (_albumsSortOption) {
-      case SortOption.alphabetical:
-        sorted.sort((a, b) => a.title.compareTo(b.title));
-        break;
-      case SortOption.recentlyAdded:
-        // Sort by lastModified (when synced from server) - newer first
-        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-        break;
-    }
-    return sorted;
-  }
-
-  List<Artist> _getSortedArtists(List<Artist> artists) {
-    final sorted = List<Artist>.from(artists);
-    switch (_artistsSortOption) {
-      case SortOption.alphabetical:
-        sorted.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case SortOption.recentlyAdded:
-        // Sort by lastModified (when synced from server) - newer first
-        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-        break;
-    }
-    return sorted;
-  }
-
-  List<Track> _getSortedTracks(List<Track> tracks) {
-    final sorted = List<Track>.from(tracks);
-    switch (_tracksSortOption) {
-      case SortOption.alphabetical:
-        sorted.sort((a, b) => a.title.compareTo(b.title));
-        break;
-      case SortOption.recentlyAdded:
-        // Sort by lastModified (when synced from server) - newer first
-        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-        break;
-    }
-    return sorted;
-  }
-
-  List<Playlist> _getSortedPlaylists(List<Playlist> playlists) {
-    final sorted = List<Playlist>.from(playlists);
-    switch (_playlistsSortOption) {
-      case SortOption.alphabetical:
-        sorted.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case SortOption.recentlyAdded:
-        sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-    }
-    return sorted;
-  }
-
-  SortOption _getCurrentSortOption() {
-    switch (_tabController.index) {
-      case 0:
-        return _albumsSortOption;
-      case 1:
-        return _artistsSortOption;
-      case 2:
-        return _tracksSortOption;
-      case 3:
-        return _playlistsSortOption;
-      default:
-        return SortOption.alphabetical;
-    }
-  }
-
-  void _setSortOption(SortOption option) {
-    setState(() {
-      switch (_tabController.index) {
-        case 0:
-          _albumsSortOption = option;
-          break;
-        case 1:
-          _artistsSortOption = option;
-          break;
-        case 2:
-          _tracksSortOption = option;
-          break;
-        case 3:
-          _playlistsSortOption = option;
-          break;
-      }
-    });
-  }
-
   void _showSortOptions() {
-    final currentSort = _getCurrentSortOption();
-    
+    final currentTab = LibraryTab.fromIndex(_tabController.index);
+    final currentOption = _sortState.getOption(currentTab);
+
     AnimationUtils.showCustomBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Sort Options',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.sort_by_alpha),
-              title: const Text('Alphabetical'),
-              trailing: currentSort == SortOption.alphabetical
-                  ? const Icon(Icons.check, color: Colors.blue)
-                  : null,
-              onTap: () {
-                Navigator.pop(context);
-                _setSortOption(SortOption.alphabetical);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.access_time),
-              title: const Text('Recently Synced'),
-              subtitle: const Text('By last sync date', style: TextStyle(fontSize: 12)),
-              trailing: currentSort == SortOption.recentlyAdded
-                  ? const Icon(Icons.check, color: Colors.blue)
-                  : null,
-              onTap: () {
-                Navigator.pop(context);
-                _setSortOption(SortOption.recentlyAdded);
-              },
-            ),
-          ],
-        ),
+      builder: (context) => SortOptionsSheet(
+        currentOption: currentOption,
+        onOptionSelected: (option) {
+          setState(() {
+            _sortState.setOption(currentTab, option);
+          });
+        },
       ),
     );
   }

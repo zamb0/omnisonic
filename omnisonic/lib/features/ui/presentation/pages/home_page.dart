@@ -49,8 +49,6 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 24),
               _buildRecentlyAddedSection(),
               const SizedBox(height: 24),
-              _buildMostPlayedSection(),
-              const SizedBox(height: 24),
               _buildQuickActionsSection(),
               const SizedBox(height: 32),
             ],
@@ -234,50 +232,6 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildMostPlayedSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingSection('Most Played');
-        }
-
-        final mostPlayed = viewModel.mostPlayed;
-        if (mostPlayed.isEmpty) {
-          return _buildEmptySection(
-            'Most Played',
-            'Your favorite tracks will appear here',
-            Icons.favorite,
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: 'Most Played',
-              subtitle: 'Your favorite tracks',
-              onSeeAllPressed: () => _navigateToMostPlayed(),
-            ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: mostPlayed.length.clamp(0, 5),
-              itemBuilder: (context, index) {
-                final track = mostPlayed[index];
-                return TrackTile(
-                  track: track,
-                  onTap: () => _onTrackTapped(track),
-                  onMorePressed: () => _showTrackOptions(track),
-                );
-              },
             ),
           ],
         );
@@ -507,10 +461,6 @@ class _HomePageState extends State<HomePage> {
     // TODO: Implement navigation
   }
 
-  void _navigateToMostPlayed() {
-    // Navigate to most played list
-    // TODO: Implement navigation
-  }
 
   void _debugClearAndResync() async {
     // Show confirmation dialog

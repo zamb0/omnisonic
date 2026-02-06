@@ -10,7 +10,7 @@ import '../../../../core/usecases/usecases.dart';
 /// 
 /// Handles:
 /// - Unified collection display and updates
-/// - Smart collections (recently played, most played, recently added)
+/// - Smart collections (recently played, recently added)
 /// - Collection filtering and search
 /// - Sync status and progress
 @injectable
@@ -32,7 +32,6 @@ class MusicLibraryViewModel extends ChangeNotifier {
   // State
   UnifiedCollection? _collection;
   List<Track> _recentlyPlayed = [];
-  List<Track> _mostPlayed = [];
   List<Track> _recentlyAdded = [];
   SearchResults? _searchResults;
   bool _isLoading = false;
@@ -46,7 +45,6 @@ class MusicLibraryViewModel extends ChangeNotifier {
   List<Album> get albums => _collection?.albums ?? [];
   List<Artist> get artists => _collection?.artists ?? [];
   List<Track> get recentlyPlayed => _recentlyPlayed;
-  List<Track> get mostPlayed => _mostPlayed;
   List<Track> get recentlyAdded => _recentlyAdded;
   SearchResults? get searchResults => _searchResults;
   bool get isLoading => _isLoading;
@@ -149,7 +147,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Loads smart collections (recently played, most played, recently added)
+  /// Loads smart collections (recently played, recently added)
   Future<void> _loadSmartCollections() async {
     try {
       // Load recently played tracks
@@ -157,13 +155,6 @@ class MusicLibraryViewModel extends ChangeNotifier {
       recentlyPlayedResult.fold(
         (failure) => debugPrint('Failed to load recently played: ${failure.message}'),
         (tracks) => _recentlyPlayed = tracks,
-      );
-
-      // Load most played tracks
-      final mostPlayedResult = await _musicRepository.getMostPlayed();
-      mostPlayedResult.fold(
-        (failure) => debugPrint('Failed to load most played: ${failure.message}'),
-        (tracks) => _mostPlayed = tracks,
       );
 
       // Load recently added tracks

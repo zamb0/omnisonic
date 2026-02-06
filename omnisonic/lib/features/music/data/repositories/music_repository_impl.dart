@@ -201,13 +201,6 @@ class MusicRepositoryImpl implements MusicRepository {
   }
 
   @override
-  Future<Result<List<Track>>> getMostPlayed({int limit = 50}) async {
-    // This would require play count tracking
-    // For now, return empty list as this feature needs playback integration
-    return ResultHelper.success([]);
-  }
-
-  @override
   Future<Result<List<Track>>> getRecentlyAdded({int limit = 50}) async {
     try {
       final allTracksResult = await _localDataSource.getAllTracks();

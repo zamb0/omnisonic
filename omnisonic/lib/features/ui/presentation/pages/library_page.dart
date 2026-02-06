@@ -17,9 +17,18 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
+enum SortOption {
+  alphabetical,
+  recentlyAdded,
+}
+
 class _LibraryPageState extends State<LibraryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  SortOption _albumsSortOption = SortOption.alphabetical;
+  SortOption _artistsSortOption = SortOption.alphabetical;
+  SortOption _tracksSortOption = SortOption.alphabetical;
+  SortOption _playlistsSortOption = SortOption.alphabetical;
 
   @override
   void initState() {
@@ -100,13 +109,15 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
+        final sortedAlbums = _getSortedAlbums(albums);
+
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: ResponsiveGridView(
             padding: const EdgeInsets.all(16),
             minItemWidth: 160,
             spacing: 16,
-            children: albums.map((album) {
+            children: sortedAlbums.map((album) {
               return AlbumCard(
                 album: album,
                 onTap: () => _onAlbumTapped(album),
@@ -138,13 +149,15 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
+        final sortedArtists = _getSortedArtists(artists);
+
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: ResponsiveGridView(
             padding: const EdgeInsets.all(16),
             minItemWidth: 140,
             spacing: 16,
-            children: artists.map((artist) {
+            children: sortedArtists.map((artist) {
               return ArtistCard(
                 artist: artist,
                 onTap: () => _onArtistTapped(artist),
@@ -176,17 +189,19 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
+        final sortedTracks = _getSortedTracks(tracks);
+
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: Column(
             children: [
-              _buildTrackListHeader(tracks.length),
+              _buildTrackListHeader(sortedTracks.length),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: tracks.length,
+                  itemCount: sortedTracks.length,
                   itemBuilder: (context, index) {
-                    final track = tracks[index];
+                    final track = sortedTracks[index];
                     return TrackTile(
                       track: track,
                       showTrackNumber: false,
@@ -224,6 +239,8 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
+        final sortedPlaylists = _getSortedPlaylists(playlists);
+
         return RefreshIndicator(
           onRefresh: viewModel.refreshPlaylists,
           child: Column(
@@ -235,7 +252,7 @@ class _LibraryPageState extends State<LibraryPage>
                     Icon(Icons.playlist_play, color: Colors.grey[600]),
                     const SizedBox(width: 8),
                     Text(
-                      '${playlists.length} playlist${playlists.length != 1 ? 's' : ''}',
+                      '${sortedPlaylists.length} playlist${sortedPlaylists.length != 1 ? 's' : ''}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -256,7 +273,7 @@ class _LibraryPageState extends State<LibraryPage>
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   minItemWidth: 160,
                   spacing: 16,
-                  children: playlists.map((playlist) {
+                  children: sortedPlaylists.map((playlist) {
                     return PlaylistCard(
                       playlist: playlist,
                       onTap: () => _onPlaylistTapped(playlist),
@@ -469,7 +486,98 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
+  List<Album> _getSortedAlbums(List<Album> albums) {
+    final sorted = List<Album>.from(albums);
+    switch (_albumsSortOption) {
+      case SortOption.alphabetical:
+        sorted.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case SortOption.recentlyAdded:
+        // Sort by lastModified (when synced from server) - newer first
+        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        break;
+    }
+    return sorted;
+  }
+
+  List<Artist> _getSortedArtists(List<Artist> artists) {
+    final sorted = List<Artist>.from(artists);
+    switch (_artistsSortOption) {
+      case SortOption.alphabetical:
+        sorted.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case SortOption.recentlyAdded:
+        // Sort by lastModified (when synced from server) - newer first
+        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        break;
+    }
+    return sorted;
+  }
+
+  List<Track> _getSortedTracks(List<Track> tracks) {
+    final sorted = List<Track>.from(tracks);
+    switch (_tracksSortOption) {
+      case SortOption.alphabetical:
+        sorted.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case SortOption.recentlyAdded:
+        // Sort by lastModified (when synced from server) - newer first
+        sorted.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+        break;
+    }
+    return sorted;
+  }
+
+  List<Playlist> _getSortedPlaylists(List<Playlist> playlists) {
+    final sorted = List<Playlist>.from(playlists);
+    switch (_playlistsSortOption) {
+      case SortOption.alphabetical:
+        sorted.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case SortOption.recentlyAdded:
+        sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+    }
+    return sorted;
+  }
+
+  SortOption _getCurrentSortOption() {
+    switch (_tabController.index) {
+      case 0:
+        return _albumsSortOption;
+      case 1:
+        return _artistsSortOption;
+      case 2:
+        return _tracksSortOption;
+      case 3:
+        return _playlistsSortOption;
+      default:
+        return SortOption.alphabetical;
+    }
+  }
+
+  void _setSortOption(SortOption option) {
+    setState(() {
+      switch (_tabController.index) {
+        case 0:
+          _albumsSortOption = option;
+          break;
+        case 1:
+          _artistsSortOption = option;
+          break;
+        case 2:
+          _tracksSortOption = option;
+          break;
+        case 3:
+          _playlistsSortOption = option;
+          break;
+      }
+    });
+  }
+
   void _showSortOptions() {
+    final currentSort = _getCurrentSortOption();
+    
     AnimationUtils.showCustomBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -485,25 +593,24 @@ class _LibraryPageState extends State<LibraryPage>
             ListTile(
               leading: const Icon(Icons.sort_by_alpha),
               title: const Text('Alphabetical'),
+              trailing: currentSort == SortOption.alphabetical
+                  ? const Icon(Icons.check, color: Colors.blue)
+                  : null,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement sorting
+                _setSortOption(SortOption.alphabetical);
               },
             ),
             ListTile(
               leading: const Icon(Icons.access_time),
-              title: const Text('Recently Added'),
+              title: const Text('Recently Synced'),
+              subtitle: const Text('By last sync date', style: TextStyle(fontSize: 12)),
+              trailing: currentSort == SortOption.recentlyAdded
+                  ? const Icon(Icons.check, color: Colors.blue)
+                  : null,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement sorting
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.play_arrow),
-              title: const Text('Most Played'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement sorting
+                _setSortOption(SortOption.recentlyAdded);
               },
             ),
           ],

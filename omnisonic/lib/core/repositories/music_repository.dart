@@ -39,9 +39,6 @@ abstract class MusicRepository {
   /// Gets recently played tracks
   Future<Result<List<Track>>> getRecentlyPlayed({int limit = 50});
   
-  /// Gets most played tracks
-  Future<Result<List<Track>>> getMostPlayed({int limit = 50});
-  
   /// Gets recently added tracks
   Future<Result<List<Track>>> getRecentlyAdded({int limit = 50});
   

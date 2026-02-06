@@ -268,15 +268,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
                 const SizedBox(width: OmnisonicSpacing.xl),
                 Expanded(
                   flex: 3,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildTrackInfo(track),
-                      const SizedBox(height: OmnisonicSpacing.xl),
-                      _buildSeekBar(playbackViewModel, position, duration, progress),
-                      const SizedBox(height: OmnisonicSpacing.xl),
-                      _buildPlaybackControls(playbackViewModel),
-                    ],
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTrackInfo(track),
+                        const SizedBox(height: OmnisonicSpacing.lg),
+                        _buildSeekBar(playbackViewModel, position, duration, progress),
+                        const SizedBox(height: OmnisonicSpacing.lg),
+                        _buildPlaybackControls(playbackViewModel),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -37,11 +37,18 @@ class MprisHandler extends DBusObject {
         flags: {DBusRequestNameFlag.doNotQueue},
       );
 
-      // Listen to playback state changes
-      _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {
-        _currentState = state;
-        _updateMprisMetadata(state);
-      });
+      // Listen to playback state changes (with deduplication)
+      _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState()
+        .distinct((previous, current) {
+          // Only emit if meaningful properties changed
+          return previous.isPlaying == current.isPlaying &&
+                 previous.currentTrack?.id == current.currentTrack?.id &&
+                 previous.queue.length == current.queue.length;
+        })
+        .listen((state) {
+          _currentState = state;
+          _updateMprisMetadata(state);
+        });
 
       print('✅ MPRIS initialized successfully');
     } catch (e) {
@@ -78,6 +85,7 @@ class MprisHandler extends DBusObject {
         properties: [
           DBusIntrospectProperty('PlaybackStatus', DBusSignature('s'), access: DBusPropertyAccess.read),
           DBusIntrospectProperty('Metadata', DBusSignature('a{sv}'), access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('Position', DBusSignature('x'), access: DBusPropertyAccess.read),
           DBusIntrospectProperty('CanGoNext', DBusSignature('b'), access: DBusPropertyAccess.read),
           DBusIntrospectProperty('CanGoPrevious', DBusSignature('b'), access: DBusPropertyAccess.read),
           DBusIntrospectProperty('CanPlay', DBusSignature('b'), access: DBusPropertyAccess.read),
@@ -138,7 +146,10 @@ class MprisHandler extends DBusObject {
 
   @override
   Future<DBusMethodResponse> getProperty(String interface, String name) async {
-    print('🎵 MPRIS: getProperty($interface, $name)');
+    // Don't log Position requests - they're polled frequently by media controllers
+    if (name != 'Position') {
+      print('🎵 MPRIS: getProperty($interface, $name)');
+    }
     if (interface == 'org.mpris.MediaPlayer2') {
       switch (name) {
         case 'Identity':
@@ -165,6 +176,9 @@ class MprisHandler extends DBusObject {
           final metadata = _getMetadata();
           print('🎵 MPRIS: Returning Metadata with ${(metadata.children as Map).length} fields');
           return DBusGetPropertyResponse(metadata);
+        case 'Position':
+          final position = _currentState?.position.inMicroseconds ?? 0;
+          return DBusGetPropertyResponse(DBusInt64(position));
         case 'CanGoNext':
           return DBusGetPropertyResponse(DBusBoolean((_currentState?.queue.length ?? 0) > 1));
         case 'CanGoPrevious':
@@ -200,6 +214,7 @@ class MprisHandler extends DBusObject {
                     _currentState?.currentTrack != null ? 'Paused' : 'Stopped';
       properties['PlaybackStatus'] = DBusString(status);
       properties['Metadata'] = _getMetadata();
+      properties['Position'] = DBusInt64(_currentState?.position.inMicroseconds ?? 0);
       properties['CanGoNext'] = DBusBoolean((_currentState?.queue.length ?? 0) > 1);
       properties['CanGoPrevious'] = DBusBoolean((_currentState?.queue.length ?? 0) > 1);
       properties['CanPlay'] = const DBusBoolean(true);
@@ -245,6 +260,7 @@ class MprisHandler extends DBusObject {
         changedProperties: {
           'PlaybackStatus': DBusString(state.isPlaying ? 'Playing' : state.currentTrack != null ? 'Paused' : 'Stopped'),
           'Metadata': _getMetadata(),
+          'Position': DBusInt64(state.position.inMicroseconds),
           'CanGoNext': DBusBoolean(state.queue.length > 1),
           'CanGoPrevious': DBusBoolean(state.queue.length > 1),
         },

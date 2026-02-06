@@ -26,13 +26,13 @@ class AdaptiveStreamingService {
 
   // Network monitoring state
   NetworkCondition _currentCondition = NetworkCondition.excellent;
-  AudioQuality _currentRecommendedQuality = AudioQuality.lossless;
-  double _estimatedBandwidth = 0.0; // Mbps
+  AudioQuality _currentRecommendedQuality = AudioQuality.ultra; // Start with best quality
+  double _estimatedBandwidth = 100.0; // Mbps - Optimistic default
   int _bufferHealth = 100; // Percentage
   bool _isBuffering = false;
 
   // Adaptive streaming configuration
-  static const Duration _bandwidthTestInterval = Duration(seconds: 30);
+  static const Duration _bandwidthTestInterval = Duration(seconds: 30); // Currently unused
   static const Duration _bufferMonitorInterval = Duration(seconds: 5);
   static const int _minBufferHealthPercent = 10;  // More lenient - was 20
   static const int _goodBufferHealthPercent = 40; // More lenient - was 60
@@ -43,8 +43,9 @@ class AdaptiveStreamingService {
       _handleConnectivityChange(results);
     });
 
-    // Start periodic bandwidth estimation
-    _startBandwidthMonitoring();
+    // Start periodic bandwidth estimation - DISABLED: produces inaccurate results
+    // The fake latency-based estimation doesn't reflect actual throughput
+    // _startBandwidthMonitoring();
 
     // Start buffer health monitoring
     _startBufferMonitoring();
@@ -53,29 +54,30 @@ class AdaptiveStreamingService {
   /// Handles connectivity changes
   void _handleConnectivityChange(List<ConnectivityResult> results) {
     if (results.isEmpty || results.contains(ConnectivityResult.none)) {
+      _estimatedBandwidth = 0.0;
       _updateNetworkCondition(NetworkCondition.offline);
+      print('🌐 Connection lost - offline mode');
       return;
     }
 
-    // Determine connection type and update condition accordingly
-    if (results.contains(ConnectivityResult.wifi)) {
-      _updateNetworkCondition(NetworkCondition.excellent);
+    // Log connection type but remain optimistic - start with best quality
+    // Only downgrade if we encounter actual buffering issues
+    if (results.contains(ConnectivityResult.ethernet)) {
+      _estimatedBandwidth = 1000.0;
+      print('🌐 Connected via Ethernet');
+    } else if (results.contains(ConnectivityResult.wifi)) {
+      _estimatedBandwidth = 100.0;
+      print('🌐 Connected via WiFi');
     } else if (results.contains(ConnectivityResult.mobile)) {
-      // For mobile, we need to estimate the actual speed
-      _updateNetworkCondition(NetworkCondition.good);
-      _estimateMobileBandwidth();
-    } else if (results.contains(ConnectivityResult.ethernet)) {
-      _updateNetworkCondition(NetworkCondition.excellent);
+      _estimatedBandwidth = 10.0;
+      print('🌐 Connected via Mobile');
     } else {
-      _updateNetworkCondition(NetworkCondition.poor);
+      _estimatedBandwidth = 5.0;
+      print('🌐 Connected via unknown type');
     }
-  }
-
-  /// Starts bandwidth monitoring
-  void _startBandwidthMonitoring() {
-    _bandwidthTestTimer = Timer.periodic(_bandwidthTestInterval, (_) {
-      _performBandwidthTest();
-    });
+    
+    // Always stay at excellent condition - let buffering drive quality adjustments
+    _updateNetworkCondition(NetworkCondition.excellent);
   }
 
   /// Starts buffer health monitoring
@@ -83,74 +85,6 @@ class AdaptiveStreamingService {
     _bufferMonitorTimer = Timer.periodic(_bufferMonitorInterval, (_) {
       _checkBufferHealth();
     });
-  }
-
-  /// Performs a lightweight bandwidth test
-  Future<void> _performBandwidthTest() async {
-    try {
-      // This is a simplified bandwidth test
-      // In a real implementation, you might download a small test file
-      // or measure actual streaming performance
-      final startTime = DateTime.now();
-      
-      // Simulate a small network request to estimate bandwidth
-      // This would be replaced with actual network measurement
-      await Future.delayed(Duration(milliseconds: 100 + Random().nextInt(200)));
-      
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-      
-      // Estimate bandwidth based on connection type and response time
-      _estimatedBandwidth = _calculateBandwidthFromLatency(duration.inMilliseconds);
-      
-      _updateNetworkConditionFromBandwidth();
-    } catch (e) {
-      // If bandwidth test fails, assume poor conditions
-      _updateNetworkCondition(NetworkCondition.poor);
-    }
-  }
-
-  /// Estimates mobile bandwidth based on connection type
-  void _estimateMobileBandwidth() {
-    // This is a simplified estimation
-    // In a real app, you might use more sophisticated methods
-    _estimatedBandwidth = 5.0; // Assume 5 Mbps for mobile
-    _updateNetworkConditionFromBandwidth();
-  }
-
-  /// Calculates estimated bandwidth from latency
-  double _calculateBandwidthFromLatency(int latencyMs) {
-    // Simple heuristic: lower latency generally means better connection
-    if (latencyMs < 50) {
-      return 50.0; // Excellent connection
-    } else if (latencyMs < 100) {
-      return 25.0; // Good connection
-    } else if (latencyMs < 200) {
-      return 10.0; // Fair connection
-    } else if (latencyMs < 500) {
-      return 5.0; // Poor connection
-    } else {
-      return 1.0; // Very poor connection
-    }
-  }
-
-  /// Updates network condition based on estimated bandwidth
-  void _updateNetworkConditionFromBandwidth() {
-    NetworkCondition newCondition;
-    
-    if (_estimatedBandwidth >= 25.0) {
-      newCondition = NetworkCondition.excellent;
-    } else if (_estimatedBandwidth >= 10.0) {
-      newCondition = NetworkCondition.good;
-    } else if (_estimatedBandwidth >= 2.0) {
-      newCondition = NetworkCondition.fair;
-    } else if (_estimatedBandwidth >= 0.5) {
-      newCondition = NetworkCondition.poor;
-    } else {
-      newCondition = NetworkCondition.offline;
-    }
-    
-    _updateNetworkCondition(newCondition);
   }
 
   /// Updates the current network condition
@@ -162,82 +96,73 @@ class AdaptiveStreamingService {
     }
   }
 
-  /// Updates recommended audio quality based on network condition and buffer health
+  /// Updates recommended audio quality based on network condition
   void _updateRecommendedQuality() {
-    AudioQuality newQuality;
-    
-    // Base quality on network condition - start higher
-    switch (_currentCondition) {
-      case NetworkCondition.excellent:
-        newQuality = AudioQuality.lossless;
-        break;
-      case NetworkCondition.good:
-        newQuality = AudioQuality.high;  // Keep high quality on good connections
-        break;
-      case NetworkCondition.fair:
-        newQuality = AudioQuality.high;  // Still use high on fair - was medium
-        break;
-      case NetworkCondition.poor:
-        newQuality = AudioQuality.medium; // Use medium on poor - was low
-        break;
-      case NetworkCondition.offline:
-        // Don't change quality when offline - use cached content
-        return;
+    // Only handle offline state - otherwise maintain current quality
+    // Quality changes are driven by actual buffering events, not predictions
+    if (_currentCondition == NetworkCondition.offline) {
+      // Offline - don't stream, use cached content only
+      return;
     }
     
-    // Only adjust based on buffer health if it's critically low
-    if (_bufferHealth < _minBufferHealthPercent) {
-      // Buffer is critically low, reduce quality by 1 step only
-      newQuality = _reduceQuality(newQuality, 1);
-    }
-    
-    // Don't change quality too frequently to avoid jarring transitions
-    if (_shouldUpdateQuality(newQuality)) {
-      _currentRecommendedQuality = newQuality;
-      _recommendedQualityController.add(newQuality);
-    }
+    // Note: Quality is now adjusted reactively in _checkBufferHealth()
+    // based on actual buffering, not predicted network conditions
   }
 
-  /// Reduces audio quality by the specified number of steps
-  AudioQuality _reduceQuality(AudioQuality quality, int steps) {
-    final qualities = AudioQuality.values;
-    final currentIndex = qualities.indexOf(quality);
-    final newIndex = (currentIndex - steps).clamp(0, qualities.length - 1);
-    return qualities[newIndex];
-  }
-
-  /// Determines if quality should be updated to avoid frequent changes
-  bool _shouldUpdateQuality(AudioQuality newQuality) {
-    // Only update if the quality change is significant or buffer is critical
-    final currentIndex = AudioQuality.values.indexOf(_currentRecommendedQuality);
-    final newIndex = AudioQuality.values.indexOf(newQuality);
-    final qualityDifference = (currentIndex - newIndex).abs();
-    
-    // Require at least 2 steps difference to change quality, unless buffer is critical
-    return qualityDifference >= 2 || _bufferHealth < _minBufferHealthPercent;
-  }
-
-  /// Checks buffer health (this would integrate with the actual audio player)
+  /// Checks buffer health and reacts to actual buffering issues
   void _checkBufferHealth() {
-    // This is a placeholder implementation
-    // In a real app, this would check the actual buffer status from the audio player
-    
     if (_isBuffering) {
-      _bufferHealth = max(0, _bufferHealth - 5);  // Slower degradation - was 10
+      // Actually buffering - this is a real problem, downgrade quality
+      _bufferHealth = max(0, _bufferHealth - 15);  // Faster response to problems
+      
+      if (_bufferHealth < _minBufferHealthPercent) {
+        // Immediate downgrade on buffering
+        _downgradeQuality();
+      }
     } else {
-      _bufferHealth = min(100, _bufferHealth + 10); // Faster recovery - was 5
-    }
-    
-    // Update quality if buffer health changed significantly
-    if (_bufferHealth < _minBufferHealthPercent || 
-        (_bufferHealth > _goodBufferHealthPercent && _currentRecommendedQuality != AudioQuality.lossless)) {
-      _updateRecommendedQuality();
+      // Streaming smoothly - gradually recover buffer health
+      _bufferHealth = min(100, _bufferHealth + 5);
+      
+      // If we've been streaming smoothly for a while, try upgrading
+      if (_bufferHealth >= _goodBufferHealthPercent && 
+          _currentRecommendedQuality != AudioQuality.ultra) {
+        _upgradeQuality();
+      }
     }
   }
 
   /// Reports buffering status from the audio player
   void reportBufferingStatus(bool isBuffering) {
+    if (isBuffering && !_isBuffering) {
+      print('⚠️  Buffering detected - may need to reduce quality');
+    }
     _isBuffering = isBuffering;
+  }
+  
+  /// Downgrade quality by one step due to buffering
+  void _downgradeQuality() {
+    final qualities = AudioQuality.values;
+    final currentIndex = qualities.indexOf(_currentRecommendedQuality);
+    
+    if (currentIndex > 0) {
+      final newQuality = qualities[currentIndex - 1];
+      print('⬇️  Quality downgrade: ${_currentRecommendedQuality.name} → ${newQuality.name} (due to buffering)');
+      _currentRecommendedQuality = newQuality;
+      _recommendedQualityController.add(newQuality);
+    }
+  }
+  
+  /// Upgrade quality by one step when streaming is smooth
+  void _upgradeQuality() {
+    final qualities = AudioQuality.values;
+    final currentIndex = qualities.indexOf(_currentRecommendedQuality);
+    
+    if (currentIndex < qualities.length - 1) {
+      final newQuality = qualities[currentIndex + 1];
+      print('⬆️  Quality upgrade: ${_currentRecommendedQuality.name} → ${newQuality.name} (smooth streaming)');
+      _currentRecommendedQuality = newQuality;
+      _recommendedQualityController.add(newQuality);
+    }
   }
 
   /// Reports actual buffer level from the audio player

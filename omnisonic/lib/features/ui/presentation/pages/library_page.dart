@@ -363,12 +363,12 @@ class _LibraryPageState extends State<LibraryPage>
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.go('/album-detail', extra: album);
+    context.push('/album-detail', extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
     // Navigate to artist detail page
-    context.go('/artist-detail', extra: artist);
+    context.push('/artist-detail', extra: artist);
   }
 
   void _onTrackTapped(Track track, List<Track> playlist, int index) {

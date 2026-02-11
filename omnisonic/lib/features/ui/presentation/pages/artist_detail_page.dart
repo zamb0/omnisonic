@@ -91,7 +91,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           pinned: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/library'),
+            onPressed: () => context.pop(),
           ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
@@ -612,6 +612,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.go('/album-detail', extra: album);
+    context.push('/album-detail', extra: album);
   }
 }

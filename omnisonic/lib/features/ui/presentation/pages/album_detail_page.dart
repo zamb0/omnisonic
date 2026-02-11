@@ -76,7 +76,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           pinned: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/library'),
+            onPressed: () => context.pop(),
           ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(

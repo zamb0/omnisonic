@@ -63,6 +63,17 @@ class MusicLibraryViewModel extends ChangeNotifier {
     print('🎵 MusicLibraryViewModel initialized');
     _subscribeToCollection();
     _loadSmartCollections();
+    // Auto sync library on app startup
+    _autoSyncOnStartup();
+  }
+
+  /// Automatically syncs the library on application startup
+  void _autoSyncOnStartup() {
+    // Use a short delay to ensure the app is fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      print('🔄 Auto-syncing library on startup...');
+      syncCollection(forceRefresh: false);
+    });
   }
 
   void _subscribeToCollection() {

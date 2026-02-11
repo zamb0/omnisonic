@@ -13,6 +13,7 @@ class AlbumCard extends StatelessWidget {
   final bool showArtist;
   final bool isSelected;
   final CardLayout layout;
+  final String? serverName;
 
   const AlbumCard({
     super.key,
@@ -23,6 +24,7 @@ class AlbumCard extends StatelessWidget {
     this.showArtist = true,
     this.isSelected = false,
     this.layout = CardLayout.grid,
+    this.serverName,
   });
 
   @override
@@ -36,6 +38,7 @@ class AlbumCard extends StatelessWidget {
       showArtist: showArtist,
       isSelected: isSelected,
       layout: layout,
+      serverName: serverName,
     );
   }
 }

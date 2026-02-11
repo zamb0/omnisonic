@@ -23,6 +23,7 @@ class EnhancedAlbumCard extends StatefulWidget {
   final bool showArtist;
   final bool isSelected;
   final CardLayout layout;
+  final String? serverName;
 
   const EnhancedAlbumCard({
     super.key,
@@ -33,6 +34,7 @@ class EnhancedAlbumCard extends StatefulWidget {
     this.showArtist = true,
     this.isSelected = false,
     this.layout = CardLayout.grid,
+    this.serverName,
   });
 
   @override
@@ -277,6 +279,19 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
               color: context.colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 11,
             ),
+          ),
+        ],
+        if (widget.serverName != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            widget.serverName!,
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ],

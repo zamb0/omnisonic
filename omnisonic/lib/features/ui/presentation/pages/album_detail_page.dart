@@ -7,6 +7,7 @@ import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/animation_utils.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 
 /// Album detail page showing tracks with enhanced functionality
@@ -252,7 +253,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                       _buildMetadataChip(
                         context,
                         Icons.dns,
-                        widget.album.serverId,
+                        _getServerName(context),
                       ),
                     ],
                   ),
@@ -455,6 +456,35 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     }
   }
 
+  String _getServerName(BuildContext context) {
+    try {
+      final serverViewModel = context.read<ServerManagementViewModel>();
+      final server = serverViewModel.servers.firstWhere(
+        (s) => s.id == widget.album.serverId,
+        orElse: () => throw Exception('Server not found'),
+      );
+      return server.name;
+    } catch (e) {
+      // Fallback to serverId if server not found
+      return widget.album.serverId;
+    }
+  }
+
+  String _getTrackServerName(Track track) {
+    try {
+      final serverViewModel = context.read<ServerManagementViewModel>();
+      final serverId = IdGenerator.extractServerId(track.id);
+      final server = serverViewModel.servers.firstWhere(
+        (s) => s.id == serverId,
+        orElse: () => throw Exception('Server not found'),
+      );
+      return server.name;
+    } catch (e) {
+      // Fallback to serverId if server not found
+      return IdGenerator.extractServerId(track.id);
+    }
+  }
+
   void _playAlbum() {
     if (_tracks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -550,7 +580,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             if (track.genre != null) _buildInfoRow('Genre', track.genre!),
             if (track.trackNumber != null) _buildInfoRow('Track', track.trackNumber.toString()),
             _buildInfoRow('Quality', track.quality.toString()),
-            _buildInfoRow('Server', IdGenerator.extractServerId(track.id)),
+            _buildInfoRow('Server', _getTrackServerName(track)),
           ],
         ),
         actions: [

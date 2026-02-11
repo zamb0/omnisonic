@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 import '../models/library_tab.dart';
 import '../models/library_sort_state.dart';
@@ -87,8 +88,8 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   Widget _buildAlbumsTab() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
+      builder: (context, viewModel, serverViewModel, child) {
         if (viewModel.isLoading) {
           return _buildLoadingGrid();
         }
@@ -108,6 +109,9 @@ class _LibraryPageState extends State<LibraryPage>
 
         final sortOption = _sortState.getOption(LibraryTab.albums);
         final sortedAlbums = LibrarySortService.sortAlbums(albums, sortOption);
+        
+        // Create a map of server IDs to server names for quick lookup
+        final serverMap = {for (var server in serverViewModel.servers) server.id: server.name};
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -119,6 +123,7 @@ class _LibraryPageState extends State<LibraryPage>
               return AlbumCard(
                 album: album,
                 onTap: () => _onAlbumTapped(album),
+                serverName: serverMap[album.serverId],
               );
             }).toList(),
           ),

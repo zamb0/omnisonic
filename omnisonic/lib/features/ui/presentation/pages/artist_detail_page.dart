@@ -6,6 +6,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 
 /// Artist detail page showing albums with enhanced functionality
@@ -242,7 +243,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                       _buildMetadataChip(
                         context,
                         Icons.dns,
-                        widget.artist.serverId,
+                        _getServerName(context),
                       ),
                       if (widget.artist.musicBrainzId != null)
                         _buildMetadataChip(
@@ -500,6 +501,20 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         ],
       ),
     );
+  }
+
+  String _getServerName(BuildContext context) {
+    try {
+      final serverViewModel = context.read<ServerManagementViewModel>();
+      final server = serverViewModel.servers.firstWhere(
+        (s) => s.id == widget.artist.serverId,
+        orElse: () => throw Exception('Server not found'),
+      );
+      return server.name;
+    } catch (e) {
+      // Fallback to serverId if server not found
+      return widget.artist.serverId;
+    }
   }
 
   void _playArtist() {

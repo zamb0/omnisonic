@@ -42,16 +42,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
     try {
       final musicRepository = context.read<MusicLibraryViewModel>();
-      // Extract the original Subsonic ID for API calls
-      final originalAlbumId = IdGenerator.extractSubsonicId(widget.album.id);
       
-      // For now, we'll filter tracks from the main collection
-      // TODO: Implement proper getAlbumTracks method in view model
-      final allTracks = musicRepository.tracks;
-      final albumTracks = allTracks.where((track) {
-        final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId ?? '');
-        return trackAlbumId == originalAlbumId;
-      }).toList();
+      // Use proper getAlbumTracks method which queries by albumId
+      // and fetches from server if not found locally
+      final albumTracks = await musicRepository.getAlbumTracks(widget.album.id);
 
       // Sort tracks by track number if available
       albumTracks.sort((a, b) {

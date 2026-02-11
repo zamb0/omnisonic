@@ -60,7 +60,73 @@ class MusicRepositoryImpl implements MusicRepository {
 
   @override
   Future<Result<List<Track>>> getAlbumTracks(String albumId) async {
-    return await _localDataSource.getTracksByAlbumId(albumId);
+    // First try to get tracks from local database
+    final localResult = await _localDataSource.getTracksByAlbumId(albumId);
+    
+    if (localResult.isSuccess && localResult.valueOrNull!.isNotEmpty) {
+      return localResult;
+    }
+    
+    // If no local tracks, fetch from server
+    print('🔄 No local tracks for album $albumId, fetching from server...');
+    
+    try {
+      // Get album details to find the server
+      final albumResult = await _localDataSource.getAlbumById(albumId);
+      if (albumResult.isFailure || albumResult.valueOrNull == null) {
+        return ResultHelper.failure(DataFailure('Album not found'));
+      }
+      
+      final album = albumResult.valueOrNull!;
+      
+      // Get server and password
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+      
+      final servers = serversResult.valueOrNull!;
+      final server = servers.firstWhere(
+        (s) => s.id == album.serverId,
+        orElse: () => throw Exception('Server not found'),
+      );
+      
+      final passwordResult = await _connectionService.getServerPassword(server.id);
+      if (passwordResult.isFailure) {
+        return ResultHelper.failure(passwordResult.failureOrNull!);
+      }
+      
+      final password = passwordResult.valueOrNull!;
+      
+      // Extract original Subsonic ID and fetch from server
+      final originalAlbumId = IdGenerator.extractSubsonicId(albumId);
+      final albumResponse = await _apiClient.getAlbum(server, password, originalAlbumId);
+      
+      if (!albumResponse.isSuccess || albumResponse.data == null) {
+        return ResultHelper.failure(NetworkFailure('Failed to fetch album tracks'));
+      }
+      
+      final albumData = albumResponse.data!;
+      final tracks = <Track>[];
+      
+      // Convert Subsonic songs to domain tracks
+      for (final subsonicSong in albumData.song) {
+        final streamUrl = _apiClient.getStreamUrl(server, password, subsonicSong.id);
+        final domainTrack = subsonicSong.toDomainTrack(server.id, streamUrl, server, password, _apiClient);
+        tracks.add(domainTrack);
+      }
+      
+      // Save tracks to local database
+      if (tracks.isNotEmpty) {
+        await _localDataSource.insertTracks(tracks);
+        print('✅ Fetched and saved ${tracks.length} tracks for album ${album.title}');
+      }
+      
+      return ResultHelper.success(tracks);
+    } catch (e) {
+      print('❌ Error fetching album tracks: $e');
+      return ResultHelper.failure(NetworkFailure('Failed to fetch album tracks: $e'));
+    }
   }
 
   @override

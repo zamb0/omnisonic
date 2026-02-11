@@ -533,8 +533,17 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     for (final album in _albums) {
       final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
       final albumTracks = allTracks.where((track) {
-        final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId ?? '');
-        return trackAlbumId == originalAlbumId;
+        // Match by albumId if available
+        if (track.albumId != null && track.albumId!.isNotEmpty) {
+          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
+          if (trackAlbumId == originalAlbumId) {
+            return true;
+          }
+        }
+        
+        // Fallback: match by album name and server ID
+        return track.album.toLowerCase() == album.title.toLowerCase() &&
+               track.serverId == album.serverId;
       }).toList();
       artistTracks.addAll(albumTracks);
     }
@@ -570,8 +579,17 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     for (final album in _albums) {
       final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
       final albumTracks = allTracks.where((track) {
-        final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId ?? '');
-        return trackAlbumId == originalAlbumId;
+        // Match by albumId if available
+        if (track.albumId != null && track.albumId!.isNotEmpty) {
+          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
+          if (trackAlbumId == originalAlbumId) {
+            return true;
+          }
+        }
+        
+        // Fallback: match by album name and server ID
+        return track.album.toLowerCase() == album.title.toLowerCase() &&
+               track.serverId == album.serverId;
       }).toList();
       artistTracks.addAll(albumTracks);
     }

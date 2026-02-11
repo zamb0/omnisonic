@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../../../core/entities/entities.dart';
-
+import '../../../../core/entities/entities.dart';import '../../../../core/services/subsonic_image_cache_manager.dart';
 /// A list tile widget for displaying playlist information in management views
 class PlaylistListTile extends StatelessWidget {
   final Playlist playlist;
@@ -127,7 +126,12 @@ class PlaylistListTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: CachedNetworkImage(
                 imageUrl: playlist.coverArtUrl!,
+                cacheKey: playlist.coverArtUrl!.subsonicCacheKey,
                 fit: BoxFit.cover,
+                maxWidthDiskCache: 112,
+                maxHeightDiskCache: 112,
+                memCacheWidth: 112,
+                memCacheHeight: 112,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],
                   child: const Icon(

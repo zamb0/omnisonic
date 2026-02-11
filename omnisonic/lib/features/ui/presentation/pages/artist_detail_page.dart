@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/id_generator.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
@@ -112,10 +114,16 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                 children: [
                   // Background artist image with blur
                   if (widget.artist.imageUrl != null)
-                    Image.network(
-                      widget.artist.imageUrl!,
+                    CachedNetworkImage(
+                      imageUrl: widget.artist.imageUrl!,
+                      cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
+                      maxWidthDiskCache: 800,
+                      maxHeightDiskCache: 800,
+                      memCacheWidth: 800,
+                      memCacheHeight: 800,
+                      placeholder: (context, url) => Container(color: Colors.grey[300]),
+                      errorWidget: (context, url, error) =>
                           Container(color: Colors.grey[300]),
                     ),
                   // Gradient overlay
@@ -150,10 +158,21 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                         ),
                         child: ClipOval(
                           child: widget.artist.imageUrl != null
-                              ? Image.network(
-                                  widget.artist.imageUrl!,
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.artist.imageUrl!,
+                                  cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
+                                  maxWidthDiskCache: 600,
+                                  maxHeightDiskCache: 600,
+                                  memCacheWidth: 600,
+                                  memCacheHeight: 600,
+                                  placeholder: (context, url) => Container(
+                                    color: Theme.of(context).colorScheme.primaryContainer,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) =>
                                       Container(
                                     color: Theme.of(context).colorScheme.primaryContainer,
                                     child: Icon(

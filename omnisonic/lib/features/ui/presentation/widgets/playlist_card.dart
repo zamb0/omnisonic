@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/playlist.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 /// A card widget for displaying playlist information
 class PlaylistCard extends StatelessWidget {
@@ -88,7 +89,12 @@ class PlaylistCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: CachedNetworkImage(
                 imageUrl: playlist.coverArtUrl!,
+                cacheKey: playlist.coverArtUrl!.subsonicCacheKey,
                 fit: BoxFit.cover,
+                maxWidthDiskCache: 400,
+                maxHeightDiskCache: 400,
+                memCacheWidth: 400,
+                memCacheHeight: 400,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],
                   child: const Icon(

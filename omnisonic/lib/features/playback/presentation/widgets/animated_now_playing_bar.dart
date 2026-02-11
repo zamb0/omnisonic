@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/design_system/animation_manager.dart';
@@ -7,6 +8,7 @@ import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
 import '../../../../core/design_system/typography.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 
 /// Animated now-playing bar that slides up from the bottom
@@ -215,10 +217,16 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: track.coverArtUrl != null
-              ? Image.network(
-                  track.coverArtUrl!,
+              ? CachedNetworkImage(
+                  imageUrl: track.coverArtUrl!,
+                  cacheKey: track.coverArtUrl!.subsonicCacheKey,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
+                  maxWidthDiskCache: 96,
+                  maxHeightDiskCache: 96,
+                  memCacheWidth: 96,
+                  memCacheHeight: 96,
+                  placeholder: (context, url) => _buildFallbackArtwork(),
+                  errorWidget: (context, url, error) {
                     return _buildFallbackArtwork();
                   },
                 )
@@ -248,10 +256,16 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: track.coverArtUrl != null
-                  ? Image.network(
-                      track.coverArtUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: track.coverArtUrl!,
+                      cacheKey: track.coverArtUrl!.subsonicCacheKey,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
+                      maxWidthDiskCache: 96,
+                      maxHeightDiskCache: 96,
+                      memCacheWidth: 96,
+                      memCacheHeight: 96,
+                      placeholder: (context, url) => _buildFallbackArtwork(),
+                      errorWidget: (context, url, error) {
                         return _buildFallbackArtwork();
                       },
                     )

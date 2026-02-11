@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../widgets/full_screen_player.dart';
 import '../widgets/audio_visualizer.dart';
@@ -180,10 +182,22 @@ class _PlayerPageState extends State<PlayerPage>
               child: track.coverArtUrl != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: Image.network(
-                        track.coverArtUrl!,
+                      child: CachedNetworkImage(
+                        imageUrl: track.coverArtUrl!,
+                        cacheKey: track.coverArtUrl!.subsonicCacheKey,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        maxWidthDiskCache: 80,
+                        maxHeightDiskCache: 80,
+                        memCacheWidth: 80,
+                        memCacheHeight: 80,
+                        placeholder: (context, url) => const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) {
                           return const Icon(
                             Icons.music_note,
                             color: Colors.white,

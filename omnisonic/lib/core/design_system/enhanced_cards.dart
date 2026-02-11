@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../entities/album.dart';
 import '../entities/artist.dart';
 import '../entities/track.dart';
+import '../services/subsonic_image_cache_manager.dart';
 import 'spacing.dart';
 import 'theme.dart';
 import 'animation_manager.dart';
@@ -327,9 +328,15 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
           child: widget.album.coverArtUrl != null
               ? CachedNetworkImage(
                   imageUrl: widget.album.coverArtUrl!,
+                  cacheKey: widget.album.coverArtUrl!.subsonicCacheKey,
                   fit: BoxFit.cover,
+                  maxWidthDiskCache: 600,
+                  maxHeightDiskCache: 600,
+                  memCacheWidth: 600,
+                  memCacheHeight: 600,
                   placeholder: (context, url) => _buildPlaceholder(),
                   errorWidget: (context, url, error) => _buildPlaceholder(),
+                  fadeInDuration: const Duration(milliseconds: 200),
                 )
               : _buildPlaceholder(),
         ),
@@ -894,7 +901,13 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
         borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
         child: CachedNetworkImage(
           imageUrl: widget.track.coverArtUrl!,
+          cacheKey: widget.track.coverArtUrl!.subsonicCacheKey,
           fit: BoxFit.cover,
+          maxWidthDiskCache: 80,
+          maxHeightDiskCache: 80,
+          memCacheWidth: 80,
+          memCacheHeight: 80,
+          fadeInDuration: const Duration(milliseconds: 200),
           placeholder: (context, url) => Container(
             color: context.colorScheme.surface,
             child: Icon(

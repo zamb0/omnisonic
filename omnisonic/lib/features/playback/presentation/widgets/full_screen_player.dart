@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:math' as math;
 
 import '../../../../core/design_system/design_system.dart';
@@ -11,6 +12,7 @@ import '../../../../core/design_system/typography.dart';
 import '../../../../core/design_system/responsive_layout.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 
 /// Full-screen player with enhanced UI and animations
@@ -378,12 +380,17 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
                 child: AspectRatio(
                   aspectRatio: 1.0,
                   child: track.coverArtUrl != null
-                      ? Image.network(
-                          track.coverArtUrl!,
+                      ? CachedNetworkImage(
+                          imageUrl: track.coverArtUrl!,
+                          cacheKey: track.coverArtUrl!.subsonicCacheKey,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildFallbackArtwork();
-                          },
+                          maxWidthDiskCache: 800,
+                          maxHeightDiskCache: 800,
+                          memCacheWidth: 800,
+                          memCacheHeight: 800,
+                          placeholder: (context, url) => _buildFallbackArtwork(),
+                          errorWidget: (context, url, error) =>
+                              _buildFallbackArtwork(),
                         )
                       : _buildFallbackArtwork(),
                 ),

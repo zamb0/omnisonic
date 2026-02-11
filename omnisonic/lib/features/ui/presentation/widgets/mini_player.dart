@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/constants/animation_constants.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 
 /// Mini player widget that appears at the bottom of the screen when music is playing
@@ -65,10 +67,16 @@ class MiniPlayer extends StatelessWidget {
                   child: track.coverArtUrl != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          child: Image.network(
-                            track.coverArtUrl!,
+                          child: CachedNetworkImage(
+                            imageUrl: track.coverArtUrl!,
+                            cacheKey: track.coverArtUrl!.subsonicCacheKey,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
+                            maxWidthDiskCache: 96,
+                            maxHeightDiskCache: 96,
+                            memCacheWidth: 96,
+                            memCacheHeight: 96,
+                            placeholder: (context, url) => const Icon(Icons.music_note, color: Colors.grey),
+                            errorWidget: (context, url, error) =>
                                 const Icon(Icons.music_note, color: Colors.grey),
                           ),
                         )

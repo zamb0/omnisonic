@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/artist.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 /// A card widget for displaying artist information
 class ArtistCard extends StatelessWidget {
@@ -78,7 +79,12 @@ class ArtistCard extends StatelessWidget {
           ? ClipOval(
               child: CachedNetworkImage(
                 imageUrl: artist.imageUrl!,
+                cacheKey: artist.imageUrl!.subsonicCacheKey,
                 fit: BoxFit.cover,
+                maxWidthDiskCache: 400,
+                maxHeightDiskCache: 400,
+                memCacheWidth: 400,
+                memCacheHeight: 400,
                 placeholder: (context, url) => Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,

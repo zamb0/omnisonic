@@ -23,12 +23,17 @@ class DraggableTrackTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).cardColor,
       ),
       child: ListTile(
+        visualDensity: VisualDensity.compact,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 0,
+        ),
         leading: _buildLeading(),
         title: Text(
           track.title,

@@ -93,7 +93,13 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           pinned: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/library');
+              }
+            },
           ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(

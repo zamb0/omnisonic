@@ -318,7 +318,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              }
+            },
             icon: const Icon(
               Icons.keyboard_arrow_down,
               color: Colors.white,

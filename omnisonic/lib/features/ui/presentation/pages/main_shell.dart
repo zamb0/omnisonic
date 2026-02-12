@@ -20,7 +20,7 @@ class MainShell extends StatelessWidget {
         children: [
           Expanded(child: child),
           AnimatedNowPlayingBar(
-            onTap: () => context.go(AppRouter.nowPlaying),
+            onTap: () => context.push(AppRouter.nowPlaying),
           ),
         ],
       ),

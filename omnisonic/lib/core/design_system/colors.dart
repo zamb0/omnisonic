@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 /// Comprehensive color palette system for Omnisonic UI Enhancement
 class OmnisonicColors {
   // Primary Brand Colors
-  static const Color primaryPurple = Color(0xFF6366F1);
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color primaryTeal = Color(0xFF06B6D4);
+  static const Color primaryPurple = Color(0xFF7C7CFF);
+  static const Color primaryBlue = Color(0xFF5A67D8);
+  static const Color primaryTeal = Color(0xFF4DD0E1);
   
   // Secondary Colors
-  static const Color secondaryIndigo = Color(0xFF4F46E5);
-  static const Color secondaryViolet = Color(0xFF7C3AED);
-  static const Color secondaryCyan = Color(0xFF0891B2);
+  static const Color secondaryIndigo = Color(0xFF6D6DFF);
+  static const Color secondaryViolet = Color(0xFF8B7BFF);
+  static const Color secondaryCyan = Color(0xFF3DB6C6);
   
   // Accent Colors
-  static const Color accentPink = Color(0xFFEC4899);
-  static const Color accentOrange = Color(0xFFF97316);
-  static const Color accentGreen = Color(0xFF059669);
+  static const Color accentPink = Color(0xFFEC6BA6);
+  static const Color accentOrange = Color(0xFFF59E0B);
+  static const Color accentGreen = Color(0xFF10B981);
   
   // Semantic Colors
   static const Color success = Color(0xFF10B981);
@@ -38,18 +38,38 @@ class OmnisonicColors {
   static const Color neutralBlack = Color(0xFF000000);
   
   // Surface Colors - Light Mode
-  static const Color surfaceLight = Color(0xFFFAFAFA);
-  static const Color cardLight = Color(0xFFFFFFFF);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
-  static const Color onSurfaceLight = Color(0xFF1F2937);
-  static const Color onBackgroundLight = Color(0xFF111827);
+  static const Color surfaceLight = Color(0xFFFFFFFF);
+  static const Color cardLight = Color(0xFFF6F6F6);
+  static const Color backgroundLight = Color(0xFFF5F5F5);
+  static const Color onSurfaceLight = Color(0xFF1E1E1E);
+  static const Color onBackgroundLight = Color(0xFF141414);
+
+  // Container Colors - Light Mode
+  static const Color primaryContainerLight = Color(0xFFE6E7FF);
+  static const Color onPrimaryContainerLight = Color(0xFF20204D);
+  static const Color secondaryContainerLight = Color(0xFFEDEAFF);
+  static const Color onSecondaryContainerLight = Color(0xFF24245A);
+  static const Color tertiaryContainerLight = Color(0xFFD4F4F8);
+  static const Color onTertiaryContainerLight = Color(0xFF003544);
+  static const Color errorContainerLight = Color(0xFFFEE2E2);
+  static const Color onErrorContainerLight = Color(0xFF7F1D1D);
   
   // Surface Colors - Dark Mode
-  static const Color surfaceDark = Color(0xFF1E1E1E);
-  static const Color cardDark = Color(0xFF2D2D2D);
-  static const Color backgroundDark = Color(0xFF121212);
-  static const Color onSurfaceDark = Color(0xFFE5E7EB);
-  static const Color onBackgroundDark = Color(0xFFF9FAFB);
+  static const Color surfaceDark = Color(0xFF1F1F21);
+  static const Color cardDark = Color(0xFF181818);
+  static const Color backgroundDark = Color(0xFF141414);
+  static const Color onSurfaceDark = Color(0xFFC9C9C9);
+  static const Color onBackgroundDark = Color(0xFFE6E6E6);
+
+  // Container Colors - Dark Mode
+  static const Color primaryContainerDark = Color(0xFF2A2A46);
+  static const Color onPrimaryContainerDark = Color(0xFFE6E7FF);
+  static const Color secondaryContainerDark = Color(0xFF2B2B4D);
+  static const Color onSecondaryContainerDark = Color(0xFFEDEAFF);
+  static const Color tertiaryContainerDark = Color(0xFF003B4D);
+  static const Color onTertiaryContainerDark = Color(0xFFD4F4F8);
+  static const Color errorContainerDark = Color(0xFF5F1D1D);
+  static const Color onErrorContainerDark = Color(0xFFFEE2E2);
   
   // Gradient Definitions
   static const LinearGradient primaryGradient = LinearGradient(
@@ -71,13 +91,13 @@ class OmnisonicColors {
   );
   
   static const LinearGradient subtleGradient = LinearGradient(
-    colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+    colors: [Color(0xFFF5F5F5), Color(0xFFEAEAEA)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
   
   static const LinearGradient darkSubtleGradient = LinearGradient(
-    colors: [Color(0xFF1E1E1E), Color(0xFF2D2D2D)],
+    colors: [Color(0xFF141414), Color(0xFF1F1F21)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -99,13 +119,13 @@ class OmnisonicColors {
   
   // Radial gradients for depth effects
   static const RadialGradient cardDepthGradient = RadialGradient(
-    colors: [Color(0xFFFFFFFF), Color(0xFFF8FAFC)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFF0F0F0)],
     center: Alignment.topLeft,
     radius: 1.5,
   );
   
   static const RadialGradient darkCardDepthGradient = RadialGradient(
-    colors: [Color(0xFF2D2D2D), Color(0xFF1E1E1E)],
+    colors: [Color(0xFF1F1F21), Color(0xFF141414)],
     center: Alignment.topLeft,
     radius: 1.5,
   );
@@ -124,9 +144,9 @@ class OmnisonicColors {
   
   static const LinearGradient darkShimmerGradient = LinearGradient(
     colors: [
-      Color(0xFF374151),
-      Color(0xFF4B5563),
-      Color(0xFF374151),
+      Color(0xFF2B2B2B),
+      Color(0xFF3B3B3B),
+      Color(0xFF2B2B2B),
     ],
     stops: [0.0, 0.5, 1.0],
     begin: Alignment(-1.0, 0.0),
@@ -179,14 +199,26 @@ class OmnisonicColors {
     brightness: Brightness.light,
     primary: primaryPurple,
     onPrimary: neutralWhite,
+    primaryContainer: primaryContainerLight,
+    onPrimaryContainer: onPrimaryContainerLight,
     secondary: secondaryIndigo,
     onSecondary: neutralWhite,
+    secondaryContainer: secondaryContainerLight,
+    onSecondaryContainer: onSecondaryContainerLight,
     tertiary: primaryTeal,
     onTertiary: neutralWhite,
+    tertiaryContainer: tertiaryContainerLight,
+    onTertiaryContainer: onTertiaryContainerLight,
     error: error,
     onError: neutralWhite,
+    errorContainer: errorContainerLight,
+    onErrorContainer: onErrorContainerLight,
+    background: backgroundLight,
+    onBackground: onBackgroundLight,
     surface: surfaceLight,
     onSurface: onSurfaceLight,
+    surfaceVariant: neutralGray100,
+    onSurfaceVariant: neutralGray600,
     outline: neutralGray300,
     outlineVariant: neutralGray200,
     shadow: Color(0x1A000000),
@@ -202,16 +234,28 @@ class OmnisonicColors {
     brightness: Brightness.dark,
     primary: Color(0xFF9CA3FF),
     onPrimary: Color(0xFF1E1B3A),
+    primaryContainer: primaryContainerDark,
+    onPrimaryContainer: onPrimaryContainerDark,
     secondary: Color(0xFF7C7CFF),
     onSecondary: Color(0xFF1A1A3A),
+    secondaryContainer: secondaryContainerDark,
+    onSecondaryContainer: onSecondaryContainerDark,
     tertiary: Color(0xFF4DD0E1),
     onTertiary: Color(0xFF003544),
+    tertiaryContainer: tertiaryContainerDark,
+    onTertiaryContainer: onTertiaryContainerDark,
     error: Color(0xFFFF6B6B),
     onError: Color(0xFF3A0A0A),
+    errorContainer: errorContainerDark,
+    onErrorContainer: onErrorContainerDark,
+    background: backgroundDark,
+    onBackground: onBackgroundDark,
     surface: surfaceDark,
     onSurface: onSurfaceDark,
-    outline: neutralGray600,
-    outlineVariant: neutralGray700,
+    surfaceVariant: cardDark,
+    onSurfaceVariant: Color(0xFF9A9A9A),
+    outline: Color(0xFF2B2B2B),
+    outlineVariant: Color(0xFF3B3B3B),
     shadow: Color(0x80000000),
     scrim: Color(0xCC000000),
     inverseSurface: neutralGray100,

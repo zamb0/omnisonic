@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'platform_optimizations.dart';
 import 'responsive_layout.dart';
+import '../utils/app_log.dart';
 
 /// Responsive behavior validator to ensure consistent behavior across screen sizes
 /// Implements Requirements: 2.1, 2.2
@@ -251,16 +252,16 @@ class _ResponsiveBehaviorValidatorWidgetState extends State<ResponsiveBehaviorVa
   
   void _logReport(ResponsiveValidationReport report) {
     if (report.issues.isNotEmpty) {
-      debugPrint('Responsive Behavior Issues (${report.platform.name}):');
+      AppLog.debug('Responsive behavior issues (${report.platform.name}):');
       for (final issue in report.issues) {
-        debugPrint('  ${issue.severity.name.toUpperCase()}: ${issue.description}');
+        AppLog.debug('${issue.severity.name.toUpperCase()}: ${issue.description}');
       }
     }
     
     if (report.recommendations.isNotEmpty) {
-      debugPrint('Responsive Behavior Recommendations (${report.platform.name}):');
+      AppLog.debug('Responsive behavior recommendations (${report.platform.name}):');
       for (final recommendation in report.recommendations) {
-        debugPrint('  RECOMMENDATION: ${recommendation.description}');
+        AppLog.debug('RECOMMENDATION: ${recommendation.description}');
       }
     }
   }

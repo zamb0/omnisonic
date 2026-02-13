@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// ViewModel for managing server connections and configuration
 /// 
@@ -166,7 +167,7 @@ class ServerManagementViewModel extends ChangeNotifier {
       _clearError();
       
       // Automatically sync the music collection from the new server
-      debugPrint('🔄 Starting automatic sync for new server: ${server.name}');
+      AppLog.info('Starting automatic sync for new server');
       _triggerAutoSync(server.id);
       
       return true;
@@ -318,7 +319,7 @@ class ServerManagementViewModel extends ChangeNotifier {
     final result = await _serverRepository.updateServerStatus(serverId, status);
     result.fold(
       (failure) => _setError('Failed to update server status: ${failure.message}'),
-      (_) => debugPrint('Server status updated to $status'),
+      (_) => AppLog.debug('Server status updated to $status'),
     );
   }
 
@@ -327,7 +328,7 @@ class ServerManagementViewModel extends ChangeNotifier {
     final result = await _serverRepository.updateLastSync(serverId, lastSync);
     result.fold(
       (failure) => _setError('Failed to update last sync: ${failure.message}'),
-      (_) => debugPrint('Server last sync updated'),
+      (_) => AppLog.debug('Server last sync updated'),
     );
   }
 
@@ -341,7 +342,7 @@ class ServerManagementViewModel extends ChangeNotifier {
     // Run sync in background without blocking the UI
     Future.delayed(const Duration(milliseconds: 500), () async {
       try {
-        debugPrint('🔄 Auto-syncing from server: $serverId');
+        AppLog.info('Auto-syncing from server: $serverId');
         final params = SyncMusicCollectionParams(
           serverId: serverId,
           forceRefresh: false,
@@ -350,15 +351,15 @@ class ServerManagementViewModel extends ChangeNotifier {
         final result = await _syncMusicCollectionUseCase(params);
         result.fold(
           (failure) {
-            debugPrint('❌ Auto-sync failed: ${failure.message}');
+            AppLog.warn('Auto-sync failed: ${failure.message}');
             // Don't show error to user for background sync
           },
           (collection) {
-            debugPrint('✅ Auto-sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
+            AppLog.info('Auto-sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
           },
         );
       } catch (e) {
-        debugPrint('❌ Auto-sync error: $e');
+        AppLog.warn('Auto-sync error: $e');
       }
     });
   }
@@ -367,7 +368,7 @@ class ServerManagementViewModel extends ChangeNotifier {
   void syncAllServers() {
     Future.delayed(const Duration(milliseconds: 100), () async {
       try {
-        debugPrint('🔄 Manual sync from all servers');
+        AppLog.info('Manual sync from all servers');
         final params = SyncMusicCollectionParams(
           serverId: null, // Sync from all servers
           forceRefresh: true, // Force refresh for manual sync
@@ -376,14 +377,14 @@ class ServerManagementViewModel extends ChangeNotifier {
         final result = await _syncMusicCollectionUseCase(params);
         result.fold(
           (failure) {
-            debugPrint('❌ Manual sync failed: ${failure.message}');
+            AppLog.warn('Manual sync failed: ${failure.message}');
           },
           (collection) {
-            debugPrint('✅ Manual sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
+            AppLog.info('Manual sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
           },
         );
       } catch (e) {
-        debugPrint('❌ Manual sync error: $e');
+        AppLog.warn('Manual sync error: $e');
       }
     });
   }

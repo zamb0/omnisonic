@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../../../../core/entities/entities.dart';
@@ -12,6 +13,7 @@ import '../../../../core/services/server_connection_service.dart';
 import '../../../../core/services/deduplication_engine.dart';
 import '../../../../core/services/source_selection_service.dart';
 import '../../../../core/utils/id_generator.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// Implementation of MusicRepository that combines remote and local data sources
 class MusicRepositoryImpl implements MusicRepository {
@@ -68,7 +70,7 @@ class MusicRepositoryImpl implements MusicRepository {
     }
     
     // If no local tracks, fetch from server
-    print('🔄 No local tracks for album $albumId, fetching from server...');
+    AppLog.info('No local tracks for album, fetching from server');
     
     try {
       // Get album details to find the server
@@ -119,12 +121,12 @@ class MusicRepositoryImpl implements MusicRepository {
       // Save tracks to local database
       if (tracks.isNotEmpty) {
         await _localDataSource.insertTracks(tracks);
-        print('✅ Fetched and saved ${tracks.length} tracks for album ${album.title}');
+        AppLog.info('Fetched and saved ${tracks.length} tracks for album');
       }
       
       return ResultHelper.success(tracks);
     } catch (e) {
-      print('❌ Error fetching album tracks: $e');
+      AppLog.warn('Error fetching album tracks: $e');
       return ResultHelper.failure(NetworkFailure('Failed to fetch album tracks: $e'));
     }
   }
@@ -232,7 +234,7 @@ class MusicRepositoryImpl implements MusicRepository {
       }
 
       // Sync data to local database
-      print('🔄 Syncing to database: ${artistsResult.valueOrNull?.length ?? 0} artists, ${albumsResult.valueOrNull?.length ?? 0} albums, ${tracksResult.valueOrNull?.length ?? 0} tracks');
+      AppLog.info('Syncing to database: ${artistsResult.valueOrNull?.length ?? 0} artists, ${albumsResult.valueOrNull?.length ?? 0} albums, ${tracksResult.valueOrNull?.length ?? 0} tracks');
       final syncResult = await _localDataSource.syncMusicData(
         serverId,
         artists: artistsResult.valueOrNull,
@@ -241,11 +243,11 @@ class MusicRepositoryImpl implements MusicRepository {
       );
 
       if (syncResult.isFailure) {
-        print('❌ Database sync failed: ${syncResult.failureOrNull!.message}');
+        AppLog.warn('Database sync failed: ${syncResult.failureOrNull!.message}');
         return ResultHelper.failure(syncResult.failureOrNull!);
       }
 
-      print('✅ Database sync completed successfully');
+      AppLog.info('Database sync completed successfully');
 
       // Update server last sync time
       await _serverRepository.updateLastSync(serverId, DateTime.now());
@@ -452,10 +454,10 @@ class MusicRepositoryImpl implements MusicRepository {
         }
       }
       
-      print('🎵 Fetched ${artists.length} artists from ${server.name}');
+      AppLog.info('Fetched ${artists.length} artists from server');
       return ResultHelper.success(artists);
     } catch (e) {
-      print('❌ Error fetching artists: $e');
+      AppLog.warn('Error fetching artists: $e');
       return ResultHelper.failure(NetworkFailure('Failed to fetch artists: $e'));
     }
   }
@@ -490,10 +492,10 @@ class MusicRepositoryImpl implements MusicRepository {
         albums.add(domainAlbum);
       }
 
-      print('💿 Fetched ${albums.length} albums from ${server.name}');
+      AppLog.info('Fetched ${albums.length} albums from server');
       return ResultHelper.success(albums);
     } catch (e) {
-      print('❌ Error fetching albums: $e');
+      AppLog.warn('Error fetching albums: $e');
       return ResultHelper.failure(NetworkFailure('Failed to fetch albums: $e'));
     }
   }
@@ -532,15 +534,15 @@ class MusicRepositoryImpl implements MusicRepository {
             }
           }
         } catch (e) {
-          print('⚠️ Failed to fetch tracks for album ${album.title}: $e');
+          AppLog.warn('Failed to fetch tracks for album: $e');
           // Continue with other albums
         }
       }
 
-      print('🎵 Fetched ${tracks.length} tracks from ${server.name}');
+      AppLog.info('Fetched ${tracks.length} tracks from server');
       return ResultHelper.success(tracks);
     } catch (e) {
-      print('❌ Error fetching tracks: $e');
+      AppLog.warn('Error fetching tracks: $e');
       return ResultHelper.failure(NetworkFailure('Failed to fetch tracks: $e'));
     }
   }
@@ -548,7 +550,7 @@ class MusicRepositoryImpl implements MusicRepository {
   /// Updates the unified collection and notifies observers
   Future<void> _updateUnifiedCollection() async {
     try {
-      print('🔄 Updating unified collection...');
+      AppLog.debug('Updating unified collection');
       final tracksResult = await getAllTracks();
       final albumsResult = await getAllAlbums();
       final artistsResult = await getAllArtists();
@@ -564,7 +566,7 @@ class MusicRepositoryImpl implements MusicRepository {
         final artists = artistsResult.valueOrNull!;
         final duplicateGroups = duplicatesResult.valueOrNull!;
 
-        print('📊 Collection updated: ${tracks.length} tracks, ${albums.length} albums, ${artists.length} artists');
+        AppLog.info('Collection updated: ${tracks.length} tracks, ${albums.length} albums, ${artists.length} artists');
 
         // Convert duplicate groups to the expected format
         final duplicateGroupsMap = <String, List<String>>{};
@@ -581,13 +583,13 @@ class MusicRepositoryImpl implements MusicRepository {
         );
 
         _collectionController.add(collection);
-        print('✅ Unified collection updated and broadcasted');
+        AppLog.debug('Unified collection updated and broadcasted');
       } else {
-        print('❌ Failed to update unified collection - some data sources failed');
+        AppLog.warn('Failed to update unified collection - some data sources failed');
       }
     } catch (e) {
       // Log error but don't throw - this is for reactive updates
-      print('❌ Error updating unified collection: $e');
+      AppLog.warn('Error updating unified collection: $e');
     }
   }
 
@@ -672,26 +674,30 @@ class MusicRepositoryImpl implements MusicRepository {
   /// DEBUG: Clear all data and resync (for testing unique IDs)
   @override
   Future<Result<void>> debugClearAndResync() async {
+    if (!kDebugMode) {
+      return ResultHelper.failure(ValidationFailure('Debug operation not available in release builds'));
+    }
+
     try {
-      print('🧹 DEBUG: Clearing all database data...');
+      AppLog.debug('Debug clear and resync started');
       
       // Clear all data from database
       await _localDataSource.clearAllData();
       
-      print('✅ DEBUG: Database cleared, starting fresh sync...');
+      AppLog.debug('Database cleared, starting fresh sync');
       
       // Resync all servers
       final result = await syncFromServers();
       
       if (result.isSuccess) {
-        print('✅ DEBUG: Fresh sync completed successfully');
+        AppLog.info('Debug fresh sync completed successfully');
       } else {
-        print('❌ DEBUG: Fresh sync failed: ${result.failureOrNull}');
+        AppLog.warn('Debug fresh sync failed: ${result.failureOrNull}');
       }
       
       return result;
     } catch (e) {
-      print('❌ DEBUG: Clear and resync failed: $e');
+      AppLog.warn('Debug clear and resync failed: $e');
       return ResultHelper.failure(UnknownFailure('Debug clear and resync failed: $e'));
     }
   }

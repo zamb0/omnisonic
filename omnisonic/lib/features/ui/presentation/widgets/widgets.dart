@@ -4,6 +4,7 @@ export 'album_card.dart';
 export 'artist_card.dart';
 export 'playlist_card.dart';
 export 'mini_player.dart';
+export 'feishin_card.dart';
 
 // Layout Components
 export 'responsive_grid.dart';

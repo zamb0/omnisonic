@@ -5,6 +5,7 @@ import 'package:dbus/dbus.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' show PlaybackState;
+import '../../../../core/utils/app_log.dart';
 import 'audio_player_data_source.dart';
 
 /// MPRIS (Media Player Remote Interfacing Specification) handler for Linux
@@ -24,7 +25,7 @@ class MprisHandler extends DBusObject {
     if (!Platform.isLinux) return;
     
     try {
-      print('🎵 Initializing MPRIS for Linux desktop integration...');
+        AppLog.info('Initializing MPRIS for Linux desktop integration');
       
       _client = DBusClient.session();
       
@@ -50,10 +51,9 @@ class MprisHandler extends DBusObject {
           _updateMprisMetadata(state);
         });
 
-      print('✅ MPRIS initialized successfully');
+        AppLog.info('MPRIS initialized successfully');
     } catch (e) {
-      print('⚠️  Failed to initialize MPRIS: $e');
-      print('⚠️  Stack trace: ${StackTrace.current}');
+        AppLog.warn('Failed to initialize MPRIS: $e');
     }
   }
 
@@ -97,29 +97,29 @@ class MprisHandler extends DBusObject {
 
   @override
   Future<DBusMethodResponse> handleMethodCall(DBusMethodCall methodCall) async {
-    print('🎵 MPRIS: handleMethodCall(${methodCall.interface}.${methodCall.name})');
+    AppLog.debug('MPRIS handleMethodCall(${methodCall.interface}.${methodCall.name})');
     
     if (methodCall.interface == 'org.mpris.MediaPlayer2') {
       switch (methodCall.name) {
         case 'Raise':
-          print('🎵 MPRIS: Raise requested (not implemented)');
+          AppLog.debug('MPRIS Raise requested (not implemented)');
           return DBusMethodSuccessResponse();
         case 'Quit':
-          print('🎵 MPRIS: Quit requested (not implemented)');
+          AppLog.debug('MPRIS Quit requested (not implemented)');
           return DBusMethodSuccessResponse();
       }
     } else if (methodCall.interface == 'org.mpris.MediaPlayer2.Player') {
       switch (methodCall.name) {
         case 'Play':
-          print('🎵 MPRIS: Play requested');
+          AppLog.debug('MPRIS Play requested');
           _audioPlayerDataSource.resume();
           return DBusMethodSuccessResponse();
         case 'Pause':
-          print('🎵 MPRIS: Pause requested');
+          AppLog.debug('MPRIS Pause requested');
           _audioPlayerDataSource.pause();
           return DBusMethodSuccessResponse();
         case 'PlayPause':
-          print('🎵 MPRIS: PlayPause requested');
+          AppLog.debug('MPRIS PlayPause requested');
           if (_currentState?.isPlaying ?? false) {
             _audioPlayerDataSource.pause();
           } else {
@@ -127,20 +127,20 @@ class MprisHandler extends DBusObject {
           }
           return DBusMethodSuccessResponse();
         case 'Next':
-          print('🎵 MPRIS: Next requested');
+          AppLog.debug('MPRIS Next requested');
           _audioPlayerDataSource.skipToNext();
           return DBusMethodSuccessResponse();
         case 'Previous':
-          print('🎵 MPRIS: Previous requested');
+          AppLog.debug('MPRIS Previous requested');
           _audioPlayerDataSource.skipToPrevious();
           return DBusMethodSuccessResponse();
         case 'Stop':
-          print('🎵 MPRIS: Stop requested');
+          AppLog.debug('MPRIS Stop requested');
           _audioPlayerDataSource.stop();
           return DBusMethodSuccessResponse();
       }
     }
-    print('⚠️  MPRIS: Unknown method: ${methodCall.interface}.${methodCall.name}');
+    AppLog.warn('MPRIS unknown method: ${methodCall.interface}.${methodCall.name}');
     return DBusMethodErrorResponse.unknownMethod();
   }
 
@@ -148,7 +148,7 @@ class MprisHandler extends DBusObject {
   Future<DBusMethodResponse> getProperty(String interface, String name) async {
     // Don't log Position requests - they're polled frequently by media controllers
     if (name != 'Position') {
-      print('🎵 MPRIS: getProperty($interface, $name)');
+        AppLog.debug('MPRIS getProperty($interface, $name)');
     }
     if (interface == 'org.mpris.MediaPlayer2') {
       switch (name) {
@@ -170,11 +170,11 @@ class MprisHandler extends DBusObject {
         case 'PlaybackStatus':
           final status = _currentState?.isPlaying ?? false ? 'Playing' : 
                         _currentState?.currentTrack != null ? 'Paused' : 'Stopped';
-          print('🎵 MPRIS: Returning PlaybackStatus=$status');
+            AppLog.debug('MPRIS returning PlaybackStatus=$status');
           return DBusGetPropertyResponse(DBusString(status));
         case 'Metadata':
           final metadata = _getMetadata();
-          print('🎵 MPRIS: Returning Metadata with ${(metadata.children as Map).length} fields');
+            AppLog.debug('MPRIS returning metadata with ${(metadata.children as Map).length} fields');
           return DBusGetPropertyResponse(metadata);
         case 'Position':
           final position = _currentState?.position.inMicroseconds ?? 0;
@@ -193,13 +193,13 @@ class MprisHandler extends DBusObject {
           return DBusGetPropertyResponse(const DBusBoolean(true));
       }
     }
-    print('⚠️  MPRIS: Unknown property: $interface.$name');
+      AppLog.warn('MPRIS unknown property: $interface.$name');
     return DBusMethodErrorResponse.unknownProperty();
   }
 
   @override
   Future<DBusMethodResponse> getAllProperties(String interface) async {
-    print('🎵 MPRIS: getAllProperties($interface)');
+    AppLog.debug('MPRIS getAllProperties($interface)');
     final properties = <String, DBusValue>{};
 
     if (interface == 'org.mpris.MediaPlayer2') {
@@ -221,7 +221,7 @@ class MprisHandler extends DBusObject {
       properties['CanPause'] = const DBusBoolean(true);
       properties['CanSeek'] = const DBusBoolean(false);
       properties['CanControl'] = const DBusBoolean(true);
-      print('🎵 MPRIS: Returning ${properties.length} properties, metadata has ${(_getMetadata().children as Map).length} fields');
+      AppLog.debug('MPRIS returning ${properties.length} properties');
     }
 
     return DBusGetAllPropertiesResponse(properties);
@@ -252,7 +252,7 @@ class MprisHandler extends DBusObject {
     if (_client == null) return;
 
     try {
-      print('🎵 Updating MPRIS: ${state.currentTrack?.title} - Playing: ${state.isPlaying}');
+        AppLog.debug('Updating MPRIS metadata');
       
       // Emit property changed signal
       emitPropertiesChanged(
@@ -266,7 +266,7 @@ class MprisHandler extends DBusObject {
         },
       );
     } catch (e) {
-      print('⚠️  Failed to update MPRIS metadata: $e');
+        AppLog.warn('Failed to update MPRIS metadata: $e');
     }
   }
 

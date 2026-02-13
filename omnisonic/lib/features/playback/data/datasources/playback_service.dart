@@ -7,6 +7,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
+import '../../../../core/utils/app_log.dart';
 import '../repositories/playback_repository_impl.dart';
 import 'audio_player_data_source.dart';
 import 'audio_service_handler.dart';
@@ -46,7 +47,7 @@ class PlaybackService {
       // audio_service only supports Android, iOS, macOS, and Windows
       // Skip initialization on Linux and Web
       if (!Platform.isLinux) {
-        print('🎵 Initializing AudioService for media notifications...');
+        AppLog.info('Initializing AudioService for media notifications');
         // Initialize audio service for background playback
         await AudioService.init(
           builder: () => _audioServiceHandler,
@@ -63,9 +64,9 @@ class PlaybackService {
           ),
         );
 
-        print('✅ AudioService initialized successfully');
+        AppLog.info('AudioService initialized successfully');
       } else {
-        print('ℹ️  Skipping AudioService on Linux - using MPRIS instead');
+        AppLog.info('Skipping AudioService on Linux - using MPRIS instead');
         // Initialize MPRIS on Linux
         await _mprisHandler.initialize();
       }
@@ -76,11 +77,11 @@ class PlaybackService {
       });
 
       _isInitialized = true;
-      print('✅ Audio service initialized successfully');
+      AppLog.info('Audio service initialized successfully');
     } catch (e) {
       // If audio service initialization fails, continue without it
       // The app can still function with basic playback
-      print('⚠️ Warning: Audio service initialization failed: $e');
+      AppLog.warn('Audio service initialization failed: $e');
       _isInitialized = true;
     }
   }
@@ -157,7 +158,7 @@ class PlaybackService {
       }
     } catch (e) {
       // Gapless preparation failure shouldn't stop playback
-      print('Warning: Failed to prepare next track for gapless playback: $e');
+      AppLog.warn('Failed to prepare next track for gapless playback: $e');
     }
   }
 
@@ -170,7 +171,7 @@ class PlaybackService {
     // 
     // For now, this is a placeholder as the actual caching
     // implementation would depend on the caching strategy
-    print('Starting background cache for: ${track.title}');
+    AppLog.info('Starting background cache for next track');
   }
 
   /// Handles playback state changes for gapless management

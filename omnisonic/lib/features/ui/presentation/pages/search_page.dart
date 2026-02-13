@@ -55,7 +55,7 @@ class _SearchPageState extends State<SearchPage> {
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
+          _buildSearchBar(context),
           Expanded(
             child: BlocBuilder<SearchBloc, SearchState>(
               builder: (context, state) {
@@ -68,9 +68,10 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
@@ -87,11 +88,19 @@ class _SearchPageState extends State<SearchPage> {
                 )
               : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: scheme.outlineVariant),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: scheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: scheme.primary, width: 1.5),
           ),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: scheme.surfaceVariant,
         ),
         textInputAction: TextInputAction.search,
         onSubmitted: (query) {
@@ -128,24 +137,23 @@ class _SearchPageState extends State<SearchPage> {
             subtitle: 'Find tracks, albums, and artists across all servers',
           ),
           const SizedBox(height: 24),
-          _buildQuickSearchSection(),
+          _buildQuickSearchSection(context),
           const SizedBox(height: 24),
-          _buildSearchTipsSection(),
+          _buildSearchTipsSection(context),
         ],
       ),
     );
   }
 
-  Widget _buildQuickSearchSection() {
+  Widget _buildQuickSearchSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Quick Search',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -175,38 +183,43 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSearchTipsSection() {
+  Widget _buildSearchTipsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Search Tips',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 12),
-        _buildTipItem('Search by track name, artist, or album'),
-        _buildTipItem('Use quotes for exact matches: "Dark Side"'),
-        _buildTipItem('Search across all connected servers simultaneously'),
-        _buildTipItem('Results are deduplicated automatically'),
+        _buildTipItem(context, 'Search by track name, artist, or album'),
+        _buildTipItem(context, 'Use quotes for exact matches: "Dark Side"'),
+        _buildTipItem(context, 'Search across all connected servers simultaneously'),
+        _buildTipItem(context, 'Results are deduplicated automatically'),
       ],
     );
   }
 
-  Widget _buildTipItem(String tip) {
+  Widget _buildTipItem(BuildContext context, String tip) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.lightbulb_outline, size: 16, color: Colors.grey[600]),
+          Icon(
+            Icons.lightbulb_outline,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               tip,
-              style: TextStyle(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'theme.dart';
+import '../utils/app_log.dart';
 
 /// Theme manager for handling theme switching and persistence
 class OmnisonicThemeManager extends ChangeNotifier {
@@ -25,7 +26,7 @@ class OmnisonicThemeManager extends ChangeNotifier {
       }
     } catch (e) {
       // If loading fails, keep default system theme
-      debugPrint('Failed to load theme preference: $e');
+      AppLog.warn('Failed to load theme preference: $e');
     }
     
     _isInitialized = true;
@@ -38,7 +39,7 @@ class OmnisonicThemeManager extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_themePreferenceKey, _themeMode.index);
     } catch (e) {
-      debugPrint('Failed to save theme preference: $e');
+      AppLog.warn('Failed to save theme preference: $e');
     }
   }
   

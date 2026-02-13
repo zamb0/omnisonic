@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/app_log.dart';
 import '../entities/music_server.dart';
 import '../entities/server_status.dart';
 import '../errors/exceptions.dart';
@@ -52,7 +53,7 @@ class ServerConnectionService {
         ),
       );
     } catch (e) {
-      print('⚠️ Secure storage not available: $e');
+      AppLog.warn('Secure storage not available: $e');
       return null;
     }
   }
@@ -108,7 +109,7 @@ class ServerConnectionService {
     String serverId,
     String password,
   ) async {
-    print('🔐 Storing password for server: $serverId');
+    AppLog.info('Storing password for server: $serverId');
     
     // Always cache in memory first
     _passwordCache[serverId] = password;
@@ -121,22 +122,20 @@ class ServerConnectionService {
           value: password,
         );
         
-        print('✅ Password stored in secure storage');
+        AppLog.info('Password stored in secure storage');
         return ResultHelper.success(null);
       } catch (e) {
-        print('❌ Secure storage failed: $e');
-        print('❌ Error details: ${e.toString()}');
+        AppLog.warn('Secure storage write failed: $e');
         _secureStorageAvailable = false;
         
         // Don't return failure yet, try database fallback
-        print('🔄 Trying database fallback...');
+        AppLog.info('Falling back to database storage');
       }
     }
     
     // Fallback to encrypted database storage
     try {
       final encryptedPassword = PasswordEncryption.encryptPassword(password);
-      print('🔐 Encrypted password length: ${encryptedPassword.length}');
       
       // Update the server record with encrypted password
       final server = await _database.getServerById(serverId);
@@ -144,28 +143,30 @@ class ServerConnectionService {
         await _database.updateServer(
           server.copyWith(encryptedPassword: encryptedPassword).toCompanion(false),
         );
-        print('✅ Password stored in encrypted database');
+        AppLog.info('Password stored in encrypted database');
         
         // Verify by reading it back immediately
         final verifyServer = await _database.getServerById(serverId);
         if (verifyServer != null && verifyServer.encryptedPassword.isNotEmpty) {
           try {
             final testDecrypt = PasswordEncryption.decryptPassword(verifyServer.encryptedPassword);
-            print('🔍 Verification: stored password matches = ${testDecrypt == password}');
+            if (testDecrypt != password) {
+              AppLog.warn('Password verification failed after database storage');
+            }
           } catch (e) {
-            print('❌ Verification failed: $e');
+            AppLog.warn('Password verification failed: $e');
           }
         }
         
         return ResultHelper.success(null);
       } else {
-        print('❌ Server not found in database: $serverId');
+        AppLog.warn('Server not found in database for password storage: $serverId');
         return ResultHelper.failure(
           DatabaseFailure('Server not found for password storage'),
         );
       }
     } catch (e) {
-      print('❌ Database storage failed: $e');
+      AppLog.error('Database password storage failed: $e');
       return ResultHelper.failure(
         CacheFailure('Failed to store password: ${e.toString()}'),
       );
@@ -174,11 +175,11 @@ class ServerConnectionService {
 
   /// Retrieves stored password for a server
   Future<Result<String>> getServerPassword(String serverId) async {
-    print('🔍 Retrieving password for server: $serverId');
+    AppLog.info('Retrieving password for server: $serverId');
     
     // Check memory cache first
     if (_passwordCache.containsKey(serverId)) {
-      print('✅ Password found in memory cache');
+      AppLog.debug('Password found in memory cache');
       return ResultHelper.success(_passwordCache[serverId]!);
     }
 
@@ -190,47 +191,43 @@ class ServerConnectionService {
         );
 
         if (password != null) {
-          print('✅ Password retrieved from secure storage');
+          AppLog.info('Password retrieved from secure storage');
           // Cache in memory
           _passwordCache[serverId] = password;
           return ResultHelper.success(password);
         } else {
-          print('❌ No password found in secure storage for server: $serverId');
+          AppLog.warn('No password found in secure storage for server: $serverId');
         }
       } catch (e) {
-        print('❌ Failed to retrieve from secure storage: $e');
-        print('❌ Error details: ${e.toString()}');
+        AppLog.warn('Failed to retrieve from secure storage: $e');
         _secureStorageAvailable = false;
       }
     } else if (_secureStorage == null) {
-      print('❌ Secure storage not available');
+      AppLog.warn('Secure storage not available');
     } else {
-      print('❌ Secure storage disabled due to previous errors');
+      AppLog.warn('Secure storage disabled due to previous errors');
     }
 
     // Fallback to encrypted database storage
     try {
-      print('🔄 Trying database fallback...');
+      AppLog.info('Falling back to database password storage');
       final server = await _database.getServerById(serverId);
       
       if (server != null && server.encryptedPassword.isNotEmpty) {
-        print('🔍 Found encrypted password in database, length: ${server.encryptedPassword.length}');
         final decryptedPassword = PasswordEncryption.decryptPassword(server.encryptedPassword);
-        print('✅ Password retrieved from encrypted database');
-        print('🔍 Decrypted password length: ${decryptedPassword.length}');
+        AppLog.info('Password retrieved from encrypted database');
         
         // Cache in memory
         _passwordCache[serverId] = decryptedPassword;
         return ResultHelper.success(decryptedPassword);
       } else {
-        print('❌ No encrypted password found in database for server: $serverId');
+        AppLog.warn('No encrypted password found in database for server: $serverId');
       }
     } catch (e) {
-      print('❌ Failed to retrieve from database: $e');
-      print('❌ Decryption error details: ${e.toString()}');
+      AppLog.error('Failed to retrieve password from database: $e');
     }
 
-    print('❌ No stored password found for server: $serverId');
+    AppLog.warn('No stored password found for server: $serverId');
     return ResultHelper.failure(
       AuthenticationFailure('No stored password found for server $serverId'),
     );

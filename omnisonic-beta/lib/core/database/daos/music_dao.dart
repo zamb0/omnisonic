@@ -1,0 +1,305 @@
+import 'package:drift/drift.dart';
+
+import '../app_database.dart';
+import '../tables.dart';
+import '../../entities/track.dart';
+import '../../entities/album.dart';
+import '../../entities/artist.dart';
+
+part 'music_dao.g.dart';
+
+@DriftAccessor(tables: [TracksTable, AlbumsTable, ArtistsTable])
+class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
+  MusicDao(super.db);
+
+  // Convert between entity and database models
+  Track _trackFromData(TrackData data) {
+    return Track(
+      id: data.id,
+      title: data.title,
+      artist: data.artist,
+      album: data.album,
+      duration: Duration(milliseconds: data.durationMs),
+      serverId: data.serverId,
+      streamUrl: data.streamUrl,
+      quality: data.quality,
+      lastModified: data.lastModified,
+      albumId: data.albumId,
+      artistId: data.artistId,
+      trackNumber: data.trackNumber,
+      discNumber: data.discNumber,
+      year: data.year,
+      genre: data.genre,
+      fileSize: data.fileSize,
+      coverArtUrl: data.coverArtUrl,
+      isCached: data.isCached,
+      cachePath: data.cachePath,
+    );
+  }
+
+  TracksTableCompanion _trackToCompanion(Track track) {
+    return TracksTableCompanion(
+      id: Value(track.id),
+      serverId: Value(track.serverId),
+      title: Value(track.title),
+      artist: Value(track.artist),
+      album: Value(track.album),
+      durationMs: Value(track.duration.inMilliseconds),
+      streamUrl: Value(track.streamUrl),
+      quality: Value(track.quality),
+      lastModified: Value(track.lastModified),
+      albumId: Value.absentIfNull(track.albumId),
+      artistId: Value.absentIfNull(track.artistId),
+      trackNumber: Value.absentIfNull(track.trackNumber),
+      discNumber: Value.absentIfNull(track.discNumber),
+      year: Value.absentIfNull(track.year),
+      genre: Value.absentIfNull(track.genre),
+      fileSize: Value.absentIfNull(track.fileSize),
+      coverArtUrl: Value.absentIfNull(track.coverArtUrl),
+      isCached: Value(track.isCached),
+      cachePath: Value.absentIfNull(track.cachePath),
+    );
+  }
+
+  Album _albumFromData(AlbumData data) {
+    return Album(
+      id: data.id,
+      title: data.title,
+      artist: data.artist,
+      serverId: data.serverId,
+      lastModified: data.lastModified,
+      artistId: data.artistId,
+      year: data.year,
+      genre: data.genre,
+      trackCount: data.trackCount,
+      duration: data.durationMs != null ? Duration(milliseconds: data.durationMs!) : null,
+      coverArtUrl: data.coverArtUrl,
+      description: data.description,
+    );
+  }
+
+  AlbumsTableCompanion _albumToCompanion(Album album) {
+    return AlbumsTableCompanion(
+      id: Value(album.id),
+      serverId: Value(album.serverId),
+      title: Value(album.title),
+      artist: Value(album.artist),
+      lastModified: Value(album.lastModified),
+      artistId: Value.absentIfNull(album.artistId),
+      year: Value.absentIfNull(album.year),
+      genre: Value.absentIfNull(album.genre),
+      trackCount: Value.absentIfNull(album.trackCount),
+      durationMs: Value.absentIfNull(album.duration?.inMilliseconds),
+      coverArtUrl: Value.absentIfNull(album.coverArtUrl),
+      description: Value.absentIfNull(album.description),
+    );
+  }
+
+  Artist _artistFromData(ArtistData data) {
+    return Artist(
+      id: data.id,
+      name: data.name,
+      serverId: data.serverId,
+      lastModified: data.lastModified,
+      albumCount: data.albumCount,
+      biography: data.biography,
+      imageUrl: data.imageUrl,
+      musicBrainzId: data.musicBrainzId,
+      lastFmUrl: data.lastFmUrl,
+    );
+  }
+
+  ArtistsTableCompanion _artistToCompanion(Artist artist) {
+    return ArtistsTableCompanion(
+      id: Value(artist.id),
+      serverId: Value(artist.serverId),
+      name: Value(artist.name),
+      lastModified: Value(artist.lastModified),
+      albumCount: Value.absentIfNull(artist.albumCount),
+      biography: Value.absentIfNull(artist.biography),
+      imageUrl: Value.absentIfNull(artist.imageUrl),
+      musicBrainzId: Value.absentIfNull(artist.musicBrainzId),
+      lastFmUrl: Value.absentIfNull(artist.lastFmUrl),
+    );
+  }
+
+  // Track operations
+  Future<List<Track>> getAllTracks() async {
+    final data = await select(tracksTable).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<List<Track>> getTracksByServerId(String serverId) async {
+    final data = await (select(tracksTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<List<Track>> getTracksByAlbumId(String albumId) async {
+    final data = await (select(tracksTable)..where((tbl) => tbl.albumId.equals(albumId))).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<List<Track>> getTracksByArtistId(String artistId) async {
+    final data = await (select(tracksTable)..where((tbl) => tbl.artistId.equals(artistId))).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<Track?> getTrackById(String id) async {
+    final data = await (select(tracksTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    return data != null ? _trackFromData(data) : null;
+  }
+
+  Future<List<Track>> getCachedTracks() async {
+    final data = await (select(tracksTable)..where((tbl) => tbl.isCached.equals(true))).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<void> insertTrack(Track track) async {
+    await into(tracksTable).insert(_trackToCompanion(track));
+  }
+
+  Future<void> insertTracks(List<Track> tracks) async {
+    await batch((batch) {
+      batch.insertAll(tracksTable, tracks.map(_trackToCompanion));
+    });
+  }
+
+  Future<void> updateTrack(Track track) async {
+    await update(tracksTable).replace(_trackToCompanion(track));
+  }
+
+  Future<void> updateTrackCacheStatus(String trackId, bool isCached, String? cachePath) async {
+    await (update(tracksTable)..where((tbl) => tbl.id.equals(trackId)))
+        .write(TracksTableCompanion(
+          isCached: Value(isCached),
+          cachePath: Value.absentIfNull(cachePath),
+        ));
+  }
+
+  Future<void> deleteTrack(String id) async {
+    await (delete(tracksTable)..where((tbl) => tbl.id.equals(id))).go();
+  }
+
+  Future<void> deleteTracksByServerId(String serverId) async {
+    await (delete(tracksTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+  }
+
+  // Album operations
+  Future<List<Album>> getAllAlbums() async {
+    final data = await select(albumsTable).get();
+    return data.map(_albumFromData).toList();
+  }
+
+  Future<List<Album>> getAlbumsByServerId(String serverId) async {
+    final data = await (select(albumsTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    return data.map(_albumFromData).toList();
+  }
+
+  Future<List<Album>> getAlbumsByArtistId(String artistId) async {
+    final data = await (select(albumsTable)..where((tbl) => tbl.artistId.equals(artistId))).get();
+    return data.map(_albumFromData).toList();
+  }
+
+  Future<Album?> getAlbumById(String id) async {
+    final data = await (select(albumsTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    return data != null ? _albumFromData(data) : null;
+  }
+
+  Future<void> insertAlbum(Album album) async {
+    await into(albumsTable).insert(_albumToCompanion(album));
+  }
+
+  Future<void> insertAlbums(List<Album> albums) async {
+    await batch((batch) {
+      batch.insertAll(albumsTable, albums.map(_albumToCompanion));
+    });
+  }
+
+  Future<void> updateAlbum(Album album) async {
+    await update(albumsTable).replace(_albumToCompanion(album));
+  }
+
+  Future<void> deleteAlbum(String id) async {
+    await (delete(albumsTable)..where((tbl) => tbl.id.equals(id))).go();
+  }
+
+  Future<void> deleteAlbumsByServerId(String serverId) async {
+    await (delete(albumsTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+  }
+
+  // Artist operations
+  Future<List<Artist>> getAllArtists() async {
+    final data = await select(artistsTable).get();
+    return data.map(_artistFromData).toList();
+  }
+
+  Future<List<Artist>> getArtistsByServerId(String serverId) async {
+    final data = await (select(artistsTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    return data.map(_artistFromData).toList();
+  }
+
+  Future<Artist?> getArtistById(String id) async {
+    final data = await (select(artistsTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    return data != null ? _artistFromData(data) : null;
+  }
+
+  Future<void> insertArtist(Artist artist) async {
+    await into(artistsTable).insert(_artistToCompanion(artist));
+  }
+
+  Future<void> insertArtists(List<Artist> artists) async {
+    await batch((batch) {
+      batch.insertAll(artistsTable, artists.map(_artistToCompanion));
+    });
+  }
+
+  Future<void> updateArtist(Artist artist) async {
+    await update(artistsTable).replace(_artistToCompanion(artist));
+  }
+
+  Future<void> deleteArtist(String id) async {
+    await (delete(artistsTable)..where((tbl) => tbl.id.equals(id))).go();
+  }
+
+  Future<void> deleteArtistsByServerId(String serverId) async {
+    await (delete(artistsTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+  }
+
+  // Search operations
+  Future<List<Track>> searchTracks(String query) async {
+    final normalizedQuery = '%${query.toLowerCase()}%';
+    final data = await (select(tracksTable)..where((tbl) => 
+      tbl.title.lower().like(normalizedQuery) |
+      tbl.artist.lower().like(normalizedQuery) |
+      tbl.album.lower().like(normalizedQuery))).get();
+    return data.map(_trackFromData).toList();
+  }
+
+  Future<List<Album>> searchAlbums(String query) async {
+    final normalizedQuery = '%${query.toLowerCase()}%';
+    final data = await (select(albumsTable)..where((tbl) => 
+      tbl.title.lower().like(normalizedQuery) |
+      tbl.artist.lower().like(normalizedQuery))).get();
+    return data.map(_albumFromData).toList();
+  }
+
+  Future<List<Artist>> searchArtists(String query) async {
+    final normalizedQuery = '%${query.toLowerCase()}%';
+    final data = await (select(artistsTable)..where((tbl) => 
+      tbl.name.lower().like(normalizedQuery))).get();
+    return data.map(_artistFromData).toList();
+  }
+
+  // Watch for changes
+  Stream<List<Track>> watchAllTracks() {
+    return select(tracksTable).watch().map((data) => data.map(_trackFromData).toList());
+  }
+
+  Stream<List<Album>> watchAllAlbums() {
+    return select(albumsTable).watch().map((data) => data.map(_albumFromData).toList());
+  }
+
+  Stream<List<Artist>> watchAllArtists() {
+    return select(artistsTable).watch().map((data) => data.map(_artistFromData).toList());
+  }
+}

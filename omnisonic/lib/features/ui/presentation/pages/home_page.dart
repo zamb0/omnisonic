@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
-import '../widgets/widgets.dart';
 import '../../../../core/entities/entities.dart';
 
-/// Home page displaying smart collections and recently played content
+/// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -30,348 +29,318 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-      ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeSection(),
-              const SizedBox(height: 16),
-              _buildRecentlyPlayedSection(),
-              const SizedBox(height: 24),
-              _buildRecentlyAddedSection(),
-              const SizedBox(height: 24),
-              _buildQuickActionsSection(),
-              const SizedBox(height: 32),
-            ],
-          ),
+          slivers: [
+            _buildFeaturedAlbumsSection(),
+            _buildRecentAlbumsSection(),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildFeaturedAlbumsSection() {
     return Consumer<MusicLibraryViewModel>(
       builder: (context, viewModel, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Discover your music collection',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              if (viewModel.isSyncing) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Syncing music collection...',
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (viewModel.hasCollection && !viewModel.isSyncing) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.library_music,
-                        size: 16,
-                        color: Colors.green[700],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${viewModel.trackCount} tracks • ${viewModel.albumCount} albums • ${viewModel.artistCount} artists',
-                        style: TextStyle(
-                          color: Colors.green[700],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+        final albums = viewModel.albums.take(10).toList();
+        if (albums.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return SliverToBoxAdapter(
+          child: SizedBox(
+            height: 330,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              itemCount: albums.length,
+              itemBuilder: (context, index) {
+                final album = albums[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildFeaturedAlbumCard(album),
+                );
+              },
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildRecentlyPlayedSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingSection('Recently Played');
-        }
-
-        final recentTracks = viewModel.recentlyPlayed;
-        if (recentTracks.isEmpty) {
-          return _buildEmptySection(
-            'Recently Played',
-            'Start playing music to see your recent tracks here',
-            Icons.history,
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: 'Recently Played',
-              subtitle: 'Your latest listening activity',
-              onSeeAllPressed: () => _navigateToRecentlyPlayed(),
-            ),
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: recentTracks.length.clamp(0, 10),
-                itemBuilder: (context, index) {
-                  final track = recentTracks[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _buildTrackCard(track),
-                  );
-                },
+  Widget _buildFeaturedAlbumCard(Album album) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 220,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: _HoverAlbumCard(
+          album: album,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    _getColorForAlbum(album).withOpacity(0.15),
+                    scheme.surface,
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentlyAddedSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingSection('Recently Added');
-        }
-
-        final recentTracks = viewModel.recentlyAdded;
-        if (recentTracks.isEmpty) {
-          return _buildEmptySection(
-            'Recently Added',
-            'New tracks will appear here when synced',
-            Icons.new_releases,
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: 'Recently Added',
-              subtitle: 'Latest additions to your library',
-              onSeeAllPressed: () => _navigateToRecentlyAdded(),
-            ),
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: recentTracks.length.clamp(0, 10),
-                itemBuilder: (context, index) {
-                  final track = recentTracks[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _buildTrackCard(track),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildQuickActionsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Quick Actions',
-          subtitle: 'Manage your music',
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionCard(
-                      icon: Icons.sync,
-                      title: 'Sync Library',
-                      subtitle: 'Update your collection',
-                      onTap: _syncLibrary,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Title at top
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                      child: Text(
+                      album.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                        maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionCard(
-                      icon: Icons.settings,
-                      title: 'Manage Servers',
-                      subtitle: 'Configure connections',
-                      onTap: _navigateToServers,
+                  // Album artwork
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: _buildAlbumArtwork(album),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  // Artist and genre/year
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: [
+                        Text(
+                          album.artist,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: scheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _getAlbumMetadata(album),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
-              const SizedBox(height: 12),
-              // DEBUG: Temporary button for testing unique IDs
-              SizedBox(
-                width: double.infinity,
-                child: _buildActionCard(
-                  icon: Icons.bug_report,
-                  title: 'DEBUG: Clear & Resync',
-                  subtitle: 'Test unique IDs (temporary)',
-                  onTap: _debugClearAndResync,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
-    final iconColor = color ?? Theme.of(context).primaryColor;
-    
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(icon, size: 32, color: iconColor),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTrackCard(Track track) {
+  Widget _buildAlbumArtwork(Album album) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        color: scheme.surfaceVariant,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: album.coverArtUrl != null
+            ? Image.network(
+                album.coverArtUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _buildPlaceholderArt(),
+              )
+            : _buildPlaceholderArt(),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderArt() {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: scheme.surfaceVariant,
+      child: Icon(
+        Icons.album,
+        color: scheme.onSurfaceVariant.withOpacity(0.3),
+        size: 48,
+      ),
+    );
+  }
+
+  Color _getColorForAlbum(Album album) {
+    final colors = [
+      const Color(0xFFC4A942), // Gold
+      const Color(0xFFB94A48), // Red
+      const Color(0xFF7A7A7A), // Gray
+      const Color(0xFF8B6F47), // Brown
+      const Color(0xFF5B7C99), // Blue
+      const Color(0xFF7B68A6), // Purple
+      const Color(0xFF6B9B7D), // Green
+    ];
+    return colors[album.title.hashCode.abs() % colors.length];
+  }
+
+  String _getAlbumMetadata(Album album) {
+    final parts = <String>[];
+    if (album.genre != null && album.genre!.isNotEmpty) {
+      parts.add(album.genre!.toUpperCase());
+    }
+    if (album.year != null) {
+      parts.add(album.year.toString());
+    }
+    return parts.join(' • ');
+  }
+
+  Widget _buildRecentAlbumsSection() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        // Get albums from recently played tracks
+        final recentAlbumIds = <String>{};
+        final recentAlbums = <Album>[];
+        
+        for (final track in viewModel.recentlyPlayed) {
+          final albumId = track.albumId;
+          if (albumId != null && !recentAlbumIds.contains(albumId)) {
+            final album = viewModel.albums.where((a) => a.id == albumId).firstOrNull;
+            if (album != null) {
+              recentAlbumIds.add(albumId);
+              recentAlbums.add(album);
+            }
+          }
+        }
+
+        if (recentAlbums.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Most played',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // TODO: View more
+                      },
+                      child: Text(
+                        'View more',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: recentAlbums.take(10).length,
+                  itemBuilder: (context, index) {
+                    final album = recentAlbums[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _buildMostPlayedAlbumCard(album),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMostPlayedAlbumCard(Album album) {
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 160,
-      child: Card(
-        child: InkWell(
-          onTap: () => _onTrackTapped(track),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: _HoverAlbumCard(
+          album: album,
+          compact: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    color: Colors.grey[300],
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      color: scheme.surfaceVariant,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: album.coverArtUrl != null
+                          ? Image.network(
+                              album.coverArtUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _buildPlaceholderArt(),
+                            )
+                          : _buildPlaceholderArt(),
+                    ),
                   ),
-                  child: track.coverArtUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            track.coverArtUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.music_note, color: Colors.grey),
-                          ),
-                        )
-                      : const Icon(Icons.music_note, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  track.title,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                  album.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  track.artist,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  album.artist,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -379,47 +348,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingSection(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(title: title),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return const Padding(
-                padding: EdgeInsets.only(right: 12),
-                child: ShimmerCard(width: 160, height: 180),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptySection(String title, String message, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(title: title),
-        SizedBox(
-          height: 200,
-          child: EmptyState(
-            icon: icon,
-            title: 'No $title',
-            subtitle: message,
-          ),
-        ),
-      ],
     );
   }
 
@@ -427,78 +355,143 @@ class _HomePageState extends State<HomePage> {
     final viewModel = context.read<MusicLibraryViewModel>();
     await viewModel.refreshSmartCollections();
   }
+}
+/// Hover card widget with play button overlay
+class _HoverAlbumCard extends StatefulWidget {
+  const _HoverAlbumCard({
+    required this.album,
+    required this.child,
+    this.compact = false,
+  });
 
-  void _onTrackTapped(Track track) {
-    context.read<PlaybackViewModel>().playTrack(track);
-  }
+  final Album album;
+  final Widget child;
+  final bool compact;
 
-  void _onAlbumTapped(Album album) {
-    // Navigate to album detail page
-    context.go('/album-detail', extra: album);
-  }
+  @override
+  State<_HoverAlbumCard> createState() => _HoverAlbumCardState();
+}
 
-  void _showTrackOptions(Track track) {
-    // Show track options bottom sheet
-    // TODO: Implement track options
-  }
+class _HoverAlbumCardState extends State<_HoverAlbumCard> {
+  bool _isHovered = false;
 
-  void _syncLibrary() {
-    context.read<MusicLibraryViewModel>().syncCollection();
-  }
-
-  void _navigateToServers() {
-    // Navigate to server management
-    // TODO: Implement server navigation
-  }
-
-  void _navigateToRecentlyPlayed() {
-    // Navigate to recently played list
-    // TODO: Implement navigation
-  }
-
-  void _navigateToRecentlyAdded() {
-    // Navigate to recently added list
-    // TODO: Implement navigation
-  }
-
-
-  void _debugClearAndResync() async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('DEBUG: Clear & Resync'),
-        content: const Text(
-          'This will clear ALL music data from the database and resync from servers. '
-          'This is for testing unique IDs. Continue?'
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () => context.push('/album-detail', extra: widget.album),
+        child: Stack(
+          children: [
+            widget.child,
+            if (_isHovered)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(widget.compact ? 6 : 8),
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _HoverButton(
+                          icon: Icons.shuffle,
+                          onPressed: () => _shuffleAlbum(context),
+                        ),
+                        const SizedBox(width: 8),
+                        _HoverButton(
+                          icon: Icons.play_arrow,
+                          onPressed: () => _playAlbum(context),
+                          isPrimary: true,
+                        ),
+                        const SizedBox(width: 8),
+                        _HoverButton(
+                          icon: Icons.more_vert,
+                          onPressed: () => _showOptions(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: const Text('Clear & Resync'),
-          ),
-        ],
       ),
     );
+  }
 
-    if (confirmed == true) {
-      final viewModel = context.read<MusicLibraryViewModel>();
-      
-      // Show loading indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🧹 Clearing database and resyncing...'),
-          duration: Duration(seconds: 2),
+  void _playAlbum(BuildContext context) {
+    final viewModel = context.read<MusicLibraryViewModel>();
+    final playback = context.read<PlaybackViewModel>();
+    viewModel.getAlbumTracks(widget.album.id).then((tracks) {
+      if (tracks.isNotEmpty) {
+        playback.playTrack(tracks.first, queue: tracks, startIndex: 0);
+      }
+    });
+  }
+
+  void _shuffleAlbum(BuildContext context) {
+    final viewModel = context.read<MusicLibraryViewModel>();
+    final playback = context.read<PlaybackViewModel>();
+    viewModel.getAlbumTracks(widget.album.id).then((tracks) {
+      if (tracks.isNotEmpty) {
+        final shuffled = List<Track>.from(tracks)..shuffle();
+        playback.playTrack(shuffled.first, queue: shuffled, startIndex: 0);
+      }
+    });
+  }
+
+  void _showOptions(BuildContext context) {
+    // TODO: Show album options
+  }
+}
+
+/// Hover button widget
+class _HoverButton extends StatefulWidget {
+  const _HoverButton({
+    required this.icon,
+    required this.onPressed,
+    this.isPrimary = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+
+  @override
+  State<_HoverButton> createState() => _HoverButtonState();
+}
+
+class _HoverButtonState extends State<_HoverButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onPressed,
+        borderRadius: BorderRadius.circular(widget.isPrimary ? 24 : 20),
+        child: Container(
+          width: widget.isPrimary ? 48 : 40,
+          height: widget.isPrimary ? 48 : 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.isPrimary
+                ? scheme.primary.withOpacity(_isHovered ? 1.0 : 0.9)
+                : scheme.surfaceVariant.withOpacity(_isHovered ? 0.8 : 0.6),
+          ),
+          child: Icon(
+            widget.icon,
+            color: widget.isPrimary ? scheme.onPrimary : scheme.onSurfaceVariant,
+            size: widget.isPrimary ? 28 : 20,
+          ),
         ),
-      );
-      
-      // Call debug method (we'll need to add this to the view model)
-      await viewModel.debugClearAndResync();
-    }
+      ),
+    );
   }
 }

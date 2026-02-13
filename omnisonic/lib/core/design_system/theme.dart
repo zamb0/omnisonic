@@ -15,7 +15,12 @@ class OmnisonicTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: OmnisonicColors.lightColorScheme,
-      textTheme: OmnisonicTypography.textTheme,
+      textTheme: OmnisonicTypography.textTheme.apply(
+        bodyColor: OmnisonicColors.lightColorScheme.onSurface,
+        displayColor: OmnisonicColors.lightColorScheme.onSurface,
+      ),
+      scaffoldBackgroundColor: OmnisonicColors.lightColorScheme.background,
+      canvasColor: OmnisonicColors.lightColorScheme.background,
       
       // App Bar Theme
       appBarTheme: AppBarTheme(
@@ -26,22 +31,21 @@ class OmnisonicTheme {
         titleTextStyle: OmnisonicTypography.titleLarge.copyWith(
           color: OmnisonicColors.lightColorScheme.onSurface,
         ),
+        surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(OmnisonicRadius.md),
-          ),
+          borderRadius: BorderRadius.zero,
         ),
       ),
       
       // Card Theme
       cardTheme: const CardThemeData(
-        elevation: OmnisonicElevation.card,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.card)),
         ),
-        color: OmnisonicColors.surfaceLight,
-        shadowColor: OmnisonicColors.neutralGray300,
+        color: OmnisonicColors.cardLight,
+        shadowColor: Colors.transparent,
         margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
       ),
       
@@ -111,12 +115,14 @@ class OmnisonicTheme {
         ),
         titleTextStyle: OmnisonicTypography.titleMedium,
         subtitleTextStyle: OmnisonicTypography.bodyMedium,
+        textColor: OmnisonicColors.lightColorScheme.onSurface,
+        iconColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
       ),
       
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: OmnisonicColors.lightColorScheme.surface,
+        fillColor: OmnisonicColors.lightColorScheme.surfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
           borderSide: BorderSide(
@@ -148,13 +154,18 @@ class OmnisonicTheme {
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: OmnisonicColors.lightColorScheme.surface,
-        selectedColor: OmnisonicColors.lightColorScheme.primary,
+        selectedColor: OmnisonicColors.lightColorScheme.secondaryContainer,
         disabledColor: OmnisonicColors.lightColorScheme.outline,
         padding: OmnisonicInsets.horizontalMd,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         ),
-        labelStyle: OmnisonicTypography.labelMedium,
+        labelStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: OmnisonicColors.lightColorScheme.onSurface,
+        ),
+        secondaryLabelStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: OmnisonicColors.lightColorScheme.onSecondaryContainer,
+        ),
       ),
       
       // Dialog Theme
@@ -178,6 +189,41 @@ class OmnisonicTheme {
         ),
         backgroundColor: OmnisonicColors.lightColorScheme.surface,
       ),
+      dividerTheme: DividerThemeData(
+        color: OmnisonicColors.lightColorScheme.outlineVariant,
+        thickness: 1,
+        space: OmnisonicSpacing.md,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: OmnisonicColors.lightColorScheme.inverseSurface,
+        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: OmnisonicColors.lightColorScheme.onInverseSurface,
+        ),
+        actionTextColor: OmnisonicColors.lightColorScheme.inversePrimary,
+        behavior: SnackBarBehavior.floating,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: OmnisonicColors.lightColorScheme.inverseSurface,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+        ),
+        textStyle: OmnisonicTypography.bodySmall.copyWith(
+          color: OmnisonicColors.lightColorScheme.onInverseSurface,
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: OmnisonicColors.lightColorScheme.primary,
+        selectionColor: OmnisonicColors.lightColorScheme.primary.withValues(alpha: 0.2),
+        selectionHandleColor: OmnisonicColors.lightColorScheme.primary,
+      ),
+      iconTheme: IconThemeData(
+        color: OmnisonicColors.lightColorScheme.onSurface,
+        size: OmnisonicIconSizes.medium,
+      ),
+      primaryIconTheme: IconThemeData(
+        color: OmnisonicColors.lightColorScheme.onPrimary,
+        size: OmnisonicIconSizes.medium,
+      ),
       
       // Slider Theme
       sliderTheme: SliderThemeData(
@@ -199,21 +245,36 @@ class OmnisonicTheme {
       
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surface,
+        backgroundColor: OmnisonicColors.lightColorScheme.surfaceVariant,
         selectedItemColor: OmnisonicColors.lightColorScheme.primary,
-        unselectedItemColor: OmnisonicColors.lightColorScheme.onSurface.withValues(alpha: 0.6),
+        unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.lightColorScheme.primary,
           size: OmnisonicIconSizes.navigation,
         ),
         unselectedIconTheme: IconThemeData(
-          color: OmnisonicColors.lightColorScheme.onSurface.withValues(alpha: 0.6),
+          color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
           size: OmnisonicIconSizes.navigation,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
         type: BottomNavigationBarType.fixed,
         elevation: OmnisonicElevation.appBar,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: OmnisonicColors.lightColorScheme.surfaceVariant,
+        indicatorColor: OmnisonicColors.lightColorScheme.primaryContainer,
+        labelTextStyle: WidgetStateProperty.all(
+          OmnisonicTypography.labelSmall.copyWith(
+            color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.all(
+          IconThemeData(
+            size: OmnisonicIconSizes.navigation,
+            color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       
       // Extensions
@@ -233,7 +294,12 @@ class OmnisonicTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: OmnisonicColors.darkColorScheme,
-      textTheme: OmnisonicTypography.textTheme,
+      textTheme: OmnisonicTypography.textTheme.apply(
+        bodyColor: OmnisonicColors.darkColorScheme.onSurface,
+        displayColor: OmnisonicColors.darkColorScheme.onSurface,
+      ),
+      scaffoldBackgroundColor: OmnisonicColors.darkColorScheme.background,
+      canvasColor: OmnisonicColors.darkColorScheme.background,
       
       // App Bar Theme
       appBarTheme: AppBarTheme(
@@ -244,22 +310,21 @@ class OmnisonicTheme {
         titleTextStyle: OmnisonicTypography.titleLarge.copyWith(
           color: OmnisonicColors.darkColorScheme.onSurface,
         ),
+        surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.light,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(OmnisonicRadius.md),
-          ),
+          borderRadius: BorderRadius.zero,
         ),
       ),
       
       // Card Theme
       cardTheme: const CardThemeData(
-        elevation: OmnisonicElevation.card,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.card)),
         ),
-        color: OmnisonicColors.surfaceDark,
-        shadowColor: OmnisonicColors.neutralGray800,
+        color: OmnisonicColors.cardDark,
+        shadowColor: Colors.transparent,
         margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
       ),
       
@@ -329,12 +394,14 @@ class OmnisonicTheme {
         ),
         titleTextStyle: OmnisonicTypography.titleMedium,
         subtitleTextStyle: OmnisonicTypography.bodyMedium,
+        textColor: OmnisonicColors.darkColorScheme.onSurface,
+        iconColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
       ),
       
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: OmnisonicColors.darkColorScheme.surface,
+        fillColor: OmnisonicColors.darkColorScheme.surfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
           borderSide: BorderSide(
@@ -366,13 +433,18 @@ class OmnisonicTheme {
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: OmnisonicColors.darkColorScheme.surface,
-        selectedColor: OmnisonicColors.darkColorScheme.primary,
+        selectedColor: OmnisonicColors.darkColorScheme.secondaryContainer,
         disabledColor: OmnisonicColors.darkColorScheme.outline,
         padding: OmnisonicInsets.horizontalMd,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         ),
-        labelStyle: OmnisonicTypography.labelMedium,
+        labelStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: OmnisonicColors.darkColorScheme.onSurface,
+        ),
+        secondaryLabelStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: OmnisonicColors.darkColorScheme.onSecondaryContainer,
+        ),
       ),
       
       // Dialog Theme
@@ -396,6 +468,41 @@ class OmnisonicTheme {
         ),
         backgroundColor: OmnisonicColors.darkColorScheme.surface,
       ),
+      dividerTheme: DividerThemeData(
+        color: OmnisonicColors.darkColorScheme.outlineVariant,
+        thickness: 1,
+        space: OmnisonicSpacing.md,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: OmnisonicColors.darkColorScheme.inverseSurface,
+        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: OmnisonicColors.darkColorScheme.onInverseSurface,
+        ),
+        actionTextColor: OmnisonicColors.darkColorScheme.inversePrimary,
+        behavior: SnackBarBehavior.floating,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: OmnisonicColors.darkColorScheme.inverseSurface,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+        ),
+        textStyle: OmnisonicTypography.bodySmall.copyWith(
+          color: OmnisonicColors.darkColorScheme.onInverseSurface,
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: OmnisonicColors.darkColorScheme.primary,
+        selectionColor: OmnisonicColors.darkColorScheme.primary.withValues(alpha: 0.25),
+        selectionHandleColor: OmnisonicColors.darkColorScheme.primary,
+      ),
+      iconTheme: IconThemeData(
+        color: OmnisonicColors.darkColorScheme.onSurface,
+        size: OmnisonicIconSizes.medium,
+      ),
+      primaryIconTheme: IconThemeData(
+        color: OmnisonicColors.darkColorScheme.onPrimary,
+        size: OmnisonicIconSizes.medium,
+      ),
       
       // Slider Theme
       sliderTheme: SliderThemeData(
@@ -417,21 +524,36 @@ class OmnisonicTheme {
       
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surface,
+        backgroundColor: OmnisonicColors.darkColorScheme.surfaceVariant,
         selectedItemColor: OmnisonicColors.darkColorScheme.primary,
-        unselectedItemColor: OmnisonicColors.darkColorScheme.onSurface.withValues(alpha: 0.6),
+        unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.darkColorScheme.primary,
           size: OmnisonicIconSizes.navigation,
         ),
         unselectedIconTheme: IconThemeData(
-          color: OmnisonicColors.darkColorScheme.onSurface.withValues(alpha: 0.6),
+          color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
           size: OmnisonicIconSizes.navigation,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
         type: BottomNavigationBarType.fixed,
         elevation: OmnisonicElevation.appBar,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: OmnisonicColors.darkColorScheme.surfaceVariant,
+        indicatorColor: OmnisonicColors.darkColorScheme.primaryContainer,
+        labelTextStyle: WidgetStateProperty.all(
+          OmnisonicTypography.labelSmall.copyWith(
+            color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.all(
+          IconThemeData(
+            size: OmnisonicIconSizes.navigation,
+            color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       
       // Extensions

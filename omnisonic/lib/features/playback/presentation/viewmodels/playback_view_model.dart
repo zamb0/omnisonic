@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// ViewModel for managing audio playback state
 /// 
@@ -93,7 +94,7 @@ class PlaybackViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        debugPrint('Position stream error: $error');
+        AppLog.warn('Position stream error: $error');
       },
     );
   }
@@ -105,7 +106,7 @@ class PlaybackViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        debugPrint('Queue stream error: $error');
+        AppLog.warn('Queue stream error: $error');
       },
     );
   }
@@ -114,14 +115,14 @@ class PlaybackViewModel extends ChangeNotifier {
     try {
       final stateResult = await _playbackRepository.getCurrentState();
       stateResult.fold(
-        (failure) => debugPrint('Failed to load current state: ${failure.message}'),
+        (failure) => AppLog.warn('Failed to load current state: ${failure.message}'),
         (state) {
           _playbackState = state;
           notifyListeners();
         },
       );
     } catch (e) {
-      debugPrint('Error loading current state: $e');
+      AppLog.warn('Error loading current state: $e');
     }
   }
 
@@ -151,7 +152,7 @@ class PlaybackViewModel extends ChangeNotifier {
       final result = await _playTrackUseCase(params);
       result.fold(
         (failure) => _setError('Failed to play track: ${failure.message}'),
-        (_) => debugPrint('Track playback started successfully'),
+        (_) => AppLog.info('Track playback started successfully'),
       );
     } catch (e) {
       _setError('Unexpected error playing track: $e');
@@ -166,7 +167,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.pause();
     result.fold(
       (failure) => _setError('Failed to pause: ${failure.message}'),
-      (_) => debugPrint('Playback paused'),
+      (_) => AppLog.info('Playback paused'),
     );
   }
 
@@ -175,7 +176,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.resume();
     result.fold(
       (failure) => _setError('Failed to resume: ${failure.message}'),
-      (_) => debugPrint('Playback resumed'),
+      (_) => AppLog.info('Playback resumed'),
     );
   }
 
@@ -193,7 +194,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.stop();
     result.fold(
       (failure) => _setError('Failed to stop: ${failure.message}'),
-      (_) => debugPrint('Playback stopped'),
+      (_) => AppLog.info('Playback stopped'),
     );
   }
 
@@ -202,7 +203,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.seek(position);
     result.fold(
       (failure) => _setError('Failed to seek: ${failure.message}'),
-      (_) => debugPrint('Seeked to ${position.inSeconds}s'),
+      (_) => AppLog.debug('Seeked to ${position.inSeconds}s'),
     );
   }
 
@@ -221,7 +222,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.skipToNext();
     result.fold(
       (failure) => _setError('Failed to skip to next: ${failure.message}'),
-      (_) => debugPrint('Skipped to next track'),
+      (_) => AppLog.info('Skipped to next track'),
     );
   }
 
@@ -230,7 +231,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.skipToPrevious();
     result.fold(
       (failure) => _setError('Failed to skip to previous: ${failure.message}'),
-      (_) => debugPrint('Skipped to previous track'),
+      (_) => AppLog.info('Skipped to previous track'),
     );
   }
 
@@ -239,7 +240,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.setQueue(tracks, startIndex: startIndex);
     result.fold(
       (failure) => _setError('Failed to set queue: ${failure.message}'),
-      (_) => debugPrint('Queue set with ${tracks.length} tracks'),
+      (_) => AppLog.info('Queue set with ${tracks.length} tracks'),
     );
   }
 
@@ -248,7 +249,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.addToQueue(track);
     result.fold(
       (failure) => _setError('Failed to add to queue: ${failure.message}'),
-      (_) => debugPrint('Track added to queue'),
+      (_) => AppLog.info('Track added to queue'),
     );
   }
 
@@ -257,7 +258,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.insertInQueue(track, index);
     result.fold(
       (failure) => _setError('Failed to insert in queue: ${failure.message}'),
-      (_) => debugPrint('Track inserted in queue at index $index'),
+      (_) => AppLog.debug('Track inserted in queue at index $index'),
     );
   }
 
@@ -266,7 +267,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.removeFromQueue(index);
     result.fold(
       (failure) => _setError('Failed to remove from queue: ${failure.message}'),
-      (_) => debugPrint('Track removed from queue at index $index'),
+      (_) => AppLog.debug('Track removed from queue at index $index'),
     );
   }
 
@@ -275,7 +276,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.clearQueue();
     result.fold(
       (failure) => _setError('Failed to clear queue: ${failure.message}'),
-      (_) => debugPrint('Queue cleared'),
+      (_) => AppLog.info('Queue cleared'),
     );
   }
 
@@ -284,7 +285,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.shuffleQueue();
     result.fold(
       (failure) => _setError('Failed to shuffle queue: ${failure.message}'),
-      (_) => debugPrint('Queue shuffled'),
+      (_) => AppLog.info('Queue shuffled'),
     );
   }
 
@@ -293,7 +294,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.setRepeatMode(mode);
     result.fold(
       (failure) => _setError('Failed to set repeat mode: ${failure.message}'),
-      (_) => debugPrint('Repeat mode set to $mode'),
+      (_) => AppLog.debug('Repeat mode set to $mode'),
     );
   }
 
@@ -319,7 +320,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.setShuffleMode(enabled);
     result.fold(
       (failure) => _setError('Failed to set shuffle mode: ${failure.message}'),
-      (_) => debugPrint('Shuffle mode set to $enabled'),
+      (_) => AppLog.debug('Shuffle mode set to $enabled'),
     );
   }
 
@@ -334,7 +335,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final result = await _playbackRepository.setVolume(clampedVolume);
     result.fold(
       (failure) => _setError('Failed to set volume: ${failure.message}'),
-      (_) => debugPrint('Volume set to ${(clampedVolume * 100).round()}%'),
+      (_) => AppLog.debug('Volume set to ${(clampedVolume * 100).round()}%'),
     );
   }
 

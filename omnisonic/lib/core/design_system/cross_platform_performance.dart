@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'platform_optimizations.dart';
+import '../utils/app_log.dart';
 
 /// Cross-platform animation performance monitor
 /// Implements Requirements: 9.1, 9.2, 9.3, 9.4, 9.5
@@ -34,7 +35,7 @@ class CrossPlatformPerformanceMonitor {
     });
     
     if (kDebugMode) {
-      debugPrint('Performance monitoring started for ${PlatformOptimizations().currentPlatform.name}');
+      AppLog.debug('Performance monitoring started for ${PlatformOptimizations().currentPlatform.name}');
     }
   }
   
@@ -49,7 +50,7 @@ class CrossPlatformPerformanceMonitor {
     SchedulerBinding.instance.removeTimingsCallback(_onFrameTiming);
     
     if (kDebugMode) {
-      debugPrint('Performance monitoring stopped');
+      AppLog.debug('Performance monitoring stopped');
     }
   }
   
@@ -121,13 +122,13 @@ class CrossPlatformPerformanceMonitor {
     // Check for performance issues
     if (report.averageFrameTime > 16.67) {
       if (kDebugMode) {
-        debugPrint('Performance Warning: Average frame time ${report.averageFrameTime.toStringAsFixed(2)}ms exceeds 60fps target');
+        AppLog.debug('Performance warning: Average frame time ${report.averageFrameTime.toStringAsFixed(2)}ms exceeds 60fps target');
       }
     }
     
     if (report.jankyFramePercentage > 10) {
       if (kDebugMode) {
-        debugPrint('Performance Warning: ${report.jankyFramePercentage.toStringAsFixed(1)}% of frames are janky');
+        AppLog.debug('Performance warning: ${report.jankyFramePercentage.toStringAsFixed(1)}% of frames are janky');
       }
     }
   }

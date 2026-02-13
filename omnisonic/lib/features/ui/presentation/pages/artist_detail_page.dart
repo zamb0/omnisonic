@@ -87,9 +87,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        // Enhanced app bar with artist image background
         SliverAppBar(
-          expandedHeight: 280,
           pinned: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -101,277 +99,29 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
               }
             },
           ),
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                widget.artist.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(0, 1),
-                      blurRadius: 3,
-                      color: Colors.black54,
-                    ),
-                  ],
-                ),
-              ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Background artist image with blur
-                  if (widget.artist.imageUrl != null)
-                    CachedNetworkImage(
-                      imageUrl: widget.artist.imageUrl!,
-                      cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
-                      fit: BoxFit.cover,
-                      maxWidthDiskCache: 800,
-                      maxHeightDiskCache: 800,
-                      memCacheWidth: 800,
-                      memCacheHeight: 800,
-                      placeholder: (context, url) => Container(color: Colors.grey[300]),
-                      errorWidget: (context, url, error) =>
-                          Container(color: Colors.grey[300]),
-                    ),
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Artist image in center
-                  Center(
-                    child: Hero(
-                      tag: 'artist-${widget.artist.id}',
-                      child: Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: widget.artist.imageUrl != null
-                              ? CachedNetworkImage(
-                                  imageUrl: widget.artist.imageUrl!,
-                                  cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
-                                  fit: BoxFit.cover,
-                                  maxWidthDiskCache: 600,
-                                  maxHeightDiskCache: 600,
-                                  memCacheWidth: 600,
-                                  memCacheHeight: 600,
-                                  placeholder: (context, url) => Container(
-                                    color: Theme.of(context).colorScheme.primaryContainer,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    color: Theme.of(context).colorScheme.primaryContainer,
-                                    child: Icon(
-                                      Icons.person,
-                                      size: 80,
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 80,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              // Play all button
-              if (_albums.isNotEmpty)
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.play_arrow,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  onPressed: () => _playArtist(),
-                ),
-              // Shuffle button
-              if (_albums.isNotEmpty)
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.shuffle,
-                      color: Theme.of(context).colorScheme.onSecondary,
-                    ),
-                  ),
-                  onPressed: () => _shuffleArtist(),
-                ),
-            ],
-        ),
-          
-        // Artist metadata section
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Artist name and metadata
-                  Text(
-                    widget.artist.name,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Artist details row
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 8,
-                    children: [
-                      _buildMetadataChip(
-                        context,
-                        Icons.album,
-                        '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
-                      ),
-                      _buildMetadataChip(
-                        context,
-                        Icons.dns,
-                        _getServerName(context),
-                      ),
-                      if (widget.artist.musicBrainzId != null)
-                        _buildMetadataChip(
-                          context,
-                          Icons.fingerprint,
-                          'MusicBrainz',
-                        ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Artist biography section (if available)
-                  if (widget.artist.biography != null && widget.artist.biography!.isNotEmpty) ...[
-                    Text(
-                      'About',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        widget.artist.biography!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ] else if (widget.artist.musicBrainzId != null) ...[
-                    Text(
-                      'About',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Artist information will be available in a future update.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'MusicBrainz ID: ${widget.artist.musicBrainzId}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Action buttons
-                  if (_albums.isNotEmpty)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _playArtist,
-                            icon: const Icon(Icons.play_arrow),
-                            label: const Text('Play All'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _shuffleArtist,
-                            icon: const Icon(Icons.shuffle),
-                            label: const Text('Shuffle'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
+          title: Text(
+            widget.artist.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+          actions: [
+            if (_albums.isNotEmpty)
+              IconButton(
+                tooltip: 'Play All',
+                icon: const Icon(Icons.play_arrow),
+                onPressed: _playArtist,
+              ),
+            if (_albums.isNotEmpty)
+              IconButton(
+                tooltip: 'Shuffle',
+                icon: const Icon(Icons.shuffle),
+                onPressed: _shuffleArtist,
+              ),
+          ],
+        ),
+        SliverToBoxAdapter(
+          child: _buildArtistHeader(context),
+        ),
           
           // Albums section header
           SliverToBoxAdapter(
@@ -479,33 +229,253 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
     return SliverPadding(
       padding: const EdgeInsets.all(16),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 0.8,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final album = _albums[index];
-            return AlbumCard(
-              album: album,
-              onTap: () => _onAlbumTapped(album),
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final rawCount = (constraints.crossAxisExtent / 180).floor();
+          final crossAxisCount = rawCount < 2 ? 2 : (rawCount > 6 ? 6 : rawCount);
+          return SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.78,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final album = _albums[index];
+                return AlbumCard(
+                  album: album,
+                  onTap: () => _onAlbumTapped(album),
+                );
+              },
+              childCount: _albums.length,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildArtistHeader(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 720;
+          final imageSize = isNarrow ? 150.0 : 190.0;
+          final content = _buildArtistHeaderContent(context, scheme);
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildArtistArtwork(context, scheme, imageSize),
+                const SizedBox(height: 16),
+                content,
+              ],
             );
-          },
-          childCount: _albums.length,
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildArtistArtwork(context, scheme, imageSize),
+              const SizedBox(width: 24),
+              Expanded(child: content),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildArtistHeaderContent(BuildContext context, ColorScheme scheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.artist.name,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: [
+            _buildMetadataChip(
+              context,
+              Icons.album,
+              '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
+            ),
+            _buildMetadataChip(
+              context,
+              Icons.dns,
+              _getServerName(context),
+            ),
+            if (widget.artist.musicBrainzId != null)
+              _buildMetadataChip(
+                context,
+                Icons.fingerprint,
+                'MusicBrainz',
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (widget.artist.biography != null && widget.artist.biography!.isNotEmpty)
+          _buildAboutCard(
+            context,
+            scheme,
+            widget.artist.biography!,
+            widget.artist.musicBrainzId,
+          )
+        else if (widget.artist.musicBrainzId != null)
+          _buildAboutCard(
+            context,
+            scheme,
+            'Artist information will be available in a future update.',
+            widget.artist.musicBrainzId,
+          ),
+        if (_albums.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: _playArtist,
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Play All'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: _shuffleArtist,
+                icon: const Icon(Icons.shuffle),
+                label: const Text('Shuffle'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAboutCard(
+    BuildContext context,
+    ColorScheme scheme,
+    String text,
+    String? musicBrainzId,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'About',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+              if (musicBrainzId != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'MusicBrainz ID: $musicBrainzId',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontFamily: 'monospace',
+                      ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArtistArtwork(
+    BuildContext context,
+    ColorScheme scheme,
+    double size,
+  ) {
+    return Hero(
+      tag: 'artist-${widget.artist.id}',
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: scheme.surfaceVariant,
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: ClipOval(
+          child: widget.artist.imageUrl != null
+              ? CachedNetworkImage(
+                  imageUrl: widget.artist.imageUrl!,
+                  cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
+                  fit: BoxFit.cover,
+                  maxWidthDiskCache: 600,
+                  maxHeightDiskCache: 600,
+                  memCacheWidth: 600,
+                  memCacheHeight: 600,
+                  placeholder: (context, url) => Container(
+                    color: scheme.surfaceVariant,
+                    child: Icon(
+                      Icons.person,
+                      size: size * 0.45,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: scheme.surfaceVariant,
+                    child: Icon(
+                      Icons.person,
+                      size: size * 0.45,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              : Container(
+                  color: scheme.surfaceVariant,
+                  child: Icon(
+                    Icons.person,
+                    size: size * 0.45,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
         ),
       ),
     );
   }
 
   Widget _buildMetadataChip(BuildContext context, IconData icon, String label) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -513,15 +483,15 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           Icon(
             icon,
             size: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: scheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),

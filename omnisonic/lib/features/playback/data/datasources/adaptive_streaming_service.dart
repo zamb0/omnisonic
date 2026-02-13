@@ -7,6 +7,7 @@ import 'package:rxdart/rxdart.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// Service that manages adaptive streaming based on network conditions
 class AdaptiveStreamingService {
@@ -56,7 +57,7 @@ class AdaptiveStreamingService {
     if (results.isEmpty || results.contains(ConnectivityResult.none)) {
       _estimatedBandwidth = 0.0;
       _updateNetworkCondition(NetworkCondition.offline);
-      print('🌐 Connection lost - offline mode');
+      AppLog.info('Connection lost - offline mode');
       return;
     }
 
@@ -64,16 +65,16 @@ class AdaptiveStreamingService {
     // Only downgrade if we encounter actual buffering issues
     if (results.contains(ConnectivityResult.ethernet)) {
       _estimatedBandwidth = 1000.0;
-      print('🌐 Connected via Ethernet');
+      AppLog.info('Connected via Ethernet');
     } else if (results.contains(ConnectivityResult.wifi)) {
       _estimatedBandwidth = 100.0;
-      print('🌐 Connected via WiFi');
+      AppLog.info('Connected via WiFi');
     } else if (results.contains(ConnectivityResult.mobile)) {
       _estimatedBandwidth = 10.0;
-      print('🌐 Connected via Mobile');
+      AppLog.info('Connected via Mobile');
     } else {
       _estimatedBandwidth = 5.0;
-      print('🌐 Connected via unknown type');
+      AppLog.info('Connected via unknown type');
     }
     
     // Always stay at excellent condition - let buffering drive quality adjustments
@@ -134,7 +135,7 @@ class AdaptiveStreamingService {
   /// Reports buffering status from the audio player
   void reportBufferingStatus(bool isBuffering) {
     if (isBuffering && !_isBuffering) {
-      print('⚠️  Buffering detected - may need to reduce quality');
+      AppLog.warn('Buffering detected - may need to reduce quality');
     }
     _isBuffering = isBuffering;
   }
@@ -146,7 +147,7 @@ class AdaptiveStreamingService {
     
     if (currentIndex > 0) {
       final newQuality = qualities[currentIndex - 1];
-      print('⬇️  Quality downgrade: ${_currentRecommendedQuality.name} → ${newQuality.name} (due to buffering)');
+      AppLog.info('Quality downgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (buffering)');
       _currentRecommendedQuality = newQuality;
       _recommendedQualityController.add(newQuality);
     }
@@ -159,7 +160,7 @@ class AdaptiveStreamingService {
     
     if (currentIndex < qualities.length - 1) {
       final newQuality = qualities[currentIndex + 1];
-      print('⬆️  Quality upgrade: ${_currentRecommendedQuality.name} → ${newQuality.name} (smooth streaming)');
+      AppLog.info('Quality upgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (smooth streaming)');
       _currentRecommendedQuality = newQuality;
       _recommendedQualityController.add(newQuality);
     }

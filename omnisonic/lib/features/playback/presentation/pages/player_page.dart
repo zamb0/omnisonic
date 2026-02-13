@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
@@ -74,12 +73,12 @@ class _PlayerPageState extends State<PlayerPage>
               // Bottom section with tabs
               Container(
                 decoration: BoxDecoration(
-                  color: OmnisonicColors.surfaceDark,
+                  color: Theme.of(context).colorScheme.surfaceVariant,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, -2),
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
                     ),
                   ],
                 ),
@@ -96,16 +95,17 @@ class _PlayerPageState extends State<PlayerPage>
                         isPlaying: playbackViewModel.isPlaying,
                         type: AudioVisualizerType.equalizer,
                         height: 60,
-                        color: OmnisonicColors.primaryPurple,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     
                     // Tab bar
                     TabBar(
                       controller: _tabController,
-                      indicatorColor: OmnisonicColors.primaryPurple,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white.withOpacity(0.6),
+                      indicatorColor: Theme.of(context).colorScheme.primary,
+                      labelColor: Theme.of(context).colorScheme.onSurface,
+                      unselectedLabelColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
                       tabs: const [
                         Tab(
                           icon: Icon(Icons.queue_music),
@@ -175,9 +175,9 @@ class _PlayerPageState extends State<PlayerPage>
               height: 40,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
-                color: isCurrentTrack 
-                    ? OmnisonicColors.primaryPurple.withOpacity(0.2)
-                    : Colors.grey.withOpacity(0.2),
+                color: isCurrentTrack
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Theme.of(context).colorScheme.surface,
               ),
               child: track.coverArtUrl != null
                   ? ClipRRect(
@@ -200,7 +200,7 @@ class _PlayerPageState extends State<PlayerPage>
                         errorWidget: (context, url, error) {
                           return const Icon(
                             Icons.music_note,
-                            color: Colors.white,
+                            color: Colors.white70,
                             size: 20,
                           );
                         },
@@ -208,14 +208,16 @@ class _PlayerPageState extends State<PlayerPage>
                     )
                   : const Icon(
                       Icons.music_note,
-                      color: Colors.white,
+                      color: Colors.white70,
                       size: 20,
                     ),
             ),
             title: Text(
               track.title,
               style: TextStyle(
-                color: isCurrentTrack ? OmnisonicColors.primaryPurple : Colors.white,
+                color: isCurrentTrack
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isCurrentTrack ? FontWeight.w600 : FontWeight.normal,
               ),
               maxLines: 1,
@@ -224,7 +226,7 @@ class _PlayerPageState extends State<PlayerPage>
             subtitle: Text(
               track.artist,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -232,7 +234,7 @@ class _PlayerPageState extends State<PlayerPage>
             trailing: isCurrentTrack
                 ? Icon(
                     playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: OmnisonicColors.primaryPurple,
+                    color: Theme.of(context).colorScheme.primary,
                   )
                 : null,
             onTap: () {
@@ -286,7 +288,7 @@ class _PlayerPageState extends State<PlayerPage>
               isPlaying: playbackViewModel.isPlaying,
               type: AudioVisualizerType.waveform,
               height: 80,
-              color: OmnisonicColors.primaryBlue,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           
@@ -297,7 +299,7 @@ class _PlayerPageState extends State<PlayerPage>
             isPlaying: playbackViewModel.isPlaying,
             type: AudioVisualizerType.circular,
             height: 100,
-            color: OmnisonicColors.primaryTeal,
+            color: Theme.of(context).colorScheme.tertiary,
           ),
         ],
       ),

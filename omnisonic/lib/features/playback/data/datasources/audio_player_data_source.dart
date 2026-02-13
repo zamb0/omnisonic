@@ -6,6 +6,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
+import '../../../../core/utils/app_log.dart';
 import 'adaptive_streaming_service.dart';
 import 'platform_audio_player.dart';
 
@@ -358,19 +359,18 @@ class AudioPlayerDataSource {
       (quality) => quality,
     );
     
-    print('Loading track: ${track.title}');
-    print('Track original quality: ${track.quality}');
-    print('Selected playback quality: $optimalQuality');
+    AppLog.info('Loading track for playback');
+    AppLog.debug('Selected playback quality: $optimalQuality');
     
     // Use cached file if available, otherwise stream from URL with optimal quality
     if (track.isCached && track.cachePath != null) {
       await _audioPlayer.setFilePath(track.cachePath!);
-      print('Playing from cache: ${track.cachePath}');
+      AppLog.info('Playing from cache');
     } else {
       // In a real implementation, you would modify the stream URL to request the optimal quality
       // For now, we use the original URL but could add quality parameters
       final streamUrl = _buildStreamUrlWithQuality(track.streamUrl, optimalQuality);
-      print('Streaming from URL with quality params');
+      AppLog.info('Streaming from URL with quality params');
       await _audioPlayer.setUrl(streamUrl);
     }
   }
@@ -434,7 +434,7 @@ class AudioPlayerDataSource {
       // 3. Maintain playback position during the switch
       
       // For now, we'll just log the quality change
-      print('Adaptive streaming: Quality changed to $newQuality');
+      AppLog.debug('Adaptive streaming quality changed to $newQuality');
     }
   }
 

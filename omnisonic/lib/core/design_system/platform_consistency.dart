@@ -7,6 +7,7 @@ import 'platform_theme_extensions.dart';
 import 'colors.dart';
 import 'typography.dart';
 import 'spacing.dart';
+import '../utils/app_log.dart';
 
 /// Platform consistency manager to ensure visual consistency across platforms
 /// Implements Requirements: 2.1, 2.2, 9.1
@@ -276,16 +277,16 @@ class _PlatformConsistencyValidatorState extends State<PlatformConsistencyValida
   
   void _logReport(PlatformConsistencyReport report) {
     if (report.issues.isNotEmpty) {
-      debugPrint('Platform Consistency Issues (${report.platform.name}):');
+      AppLog.debug('Platform consistency issues (${report.platform.name}):');
       for (final issue in report.issues) {
-        debugPrint('  ${issue.severity.name.toUpperCase()}: ${issue.description}');
+        AppLog.debug('${issue.severity.name.toUpperCase()}: ${issue.description}');
       }
     }
     
     if (report.warnings.isNotEmpty) {
-      debugPrint('Platform Consistency Warnings (${report.platform.name}):');
+      AppLog.debug('Platform consistency warnings (${report.platform.name}):');
       for (final warning in report.warnings) {
-        debugPrint('  WARNING: ${warning.description}');
+        AppLog.debug('WARNING: ${warning.description}');
       }
     }
   }

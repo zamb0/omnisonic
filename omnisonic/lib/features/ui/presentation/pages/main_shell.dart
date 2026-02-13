@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/design_system/responsive_layout.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
+import '../widgets/feishin_shell.dart';
 
 /// Main shell widget that provides the bottom navigation structure
 class MainShell extends StatelessWidget {
@@ -15,6 +17,14 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobile: _buildMobileShell(context),
+      tablet: _buildDesktopShell(context, extended: false),
+      desktop: _buildDesktopShell(context, extended: true),
+    );
+  }
+
+  Widget _buildMobileShell(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
@@ -28,32 +38,44 @@ class MainShell extends StatelessWidget {
     );
   }
 
+  Widget _buildDesktopShell(BuildContext context, {required bool extended}) {
+    return Scaffold(
+      body: FeishinShell(
+        child: child,
+        selectedIndex: _calculateSelectedIndex(context),
+        onSelect: (index) => _onItemTapped(index, context),
+        extended: extended,
+      ),
+    );
+  }
+
   Widget _buildBottomNavigation(BuildContext context) {
     final currentIndex = _calculateSelectedIndex(context);
     
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: (index) => _onItemTapped(index, context),
-      items: const [
-        BottomNavigationBarItem(
+    return NavigationBar(
+      selectedIndex: currentIndex,
+      height: 64,
+      onDestinationSelected: (index) => _onItemTapped(index, context),
+      destinations: const [
+        NavigationDestination(
           icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
+          selectedIcon: Icon(Icons.home),
           label: 'Home',
         ),
-        BottomNavigationBarItem(
+        NavigationDestination(
           icon: Icon(Icons.library_music_outlined),
-          activeIcon: Icon(Icons.library_music),
+          selectedIcon: Icon(Icons.library_music),
           label: 'Library',
         ),
-        BottomNavigationBarItem(
+        NavigationDestination(
           icon: Icon(Icons.search_outlined),
-          activeIcon: Icon(Icons.search),
+          selectedIcon: Icon(Icons.search),
           label: 'Search',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings_outlined),
-          activeIcon: Icon(Icons.settings),
-          label: 'Settings',
+        NavigationDestination(
+          icon: Icon(Icons.dns_outlined),
+          selectedIcon: Icon(Icons.dns),
+          label: 'Servers',
         ),
       ],
     );

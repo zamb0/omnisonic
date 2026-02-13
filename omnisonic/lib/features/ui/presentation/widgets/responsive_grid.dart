@@ -48,6 +48,7 @@ class ResponsiveGridView extends StatelessWidget {
   final double spacing;
   final EdgeInsets? padding;
   final ScrollController? controller;
+  final double? childAspectRatio;
 
   const ResponsiveGridView({
     super.key,
@@ -56,6 +57,7 @@ class ResponsiveGridView extends StatelessWidget {
     this.spacing = 16.0,
     this.padding,
     this.controller,
+    this.childAspectRatio,
   });
 
   @override
@@ -72,7 +74,7 @@ class ResponsiveGridView extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
-            childAspectRatio: _calculateAspectRatio(minItemWidth),
+            childAspectRatio: childAspectRatio ?? _calculateAspectRatio(minItemWidth),
           ),
           itemCount: children.length,
           itemBuilder: (context, index) => children[index],
@@ -84,6 +86,6 @@ class ResponsiveGridView extends StatelessWidget {
   double _calculateAspectRatio(double width) {
     // Adjust aspect ratio based on content type
     // This is a reasonable default for music cards
-    return width / (width + 80); // Account for text below image
+    return width / (width + 64); // Feishin-like tighter card metadata
   }
 }

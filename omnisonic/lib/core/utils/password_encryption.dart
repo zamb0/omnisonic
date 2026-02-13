@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
+import 'app_log.dart';
 
 /// Utility class for encrypting and decrypting passwords for database storage
 /// Uses AES-like encryption with a device-specific key
@@ -54,31 +55,24 @@ class PasswordEncryption {
     }
 
     try {
-      print('🔐 Encrypting password of length: ${password.length}');
-      
       // Generate a random salt for this password
       final random = Random.secure();
       final salt = List.generate(16, (_) => random.nextInt(256));
       final saltBase64 = base64.encode(salt);
-      print('🧂 Generated salt: ${saltBase64.substring(0, 8)}...');
 
       // Create encryption key from device key + salt
       final deviceKey = _generateDeviceKey();
       final combinedKey = '$deviceKey$saltBase64';
       final keyHash = sha256.convert(utf8.encode(combinedKey));
       final encryptionKey = base64.encode(keyHash.bytes);
-      print('🔑 Generated encryption key hash');
-
       // Encrypt the password
       final encrypted = _xorEncrypt(password, encryptionKey);
-      print('🔒 Encrypted data length: ${encrypted.length}');
 
       // Combine salt + encrypted data
       final result = '$saltBase64:$encrypted';
-      print('📦 Final encrypted result length: ${result.length}');
       return result;
     } catch (e) {
-      print('❌ Encryption error: $e');
+      AppLog.error('Encryption error: $e');
       throw Exception('Failed to encrypt password: $e');
     }
   }
@@ -90,8 +84,6 @@ class PasswordEncryption {
     }
 
     try {
-      print('🔓 Decrypting password of length: ${encryptedPassword.length}');
-      
       // Split salt and encrypted data
       final parts = encryptedPassword.split(':');
       if (parts.length != 2) {
@@ -100,22 +92,17 @@ class PasswordEncryption {
 
       final saltBase64 = parts[0];
       final encrypted = parts[1];
-      print('🧂 Extracted salt: ${saltBase64.substring(0, 8)}...');
-      print('🔒 Encrypted data length: ${encrypted.length}');
 
       // Recreate encryption key
       final deviceKey = _generateDeviceKey();
       final combinedKey = '$deviceKey$saltBase64';
       final keyHash = sha256.convert(utf8.encode(combinedKey));
       final encryptionKey = base64.encode(keyHash.bytes);
-      print('🔑 Recreated encryption key hash');
-
       // Decrypt the password
       final decrypted = _xorDecrypt(encrypted, encryptionKey);
-      print('🔓 Decrypted password length: ${decrypted.length}');
       return decrypted;
     } catch (e) {
-      print('❌ Decryption error: $e');
+      AppLog.error('Decryption error: $e');
       throw Exception('Failed to decrypt password: $e');
     }
   }

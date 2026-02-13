@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import '../utils/app_log.dart';
 import '../entities/music_server.dart';
 import '../errors/exceptions.dart';
 import 'subsonic_models.dart';
@@ -24,8 +25,7 @@ class SubsonicApiClient {
     String password,
   ) async {
     try {
-      print('🔗 Testing connection to: ${server.url}');
-      print('👤 Username: ${server.username}');
+      AppLog.info('Testing connection to server');
       
       final response = await _makeRequest(
         server: server,
@@ -33,13 +33,13 @@ class SubsonicApiClient {
         endpoint: 'ping',
       );
       
-      print('✅ Connection successful');
+      AppLog.info('Connection successful');
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
-      print('❌ Connection failed: $e');
+      AppLog.warn('Connection failed: $e');
       throw _handleException(e);
     }
   }
@@ -195,8 +195,7 @@ class SubsonicApiClient {
       ...?queryParams,
     };
     
-    print('🌐 Making request to: ${server.apiUrl}/$endpoint');
-    print('📋 Parameters: ${params.keys.join(', ')}');
+    AppLog.debug('Making request to endpoint: $endpoint');
     
     try {
       final response = await _dio.get(
@@ -204,7 +203,7 @@ class SubsonicApiClient {
         queryParameters: params,
       );
       
-      print('📡 Response status: ${response.statusCode}');
+      AppLog.debug('Response status: ${response.statusCode}');
       
       if (response.statusCode != 200) {
         throw SubsonicApiException(
@@ -233,7 +232,7 @@ class SubsonicApiClient {
       
       return response;
     } catch (e) {
-      print('💥 Request failed: $e');
+      AppLog.warn('Request failed: $e');
       rethrow;
     }
   }
@@ -254,13 +253,12 @@ class SubsonicApiClient {
 
   /// Handles exceptions and converts them to appropriate types
   Exception _handleException(dynamic error) {
-    print('🚨 Handling exception: $error');
+    AppLog.debug('Handling exception: $error');
     
     if (error is DioException) {
-      print('📡 DioException type: ${error.type}');
-      print('📡 Status code: ${error.response?.statusCode}');
-      print('📡 Message: ${error.message}');
-      print('📡 Response data: ${error.response?.data}');
+      AppLog.debug('DioException type: ${error.type}');
+      AppLog.debug('Status code: ${error.response?.statusCode}');
+      AppLog.debug('Message: ${error.message}');
       
       switch (error.type) {
         case DioExceptionType.connectionTimeout:

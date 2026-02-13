@@ -28,15 +28,21 @@ class TrackTile extends StatelessWidget {
         horizontal: 16,
         vertical: 0,
       ),
-      leading: showAlbumArt ? _buildAlbumArt() : _buildTrackNumber(),
+      tileColor: Theme.of(context).colorScheme.surface,
+      leading: showAlbumArt ? _buildAlbumArt(context) : _buildTrackNumber(context),
       title: Text(
         track.title,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
         track.artist,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -45,7 +51,9 @@ class TrackTile extends StatelessWidget {
         children: [
           Text(
             _formatDuration(track.duration),
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
           if (onMorePressed != null) ...[
             const SizedBox(width: 8),
@@ -61,13 +69,14 @@ class TrackTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAlbumArt() {
+  Widget _buildAlbumArt(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
-        color: Colors.grey[300],
+        color: scheme.surfaceVariant,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
@@ -76,30 +85,29 @@ class TrackTile extends StatelessWidget {
                 imageUrl: track.coverArtUrl!,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.music_note, color: Colors.grey),
+                  color: scheme.surfaceVariant,
+                  child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.music_note, color: Colors.grey),
+                  color: scheme.surfaceVariant,
+                  child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
                 ),
               ),
             )
-          : const Icon(Icons.music_note, color: Colors.grey),
+          : Icon(Icons.music_note, color: scheme.onSurfaceVariant),
     );
   }
 
-  Widget _buildTrackNumber() {
+  Widget _buildTrackNumber(BuildContext context) {
     return Container(
       width: 48,
       height: 48,
       alignment: Alignment.center,
       child: Text(
         track.trackNumber?.toString() ?? '—',
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

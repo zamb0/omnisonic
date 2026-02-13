@@ -9,7 +9,6 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../widgets/widgets.dart';
 import '../models/library_tab.dart';
 import '../models/library_sort_state.dart';
-import '../models/sort_option.dart';
 import '../services/library_sort_service.dart';
 import '../services/track_actions.dart';
 import '../../../../core/entities/entities.dart';
@@ -70,6 +69,9 @@ class _LibraryPageState extends State<LibraryPage>
         ],
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          labelColor: Theme.of(context).colorScheme.onSurface,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
           tabs: LibraryTab.values
               .map((tab) => Tab(text: tab.label, icon: Icon(tab.icon)))
               .toList(),
@@ -107,23 +109,23 @@ class _LibraryPageState extends State<LibraryPage>
           );
         }
 
+        final dedupedAlbums = _dedupeAlbumsByServer(albums);
         final sortOption = _sortState.getOption(LibraryTab.albums);
-        final sortedAlbums = LibrarySortService.sortAlbums(albums, sortOption);
-        
-        // Create a map of server IDs to server names for quick lookup
-        final serverMap = {for (var server in serverViewModel.servers) server.id: server.name};
+        final sortedAlbums = LibrarySortService.sortAlbums(dedupedAlbums, sortOption);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: ResponsiveGridView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             minItemWidth: 160,
-            spacing: 16,
+            spacing: 20,
+            childAspectRatio: 0.72,
             children: sortedAlbums.map((album) {
               return AlbumCard(
                 album: album,
                 onTap: () => _onAlbumTapped(album),
-                serverName: serverMap[album.serverId],
+                showArtist: true,
+                showMeta: true,
               );
             }).toList(),
           ),
@@ -158,9 +160,10 @@ class _LibraryPageState extends State<LibraryPage>
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: ResponsiveGridView(
-            padding: const EdgeInsets.all(16),
-            minItemWidth: 140,
-            spacing: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            minItemWidth: 150,
+            spacing: 20,
+            childAspectRatio: 0.72,
             children: sortedArtists.map((artist) {
               return ArtistCard(
                 artist: artist,
@@ -255,17 +258,16 @@ class _LibraryPageState extends State<LibraryPage>
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
                   children: [
-                    Icon(Icons.playlist_play, color: Colors.grey[600]),
+                    Icon(Icons.playlist_play, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 8),
                     Text(
                       '${sortedPlaylists.length} playlist${sortedPlaylists.length != 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const Spacer(),
@@ -279,9 +281,10 @@ class _LibraryPageState extends State<LibraryPage>
               ),
               Expanded(
                 child: ResponsiveGridView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   minItemWidth: 160,
-                  spacing: 16,
+                  spacing: 20,
+                  childAspectRatio: 0.72,
                   children: sortedPlaylists.map((playlist) {
                     return PlaylistCard(
                       playlist: playlist,
@@ -299,17 +302,16 @@ class _LibraryPageState extends State<LibraryPage>
 
   Widget _buildTrackListHeader(int trackCount) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          Icon(Icons.music_note, color: Colors.grey[600]),
+          Icon(Icons.music_note, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(
             '$trackCount track${trackCount != 1 ? 's' : ''}',
-            style: TextStyle(
-              fontSize: 16,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const Spacer(),
@@ -353,7 +355,7 @@ class _LibraryPageState extends State<LibraryPage>
           height: 72,
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
         );
@@ -402,6 +404,39 @@ class _LibraryPageState extends State<LibraryPage>
         },
       ),
     );
+  }
+
+  List<Album> _dedupeAlbumsByServer(List<Album> albums) {
+    final grouped = <String, List<Album>>{};
+    for (final album in albums) {
+      final key = _albumGroupKey(album);
+      grouped.putIfAbsent(key, () => []).add(album);
+    }
+
+    final deduped = <Album>[];
+    for (final group in grouped.values) {
+      group.sort((a, b) {
+        final aTracks = a.trackCount ?? 0;
+        final bTracks = b.trackCount ?? 0;
+        if (aTracks != bTracks) {
+          return bTracks.compareTo(aTracks);
+        }
+        return b.lastModified.compareTo(a.lastModified);
+      });
+      deduped.add(group.first);
+    }
+    return deduped;
+  }
+
+  String _albumGroupKey(Album album) {
+    final title = _normalizeAlbumKey(album.title);
+    final artist = album.artist; // Exact match for artist
+    final year = album.year?.toString() ?? '';
+    return '$title|$artist|$year';
+  }
+
+  String _normalizeAlbumKey(String input) {
+    return input.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
   }
 
   void _shuffleAllTracks() {

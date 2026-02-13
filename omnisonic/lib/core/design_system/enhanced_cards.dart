@@ -60,15 +60,15 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
     
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.05,
+      end: 1.02,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: AnimationManager.hoverCurve,
     ));
     
     _elevationAnimation = Tween<double>(
-      begin: OmnisonicElevation.card,
-      end: OmnisonicElevation.cardHover,
+      begin: OmnisonicElevation.xs,
+      end: OmnisonicElevation.sm,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: AnimationManager.hoverCurve,
@@ -127,10 +127,12 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
               width: cardWidth,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(OmnisonicRadius.card),
-                gradient: widget.isSelected ? context.primaryGradient : null,
+                color: widget.isSelected
+                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    : null,
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).shadowColor,
+                    color: Theme.of(context).shadowColor.withValues(alpha: 0.15),
                     blurRadius: _elevationAnimation.value,
                     offset: Offset(0, _elevationAnimation.value / 2),
                   ),
@@ -144,7 +146,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
                   side: widget.isSelected
                       ? BorderSide(
                           color: Theme.of(context).colorScheme.primary,
-                          width: 2,
+                          width: 1.5,
                         )
                       : BorderSide.none,
                 ),
@@ -314,14 +316,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
         height: height,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(OmnisonicRadius.albumArt),
-          gradient: context.cardDepthGradient,
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: Theme.of(context).colorScheme.surfaceVariant,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(OmnisonicRadius.albumArt),

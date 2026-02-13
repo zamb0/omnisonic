@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/server_management_view_model.dart';
-import 'server_diagnostics_dialog.dart';
 
 /// Dialog for adding a new Subsonic server
 class ServerAddDialog extends StatefulWidget {
@@ -310,16 +309,6 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
               content: Text(errorMessage),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Diagnostics',
-                textColor: Colors.white,
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const ServerDiagnosticsDialog(),
-                  );
-                },
-              ),
             ),
           );
         }

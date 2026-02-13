@@ -7,7 +7,6 @@ import '../widgets/server_add_dialog.dart';
 import '../widgets/server_edit_dialog.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/server_status_card.dart';
-import '../widgets/server_diagnostics_dialog.dart';
 import '../../../ui/presentation/widgets/loading_indicator.dart';
 import '../../../ui/presentation/widgets/empty_state.dart';
 
@@ -57,9 +56,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 case 'sync':
                   _syncAllServers(context);
                   break;
-                case 'diagnostics':
-                  _showDiagnosticsDialog(context);
-                  break;
               }
             },
             itemBuilder: (context) => [
@@ -70,16 +66,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                     Icon(Icons.sync),
                     SizedBox(width: 8),
                     Text('Sync All Servers'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'diagnostics',
-                child: Row(
-                  children: [
-                    Icon(Icons.bug_report),
-                    SizedBox(width: 8),
-                    Text('Diagnostics'),
                   ],
                 ),
               ),
@@ -603,13 +589,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     context.read<ServerManagementViewModel>().refreshServers();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Refreshing servers...')),
-    );
-  }
-
-  void _showDiagnosticsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const ServerDiagnosticsDialog(),
     );
   }
 

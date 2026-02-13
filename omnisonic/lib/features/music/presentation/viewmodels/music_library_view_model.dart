@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// ViewModel for managing music library collection state
 /// 
@@ -60,7 +61,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   DateTime? get lastUpdated => _collection?.lastUpdated;
 
   void _initialize() {
-    print('🎵 MusicLibraryViewModel initialized');
+    AppLog.debug('MusicLibraryViewModel initialized');
     _subscribeToCollection();
     _loadSmartCollections();
     // Auto sync library on app startup
@@ -71,7 +72,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void _autoSyncOnStartup() {
     // Use a short delay to ensure the app is fully initialized
     Future.delayed(const Duration(milliseconds: 500), () {
-      print('🔄 Auto-syncing library on startup...');
+      AppLog.info('Auto-syncing library on startup');
       syncCollection(forceRefresh: false);
     });
   }
@@ -79,13 +80,13 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void _subscribeToCollection() {
     _collectionSubscription = _musicRepository.observeCollection().listen(
       (collection) {
-        print('🎵 MusicLibraryViewModel received collection update: ${collection.albums.length} albums, ${collection.artists.length} artists, ${collection.tracks.length} tracks');
+        AppLog.debug('Collection update: ${collection.albums.length} albums, ${collection.artists.length} artists, ${collection.tracks.length} tracks');
         _collection = collection;
         _clearError();
         notifyListeners();
       },
       onError: (error) {
-        print('❌ MusicLibraryViewModel collection stream error: $error');
+        AppLog.warn('Collection stream error: $error');
         _setError('Failed to load music collection: $error');
       },
     );
@@ -164,20 +165,20 @@ class MusicLibraryViewModel extends ChangeNotifier {
       // Load recently played tracks
       final recentlyPlayedResult = await _musicRepository.getRecentlyPlayed();
       recentlyPlayedResult.fold(
-        (failure) => debugPrint('Failed to load recently played: ${failure.message}'),
+        (failure) => AppLog.warn('Failed to load recently played: ${failure.message}'),
         (tracks) => _recentlyPlayed = tracks,
       );
 
       // Load recently added tracks
       final recentlyAddedResult = await _musicRepository.getRecentlyAdded();
       recentlyAddedResult.fold(
-        (failure) => debugPrint('Failed to load recently added: ${failure.message}'),
+        (failure) => AppLog.warn('Failed to load recently added: ${failure.message}'),
         (tracks) => _recentlyAdded = tracks,
       );
 
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading smart collections: $e');
+      AppLog.warn('Error loading smart collections: $e');
     }
   }
 
@@ -250,7 +251,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     final result = await _musicRepository.markAsDuplicates(trackIds);
     result.fold(
       (failure) => _setError('Failed to mark as duplicates: ${failure.message}'),
-      (_) => debugPrint('Tracks marked as duplicates successfully'),
+      (_) => AppLog.info('Tracks marked as duplicates successfully'),
     );
   }
 
@@ -259,7 +260,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     final result = await _musicRepository.markAsUnique(trackIds);
     result.fold(
       (failure) => _setError('Failed to mark as unique: ${failure.message}'),
-      (_) => debugPrint('Tracks marked as unique successfully'),
+      (_) => AppLog.info('Tracks marked as unique successfully'),
     );
   }
 
@@ -280,27 +281,32 @@ class MusicLibraryViewModel extends ChangeNotifier {
 
   /// DEBUG: Clear all data and resync (for testing unique IDs)
   Future<void> debugClearAndResync() async {
+    if (!kDebugMode) {
+      _setError('Debug operation not available in release builds');
+      return;
+    }
+
     try {
       _isSyncing = true;
       _errorMessage = null;
       notifyListeners();
 
-      print('🧹 DEBUG: Starting clear and resync...');
+      AppLog.debug('Starting debug clear and resync');
       
       final result = await _musicRepository.debugClearAndResync();
       
       result.fold(
         (failure) {
           _errorMessage = failure.message;
-          print('❌ DEBUG: Clear and resync failed: $_errorMessage');
+          AppLog.warn('Debug clear and resync failed: $_errorMessage');
         },
         (_) {
-          print('✅ DEBUG: Clear and resync completed successfully');
+          AppLog.info('Debug clear and resync completed successfully');
         },
       );
     } catch (e) {
       _errorMessage = 'Debug clear and resync failed: $e';
-      print('❌ DEBUG: Clear and resync error: $e');
+      AppLog.warn('Debug clear and resync error: $e');
     } finally {
       _isSyncing = false;
       notifyListeners();

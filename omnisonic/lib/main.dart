@@ -15,6 +15,7 @@ import 'features/music/presentation/viewmodels/music_library_view_model.dart';
 import 'features/playback/presentation/viewmodels/playback_view_model.dart';
 import 'features/servers/presentation/viewmodels/server_management_view_model.dart';
 import 'features/music/presentation/viewmodels/playlist_view_model.dart';
+import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
 
 // BLoCs
 import 'features/sync/presentation/bloc/sync_bloc.dart';
@@ -127,6 +128,9 @@ class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver
         ),
         ChangeNotifierProvider<PlaylistViewModel>(
           create: (_) => getIt<PlaylistViewModel>(),
+        ),
+        ChangeNotifierProvider<LyricsViewModel>(
+          create: (_) => getIt<LyricsViewModel>(),
         ),
         
         // BLoCs

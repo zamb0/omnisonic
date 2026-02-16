@@ -16,6 +16,7 @@ import '../repositories/music_repository.dart';
 import '../repositories/server_repository.dart';
 import '../repositories/playback_repository.dart';
 import '../repositories/playlist_repository.dart';
+import '../repositories/lyrics_repository.dart';
 import '../../features/music/data/repositories/music_repository_impl.dart';
 import '../../features/servers/data/repositories/server_repository_impl.dart';
 import '../../features/playback/data/repositories/playback_repository_impl.dart';
@@ -26,6 +27,9 @@ import '../../features/playback/data/datasources/audio_focus_manager.dart';
 import '../../features/playback/data/datasources/adaptive_streaming_service.dart';
 import '../../features/playback/data/datasources/mpris_handler.dart';
 import '../../features/playback/data/datasources/playback_service.dart';
+import '../../features/lyrics/data/datasources/lyrics_cache_data_source.dart';
+import '../../features/lyrics/data/datasources/lyrics_remote_data_source.dart';
+import '../../features/lyrics/data/repositories/lyrics_repository_impl.dart';
 import '../usecases/sync_music_collection_use_case.dart';
 import '../usecases/search_music_use_case.dart';
 import '../usecases/play_track_use_case.dart';
@@ -34,6 +38,7 @@ import '../usecases/manage_playlist_use_case.dart';
 // ViewModels
 import '../../features/music/presentation/viewmodels/music_library_view_model.dart';
 import '../../features/playback/presentation/viewmodels/playback_view_model.dart';
+import '../../features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
 import '../../features/servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../features/music/presentation/viewmodels/playlist_view_model.dart';
 
@@ -67,6 +72,13 @@ abstract class AppModule {
   @lazySingleton
   LocalPlaylistDataSource localPlaylistDataSource(AppDatabase database) =>
       LocalPlaylistDataSource(database);
+
+    @lazySingleton
+    LyricsRemoteDataSource lyricsRemoteDataSource(Dio dio) =>
+      LyricsRemoteDataSource(dio: dio);
+
+    @lazySingleton
+    LyricsCacheDataSource lyricsCacheDataSource() => LyricsCacheDataSource();
 
   // Services
   @lazySingleton
@@ -176,5 +188,15 @@ abstract class AppModule {
   ) =>
       PlaybackRepositoryImpl(
         audioPlayerDataSource: audioPlayerDataSource,
+      );
+
+  @LazySingleton(as: LyricsRepository)
+  LyricsRepositoryImpl lyricsRepository(
+    LyricsRemoteDataSource remoteDataSource,
+    LyricsCacheDataSource cacheDataSource,
+  ) =>
+      LyricsRepositoryImpl(
+        remoteDataSource: remoteDataSource,
+        cacheDataSource: cacheDataSource,
       );
 }

@@ -8,6 +8,7 @@ import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
 import '../../data/datasources/playback_tracking_service.dart';
+import '../../data/datasources/adaptive_streaming_service.dart';
 
 /// ViewModel for managing audio playback state
 /// 
@@ -24,6 +25,7 @@ class PlaybackViewModel extends ChangeNotifier {
     this._trackingService,
     this._apiClient,
     this._serverRepository,
+    this._adaptiveStreamingService,
   ) {
     _initialize();
   }
@@ -33,10 +35,12 @@ class PlaybackViewModel extends ChangeNotifier {
   final PlaybackTrackingService _trackingService;
   final SubsonicApiClient _apiClient;
   final ServerRepository _serverRepository;
+  final AdaptiveStreamingService _adaptiveStreamingService;
 
   StreamSubscription<PlaybackState>? _playbackStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<List<Track>>? _queueSubscription;
+  StreamSubscription<AudioQuality>? _qualitySubscription;
   Timer? _positionTicker;
   DateTime? _lastPositionUpdate;
   Duration _lastObservedPosition = Duration.zero;
@@ -57,6 +61,8 @@ class PlaybackViewModel extends ChangeNotifier {
   String? _errorMessage;
   Track? _previousTrack; // Track previous track for scrobbling
   bool _isRestoring = false; // Flag to prevent auto-play during restoration
+  AudioQuality _streamingQuality = AudioQuality.ultra;
+  AudioQuality _maxStreamingQuality = AudioQuality.ultra;
 
   // Getters
   PlaybackState get playbackState => _playbackState;
@@ -82,7 +88,12 @@ class PlaybackViewModel extends ChangeNotifier {
   bool get isRestoring => _isRestoring;
   
   // TODO: Connect to AdaptiveStreamingService for real quality monitoring
-  AudioQuality get currentQuality => AudioQuality.lossless;
+  AudioQuality get currentQuality => _streamingQuality;
+  AudioQuality get maxQuality => _maxStreamingQuality;
+  double get streamingQualityRatio {
+    if (_maxStreamingQuality.qualityScore == 0) return 0;
+    return _streamingQuality.qualityScore / _maxStreamingQuality.qualityScore;
+  }
 
   void _initialize() {
     try {
@@ -90,6 +101,7 @@ class PlaybackViewModel extends ChangeNotifier {
       _subscribeToPlaybackState();
       _subscribeToPosition();
       _subscribeToQueue();
+      _subscribeToQuality();
       _loadCurrentState();
       
       // Restore queue as early as possible, with a delayed retry to
@@ -143,6 +155,8 @@ class PlaybackViewModel extends ChangeNotifier {
         
         // Start tracking when track changes (but not during restoration)
         if (trackChanged && !_isRestoring) {
+          _maxStreamingQuality = state.currentTrack!.quality;
+          _streamingQuality = _clampQuality(_streamingQuality, _maxStreamingQuality);
           _trackingService.startTrackingTrack(state.currentTrack!);
           _previousTrack = state.currentTrack;
           
@@ -160,6 +174,22 @@ class PlaybackViewModel extends ChangeNotifier {
         _setError('Playback state error: $error');
       },
     );
+  }
+
+  void _subscribeToQuality() {
+    _qualitySubscription = _adaptiveStreamingService
+        .observeRecommendedQuality()
+        .listen((quality) {
+      _streamingQuality = _clampQuality(quality, _maxStreamingQuality);
+      notifyListeners();
+    });
+  }
+
+  AudioQuality _clampQuality(AudioQuality quality, AudioQuality maxQuality) {
+    if (quality.qualityScore > maxQuality.qualityScore) {
+      return maxQuality;
+    }
+    return quality;
   }
 
   void _subscribeToPosition() {
@@ -309,13 +339,39 @@ class PlaybackViewModel extends ChangeNotifier {
     bool useBestSource = true,
     bool allowFallback = true,
   }) async {
-    if (_isLoading) return;
+    final isSwitchRequest = currentTrack != null && currentTrack!.id != track.id;
+    if (_isLoading && !isSwitchRequest) return;
+    if (_isLoading && isSwitchRequest) {
+      AppLog.debug('Play requested while loading; forcing switch');
+    }
 
     _isLoading = true;
     _clearError();
     notifyListeners();
 
     try {
+      AppLog.debug('Play requested: ${track.title} (${track.id})');
+
+      final shouldDirectSwitch =
+          currentTrack != null && currentTrack!.id != track.id && queue != null && queue.isNotEmpty;
+
+      if (shouldDirectSwitch) {
+        AppLog.debug('Direct switch to: ${track.title}');
+        await _playbackRepository.stop();
+
+        await _playbackRepository.setQueue(
+          queue,
+          startIndex: startIndex ?? 0,
+        );
+
+        final playResult = await _playbackRepository.play(track);
+        playResult.fold(
+          (failure) => _setError('Failed to play track: ${failure.message}'),
+          (_) => AppLog.info('Track playback started successfully'),
+        );
+        return;
+      }
+
       final params = PlayTrackParams(
         track: track,
         queue: queue,
@@ -639,6 +695,7 @@ class PlaybackViewModel extends ChangeNotifier {
     _playbackStateSubscription?.cancel();
     _positionSubscription?.cancel();
     _queueSubscription?.cancel();
+    _qualitySubscription?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

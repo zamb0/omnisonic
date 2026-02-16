@@ -607,6 +607,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   void _onTrackTapped(Track track, int index) {
+    debugPrint('Track tapped: ${track.title} (${track.id})');
     final playbackViewModel = context.read<PlaybackViewModel>();
     playbackViewModel.playTrack(track, queue: _tracks, startIndex: index);
   }

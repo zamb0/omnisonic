@@ -350,7 +350,12 @@ class AudioPlayerDataSource {
 
   /// Loads a track into the audio player with adaptive quality selection
   Future<void> _loadTrack(Track track) async {
+    final previousTrack = _currentTrack;
     _currentTrack = track;
+
+    if (previousTrack != null && previousTrack.id != track.id) {
+      await _audioPlayer.stop();
+    }
     
     // Get optimal quality for current network conditions
     final qualityResult = await _adaptiveStreamingService.getOptimalQuality(track);
@@ -401,11 +406,9 @@ class AudioPlayerDataSource {
         break;
       case AudioQuality.lossless:
       case AudioQuality.ultra:
-        // Request original format without transcoding for lossless
+        // Request original format without forcing raw transcoding
         queryParams.remove('maxBitRate');
         queryParams.remove('format');
-        // Some Subsonic servers use 'raw' to indicate no transcoding
-        queryParams['format'] = 'raw';
         break;
     }
     
@@ -443,11 +446,17 @@ class AudioPlayerDataSource {
 
   /// Updates the playback state and notifies listeners
   void _updatePlaybackState() {
+    final fallbackDuration = _currentTrack?.duration ?? Duration.zero;
+    final resolvedDuration = (_audioPlayer.duration == null ||
+            _audioPlayer.duration == Duration.zero)
+        ? fallbackDuration
+        : _audioPlayer.duration!;
+
     final state = PlaybackState(
       isPlaying: _audioPlayer.playing,
       currentTrack: _currentTrack,
       position: _audioPlayer.position,
-      duration: _audioPlayer.duration ?? Duration.zero,
+      duration: resolvedDuration,
       queue: _currentQueue,
       currentIndex: _currentIndex,
       repeatMode: _repeatMode,

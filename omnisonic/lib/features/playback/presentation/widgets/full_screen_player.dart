@@ -10,6 +10,7 @@ import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
+import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -369,13 +370,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Widget _buildQualityIndicator(BuildContext context, PlaybackViewModel playbackViewModel) {
     final scheme = Theme.of(context).colorScheme;
     final quality = playbackViewModel.currentQuality;
+    final maxQuality = playbackViewModel.maxQuality;
+    final ratio = (playbackViewModel.streamingQualityRatio * 100).clamp(0, 100).round();
     
     return Align(
       alignment: Alignment.centerRight,
       child: Opacity(
         opacity: 0.6,
         child: Text(
-          '${quality.format} • ${quality.bitrate} kbps',
+          '${quality.format} ${quality.bitrate} kbps • ${ratio}% of max ${maxQuality.bitrate}',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: scheme.onSurfaceVariant,
                 fontSize: 10,
@@ -543,7 +546,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       case _NowPlayingPanel.queue:
         return _buildQueuePanel(context, playbackViewModel);
       case _NowPlayingPanel.lyrics:
-        return _buildLyricsPanel(context);
+        return _buildLyricsPanel(context, playbackViewModel);
       case _NowPlayingPanel.visualizer:
         return _buildVisualizerPanel(context, playbackViewModel);
     }
@@ -634,15 +637,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildLyricsPanel(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Text(
-        'Lyrics will appear here',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-      ),
+  Widget _buildLyricsPanel(BuildContext context, PlaybackViewModel playbackViewModel) {
+    return LyricsPanel(
+      track: playbackViewModel.currentTrack,
+      position: playbackViewModel.position,
     );
   }
 

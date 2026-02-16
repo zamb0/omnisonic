@@ -19,7 +19,7 @@ class AdaptiveStreamingService {
   final BehaviorSubject<NetworkCondition> _networkConditionController = 
       BehaviorSubject<NetworkCondition>.seeded(NetworkCondition.excellent);
   final BehaviorSubject<AudioQuality> _recommendedQualityController = 
-      BehaviorSubject<AudioQuality>.seeded(AudioQuality.lossless);
+      BehaviorSubject<AudioQuality>.seeded(AudioQuality.ultra);
 
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   Timer? _bandwidthTestTimer;
@@ -31,12 +31,19 @@ class AdaptiveStreamingService {
   double _estimatedBandwidth = 100.0; // Mbps - Optimistic default
   int _bufferHealth = 100; // Percentage
   bool _isBuffering = false;
+  DateTime? _lastBufferingAt;
+  DateTime? _lastQualityChangeAt;
+  int _bufferingStreak = 0;
+  int _stableStreak = 0;
 
   // Adaptive streaming configuration
   static const Duration _bandwidthTestInterval = Duration(seconds: 30); // Currently unused
   static const Duration _bufferMonitorInterval = Duration(seconds: 5);
-  static const int _minBufferHealthPercent = 10;  // More lenient - was 20
-  static const int _goodBufferHealthPercent = 40; // More lenient - was 60
+  static const int _minBufferHealthPercent = 12;  // Slightly more conservative
+  static const int _goodBufferHealthPercent = 60; // Require healthier buffer before upgrading
+  static const Duration _minQualityChangeInterval = Duration(seconds: 20);
+  static const Duration _bufferingGracePeriod = Duration(seconds: 8);
+  static const Duration _stableUpgradeWindow = Duration(seconds: 60);
 
   void _init() {
     // Monitor connectivity changes
@@ -112,22 +119,45 @@ class AdaptiveStreamingService {
 
   /// Checks buffer health and reacts to actual buffering issues
   void _checkBufferHealth() {
+    final now = DateTime.now();
+
     if (_isBuffering) {
       // Actually buffering - this is a real problem, downgrade quality
-      _bufferHealth = max(0, _bufferHealth - 15);  // Faster response to problems
-      
-      if (_bufferHealth < _minBufferHealthPercent) {
-        // Immediate downgrade on buffering
+      _bufferHealth = max(0, _bufferHealth - 10);  // Slower drain to avoid aggressive drops
+      _bufferingStreak += 1;
+      _stableStreak = 0;
+      _lastBufferingAt ??= now;
+
+      final bufferingDuration = now.difference(_lastBufferingAt!);
+      final canChangeQuality = _lastQualityChangeAt == null ||
+          now.difference(_lastQualityChangeAt!) >= _minQualityChangeInterval;
+
+      if (_bufferHealth < _minBufferHealthPercent &&
+          bufferingDuration >= _bufferingGracePeriod &&
+          _bufferingStreak >= 2 &&
+          canChangeQuality) {
         _downgradeQuality();
+        _lastQualityChangeAt = now;
       }
     } else {
       // Streaming smoothly - gradually recover buffer health
-      _bufferHealth = min(100, _bufferHealth + 5);
-      
+      _bufferHealth = min(100, _bufferHealth + 4);
+      _bufferingStreak = 0;
+      _stableStreak += 1;
+      _lastBufferingAt = null;
+
+      final canChangeQuality = _lastQualityChangeAt == null ||
+          now.difference(_lastQualityChangeAt!) >= _minQualityChangeInterval;
+
+      final stableDuration = Duration(seconds: _stableStreak * _bufferMonitorInterval.inSeconds);
+
       // If we've been streaming smoothly for a while, try upgrading
-      if (_bufferHealth >= _goodBufferHealthPercent && 
-          _currentRecommendedQuality != AudioQuality.ultra) {
+      if (_bufferHealth >= _goodBufferHealthPercent &&
+          _currentRecommendedQuality != AudioQuality.ultra &&
+          stableDuration >= _stableUpgradeWindow &&
+          canChangeQuality) {
         _upgradeQuality();
+        _lastQualityChangeAt = now;
       }
     }
   }
@@ -138,6 +168,9 @@ class AdaptiveStreamingService {
       AppLog.warn('Buffering detected - may need to reduce quality');
     }
     _isBuffering = isBuffering;
+    if (!isBuffering) {
+      _lastBufferingAt = null;
+    }
   }
   
   /// Downgrade quality by one step due to buffering

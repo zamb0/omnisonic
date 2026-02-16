@@ -2,26 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:math' as math;
 
-import '../../../../core/design_system/design_system.dart';
-import '../../../../core/design_system/animation_manager.dart';
-import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
-import '../../../../core/design_system/typography.dart';
 import '../../../../core/design_system/responsive_layout.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
+import 'audio_visualizer.dart';
 
-/// Full-screen player with enhanced UI and animations
-/// 
-/// Features:
-/// - Large album artwork display with animations
-/// - Prominent playback controls with smooth interactions
-/// - Precise seek bar with scrubbing animations
-/// - Responsive layout for different screen sizes
+/// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
   const FullScreenPlayer({super.key});
 
@@ -29,105 +19,10 @@ class FullScreenPlayer extends StatefulWidget {
   State<FullScreenPlayer> createState() => _FullScreenPlayerState();
 }
 
-class _FullScreenPlayerState extends State<FullScreenPlayer>
-    with TickerProviderStateMixin {
-  late AnimationController _artworkController;
-  late AnimationController _controlsController;
-  late AnimationController _seekController;
-  late AnimationController _rotationController;
-  
-  late Animation<double> _artworkScaleAnimation;
-  late Animation<double> _controlsOpacityAnimation;
-  late Animation<double> _seekScaleAnimation;
-  late Animation<double> _rotationAnimation;
-
+class _FullScreenPlayerState extends State<FullScreenPlayer> {
   bool _isDraggingSeek = false;
   double _seekValue = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAnimations();
-  }
-
-  void _initializeAnimations() {
-    // Artwork animation
-    _artworkController = AnimationController(
-      duration: AnimationManager.slowDuration,
-      vsync: this,
-    );
-    
-    _artworkScaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _artworkController,
-      curve: AnimationManager.standardCurve,
-    ));
-
-    // Controls animation
-    _controlsController = AnimationController(
-      duration: AnimationManager.normalDuration,
-      vsync: this,
-    );
-    
-    _controlsOpacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controlsController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Seek bar animation
-    _seekController = AnimationController(
-      duration: AnimationManager.fastDuration,
-      vsync: this,
-    );
-    
-    _seekScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(
-      parent: _seekController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Rotation animation for playing state
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 20),
-      vsync: this,
-    );
-    
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
-    ));
-
-    // Start entrance animations
-    _artworkController.forward();
-    _controlsController.forward();
-  }
-
-  @override
-  void dispose() {
-    _artworkController.dispose();
-    _controlsController.dispose();
-    _seekController.dispose();
-    _rotationController.dispose();
-    super.dispose();
-  }
-
-  void _handlePlaybackStateChange(bool isPlaying) {
-    if (isPlaying) {
-      _rotationController.repeat();
-    } else {
-      _rotationController.stop();
-    }
-  }
+  _NowPlayingPanel _panel = _NowPlayingPanel.queue;
 
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes;
@@ -140,12 +35,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
     return Consumer<PlaybackViewModel>(
       builder: (context, playbackViewModel, child) {
         final currentTrack = playbackViewModel.currentTrack;
-        final isPlaying = playbackViewModel.isPlaying;
         final position = playbackViewModel.position;
         final duration = playbackViewModel.duration;
         final progress = playbackViewModel.progress;
-
-        _handlePlaybackStateChange(isPlaying);
 
         if (currentTrack == null) {
           return const Scaffold(
@@ -156,46 +48,31 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
         }
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  OmnisonicColors.backgroundDark,
-                  OmnisonicColors.surfaceDark,
-                ],
+          body: SafeArea(
+            child: ResponsiveLayout(
+              mobile: _buildMobileLayout(
+                context,
+                currentTrack,
+                playbackViewModel,
+                position,
+                duration,
+                progress,
               ),
-            ),
-            child: SafeArea(
-              child: ResponsiveLayout(
-                mobile: _buildMobileLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                  isPlaying,
-                ),
-                tablet: _buildTabletLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                  isPlaying,
-                ),
-                desktop: _buildDesktopLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                  isPlaying,
-                ),
+              tablet: _buildDesktopLayout(
+                context,
+                currentTrack,
+                playbackViewModel,
+                position,
+                duration,
+                progress,
+              ),
+              desktop: _buildDesktopLayout(
+                context,
+                currentTrack,
+                playbackViewModel,
+                position,
+                duration,
+                progress,
               ),
             ),
           ),
@@ -211,79 +88,26 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
     Duration position,
     Duration duration,
     double progress,
-    bool isPlaying,
   ) {
     return Column(
       children: [
-        _buildHeader(context),
+        _buildHeader(context, title: 'Now Playing'),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(OmnisonicSpacing.xl),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(OmnisonicSpacing.lg),
             child: Column(
               children: [
-                Expanded(
-                  flex: 3,
-                  child: _buildAlbumArtwork(track, isPlaying),
-                ),
-                const SizedBox(height: OmnisonicSpacing.xl),
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [
-                      _buildTrackInfo(track),
-                      const SizedBox(height: OmnisonicSpacing.xl),
-                      _buildSeekBar(playbackViewModel, position, duration, progress),
-                      const SizedBox(height: OmnisonicSpacing.xl),
-                      _buildPlaybackControls(playbackViewModel),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabletLayout(
-    BuildContext context,
-    Track track,
-    PlaybackViewModel playbackViewModel,
-    Duration position,
-    Duration duration,
-    double progress,
-    bool isPlaying,
-  ) {
-    return Column(
-      children: [
-        _buildHeader(context),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(OmnisonicSpacing.xl),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildAlbumArtwork(track, isPlaying),
-                ),
-                const SizedBox(width: OmnisonicSpacing.xl),
-                Expanded(
-                  flex: 3,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildTrackInfo(track),
-                        const SizedBox(height: OmnisonicSpacing.lg),
-                        _buildSeekBar(playbackViewModel, position, duration, progress),
-                        const SizedBox(height: OmnisonicSpacing.lg),
-                        _buildPlaybackControls(playbackViewModel),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildArtwork(track),
+                const SizedBox(height: OmnisonicSpacing.lg),
+                _buildTrackInfo(context, track),
+                const SizedBox(height: OmnisonicSpacing.lg),
+                _buildSeekBar(playbackViewModel, position, duration, progress),
+                const SizedBox(height: OmnisonicSpacing.md),
+                _buildPrimaryControls(context, playbackViewModel),
+                const SizedBox(height: OmnisonicSpacing.md),
+                _buildSecondaryControls(context, playbackViewModel),
+                const SizedBox(height: OmnisonicSpacing.lg),
+                _buildPanel(context, playbackViewModel, compact: true),
               ],
             ),
           ),
@@ -299,22 +123,57 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
     Duration position,
     Duration duration,
     double progress,
-    bool isPlaying,
   ) {
-    return _buildTabletLayout(
-      context,
-      track,
-      playbackViewModel,
-      position,
-      duration,
-      progress,
-      isPlaying,
+    return Column(
+      children: [
+        _buildHeader(context, title: 'Now Playing'),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(OmnisonicSpacing.lg),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildArtwork(track),
+                      const SizedBox(height: OmnisonicSpacing.lg),
+                      _buildTrackInfo(context, track),
+                      const SizedBox(height: OmnisonicSpacing.lg),
+                      _buildSecondaryControls(context, playbackViewModel),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: OmnisonicSpacing.lg),
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildSeekBar(playbackViewModel, position, duration, progress),
+                      const SizedBox(height: OmnisonicSpacing.lg),
+                      _buildPrimaryControls(context, playbackViewModel),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: OmnisonicSpacing.lg),
+                SizedBox(
+                  width: 320,
+                  child: _buildPanel(context, playbackViewModel),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, {required String title}) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
       child: Row(
         children: [
           IconButton(
@@ -323,144 +182,114 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
                 context.pop();
               }
             },
-            icon: const Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.white,
-              size: 32,
-            ),
+            icon: const Icon(Icons.keyboard_arrow_down),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const Spacer(),
           IconButton(
-            onPressed: () {
-              // TODO: Implement queue view
-            },
-            icon: const Icon(
-              Icons.queue_music,
-              color: Colors.white,
-            ),
+            onPressed: () {},
+            icon: Icon(Icons.favorite_border, color: scheme.onSurfaceVariant),
           ),
           IconButton(
-            onPressed: () {
-              // TODO: Implement more options
-            },
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-            ),
+            onPressed: () => setState(() => _panel = _NowPlayingPanel.queue),
+            icon: Icon(Icons.queue_music, color: scheme.onSurfaceVariant),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAlbumArtwork(Track track, bool isPlaying) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        _artworkScaleAnimation,
-        _rotationAnimation,
-      ]),
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _artworkScaleAnimation.value,
-          child: Transform.rotate(
-            angle: isPlaying ? _rotationAnimation.value * 0.1 : 0,
-            child: Container(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-                maxHeight: 400,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: OmnisonicColors.primaryPurple.withOpacity(0.3),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: track.coverArtUrl!,
-                          cacheKey: track.coverArtUrl!.subsonicCacheKey,
-                          fit: BoxFit.cover,
-                          maxWidthDiskCache: 800,
-                          maxHeightDiskCache: 800,
-                          memCacheWidth: 800,
-                          memCacheHeight: 800,
-                          placeholder: (context, url) => _buildFallbackArtwork(),
-                          errorWidget: (context, url, error) =>
-                              _buildFallbackArtwork(),
-                        )
-                      : _buildFallbackArtwork(),
-                ),
-              ),
+  Widget _buildArtwork(Track track) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: scheme.surfaceVariant,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: track.coverArtUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: track.coverArtUrl!,
+                    cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                    fit: BoxFit.cover,
+                    maxWidthDiskCache: 800,
+                    maxHeightDiskCache: 800,
+                    memCacheWidth: 800,
+                    memCacheHeight: 800,
+                    placeholder: (context, url) => _buildFallbackArtwork(),
+                    errorWidget: (context, url, error) => _buildFallbackArtwork(),
+                  )
+                : _buildFallbackArtwork(),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFallbackArtwork() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: OmnisonicColors.primaryGradient,
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.music_note,
-          color: Colors.white,
-          size: 120,
         ),
       ),
     );
   }
 
-  Widget _buildTrackInfo(Track track) {
-    return FadeTransition(
-      opacity: _controlsOpacityAnimation,
-      child: Column(
-        children: [
+  Widget _buildFallbackArtwork() {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: scheme.surfaceVariant,
+      child: Icon(
+        Icons.music_note,
+        color: scheme.onSurfaceVariant.withOpacity(0.5),
+        size: 72,
+      ),
+    );
+  }
+
+  Widget _buildTrackInfo(BuildContext context, Track track) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          track.title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          track.artist,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (track.album.isNotEmpty) ...[
+          const SizedBox(height: 4),
           Text(
-            track.title,
-            style: OmnisonicTypography.displayLarge.copyWith(
-              color: Colors.white,
-              fontSize: 28,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: OmnisonicSpacing.sm),
-          Text(
-            track.artist,
-            style: OmnisonicTypography.headlineMedium.copyWith(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 20,
-            ),
-            textAlign: TextAlign.center,
+            track.album,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (track.album.isNotEmpty) ...[
-            const SizedBox(height: OmnisonicSpacing.xs),
-            Text(
-              track.album,
-              style: OmnisonicTypography.bodyLarge.copyWith(
-                color: Colors.white.withOpacity(0.6),
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
 
@@ -470,110 +299,95 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
     Duration duration,
     double progress,
   ) {
-    return FadeTransition(
-      opacity: _controlsOpacityAnimation,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _formatDuration(_isDraggingSeek 
-                    ? Duration(milliseconds: (_seekValue * duration.inMilliseconds).round())
-                    : position),
-                style: OmnisonicTypography.labelMedium.copyWith(
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-              Text(
-                _formatDuration(duration),
-                style: OmnisonicTypography.labelMedium.copyWith(
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: OmnisonicSpacing.sm),
-          AnimatedBuilder(
-            animation: _seekScaleAnimation,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: Colors.white,
-                inactiveTrackColor: Colors.white.withOpacity(0.3),
-                thumbColor: Colors.white,
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 8,
-                ),
-                overlayColor: Colors.white.withOpacity(0.2),
-                trackHeight: 4,
-              ),
-              child: Slider(
-                value: _isDraggingSeek ? _seekValue : progress.clamp(0.0, 1.0),
-                onChanged: (value) {
-                  setState(() {
-                    _isDraggingSeek = true;
-                    _seekValue = value;
-                  });
-                },
-                onChangeStart: (value) {
-                  _seekController.forward();
-                },
-                onChangeEnd: (value) {
-                  _seekController.reverse();
-                  playbackViewModel.seekToProgress(value);
-                  setState(() {
-                    _isDraggingSeek = false;
-                  });
-                },
-              ),
+    final scheme = Theme.of(context).colorScheme;
+    final activeValue = _isDraggingSeek ? _seekValue : progress.clamp(0.0, 1.0);
+    final elapsed = _isDraggingSeek
+        ? Duration(milliseconds: (_seekValue * duration.inMilliseconds).round())
+        : position;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _formatDuration(elapsed),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
             ),
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _seekScaleAnimation.value,
-                child: child,
-              );
+            Text(
+              _formatDuration(duration),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: scheme.primary,
+            inactiveTrackColor: scheme.surfaceVariant,
+            thumbColor: scheme.primary,
+            trackHeight: 4,
+          ),
+          child: Slider(
+            value: activeValue,
+            onChanged: (value) {
+              setState(() {
+                _isDraggingSeek = true;
+                _seekValue = value;
+              });
+            },
+            onChangeEnd: (value) {
+              playbackViewModel.seekToProgress(value);
+              setState(() {
+                _isDraggingSeek = false;
+              });
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildPlaybackControls(PlaybackViewModel playbackViewModel) {
-    return FadeTransition(
-      opacity: _controlsOpacityAnimation,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildControlButton(
-            icon: playbackViewModel.shuffleEnabled 
-                ? Icons.shuffle 
-                : Icons.shuffle,
-            isActive: playbackViewModel.shuffleEnabled,
-            onPressed: () => playbackViewModel.toggleShuffleMode(),
+  Widget _buildPrimaryControls(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: playbackViewModel.hasPrevious
+              ? () => playbackViewModel.skipToPrevious()
+              : null,
+          icon: const Icon(Icons.skip_previous),
+          iconSize: 36,
+        ),
+        const SizedBox(width: 12),
+        FilledButton(
+          onPressed: () => playbackViewModel.togglePlayPause(),
+          style: FilledButton.styleFrom(
+            shape: const CircleBorder(),
+            padding: const EdgeInsets.all(16),
+            backgroundColor: scheme.primary,
           ),
-          _buildControlButton(
-            icon: Icons.skip_previous,
-            onPressed: playbackViewModel.hasPrevious
-                ? () => playbackViewModel.skipToPrevious()
-                : null,
-            size: 40,
+          child: Icon(
+            playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
+            size: 36,
           ),
-          _buildPlayPauseButton(playbackViewModel),
-          _buildControlButton(
-            icon: Icons.skip_next,
-            onPressed: playbackViewModel.hasNext
-                ? () => playbackViewModel.skipToNext()
-                : null,
-            size: 40,
-          ),
-          _buildControlButton(
-            icon: _getRepeatIcon(playbackViewModel.repeatMode),
-            isActive: playbackViewModel.repeatMode != RepeatMode.none,
-            onPressed: () => playbackViewModel.toggleRepeatMode(),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 12),
+        IconButton(
+          onPressed:
+              playbackViewModel.hasNext ? () => playbackViewModel.skipToNext() : null,
+          icon: const Icon(Icons.skip_next),
+          iconSize: 36,
+        ),
+      ],
     );
   }
 
@@ -588,65 +402,222 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
     }
   }
 
-  Widget _buildPlayPauseButton(PlaybackViewModel playbackViewModel) {
+  Widget _buildSecondaryControls(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => playbackViewModel.toggleShuffleMode(),
+          icon: Icon(
+            Icons.shuffle,
+            color: playbackViewModel.shuffleEnabled
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+          tooltip: 'Shuffle',
+        ),
+        IconButton(
+          onPressed: () => playbackViewModel.toggleRepeatMode(),
+          icon: Icon(
+            _getRepeatIcon(playbackViewModel.repeatMode),
+            color: playbackViewModel.repeatMode != RepeatMode.none
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+          tooltip: 'Repeat',
+        ),
+        IconButton(
+          onPressed: () {},
+          icon: Icon(Icons.favorite_border, color: scheme.onSurfaceVariant),
+          tooltip: 'Favorite',
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: () => setState(() => _panel = _NowPlayingPanel.queue),
+          icon: Icon(Icons.queue_music, color: scheme.onSurfaceVariant),
+          tooltip: 'Queue',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPanel(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel, {
+    bool compact = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      width: 80,
-      height: 80,
+      padding: EdgeInsets.all(compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        color: scheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SegmentedButton<_NowPlayingPanel>(
+            segments: const [
+              ButtonSegment(
+                value: _NowPlayingPanel.queue,
+                label: Text('Queue'),
+              ),
+              ButtonSegment(
+                value: _NowPlayingPanel.lyrics,
+                label: Text('Lyrics'),
+              ),
+              ButtonSegment(
+                value: _NowPlayingPanel.visualizer,
+                label: Text('Visualizer'),
+              ),
+            ],
+            selected: {_panel},
+            onSelectionChanged: (value) {
+              setState(() => _panel = value.first);
+            },
+          ),
+          const SizedBox(height: OmnisonicSpacing.md),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              child: _buildPanelContent(context, playbackViewModel, key: _panel),
+            ),
           ),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(40),
-          onTap: () => playbackViewModel.togglePlayPause(),
-          child: Icon(
-            playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
-            color: OmnisonicColors.primaryPurple,
-            size: 40,
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    bool isActive = false,
-    double size = 32,
+  Widget _buildPanelContent(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel, {
+    required _NowPlayingPanel key,
   }) {
-    return Container(
-      width: size + 16,
-      height: size + 16,
-      decoration: BoxDecoration(
-        color: isActive 
-            ? Colors.white.withOpacity(0.2)
-            : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular((size + 16) / 2),
-          onTap: onPressed,
-          child: Icon(
-            icon,
-            color: onPressed != null 
-                ? (isActive ? Colors.white : Colors.white.withOpacity(0.8))
-                : Colors.white.withOpacity(0.3),
-            size: size,
-          ),
+    switch (key) {
+      case _NowPlayingPanel.queue:
+        return _buildQueuePanel(context, playbackViewModel);
+      case _NowPlayingPanel.lyrics:
+        return _buildLyricsPanel(context);
+      case _NowPlayingPanel.visualizer:
+        return _buildVisualizerPanel(context, playbackViewModel);
+    }
+  }
+
+  Widget _buildQueuePanel(BuildContext context, PlaybackViewModel playbackViewModel) {
+    final queue = playbackViewModel.queue;
+    final currentIndex = playbackViewModel.currentIndex;
+    final scheme = Theme.of(context).colorScheme;
+
+    if (queue.isEmpty) {
+      return Center(
+        child: Text(
+          'Queue is empty',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
         ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: queue.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final track = queue[index];
+        final isCurrent = index == currentIndex;
+
+        return ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: scheme.surface,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: track.coverArtUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: track.coverArtUrl!,
+                      cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 80,
+                      memCacheHeight: 80,
+                    )
+                  : Icon(
+                      Icons.music_note,
+                      color: scheme.onSurfaceVariant,
+                      size: 18,
+                    ),
+            ),
+          ),
+          title: Text(
+            track.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                ),
+          ),
+          subtitle: Text(
+            track.artist,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+          ),
+          trailing: isCurrent
+              ? Icon(
+                  playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: scheme.primary,
+                )
+              : null,
+          onTap: () => playbackViewModel.playTrack(
+            track,
+            queue: queue,
+            startIndex: index,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLyricsPanel(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Text(
+        'Lyrics will appear here',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
       ),
     );
   }
+
+  Widget _buildVisualizerPanel(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: AudioVisualizer(
+        isPlaying: playbackViewModel.isPlaying,
+        type: AudioVisualizerType.equalizer,
+        height: 120,
+        color: scheme.primary,
+      ),
+    );
+  }
+}
+
+enum _NowPlayingPanel {
+  queue,
+  lyrics,
+  visualizer,
 }

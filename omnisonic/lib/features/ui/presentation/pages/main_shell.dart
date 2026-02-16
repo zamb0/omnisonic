@@ -42,8 +42,6 @@ class MainShell extends StatelessWidget {
     return Scaffold(
       body: FeishinShell(
         child: child,
-        selectedIndex: _calculateSelectedIndex(context),
-        onSelect: (index) => _onItemTapped(index, context),
         extended: extended,
       ),
     );

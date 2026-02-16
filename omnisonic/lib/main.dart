@@ -21,13 +21,26 @@ import 'features/playback/presentation/bloc/playback_bloc.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize dependency injection
-  await configureDependencies();
-  
-  // Initialize audio service for background playback
-  // This ensures media notifications work on Android
-  final playbackService = getIt<PlaybackService>();
-  await playbackService.initialize();
+  try {
+    // Initialize dependency injection
+    await configureDependencies();
+    
+    // Initialize audio service for background playback
+    // Use a timeout to prevent hanging on iOS if AudioService.init() blocks
+    try {
+      final playbackService = getIt<PlaybackService>();
+      await playbackService.initialize().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('PlaybackService initialization timed out after 5s');
+        },
+      );
+    } catch (e) {
+      debugPrint('PlaybackService initialization failed: $e');
+    }
+  } catch (e) {
+    debugPrint('App initialization failed: $e');
+  }
   
   runApp(const OmnisonicApp());
 }

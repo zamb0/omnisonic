@@ -4,17 +4,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/viewmodels/playlist_view_model.dart';
-import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 import '../models/library_tab.dart';
 import '../models/library_sort_state.dart';
 import '../services/library_sort_service.dart';
-import '../services/track_actions.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/utils/animation_utils.dart';
 
-/// Library page displaying albums, artists, tracks, and playlists
+/// Library page displaying albums, artists, and playlists
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
 
@@ -22,36 +21,23 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _LibraryPageState extends State<LibraryPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LibraryPageState extends State<LibraryPage> {
   late LibrarySortState _sortState;
-  late TrackActions _trackActions;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: LibraryTab.count, vsync: this);
     _sortState = LibrarySortState();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _trackActions = TrackActions(context);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
+    final activeTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library'),
+        title: Text(activeTab.label),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
@@ -67,26 +53,34 @@ class _LibraryPageState extends State<LibraryPage>
             tooltip: 'Sort Options',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelColor: Theme.of(context).colorScheme.onSurface,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          tabs: LibraryTab.values
-              .map((tab) => Tab(text: tab.label, icon: Icon(tab.icon)))
-              .toList(),
+      ),
+      body: AnimatedSwitcher(
+        duration: AnimationConstants.quickAnimation,
+        switchInCurve: AnimationConstants.smoothCurve,
+        switchOutCurve: AnimationConstants.smoothCurve,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(activeTab),
+          child: _buildSectionForTab(activeTab),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildAlbumsTab(),
-          _buildArtistsTab(),
-          _buildTracksTab(),
-          _buildPlaylistsTab(),
-        ],
-      ),
     );
+  }
+
+  Widget _buildSectionForTab(LibraryTab tab) {
+    switch (tab) {
+      case LibraryTab.albums:
+        return _buildAlbumsTab();
+      case LibraryTab.artists:
+        return _buildArtistsTab();
+      case LibraryTab.playlists:
+        return _buildPlaylistsTab();
+    }
   }
 
   Widget _buildAlbumsTab() {
@@ -176,59 +170,6 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  Widget _buildTracksTab() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingList();
-        }
-
-        final tracks = viewModel.tracks;
-        if (tracks.isEmpty) {
-          return EmptyState(
-            icon: Icons.music_note,
-            title: 'No Tracks',
-            subtitle: 'Connect to servers and sync your library to see tracks here',
-            action: ElevatedButton(
-              onPressed: _syncLibrary,
-              child: const Text('Sync Library'),
-            ),
-          );
-        }
-
-        final sortOption = _sortState.getOption(LibraryTab.tracks);
-        final sortedTracks = LibrarySortService.sortTracks(tracks, sortOption);
-
-        return RefreshIndicator(
-          onRefresh: () => viewModel.syncCollection(),
-          child: Column(
-            children: [
-              _buildTrackListHeader(sortedTracks.length),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sortedTracks.length,
-                  itemBuilder: (context, index) {
-                    final track = sortedTracks[index];
-                    return TrackTile(
-                      track: track,
-                      showTrackNumber: false,
-                      onTap: () => _onTrackTapped(track, sortedTracks, index),
-                      onMorePressed: () => _trackActions.showOptions(
-                        track,
-                        onPlayNow: () => _onTrackTapped(track, sortedTracks, index),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildPlaylistsTab() {
     return Consumer<PlaylistViewModel>(
       builder: (context, viewModel, child) {
@@ -300,36 +241,6 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  Widget _buildTrackListHeader(int trackCount) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: [
-          Icon(Icons.music_note, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
-          Text(
-            '$trackCount track${trackCount != 1 ? 's' : ''}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.shuffle),
-            onPressed: trackCount > 0 ? _shuffleAllTracks : null,
-            tooltip: 'Shuffle All',
-          ),
-          IconButton(
-            icon: const Icon(Icons.play_arrow),
-            onPressed: trackCount > 0 ? _playAllTracks : null,
-            tooltip: 'Play All',
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLoadingGrid() {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -346,23 +257,6 @@ class _LibraryPageState extends State<LibraryPage>
     );
   }
 
-  Widget _buildLoadingList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        return Container(
-          height: 72,
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-        );
-      },
-    );
-  }
-
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
     context.push('/album-detail', extra: album);
@@ -371,11 +265,6 @@ class _LibraryPageState extends State<LibraryPage>
   void _onArtistTapped(Artist artist) {
     // Navigate to artist detail page
     context.push('/artist-detail', extra: artist);
-  }
-
-  void _onTrackTapped(Track track, List<Track> playlist, int index) {
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(track, queue: playlist, startIndex: index);
   }
 
   void _onPlaylistTapped(Playlist playlist) {
@@ -390,7 +279,8 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _showSortOptions() {
-    final currentTab = LibraryTab.fromIndex(_tabController.index);
+    final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
+    final currentTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
     final currentOption = _sortState.getOption(currentTab);
 
     AnimationUtils.showCustomBottomSheet(
@@ -439,24 +329,4 @@ class _LibraryPageState extends State<LibraryPage>
     return input.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
   }
 
-  void _shuffleAllTracks() {
-    final tracks = context.read<MusicLibraryViewModel>().tracks;
-    if (tracks.isNotEmpty) {
-      final shuffledTracks = List<Track>.from(tracks)..shuffle();
-      context.read<PlaybackViewModel>().playTrack(shuffledTracks.first, queue: shuffledTracks);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shuffling all tracks')),
-      );
-    }
-  }
-
-  void _playAllTracks() {
-    final tracks = context.read<MusicLibraryViewModel>().tracks;
-    if (tracks.isNotEmpty) {
-      context.read<PlaybackViewModel>().playTrack(tracks.first, queue: tracks, startIndex: 0);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Playing all tracks')),
-      );
-    }
-  }
 }

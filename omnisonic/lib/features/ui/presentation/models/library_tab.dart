@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 enum LibraryTab {
   albums('Albums', Icons.album),
   artists('Artists', Icons.person),
-  tracks('Tracks', Icons.music_note),
   playlists('Playlists', Icons.playlist_play);
 
   const LibraryTab(this.label, this.icon);
@@ -18,6 +17,21 @@ enum LibraryTab {
       (tab) => tab.index == index,
       orElse: () => LibraryTab.albums,
     );
+  }
+
+  /// Get tab by name (matches enum name values)
+  static LibraryTab? fromName(String? name) {
+    if (name == null || name.isEmpty) {
+      return null;
+    }
+
+    for (final tab in LibraryTab.values) {
+      if (tab.name == name) {
+        return tab;
+      }
+    }
+
+    return null;
   }
 
   /// Get total number of tabs

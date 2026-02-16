@@ -82,6 +82,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
     return Consumer<PlaybackViewModel>(
       builder: (context, vm, child) {
@@ -97,32 +99,178 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
 
         return SlideTransition(
           position: _slideAnimation,
-          child: Container(
-            height: 90,
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              border: Border(
-                top: BorderSide(
-                  color: scheme.outlineVariant.withOpacity(0.5),
-                  width: 1,
+          child: isMobile
+              ? _buildMobileBar(context, vm, track, scheme, position, duration, progress)
+              : _buildDesktopBar(context, vm, track, scheme, position, duration, progress),
+        );
+      },
+    );
+  }
+
+  /// Compact mobile bar: artwork + info + controls, with a thin progress bar on top
+  Widget _buildMobileBar(
+    BuildContext context,
+    PlaybackViewModel vm,
+    Track track,
+    ColorScheme scheme,
+    Duration position,
+    Duration duration,
+    double progress,
+  ) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          border: Border(
+            top: BorderSide(
+              color: scheme.outlineVariant.withOpacity(0.5),
+              width: 1,
+            ),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Thin progress bar at top
+            LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 2,
+              backgroundColor: scheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    // Artwork
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: scheme.surfaceContainerHighest,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: track.coverArtUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: track.coverArtUrl!,
+                                cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 88,
+                                memCacheHeight: 88,
+                                placeholder: (context, url) => _buildFallbackArtwork(),
+                                errorWidget: (context, url, error) => _buildFallbackArtwork(),
+                              )
+                            : _buildFallbackArtwork(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Title + Artist
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            track.title,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            track.artist,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Compact controls
+                    _iconBtn(
+                      Icons.skip_previous,
+                      22,
+                      vm.hasPrevious ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+                      vm.hasPrevious ? () => vm.skipToPrevious() : null,
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          vm.isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: scheme.onPrimary,
+                        ),
+                        iconSize: 20,
+                        padding: EdgeInsets.zero,
+                        onPressed: () => vm.togglePlayPause(),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _iconBtn(
+                      Icons.skip_next,
+                      22,
+                      vm.hasNext ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+                      vm.hasNext ? () => vm.skipToNext() : null,
+                    ),
+                  ],
                 ),
               ),
             ),
-            child: Row(
-              children: [
-                // === LEFT: Artwork + Track Info ===
-                _buildLeftSection(track, scheme),
-                // === CENTER: Controls + Progress ===
-                Expanded(
-                  child: _buildCenterSection(vm, scheme, position, duration, progress),
-                ),
-                // === RIGHT: Utility Icons ===
-                _buildRightSection(scheme),
-              ],
-            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Full desktop 3-section bar: left (artwork+info), center (controls+progress), right (volume)
+  Widget _buildDesktopBar(
+    BuildContext context,
+    PlaybackViewModel vm,
+    Track track,
+    ColorScheme scheme,
+    Duration position,
+    Duration duration,
+    double progress,
+  ) {
+    return Container(
+      height: 90,
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: scheme.outlineVariant.withOpacity(0.5),
+            width: 1,
           ),
-        );
-      },
+        ),
+      ),
+      child: Row(
+        children: [
+          // === LEFT: Artwork + Track Info ===
+          _buildLeftSection(track, scheme),
+          // === CENTER: Controls + Progress ===
+          Expanded(
+            child: _buildCenterSection(vm, scheme, position, duration, progress),
+          ),
+          // === RIGHT: Utility Icons ===
+          _buildRightSection(scheme),
+        ],
+      ),
     );
   }
 

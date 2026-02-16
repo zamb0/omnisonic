@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'platform_optimizations.dart';
 
@@ -11,21 +9,7 @@ class PlatformAnimations {
 
   /// Get platform-appropriate page transition
   PageTransitionsBuilder get pageTransitionBuilder {
-    switch (PlatformOptimizations().currentPlatform) {
-      case PlatformType.ios:
-        return const CupertinoPageTransitionsBuilder();
-      case PlatformType.android:
-        return const FadeUpwardsPageTransitionsBuilder();
-      case PlatformType.web:
-        return const FadeUpwardsPageTransitionsBuilder();
-      case PlatformType.macos:
-        return const CupertinoPageTransitionsBuilder();
-      case PlatformType.windows:
-      case PlatformType.linux:
-        return const OpenUpwardsPageTransitionsBuilder();
-      case PlatformType.unknown:
-        return const FadeUpwardsPageTransitionsBuilder();
-    }
+    return const FadeOnlyPageTransitionsBuilder();
   }
 
   /// Get platform-appropriate animation curves
@@ -190,6 +174,27 @@ class PlatformAnimations {
       case PlatformType.unknown:
         return Curves.easeOutCubic;
     }
+  }
+}
+
+class FadeOnlyPageTransitionsBuilder extends PageTransitionsBuilder {
+  const FadeOnlyPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      ),
+      child: child,
+    );
   }
 }
 

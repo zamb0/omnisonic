@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/entities/entities.dart';
-import '../../core/utils/animation_utils.dart';
+import '../../core/constants/animation_constants.dart';
 import '../../features/ui/presentation/pages/home_page.dart';
 import '../../features/ui/presentation/pages/library_page.dart';
 import '../../features/ui/presentation/pages/search_page.dart';
@@ -35,37 +35,55 @@ class AppRouter {
           GoRoute(
             path: home,
             name: 'home',
-            builder: (context, state) => const HomePage(),
+            pageBuilder: (context, state) => _fadePage(
+              state: state,
+              child: const HomePage(),
+            ),
           ),
           GoRoute(
             path: library,
             name: 'library',
-            builder: (context, state) => const LibraryPage(),
+            pageBuilder: (context, state) => _fadePage(
+              state: state,
+              child: const LibraryPage(),
+            ),
           ),
           GoRoute(
             path: search,
             name: 'search',
-            builder: (context, state) => const SearchPage(),
+            pageBuilder: (context, state) => _fadePage(
+              state: state,
+              child: const SearchPage(),
+            ),
           ),
           GoRoute(
             path: servers,
             name: 'servers',
-            builder: (context, state) => const ServerManagementPage(),
+            pageBuilder: (context, state) => _fadePage(
+              state: state,
+              child: const ServerManagementPage(),
+            ),
           ),
           GoRoute(
             path: albumDetail,
             name: 'albumDetail',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final album = state.extra as Album;
-              return AlbumDetailPage(album: album);
+              return _fadePage(
+                state: state,
+                child: AlbumDetailPage(album: album),
+              );
             },
           ),
           GoRoute(
             path: artistDetail,
             name: 'artistDetail',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final artist = state.extra as Artist;
-              return ArtistDetailPage(artist: artist);
+              return _fadePage(
+                state: state,
+                child: ArtistDetailPage(artist: artist),
+              );
             },
           ),
         ],
@@ -96,16 +114,42 @@ class AppRouter {
       GoRoute(
         path: playlistManagement,
         name: 'playlistManagement',
-        builder: (context, state) => const PlaylistManagementPage(),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const PlaylistManagementPage(),
+        ),
       ),
       GoRoute(
         path: playlistDetail,
         name: 'playlistDetail',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final playlistId = state.uri.queryParameters['id'] ?? '';
-          return PlaylistDetailPage(playlistId: playlistId);
+          return _fadePage(
+            state: state,
+            child: PlaylistDetailPage(playlistId: playlistId),
+          );
         },
       ),
     ],
   );
+
+  static CustomTransitionPage<void> _fadePage({
+    required GoRouterState state,
+    required Widget child,
+  }) {
+    return CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: AnimationConstants.quickAnimation,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: AnimationConstants.smoothCurve,
+          ),
+          child: child,
+        );
+      },
+    );
+  }
 }

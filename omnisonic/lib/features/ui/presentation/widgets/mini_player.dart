@@ -68,13 +68,14 @@ class MiniPlayer extends StatelessWidget {
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: CachedNetworkImage(
-                            imageUrl: track.coverArtUrl!,
-                            cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                            imageUrl: track.coverArtUrl!.withCoverArtSize(96),
+                            cacheKey: track.coverArtUrl!.withCoverArtSize(96).subsonicCacheKey,
+                            cacheManager: OmnisonicImageCacheManager.instance,
                             fit: BoxFit.cover,
-                            maxWidthDiskCache: 96,
-                            maxHeightDiskCache: 96,
                             memCacheWidth: 96,
                             memCacheHeight: 96,
+                            fadeInDuration: const Duration(milliseconds: 120),
+                            useOldImageOnUrlChange: true,
                             placeholder: (context, url) => const Icon(Icons.music_note, color: Colors.grey),
                             errorWidget: (context, url, error) =>
                                 const Icon(Icons.music_note, color: Colors.grey),

@@ -175,6 +175,174 @@ class SubsonicApiClient {
     
     return '${server.apiUrl}/getCoverArt?$query';
   }
+
+  /// Scrobbles a track (registers playback at Last.fm or similar service)
+  /// 
+  /// Parameters:
+  /// - [trackId]: The ID of the track being played
+  /// - [time]: The time (in milliseconds since epoch) at which the song was listened to
+  /// - [submission]: Whether this is a "submission" or "now playing" notification
+  Future<SubsonicResponse<PingResponse>> scrobble(
+    MusicServer server,
+    String password,
+    String trackId, {
+    DateTime? time,
+    bool submission = true,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'id': trackId,
+        'submission': submission.toString(),
+      };
+      
+      if (time != null) {
+        queryParams['time'] = time.millisecondsSinceEpoch.toString();
+      }
+      
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'scrobble',
+        queryParams: queryParams,
+      );
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PingResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Saves the state of the play queue for this user
+  /// 
+  /// Parameters:
+  /// - [trackIds]: ID of all tracks in the play queue
+  /// - [current]: ID of the currently playing track
+  /// - [position]: Current playback position (in milliseconds) of the current track
+  Future<SubsonicResponse<PingResponse>> savePlayQueue(
+    MusicServer server,
+    String password,
+    List<String> trackIds, {
+    String? current,
+    int? position,
+  }) async {
+    try {
+      // Build query params without the trackIds first
+      final Map<String,dynamic> baseParams = {};
+      if (current != null) baseParams['current'] = current;
+      if (position != null) baseParams['position'] = position.toString();
+      
+      // Make request with custom handling for multiple 'id' params
+      final response = await _makeRequestWithMultipleIds(
+        server: server,
+        password: password,
+        endpoint: 'savePlayQueue',
+        ids: trackIds,
+        additionalParams: baseParams,
+      );
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PingResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Returns the state of the play queue for this user
+  Future<SubsonicResponse<PlayQueueResponse>> getPlayQueue(
+    MusicServer server,
+    String password,
+  ) async {
+    try {
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'getPlayQueue',
+      );
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PlayQueueResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Stars (favorites) an item
+  /// 
+  /// Parameters:
+  /// - [id]: The ID of the track, album, or artist to star
+  /// - [albumId]: The ID of the album to star (optional)
+  /// - [artistId]: The ID of the artist to star (optional)
+  Future<SubsonicResponse<PingResponse>> star(
+    MusicServer server,
+    String password, {
+    String? id,
+    String? albumId,
+    String? artistId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (id != null) queryParams['id'] = id;
+      if (albumId != null) queryParams['albumId'] = albumId;
+      if (artistId != null) queryParams['artistId'] = artistId;
+      
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'star',
+        queryParams: queryParams,
+      );
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PingResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Unstars (removes from favorites) an item
+  /// 
+  /// Parameters:
+  /// - [id]: The ID of the track, album, or artist to unstar
+  /// - [albumId]: The ID of the album to unstar (optional)
+  /// - [artistId]: The ID of the artist to unstar (optional)
+  Future<SubsonicResponse<PingResponse>> unstar(
+    MusicServer server,
+    String password, {
+    String? id,
+   String? albumId,
+    String? artistId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (id != null) queryParams['id'] = id;
+      if (albumId != null) queryParams['albumId'] = albumId;
+      if (artistId != null) queryParams['artistId'] = artistId;
+      
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'unstar',
+        queryParams: queryParams,
+      );
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PingResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   /// Makes a request to the Subsonic API
   Future<Response> _makeRequest({
     required MusicServer server,
@@ -202,6 +370,81 @@ class SubsonicApiClient {
         '${server.apiUrl}/$endpoint',
         queryParameters: params,
       );
+      
+      AppLog.debug('Response status: ${response.statusCode}');
+      
+      if (response.statusCode != 200) {
+        throw SubsonicApiException(
+          'HTTP ${response.statusCode}: ${response.statusMessage}',
+          response.statusCode.toString(),
+        );
+      }
+      
+      // Check if response contains Subsonic error
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        final subsonicResponse = data['subsonic-response'];
+        if (subsonicResponse is Map<String, dynamic>) {
+          final status = subsonicResponse['status'];
+          if (status == 'failed') {
+            final error = subsonicResponse['error'];
+            if (error is Map<String, dynamic>) {
+              throw SubsonicApiException(
+                error['message'] as String? ?? 'Unknown server error',
+                (error['code'] as int?)?.toString(),
+              );
+            }
+          }
+        }
+      }
+      
+      return response;
+    } catch (e) {
+      AppLog.warn('Request failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Makes a request with multiple values for the same parameter (e.g., multiple 'id' params)
+  Future<Response> _makeRequestWithMultipleIds({
+    required MusicServer server,
+    required String password,
+    required String endpoint,
+    required List<String> ids,
+    Map<String, dynamic>? additionalParams,
+  }) async {
+    final salt = _generateSalt();
+    final token = _generateToken(password, salt);
+    
+    // Build query string manually to support multiple 'id' parameters
+    final queryParts = <String>[
+      'u=${Uri.encodeComponent(server.username)}',
+      't=${Uri.encodeComponent(token)}',
+      's=${Uri.encodeComponent(salt)}',
+      'v=$_apiVersion',
+      'c=$_clientName',
+      'f=json',
+    ];
+    
+    // Add multiple 'id' parameters
+    for (final id in ids) {
+      queryParts.add('id=${Uri.encodeComponent(id)}');
+    }
+    
+    // Add additional parameters
+    if (additionalParams != null) {
+      for (final entry in additionalParams.entries) {
+        queryParts.add('${entry.key}=${Uri.encodeComponent(entry.value.toString())}');
+      }
+    }
+    
+    final queryString = queryParts.join('&');
+    final url = '${server.apiUrl}/$endpoint?$queryString';
+    
+    AppLog.debug('Making request to endpoint: $endpoint with ${ids.length} IDs');
+    
+    try {
+      final response = await _dio.get(url);
       
       AppLog.debug('Response status: ${response.statusCode}');
       

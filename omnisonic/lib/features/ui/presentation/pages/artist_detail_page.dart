@@ -434,8 +434,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                   imageUrl: widget.artist.imageUrl!,
                   cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
                   fit: BoxFit.cover,
-                  maxWidthDiskCache: 600,
-                  maxHeightDiskCache: 600,
                   memCacheWidth: 600,
                   memCacheHeight: 600,
                   placeholder: (context, url) => Container(

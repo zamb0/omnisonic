@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
 
 // **************************************************************************
 // InjectableConfigGenerator
@@ -60,6 +61,8 @@ import 'package:omnisonic/features/playback/data/datasources/mpris_handler.dart'
     as _i670;
 import 'package:omnisonic/features/playback/data/datasources/playback_service.dart'
     as _i48;
+import 'package:omnisonic/features/playback/data/datasources/playback_tracking_service.dart'
+    as _i989;
 import 'package:omnisonic/features/playback/presentation/bloc/playback_bloc.dart'
     as _i725;
 import 'package:omnisonic/features/playback/presentation/viewmodels/playback_view_model.dart'
@@ -70,16 +73,12 @@ import 'package:omnisonic/features/sync/presentation/bloc/sync_bloc.dart'
     as _i409;
 
 extension GetItInjectableX on _i174.GetIt {
-// initializes the registration of main-scope dependencies inside of GetIt
+  // initializes the registration of main-scope dependencies inside of GetIt
   _i174.GetIt init({
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
   }) {
-    final gh = _i526.GetItHelper(
-      this,
-      environment,
-      environmentFilter,
-    );
+    final gh = _i526.GetItHelper(this, environment, environmentFilter);
     final appModule = _$AppModule();
     final connectivityModule = _$ConnectivityModule();
     gh.lazySingleton<_i361.Dio>(() => appModule.dio);
@@ -87,111 +86,163 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i350.AppDatabase>(() => appModule.database);
     gh.lazySingleton<_i569.ServerValidator>(() => appModule.serverValidator());
     gh.lazySingleton<_i566.DeduplicationEngine>(
-        () => appModule.deduplicationEngine());
+      () => appModule.deduplicationEngine(),
+    );
     gh.lazySingleton<_i1002.AdaptiveStreamingService>(
-        () => appModule.adaptiveStreamingService());
+      () => appModule.adaptiveStreamingService(),
+    );
     gh.lazySingleton<_i895.Connectivity>(() => connectivityModule.connectivity);
-    gh.lazySingleton<_i516.AudioPlayerDataSource>(() =>
-        appModule.audioPlayerDataSource(gh<_i1002.AdaptiveStreamingService>()));
     gh.lazySingleton<_i79.SubsonicApiClient>(
-        () => appModule.subsonicApiClient(gh<_i361.Dio>()));
-    gh.lazySingleton<_i963.LocalMusicDataSource>(
-        () => appModule.localMusicDataSource(gh<_i350.AppDatabase>()));
-    gh.lazySingleton<_i618.LocalServerDataSource>(
-        () => appModule.localServerDataSource(gh<_i350.AppDatabase>()));
-    gh.lazySingleton<_i2.LocalPlaylistDataSource>(
-        () => appModule.localPlaylistDataSource(gh<_i350.AppDatabase>()));
+      () => appModule.subsonicApiClient(gh<_i361.Dio>()),
+    );
+    gh.lazySingleton<_i516.AudioPlayerDataSource>(
+      () => appModule.audioPlayerDataSource(
+        gh<_i1002.AdaptiveStreamingService>(),
+      ),
+    );
     gh.lazySingleton<_i1048.NetworkInfo>(
-        () => _i1048.NetworkInfoImpl(gh<_i895.Connectivity>()));
-    gh.lazySingleton<_i648.AudioServiceHandler>(
-        () => appModule.audioServiceHandler(gh<_i516.AudioPlayerDataSource>()));
-    gh.lazySingleton<_i463.AudioFocusManager>(
-        () => appModule.audioFocusManager(gh<_i516.AudioPlayerDataSource>()));
-    gh.lazySingleton<_i670.MprisHandler>(
-        () => appModule.mprisHandler(gh<_i516.AudioPlayerDataSource>()));
-    gh.lazySingleton<_i995.PlaybackRepository>(
-        () => appModule.playbackRepository(gh<_i516.AudioPlayerDataSource>()));
-    gh.lazySingleton<_i632.ServerConnectionService>(
-        () => appModule.serverConnectionService(
-              gh<_i79.SubsonicApiClient>(),
-              gh<_i558.FlutterSecureStorage>(),
-              gh<_i350.AppDatabase>(),
-            ));
+      () => _i1048.NetworkInfoImpl(gh<_i895.Connectivity>()),
+    );
+    gh.lazySingleton<_i963.LocalMusicDataSource>(
+      () => appModule.localMusicDataSource(gh<_i350.AppDatabase>()),
+    );
+    gh.lazySingleton<_i618.LocalServerDataSource>(
+      () => appModule.localServerDataSource(gh<_i350.AppDatabase>()),
+    );
+    gh.lazySingleton<_i2.LocalPlaylistDataSource>(
+      () => appModule.localPlaylistDataSource(gh<_i350.AppDatabase>()),
+    );
     gh.lazySingleton<_i293.PlaylistRepository>(
-        () => _i238.PlaylistRepositoryImpl(
-              localPlaylistDataSource: gh<_i2.LocalPlaylistDataSource>(),
-              localMusicDataSource: gh<_i963.LocalMusicDataSource>(),
-            ));
-    gh.lazySingleton<_i48.PlaybackService>(() => appModule.playbackService(
-          gh<_i516.AudioPlayerDataSource>(),
-          gh<_i648.AudioServiceHandler>(),
-          gh<_i463.AudioFocusManager>(),
-          gh<_i670.MprisHandler>(),
-        ));
-    gh.lazySingleton<_i253.ServerStatusMonitor>(() =>
-        appModule.serverStatusMonitor(gh<_i632.ServerConnectionService>()));
-    gh.lazySingleton<_i296.ServerRepository>(() => appModule.serverRepository(
-          gh<_i618.LocalServerDataSource>(),
-          gh<_i632.ServerConnectionService>(),
-          gh<_i253.ServerStatusMonitor>(),
-          gh<_i569.ServerValidator>(),
-        ));
+      () => _i238.PlaylistRepositoryImpl(
+        localPlaylistDataSource: gh<_i2.LocalPlaylistDataSource>(),
+        localMusicDataSource: gh<_i963.LocalMusicDataSource>(),
+      ),
+    );
+    gh.lazySingleton<_i995.PlaybackRepository>(
+      () => appModule.playbackRepository(gh<_i516.AudioPlayerDataSource>()),
+    );
+    gh.lazySingleton<_i648.AudioServiceHandler>(
+      () => appModule.audioServiceHandler(gh<_i516.AudioPlayerDataSource>()),
+    );
+    gh.lazySingleton<_i463.AudioFocusManager>(
+      () => appModule.audioFocusManager(gh<_i516.AudioPlayerDataSource>()),
+    );
+    gh.lazySingleton<_i670.MprisHandler>(
+      () => appModule.mprisHandler(gh<_i516.AudioPlayerDataSource>()),
+    );
+    gh.lazySingleton<_i632.ServerConnectionService>(
+      () => appModule.serverConnectionService(
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i558.FlutterSecureStorage>(),
+        gh<_i350.AppDatabase>(),
+      ),
+    );
+    gh.lazySingleton<_i48.PlaybackService>(
+      () => appModule.playbackService(
+        gh<_i516.AudioPlayerDataSource>(),
+        gh<_i648.AudioServiceHandler>(),
+        gh<_i463.AudioFocusManager>(),
+        gh<_i670.MprisHandler>(),
+      ),
+    );
+    gh.lazySingleton<_i253.ServerStatusMonitor>(
+      () => appModule.serverStatusMonitor(gh<_i632.ServerConnectionService>()),
+    );
+    gh.lazySingleton<_i296.ServerRepository>(
+      () => appModule.serverRepository(
+        gh<_i618.LocalServerDataSource>(),
+        gh<_i632.ServerConnectionService>(),
+        gh<_i253.ServerStatusMonitor>(),
+        gh<_i569.ServerValidator>(),
+      ),
+    );
+    gh.factory<_i989.PlaybackTrackingService>(
+      () => _i989.PlaybackTrackingService(
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i296.ServerRepository>(),
+      ),
+    );
     gh.lazySingleton<_i759.SourceSelectionService>(
-        () => appModule.sourceSelectionService(gh<_i296.ServerRepository>()));
-    gh.lazySingleton<_i102.MusicRepository>(() => appModule.musicRepository(
-          gh<_i963.LocalMusicDataSource>(),
-          gh<_i79.SubsonicApiClient>(),
-          gh<_i296.ServerRepository>(),
-          gh<_i632.ServerConnectionService>(),
-          gh<_i566.DeduplicationEngine>(),
-          gh<_i759.SourceSelectionService>(),
-        ));
-    gh.factory<_i631.ManagePlaylistUseCase>(() => _i631.ManagePlaylistUseCase(
-          gh<_i331.PlaylistRepository>(),
-          gh<_i331.MusicRepository>(),
-        ));
-    gh.factory<_i1063.SearchMusicUseCase>(() => _i1063.SearchMusicUseCase(
-          gh<_i331.MusicRepository>(),
-          gh<_i331.ServerRepository>(),
-        ));
+      () => appModule.sourceSelectionService(gh<_i296.ServerRepository>()),
+    );
+    gh.lazySingleton<_i102.MusicRepository>(
+      () => appModule.musicRepository(
+        gh<_i963.LocalMusicDataSource>(),
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i296.ServerRepository>(),
+        gh<_i632.ServerConnectionService>(),
+        gh<_i566.DeduplicationEngine>(),
+        gh<_i759.SourceSelectionService>(),
+      ),
+    );
+    gh.factory<_i896.PlayTrackUseCase>(
+      () => _i896.PlayTrackUseCase(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
+    gh.factory<_i725.PlaybackBloc>(
+      () => _i725.PlaybackBloc(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i503.PlayTrackUseCase>(),
+      ),
+    );
+    gh.factory<_i631.ManagePlaylistUseCase>(
+      () => _i631.ManagePlaylistUseCase(
+        gh<_i331.PlaylistRepository>(),
+        gh<_i331.MusicRepository>(),
+      ),
+    );
+    gh.factory<_i1063.SearchMusicUseCase>(
+      () => _i1063.SearchMusicUseCase(
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
     gh.factory<_i882.SyncMusicCollectionUseCase>(
-        () => _i882.SyncMusicCollectionUseCase(
-              gh<_i331.MusicRepository>(),
-              gh<_i331.ServerRepository>(),
-            ));
-    gh.factory<_i409.SyncBloc>(() => _i409.SyncBloc(
-          gh<_i503.SyncMusicCollectionUseCase>(),
-          gh<_i331.ServerRepository>(),
-        ));
-    gh.factory<_i896.PlayTrackUseCase>(() => _i896.PlayTrackUseCase(
-          gh<_i331.PlaybackRepository>(),
-          gh<_i331.MusicRepository>(),
-          gh<_i331.ServerRepository>(),
-        ));
-    gh.factory<_i725.PlaybackBloc>(() => _i725.PlaybackBloc(
-          gh<_i331.PlaybackRepository>(),
-          gh<_i503.PlayTrackUseCase>(),
-        ));
-    gh.factory<_i984.PlaybackViewModel>(() => _i984.PlaybackViewModel(
-          gh<_i331.PlaybackRepository>(),
-          gh<_i503.PlayTrackUseCase>(),
-        ));
-    gh.factory<_i693.PlaylistViewModel>(() => _i693.PlaylistViewModel(
-          gh<_i331.PlaylistRepository>(),
-          gh<_i503.ManagePlaylistUseCase>(),
-        ));
-    gh.factory<_i780.MusicLibraryViewModel>(() => _i780.MusicLibraryViewModel(
-          gh<_i331.MusicRepository>(),
-          gh<_i503.SyncMusicCollectionUseCase>(),
-          gh<_i503.SearchMusicUseCase>(),
-        ));
-    gh.factory<_i106.SearchBloc>(
-        () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()));
+      () => _i882.SyncMusicCollectionUseCase(
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
+    gh.factory<_i693.PlaylistViewModel>(
+      () => _i693.PlaylistViewModel(
+        gh<_i331.PlaylistRepository>(),
+        gh<_i503.ManagePlaylistUseCase>(),
+      ),
+    );
+    gh.factory<_i984.PlaybackViewModel>(
+      () => _i984.PlaybackViewModel(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i503.PlayTrackUseCase>(),
+        gh<_i989.PlaybackTrackingService>(),
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
+    gh.factory<_i780.MusicLibraryViewModel>(
+      () => _i780.MusicLibraryViewModel(
+        gh<_i331.MusicRepository>(),
+        gh<_i503.SyncMusicCollectionUseCase>(),
+        gh<_i503.SearchMusicUseCase>(),
+      ),
+    );
+    gh.factory<_i409.SyncBloc>(
+      () => _i409.SyncBloc(
+        gh<_i503.SyncMusicCollectionUseCase>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
     gh.factory<_i502.ServerManagementViewModel>(
-        () => _i502.ServerManagementViewModel(
-              gh<_i331.ServerRepository>(),
-              gh<_i503.SyncMusicCollectionUseCase>(),
-            ));
+      () => _i502.ServerManagementViewModel(
+        gh<_i331.ServerRepository>(),
+        gh<_i503.SyncMusicCollectionUseCase>(),
+      ),
+    );
+    gh.factory<_i106.SearchBloc>(
+      () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
+    );
     return this;
   }
 }

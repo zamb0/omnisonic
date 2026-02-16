@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/track.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 /// A reusable tile widget for displaying track information
 class TrackTile extends StatelessWidget {
@@ -82,8 +83,14 @@ class TrackTile extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: CachedNetworkImage(
-                imageUrl: track.coverArtUrl!,
+                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
+                memCacheWidth: 128,
+                memCacheHeight: 128,
+                fadeInDuration: const Duration(milliseconds: 120),
+                useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
                   color: scheme.surfaceVariant,
                   child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),

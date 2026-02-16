@@ -376,13 +376,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           borderRadius: borderRadius,
             child: _album.coverArtUrl != null
               ? CachedNetworkImage(
-                imageUrl: _album.coverArtUrl!,
-                cacheKey: _album.coverArtUrl!.subsonicCacheKey,
+                imageUrl: _album.coverArtUrl!.withCoverArtSize(800),
+                cacheKey: _album.coverArtUrl!.withCoverArtSize(800).subsonicCacheKey,
+                cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
-                  maxWidthDiskCache: 800,
-                  maxHeightDiskCache: 800,
                   memCacheWidth: 800,
                   memCacheHeight: 800,
+                  fadeInDuration: const Duration(milliseconds: 120),
+                  useOldImageOnUrlChange: true,
                   placeholder: (context, url) => Container(
                     color: scheme.surfaceVariant,
                     child: Icon(
@@ -391,13 +392,17 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
-                    color: scheme.surfaceVariant,
-                    child: Icon(
-                      Icons.album,
-                      size: size * 0.5,
-                      color: scheme.onSurfaceVariant,
+                  errorWidget: (context, url, error) => coverArtErrorWidget(
+                    Container(
+                      color: scheme.surfaceVariant,
+                      child: Icon(
+                        Icons.album,
+                        size: size * 0.5,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
+                    url,
+                    error,
                   ),
                 )
               : Container(

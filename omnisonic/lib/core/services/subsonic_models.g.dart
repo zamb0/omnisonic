@@ -9,48 +9,45 @@ part of 'subsonic_models.dart';
 SubsonicResponse<T> _$SubsonicResponseFromJson<T>(
   Map<String, dynamic> json,
   T Function(Object? json) fromJsonT,
-) =>
-    SubsonicResponse<T>(
-      subsonicResponse: SubsonicResponseData<T>.fromJson(
-          json['subsonic-response'] as Map<String, dynamic>,
-          (value) => fromJsonT(value)),
-    );
+) => SubsonicResponse<T>(
+  subsonicResponse: SubsonicResponseData<T>.fromJson(
+    json['subsonic-response'] as Map<String, dynamic>,
+    (value) => fromJsonT(value),
+  ),
+);
 
 Map<String, dynamic> _$SubsonicResponseToJson<T>(
   SubsonicResponse<T> instance,
   Object? Function(T value) toJsonT,
-) =>
-    <String, dynamic>{
-      'subsonic-response': instance.subsonicResponse.toJson(
-        (value) => toJsonT(value),
-      ),
-    };
+) => <String, dynamic>{
+  'subsonic-response': instance.subsonicResponse.toJson(
+    (value) => toJsonT(value),
+  ),
+};
 
 SubsonicResponseData<T> _$SubsonicResponseDataFromJson<T>(
   Map<String, dynamic> json,
   T Function(Object? json) fromJsonT,
-) =>
-    SubsonicResponseData<T>(
-      status: json['status'] as String,
-      version: json['version'] as String,
-      type: json['type'] as String?,
-      serverVersion: json['serverVersion'] as String?,
-      error: json['error'] == null
-          ? null
-          : SubsonicError.fromJson(json['error'] as Map<String, dynamic>),
-    );
+) => SubsonicResponseData<T>(
+  status: json['status'] as String,
+  version: json['version'] as String,
+  type: json['type'] as String?,
+  serverVersion: json['serverVersion'] as String?,
+  error: json['error'] == null
+      ? null
+      : SubsonicError.fromJson(json['error'] as Map<String, dynamic>),
+);
 
 Map<String, dynamic> _$SubsonicResponseDataToJson<T>(
   SubsonicResponseData<T> instance,
   Object? Function(T value) toJsonT,
-) =>
-    <String, dynamic>{
-      'status': instance.status,
-      'version': instance.version,
-      'type': instance.type,
-      'serverVersion': instance.serverVersion,
-      'error': instance.error,
-    };
+) => <String, dynamic>{
+  'status': instance.status,
+  'version': instance.version,
+  'type': instance.type,
+  'serverVersion': instance.serverVersion,
+  'error': instance.error,
+};
 
 SubsonicError _$SubsonicErrorFromJson(Map<String, dynamic> json) =>
     SubsonicError(
@@ -59,10 +56,7 @@ SubsonicError _$SubsonicErrorFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$SubsonicErrorToJson(SubsonicError instance) =>
-    <String, dynamic>{
-      'code': instance.code,
-      'message': instance.message,
-    };
+    <String, dynamic>{'code': instance.code, 'message': instance.message};
 
 PingResponse _$PingResponseFromJson(Map<String, dynamic> json) =>
     PingResponse();
@@ -78,9 +72,7 @@ AlbumsResponse _$AlbumsResponseFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$AlbumsResponseToJson(AlbumsResponse instance) =>
-    <String, dynamic>{
-      'album': instance.album,
-    };
+    <String, dynamic>{'album': instance.album};
 
 ArtistsResponse _$ArtistsResponseFromJson(Map<String, dynamic> json) =>
     ArtistsResponse(
@@ -90,9 +82,7 @@ ArtistsResponse _$ArtistsResponseFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$ArtistsResponseToJson(ArtistsResponse instance) =>
-    <String, dynamic>{
-      'index': instance.index,
-    };
+    <String, dynamic>{'index': instance.index};
 
 AlbumResponse _$AlbumResponseFromJson(Map<String, dynamic> json) =>
     AlbumResponse(
@@ -179,11 +169,8 @@ SubsonicArtistIndex _$SubsonicArtistIndexFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$SubsonicArtistIndexToJson(
-        SubsonicArtistIndex instance) =>
-    <String, dynamic>{
-      'name': instance.name,
-      'artist': instance.artist,
-    };
+  SubsonicArtistIndex instance,
+) => <String, dynamic>{'name': instance.name, 'artist': instance.artist};
 
 SubsonicArtist _$SubsonicArtistFromJson(Map<String, dynamic> json) =>
     SubsonicArtist(
@@ -206,37 +193,37 @@ Map<String, dynamic> _$SubsonicArtistToJson(SubsonicArtist instance) =>
     };
 
 SubsonicSong _$SubsonicSongFromJson(Map<String, dynamic> json) => SubsonicSong(
-      id: json['id'] as String,
-      parent: json['parent'] as String?,
-      isDir: json['isDir'] as bool,
-      title: json['title'] as String,
-      album: json['album'] as String?,
-      artist: json['artist'] as String?,
-      track: _parseIntFromDynamic(json['track']),
-      year: _parseIntFromDynamic(json['year']),
-      genre: json['genre'] as String?,
-      coverArt: json['coverArt'] as String?,
-      size: _parseIntFromDynamic(json['size']),
-      contentType: json['contentType'] as String?,
-      suffix: json['suffix'] as String?,
-      duration: _parseIntFromDynamic(json['duration']),
-      bitRate: _parseIntFromDynamic(json['bitRate']),
-      path: json['path'] as String?,
-      playCount: _parseIntFromDynamic(json['playCount']),
-      discNumber: _parseIntFromDynamic(json['discNumber']),
-      created: json['created'] == null
-          ? null
-          : DateTime.parse(json['created'] as String),
-      starred: json['starred'] == null
-          ? null
-          : DateTime.parse(json['starred'] as String),
-      albumId: json['albumId'] as String?,
-      artistId: json['artistId'] as String?,
-      type: json['type'] as String?,
-      bookmarkPosition: _parseIntFromDynamic(json['bookmarkPosition']),
-      originalWidth: _parseIntFromDynamic(json['originalWidth']),
-      originalHeight: _parseIntFromDynamic(json['originalHeight']),
-    );
+  id: json['id'] as String,
+  parent: json['parent'] as String?,
+  isDir: json['isDir'] as bool,
+  title: json['title'] as String,
+  album: json['album'] as String?,
+  artist: json['artist'] as String?,
+  track: _parseIntFromDynamic(json['track']),
+  year: _parseIntFromDynamic(json['year']),
+  genre: json['genre'] as String?,
+  coverArt: json['coverArt'] as String?,
+  size: _parseIntFromDynamic(json['size']),
+  contentType: json['contentType'] as String?,
+  suffix: json['suffix'] as String?,
+  duration: _parseIntFromDynamic(json['duration']),
+  bitRate: _parseIntFromDynamic(json['bitRate']),
+  path: json['path'] as String?,
+  playCount: _parseIntFromDynamic(json['playCount']),
+  discNumber: _parseIntFromDynamic(json['discNumber']),
+  created: json['created'] == null
+      ? null
+      : DateTime.parse(json['created'] as String),
+  starred: json['starred'] == null
+      ? null
+      : DateTime.parse(json['starred'] as String),
+  albumId: json['albumId'] as String?,
+  artistId: json['artistId'] as String?,
+  type: json['type'] as String?,
+  bookmarkPosition: _parseIntFromDynamic(json['bookmarkPosition']),
+  originalWidth: _parseIntFromDynamic(json['originalWidth']),
+  originalHeight: _parseIntFromDynamic(json['originalHeight']),
+);
 
 Map<String, dynamic> _$SubsonicSongToJson(SubsonicSong instance) =>
     <String, dynamic>{
@@ -266,4 +253,28 @@ Map<String, dynamic> _$SubsonicSongToJson(SubsonicSong instance) =>
       'bookmarkPosition': instance.bookmarkPosition,
       'originalWidth': instance.originalWidth,
       'originalHeight': instance.originalHeight,
+    };
+
+PlayQueueResponse _$PlayQueueResponseFromJson(Map<String, dynamic> json) =>
+    PlayQueueResponse(
+      current: json['current'] as String?,
+      position: (json['position'] as num?)?.toInt(),
+      username: json['username'] as String?,
+      changed: json['changed'] == null
+          ? null
+          : DateTime.parse(json['changed'] as String),
+      changedBy: json['changedBy'] as String?,
+      entries: (json['entry'] as List<dynamic>?)
+          ?.map((e) => SubsonicSong.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$PlayQueueResponseToJson(PlayQueueResponse instance) =>
+    <String, dynamic>{
+      'current': instance.current,
+      'position': instance.position,
+      'username': instance.username,
+      'changed': instance.changed?.toIso8601String(),
+      'changedBy': instance.changedBy,
+      'entry': instance.entries,
     };

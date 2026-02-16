@@ -22,6 +22,7 @@ class Track extends Equatable {
     this.coverArtUrl,
     this.isCached = false,
     this.cachePath,
+    this.isStarred = false,
   });
 
   final String id;
@@ -43,6 +44,7 @@ class Track extends Equatable {
   final String? coverArtUrl;
   final bool isCached;
   final String? cachePath;
+  final bool isStarred;
 
   /// Validates that the track has all required fields
   bool get isValid {
@@ -110,6 +112,7 @@ class Track extends Equatable {
     String? coverArtUrl,
     bool? isCached,
     String? cachePath,
+    bool? isStarred,
   }) {
     return Track(
       id: id ?? this.id,
@@ -131,6 +134,7 @@ class Track extends Equatable {
       coverArtUrl: coverArtUrl ?? this.coverArtUrl,
       isCached: isCached ?? this.isCached,
       cachePath: cachePath ?? this.cachePath,
+      isStarred: isStarred ?? this.isStarred,
     );
   }
 
@@ -155,6 +159,7 @@ class Track extends Equatable {
         coverArtUrl,
         isCached,
         cachePath,
+        isStarred,
       ];
 
   @override

@@ -156,11 +156,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         borderRadius: BorderRadius.circular(4),
                         child: track.coverArtUrl != null
                             ? CachedNetworkImage(
-                                imageUrl: track.coverArtUrl!,
-                                cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                                cacheManager: OmnisonicImageCacheManager.instance,
                                 fit: BoxFit.cover,
                                 memCacheWidth: 88,
                                 memCacheHeight: 88,
+                                fadeInDuration: const Duration(milliseconds: 120),
+                                useOldImageOnUrlChange: true,
                                 placeholder: (context, url) => _buildFallbackArtwork(),
                                 errorWidget: (context, url, error) => _buildFallbackArtwork(),
                               )
@@ -295,11 +298,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   borderRadius: BorderRadius.circular(4),
                   child: track.coverArtUrl != null
                       ? CachedNetworkImage(
-                          imageUrl: track.coverArtUrl!,
-                          cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                          imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                          cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                          cacheManager: OmnisonicImageCacheManager.instance,
                           fit: BoxFit.cover,
                           memCacheWidth: 112,
                           memCacheHeight: 112,
+                          fadeInDuration: const Duration(milliseconds: 120),
+                          useOldImageOnUrlChange: true,
                           placeholder: (context, url) => _buildFallbackArtwork(),
                           errorWidget: (context, url, error) => _buildFallbackArtwork(),
                         )

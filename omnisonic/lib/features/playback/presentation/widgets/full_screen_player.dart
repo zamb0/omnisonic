@@ -6,7 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/design_system/spacing.dart';
 import '../../../../core/design_system/responsive_layout.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart';
+import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
@@ -107,7 +107,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 const SizedBox(height: OmnisonicSpacing.md),
                 _buildSecondaryControls(context, playbackViewModel),
                 const SizedBox(height: OmnisonicSpacing.lg),
-                _buildPanel(context, playbackViewModel, compact: true),
+                SizedBox(
+                  height: 400,
+                  child: _buildPanel(context, playbackViewModel, compact: true),
+                ),
               ],
             ),
           ),
@@ -131,35 +134,28 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           child: Padding(
             padding: const EdgeInsets.all(OmnisonicSpacing.lg),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  flex: 3,
+                  flex: 2,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildArtwork(track),
                       const SizedBox(height: OmnisonicSpacing.lg),
                       _buildTrackInfo(context, track),
                       const SizedBox(height: OmnisonicSpacing.lg),
+                      _buildSeekBar(playbackViewModel, position, duration, progress),
+                      const SizedBox(height: OmnisonicSpacing.lg),
+                      _buildPrimaryControls(context, playbackViewModel),
+                      const SizedBox(height: OmnisonicSpacing.md),
                       _buildSecondaryControls(context, playbackViewModel),
                     ],
                   ),
                 ),
-                const SizedBox(width: OmnisonicSpacing.lg),
+                const SizedBox(width: OmnisonicSpacing.xl),
                 Expanded(
-                  flex: 4,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSeekBar(playbackViewModel, position, duration, progress),
-                      const SizedBox(height: OmnisonicSpacing.lg),
-                      _buildPrimaryControls(context, playbackViewModel),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: OmnisonicSpacing.lg),
-                SizedBox(
-                  width: 320,
+                  flex: 1,
                   child: _buildPanel(context, playbackViewModel),
                 ),
               ],
@@ -192,13 +188,22 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 ),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.favorite_border, color: scheme.onSurfaceVariant),
-          ),
-          IconButton(
-            onPressed: () => setState(() => _panel = _NowPlayingPanel.queue),
-            icon: Icon(Icons.queue_music, color: scheme.onSurfaceVariant),
+          Consumer<PlaybackViewModel>(
+            builder: (context, viewModel, child) {
+              final track = viewModel.currentTrack;
+              final isStarred = track?.isStarred ?? false;
+              
+              return IconButton(
+                onPressed: track != null ? () {
+                  viewModel.toggleFavorite(track);
+                } : null,
+                icon: Icon(
+                  isStarred ? Icons.favorite : Icons.favorite_border,
+                  color: isStarred ? Colors.red : scheme.onSurfaceVariant,
+                ),
+                tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
+              );
+            },
           ),
         ],
       ),
@@ -227,13 +232,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             aspectRatio: 1,
             child: track.coverArtUrl != null
                 ? CachedNetworkImage(
-                    imageUrl: track.coverArtUrl!,
-                    cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                    imageUrl: track.coverArtUrl!.withCoverArtSize(800),
+                    cacheKey: track.coverArtUrl!.withCoverArtSize(800).subsonicCacheKey,
+                    cacheManager: OmnisonicImageCacheManager.instance,
                     fit: BoxFit.cover,
-                    maxWidthDiskCache: 800,
-                    maxHeightDiskCache: 800,
                     memCacheWidth: 800,
                     memCacheHeight: 800,
+                    fadeInDuration: const Duration(milliseconds: 120),
+                    useOldImageOnUrlChange: true,
                     placeholder: (context, url) => _buildFallbackArtwork(),
                     errorWidget: (context, url, error) => _buildFallbackArtwork(),
                   )
@@ -259,7 +265,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Widget _buildTrackInfo(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           track.title,
@@ -268,6 +274,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         Text(
@@ -277,6 +284,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
         if (track.album.isNotEmpty) ...[
           const SizedBox(height: 4),
@@ -287,6 +295,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -300,6 +309,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     double progress,
   ) {
     final scheme = Theme.of(context).colorScheme;
+    if (playbackViewModel.isRestoring && position == Duration.zero) {
+      return const SizedBox(height: 56);
+    }
     final activeValue = _isDraggingSeek ? _seekValue : progress.clamp(0.0, 1.0);
     final elapsed = _isDraggingSeek
         ? Duration(milliseconds: (_seekValue * duration.inMilliseconds).round())
@@ -348,7 +360,29 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             },
           ),
         ),
+        const SizedBox(height: 4),
+        _buildQualityIndicator(context, playbackViewModel),
       ],
+    );
+  }
+  
+  Widget _buildQualityIndicator(BuildContext context, PlaybackViewModel playbackViewModel) {
+    final scheme = Theme.of(context).colorScheme;
+    final quality = playbackViewModel.currentQuality;
+    
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Opacity(
+        opacity: 0.6,
+        child: Text(
+          '${quality.format} • ${quality.bitrate} kbps',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontSize: 10,
+                letterSpacing: 0.2,
+              ),
+        ),
+      ),
     );
   }
 
@@ -391,13 +425,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  IconData _getRepeatIcon(RepeatMode repeatMode) {
+  IconData _getRepeatIcon(playback.RepeatMode repeatMode) {
     switch (repeatMode) {
-      case RepeatMode.none:
+      case playback.RepeatMode.none:
         return Icons.repeat;
-      case RepeatMode.all:
+      case playback.RepeatMode.all:
         return Icons.repeat;
-      case RepeatMode.one:
+      case playback.RepeatMode.one:
         return Icons.repeat_one;
     }
   }
@@ -408,6 +442,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
           onPressed: () => playbackViewModel.toggleShuffleMode(),
@@ -419,26 +454,34 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           ),
           tooltip: 'Shuffle',
         ),
+        const SizedBox(width: 8),
         IconButton(
           onPressed: () => playbackViewModel.toggleRepeatMode(),
           icon: Icon(
             _getRepeatIcon(playbackViewModel.repeatMode),
-            color: playbackViewModel.repeatMode != RepeatMode.none
+            color: playbackViewModel.repeatMode != playback.RepeatMode.none
                 ? scheme.primary
                 : scheme.onSurfaceVariant,
           ),
           tooltip: 'Repeat',
         ),
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.favorite_border, color: scheme.onSurfaceVariant),
-          tooltip: 'Favorite',
-        ),
-        const Spacer(),
-        IconButton(
-          onPressed: () => setState(() => _panel = _NowPlayingPanel.queue),
-          icon: Icon(Icons.queue_music, color: scheme.onSurfaceVariant),
-          tooltip: 'Queue',
+        const SizedBox(width: 8),
+        Consumer<PlaybackViewModel>(
+          builder: (context, viewModel, child) {
+            final track = viewModel.currentTrack;
+            final isStarred = track?.isStarred ?? false;
+            
+            return IconButton(
+              onPressed: track != null ? () {
+                viewModel.toggleFavorite(track);
+              } : null,
+              icon: Icon(
+                isStarred ? Icons.favorite : Icons.favorite_border,
+                color: isStarred ? Colors.red : scheme.onSurfaceVariant,
+              ),
+              tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
+            );
+          },
         ),
       ],
     );
@@ -457,7 +500,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SegmentedButton<_NowPlayingPanel>(
             segments: const [
@@ -543,11 +586,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               borderRadius: BorderRadius.circular(8),
               child: track.coverArtUrl != null
                   ? CachedNetworkImage(
-                      imageUrl: track.coverArtUrl!,
-                      cacheKey: track.coverArtUrl!.subsonicCacheKey,
+                      imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                      cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                      cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 80,
                       memCacheHeight: 80,
+                      fadeInDuration: const Duration(milliseconds: 120),
+                      useOldImageOnUrlChange: true,
                     )
                   : Icon(
                       Icons.music_note,

@@ -4,8 +4,10 @@ import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
+import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../data/datasources/playback_tracking_service.dart';
 
 /// ViewModel for managing audio playback state
 /// 
@@ -19,16 +21,25 @@ class PlaybackViewModel extends ChangeNotifier {
   PlaybackViewModel(
     this._playbackRepository,
     this._playTrackUseCase,
+    this._trackingService,
+    this._apiClient,
+    this._serverRepository,
   ) {
     _initialize();
   }
 
   final PlaybackRepository _playbackRepository;
   final PlayTrackUseCase _playTrackUseCase;
+  final PlaybackTrackingService _trackingService;
+  final SubsonicApiClient _apiClient;
+  final ServerRepository _serverRepository;
 
   StreamSubscription<PlaybackState>? _playbackStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<List<Track>>? _queueSubscription;
+  Timer? _positionTicker;
+  DateTime? _lastPositionUpdate;
+  Duration _lastObservedPosition = Duration.zero;
 
   // State
   PlaybackState _playbackState = const PlaybackState(
@@ -44,6 +55,8 @@ class PlaybackViewModel extends ChangeNotifier {
   );
   bool _isLoading = false;
   String? _errorMessage;
+  Track? _previousTrack; // Track previous track for scrobbling
+  bool _isRestoring = false; // Flag to prevent auto-play during restoration
 
   // Getters
   PlaybackState get playbackState => _playbackState;
@@ -66,19 +79,81 @@ class PlaybackViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasQueue => queue.isNotEmpty;
   int get queueLength => queue.length;
+  bool get isRestoring => _isRestoring;
+  
+  // TODO: Connect to AdaptiveStreamingService for real quality monitoring
+  AudioQuality get currentQuality => AudioQuality.lossless;
 
   void _initialize() {
-    _subscribeToPlaybackState();
-    _subscribeToPosition();
-    _subscribeToQueue();
-    _loadCurrentState();
+    try {
+      AppLog.info('Initializing PlaybackViewModel...');
+      _subscribeToPlaybackState();
+      _subscribeToPosition();
+      _subscribeToQueue();
+      _loadCurrentState();
+      
+      // Restore queue as early as possible, with a delayed retry to
+      // catch cases where subscriptions set up state slightly later.
+      _restorePlayQueueIfNeeded();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!hasQueue && !_isRestoring) {
+          _restorePlayQueueIfNeeded();
+        }
+      });
+      AppLog.info('PlaybackViewModel initialized successfully');
+    } catch (e, stackTrace) {
+      AppLog.warn('Error during PlaybackViewModel initialization: $e\n$stackTrace');
+    }
+  }
+
+  /// Restores the play queue from the server only if there's no current queue
+  Future<void> _restorePlayQueueIfNeeded() async {
+    try {
+      if (_isRestoring) {
+        return;
+      }
+      // Don't restore if we already have an active queue
+      if (hasQueue && currentTrack != null) {
+        AppLog.info('Active queue found, skipping restore from server');
+        return;
+      }
+      
+      AppLog.info('No active queue, attempting restore from server');
+      await _restorePlayQueue();
+    } catch (e, stackTrace) {
+      AppLog.warn('Error in _restorePlayQueueIfNeeded: $e\n$stackTrace');
+      // Non-critical: app should continue if restore fails
+    }
   }
 
   void _subscribeToPlaybackState() {
     _playbackStateSubscription = _playbackRepository.observePlaybackState().listen(
       (state) {
+        // Check if track changed
+        final trackChanged = state.currentTrack != null && 
+                            state.currentTrack != _previousTrack;
+        
         _playbackState = state;
+        if (state.isPlaying) {
+          _startPositionTicker();
+        } else {
+          _stopPositionTicker();
+        }
         _clearError();
+        
+        // Start tracking when track changes (but not during restoration)
+        if (trackChanged && !_isRestoring) {
+          _trackingService.startTrackingTrack(state.currentTrack!);
+          _previousTrack = state.currentTrack;
+          
+          // Start periodic queue saving
+          _trackingService.startPeriodicQueueSave(
+            () async => queue,
+            () async => currentIndex,
+            () async => position,
+          );
+        }
+        
         notifyListeners();
       },
       onError: (error) {
@@ -91,12 +166,43 @@ class PlaybackViewModel extends ChangeNotifier {
     _positionSubscription = _playbackRepository.observePosition().listen(
       (position) {
         _playbackState = _playbackState.copyWith(position: position);
+        _lastObservedPosition = position;
+        _lastPositionUpdate = DateTime.now();
         notifyListeners();
       },
       onError: (error) {
         AppLog.warn('Position stream error: $error');
       },
     );
+  }
+
+  void _startPositionTicker() {
+    if (_positionTicker != null) return;
+
+    _lastPositionUpdate ??= DateTime.now();
+    _lastObservedPosition = _playbackState.position;
+
+    _positionTicker = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!_playbackState.isPlaying || _lastPositionUpdate == null) return;
+
+      final elapsed = DateTime.now().difference(_lastPositionUpdate!);
+      final estimated = _lastObservedPosition + elapsed;
+      final durationMs = _playbackState.duration.inMilliseconds;
+      final clamped = durationMs > 0
+          ? Duration(milliseconds: estimated.inMilliseconds.clamp(0, durationMs))
+          : estimated;
+
+      final deltaMs = (clamped.inMilliseconds - _playbackState.position.inMilliseconds).abs();
+      if (deltaMs >= 200) {
+        _playbackState = _playbackState.copyWith(position: clamped);
+        notifyListeners();
+      }
+    });
+  }
+
+  void _stopPositionTicker() {
+    _positionTicker?.cancel();
+    _positionTicker = null;
   }
 
   void _subscribeToQueue() {
@@ -123,6 +229,75 @@ class PlaybackViewModel extends ChangeNotifier {
       );
     } catch (e) {
       AppLog.warn('Error loading current state: $e');
+    }
+  }
+
+  /// Restores the play queue from the server
+  Future<void> _restorePlayQueue() async {
+    _isRestoring = true;
+    notifyListeners();
+    try {
+      final savedState = await _trackingService.getPlayQueue();
+      if (savedState == null || savedState.tracks.isEmpty) {
+        AppLog.debug('No saved play queue to restore');
+        return;
+      }
+
+      AppLog.info('Restoring play queue: ${savedState.tracks.length} tracks');
+      
+      // If there's a current track and position, load it
+      if (savedState.currentIndex != null && 
+          savedState.currentIndex! >= 0 && 
+          savedState.currentIndex! < savedState.tracks.length) {
+        final track = savedState.tracks[savedState.currentIndex!];
+        final restoredPosition = savedState.position ?? Duration.zero;
+
+        // Optimistically surface restored state so the UI doesn't show 0:00.
+        _playbackState = _playbackState.copyWith(
+          queue: savedState.tracks,
+          currentIndex: savedState.currentIndex!,
+          currentTrack: track,
+          duration: track.duration,
+          position: restoredPosition,
+        );
+        _lastObservedPosition = restoredPosition;
+        _lastPositionUpdate = DateTime.now();
+        notifyListeners();
+
+        
+        // Set the queue - this should load the track at the given index
+        // without starting playback
+        final setQueueResult = await _playbackRepository.setQueue(
+          savedState.tracks,
+          startIndex: savedState.currentIndex!,
+        );
+        
+        var hasError = false;
+        setQueueResult.fold(
+          (failure) {
+            AppLog.warn('Failed to restore queue: ${failure.message}');
+            hasError = true;
+          },
+          (_) {},
+        );
+        
+        if (hasError) return;
+        
+        // Wait for the queue to be set
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Seek to the saved position if available
+        if (savedState.position != null && savedState.position! > Duration.zero) {
+          await _playbackRepository.seek(savedState.position!);
+        }
+        
+        AppLog.info('Session restored: track "${track.title}" at ${savedState.position?.inSeconds ?? 0}s (paused)');
+      }
+    } catch (e, stackTrace) {
+      AppLog.warn('Error restoring play queue: $e\n$stackTrace');
+    } finally {
+      _isRestoring = false;
+      notifyListeners();
     }
   }
 
@@ -377,11 +552,95 @@ class PlaybackViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Toggles the favorite (starred) status of a track
+  Future<void> toggleFavorite(Track track) async {
+    try {
+      // Get server credentials
+      final serversResult = await _serverRepository.getOnlineServers();
+      
+      MusicServer? server;
+      serversResult.fold(
+        (failure) {
+          AppLog.warn('Failed to get online servers: ${failure.message}');
+          _setError('No server connection available');
+        },
+        (servers) {
+          if (servers.isEmpty) {
+            AppLog.warn('No online servers available');
+            _setError('No server connection available');
+          } else {
+            server = servers.first;
+          }
+        },
+      );
+      
+      if (server == null) return;
+
+      final passwordResult = await _serverRepository.getCredentials(server!.id);
+      
+      String? password;
+      passwordResult.fold(
+        (failure) {
+          AppLog.warn('Failed to get server credentials: ${failure.message}');
+          _setError('Server credentials not available');
+        },
+        (pwd) {
+          password = pwd;
+        },
+      );
+      
+      if (password == null) return;
+      
+      // Extract subsonic ID from composite ID
+      final subsonicId = _extractSubsonicId(track.id);
+      
+      // Toggle favorite status
+      if (track.isStarred) {
+        await _apiClient.unstar(server!, password!, id: subsonicId);
+        AppLog.info('✓ Unstarred track: ${track.title}');
+      } else {
+        await _apiClient.star(server!, password!, id: subsonicId);
+        AppLog.info('✓ Starred track: ${track.title}');
+      }
+      
+      // Update track in current state
+      final updatedTrack = track.copyWith(isStarred: !track.isStarred);
+      
+      // Update queue if this track is in it
+      final updatedQueue = queue.map((t) => t.id == track.id ? updatedTrack : t).toList();
+      
+      // Update playback state
+      _playbackState = _playbackState.copyWith(
+        currentTrack: currentTrack?.id == track.id ? updatedTrack : currentTrack,
+        queue: updatedQueue,
+      );
+      
+      notifyListeners();
+    } catch (e) {
+      AppLog.warn('Failed to toggle favorite: $e');
+      _setError('Failed to update favorite status');
+    }
+  }
+
+  /// Extracts the original Subsonic ID from our composite ID
+  String _extractSubsonicId(String compositeId) {
+    // Our IDs are in format "serverId_subsonicId"
+    final parts = compositeId.split('_');
+    return parts.length > 1 ? parts.sublist(1).join('_') : compositeId;
+  }
+
   @override
   void dispose() {
+    // Don't save here - it's async and won't complete before app closes
+    // Queue saving is handled by:
+    // 1. Periodic timer (every 30s)
+    // 2. App lifecycle observer in main.dart
+    
     _playbackStateSubscription?.cancel();
     _positionSubscription?.cancel();
     _queueSubscription?.cancel();
+    _stopPositionTicker();
+    _trackingService.dispose();
     super.dispose();
   }
 }

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../entities/album.dart';
 import '../entities/artist.dart';
 import '../entities/track.dart';
+import '../services/subsonic_image_cache_manager.dart';
 import 'spacing.dart';
 import 'theme.dart';
 import 'animation_manager.dart';
@@ -260,8 +261,14 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
   Widget _buildAlbumArtwork(BuildContext context) {
     if (widget.album.coverArtUrl != null) {
       return CachedNetworkImage(
-        imageUrl: widget.album.coverArtUrl!,
+        imageUrl: widget.album.coverArtUrl!.withCoverArtSize(320),
+        cacheKey: widget.album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
+        cacheManager: OmnisonicImageCacheManager.instance,
         fit: BoxFit.cover,
+        memCacheWidth: 320,
+        memCacheHeight: 320,
+        fadeInDuration: const Duration(milliseconds: 120),
+        useOldImageOnUrlChange: true,
         placeholder: (context, url) => _buildPlaceholder(context),
         errorWidget: (context, url, error) => _buildPlaceholder(context),
       );

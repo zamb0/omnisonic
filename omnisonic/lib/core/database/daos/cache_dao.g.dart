@@ -8,4 +8,19 @@ mixin _$CacheDaoMixin on DatabaseAccessor<AppDatabase> {
   $TracksTableTable get tracksTable => attachedDatabase.tracksTable;
   $CacheEntriesTableTable get cacheEntriesTable =>
       attachedDatabase.cacheEntriesTable;
+  CacheDaoManager get managers => CacheDaoManager(this);
+}
+
+class CacheDaoManager {
+  final _$CacheDaoMixin _db;
+  CacheDaoManager(this._db);
+  $$ServersTableTableTableManager get serversTable =>
+      $$ServersTableTableTableManager(_db.attachedDatabase, _db.serversTable);
+  $$TracksTableTableTableManager get tracksTable =>
+      $$TracksTableTableTableManager(_db.attachedDatabase, _db.tracksTable);
+  $$CacheEntriesTableTableTableManager get cacheEntriesTable =>
+      $$CacheEntriesTableTableTableManager(
+        _db.attachedDatabase,
+        _db.cacheEntriesTable,
+      );
 }

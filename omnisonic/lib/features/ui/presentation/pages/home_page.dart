@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -176,10 +178,18 @@ class _HomePageState extends State<HomePage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: album.coverArtUrl != null
-            ? Image.network(
-                album.coverArtUrl!,
+            ? CachedNetworkImage(
+                imageUrl: album.coverArtUrl!.withCoverArtSize(320),
+                cacheKey: album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
+                cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPlaceholderArt(),
+                memCacheWidth: 320,
+                memCacheHeight: 320,
+                fadeInDuration: const Duration(milliseconds: 120),
+                useOldImageOnUrlChange: true,
+                placeholder: (context, url) => _buildPlaceholderArt(),
+                errorWidget: (context, url, error) =>
+                    coverArtErrorWidget(_buildPlaceholderArt(), url, error),
               )
             : _buildPlaceholderArt(),
       ),

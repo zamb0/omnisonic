@@ -69,6 +69,8 @@ class SubsonicResponseData<T> {
       data = fromJsonT(json['artists']);
     } else if (json.containsKey('album')) {
       data = fromJsonT(json['album']);
+    } else if (json.containsKey('playQueue')) {
+      data = fromJsonT(json['playQueue']);
     } else if (json['status'] == 'ok') {
       // For ping and other simple responses
       data = fromJsonT(<String, dynamic>{});
@@ -424,6 +426,7 @@ class SubsonicSong {
       genre: genre,
       fileSize: size,
       coverArtUrl: coverArtUrl,
+      isStarred: starred != null,
     );
   }
 }
@@ -447,4 +450,30 @@ int _parseRequiredIntFromDynamic(dynamic value) {
     return int.tryParse(value) ?? 0;
   }
   return 0;
+}
+
+/// Play queue response from getPlayQueue endpoint
+@JsonSerializable()
+class PlayQueueResponse {
+  final String? current;
+  final int? position;
+  final String? username;
+  final DateTime? changed;
+  final String? changedBy;
+  @JsonKey(name: 'entry')
+  final List<SubsonicSong>? entries;
+
+  const PlayQueueResponse({
+    this.current,
+    this.position,
+    this.username,
+    this.changed,
+    this.changedBy,
+    this.entries,
+  });
+
+  factory PlayQueueResponse.fromJson(Map<String, dynamic> json) =>
+      _$PlayQueueResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PlayQueueResponseToJson(this);
 }

@@ -156,12 +156,19 @@ class _FeishinCardState extends State<FeishinCard> {
 
     if (widget.imageUrl == null) return placeholder;
 
+    final sizedUrl = widget.imageUrl!.withCoverArtSize(400);
+
     return CachedNetworkImage(
-      imageUrl: widget.imageUrl!,
-      cacheKey: widget.imageUrl!.subsonicCacheKey,
+      imageUrl: sizedUrl,
+      cacheKey: sizedUrl.subsonicCacheKey,
+      cacheManager: OmnisonicImageCacheManager.instance,
       fit: BoxFit.cover,
+      memCacheWidth: 400,
+      memCacheHeight: 400,
+      fadeInDuration: const Duration(milliseconds: 120),
+      useOldImageOnUrlChange: true,
       placeholder: (context, url) => placeholder,
-      errorWidget: (context, url, error) => placeholder,
+      errorWidget: (context, url, error) => coverArtErrorWidget(placeholder, url, error),
     );
   }
 }

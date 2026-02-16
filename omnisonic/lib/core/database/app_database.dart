@@ -4,7 +4,6 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 import '../entities/audio_quality.dart';
 import '../entities/server_status.dart';
@@ -253,11 +252,6 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'omnisonic.db'));
-
-    // Make sure sqlite3 is available on mobile platforms
-    if (Platform.isAndroid) {
-      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
-    }
 
     return NativeDatabase.createInBackground(file);
   });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 /// A draggable track tile for playlist reordering
 class DraggableTrackTile extends StatelessWidget {
@@ -96,8 +97,14 @@ class DraggableTrackTile extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: CachedNetworkImage(
-                imageUrl: track.coverArtUrl!,
+                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
+                memCacheWidth: 128,
+                memCacheHeight: 128,
+                fadeInDuration: const Duration(milliseconds: 120),
+                useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],
                   child: const Icon(Icons.music_note, color: Colors.grey, size: 16),

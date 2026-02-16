@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injection_container.dart';
+import 'core/constants/app_constants.dart';
 import 'core/routing/app_router.dart';
 import 'core/design_system/theme.dart';
 import 'features/playback/data/datasources/playback_service.dart';
+import 'features/playback/data/datasources/playback_tracking_service.dart';
 
 // ViewModels
 import 'features/music/presentation/viewmodels/music_library_view_model.dart';
@@ -20,6 +23,10 @@ import 'features/playback/presentation/bloc/playback_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSizeBytes = AppConstants.maxImageCacheSize;
+  imageCache.maximumSize = 1000;
   
   try {
     // Initialize dependency injection
@@ -45,8 +52,64 @@ void main() async {
   runApp(const OmnisonicApp());
 }
 
-class OmnisonicApp extends StatelessWidget {
+class OmnisonicApp extends StatefulWidget {
   const OmnisonicApp({super.key});
+
+  @override
+  State<OmnisonicApp> createState() => _OmnisonicAppState();
+}
+
+class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver {
+  PlaybackViewModel? _playbackViewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    debugPrint('App lifecycle changed to: $state');
+    
+    // Save queue when app goes to background or is about to close
+    if (state == AppLifecycleState.paused || 
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      debugPrint('Saving queue due to lifecycle state: $state');
+      _saveCurrentQueue();
+    }
+  }
+
+  void _saveCurrentQueue() async {
+    try {
+      if (_playbackViewModel == null) {
+        _playbackViewModel = getIt<PlaybackViewModel>();
+      }
+      
+      if (_playbackViewModel!.hasQueue && _playbackViewModel!.currentIndex >= 0) {
+        final trackingService = getIt<PlaybackTrackingService>();
+        await trackingService.savePlayQueue(
+          _playbackViewModel!.queue,
+          _playbackViewModel!.currentIndex,
+          _playbackViewModel!.position,
+        );
+        debugPrint('✓ Queue saved successfully on lifecycle change');
+      } else {
+        debugPrint('No queue to save (hasQueue: ${_playbackViewModel!.hasQueue}, index: ${_playbackViewModel!.currentIndex})');
+      }
+    } catch (e) {
+      debugPrint('✗ Failed to save queue: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

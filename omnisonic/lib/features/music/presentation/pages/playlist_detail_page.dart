@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/draggable_track_tile.dart';
@@ -122,9 +124,15 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               ? Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
-                      playlist.coverArtUrl!,
+                    CachedNetworkImage(
+                      imageUrl: playlist.coverArtUrl!.withCoverArtSize(600),
+                      cacheKey: playlist.coverArtUrl!.withCoverArtSize(600).subsonicCacheKey,
+                      cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
+                      memCacheWidth: 600,
+                      memCacheHeight: 600,
+                      fadeInDuration: const Duration(milliseconds: 120),
+                      useOldImageOnUrlChange: true,
                     ),
                     Container(
                       decoration: BoxDecoration(

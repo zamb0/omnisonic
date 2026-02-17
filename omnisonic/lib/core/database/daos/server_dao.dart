@@ -23,7 +23,6 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
       lastSync: data.lastSync,
       apiVersion: data.apiVersion,
       serverVersion: data.serverVersion,
-      licenseValid: data.licenseValid,
       errorMessage: data.errorMessage,
     );
   }
@@ -42,7 +41,6 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
       lastSync: Value.absentIfNull(server.lastSync),
       apiVersion: Value.absentIfNull(server.apiVersion),
       serverVersion: Value.absentIfNull(server.serverVersion),
-      licenseValid: Value.absentIfNull(server.licenseValid),
       errorMessage: Value.absentIfNull(server.errorMessage),
     );
   }

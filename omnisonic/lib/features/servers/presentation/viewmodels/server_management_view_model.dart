@@ -133,7 +133,6 @@ class ServerManagementViewModel extends ChangeNotifier {
         createdAt: DateTime.now(),
         apiVersion: connectionResult.serverInfo?.apiVersion,
         serverVersion: connectionResult.serverInfo?.version,
-        licenseValid: connectionResult.serverInfo?.licenseValid,
       );
 
       // Add the server

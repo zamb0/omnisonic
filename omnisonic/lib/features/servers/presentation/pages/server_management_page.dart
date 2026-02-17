@@ -348,14 +348,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 _buildInfoChip('API', server.apiVersion ?? 'Unknown'),
                 const SizedBox(width: 8),
                 _buildInfoChip('Version', server.serverVersion ?? 'Unknown'),
-                if (server.licenseValid != null) ...[
-                  const SizedBox(width: 8),
-                  _buildInfoChip(
-                    'License',
-                    server.licenseValid! ? 'Valid' : 'Invalid',
-                    color: server.licenseValid! ? Colors.green : Colors.red,
-                  ),
-                ],
               ],
             ),
             if (server.lastSync != null) ...[
@@ -484,8 +476,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               _buildDetailRow('API Version', server.apiVersion!),
             if (server.serverVersion != null)
               _buildDetailRow('Server Version', server.serverVersion!),
-            if (server.licenseValid != null)
-              _buildDetailRow('License', server.licenseValid! ? 'Valid' : 'Invalid'),
             _buildDetailRow('Created', _formatDateTime(server.createdAt)),
             if (server.lastSync != null)
               _buildDetailRow('Last Sync', _formatDateTime(server.lastSync!)),

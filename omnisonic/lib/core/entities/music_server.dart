@@ -12,7 +12,6 @@ class MusicServer extends Equatable {
     this.lastSync,
     this.apiVersion,
     this.serverVersion,
-    this.licenseValid,
     this.errorMessage,
   });
 
@@ -25,7 +24,6 @@ class MusicServer extends Equatable {
   final DateTime? lastSync;
   final String? apiVersion;
   final String? serverVersion;
-  final bool? licenseValid;
   final String? errorMessage;
 
   /// Validates that the server has all required fields
@@ -75,7 +73,6 @@ class MusicServer extends Equatable {
     DateTime? lastSync,
     String? apiVersion,
     String? serverVersion,
-    bool? licenseValid,
     String? errorMessage,
   }) {
     return MusicServer(
@@ -88,7 +85,6 @@ class MusicServer extends Equatable {
       lastSync: lastSync ?? this.lastSync,
       apiVersion: apiVersion ?? this.apiVersion,
       serverVersion: serverVersion ?? this.serverVersion,
-      licenseValid: licenseValid ?? this.licenseValid,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -104,7 +100,6 @@ class MusicServer extends Equatable {
         lastSync,
         apiVersion,
         serverVersion,
-        licenseValid,
         errorMessage,
       ];
 

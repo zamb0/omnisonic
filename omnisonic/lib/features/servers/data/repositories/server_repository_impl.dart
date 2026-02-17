@@ -184,7 +184,6 @@ class ServerRepositoryImpl implements ServerRepository {
           serverInfo: ServerInfo(
             version: updatedServer.serverVersion ?? 'Unknown',
             apiVersion: updatedServer.apiVersion ?? 'Unknown',
-            licenseValid: true, // Assume valid if connection succeeds
             serverName: updatedServer.name,
             serverType: 'Subsonic',
           ),

@@ -75,14 +75,12 @@ class ServerInfo {
   const ServerInfo({
     required this.version,
     required this.apiVersion,
-    required this.licenseValid,
     this.serverName,
     this.serverType,
   });
 
   final String version;
   final String apiVersion;
-  final bool licenseValid;
   final String? serverName;
   final String? serverType;
 }

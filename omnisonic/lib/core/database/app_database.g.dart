@@ -92,17 +92,6 @@ class $ServersTableTable extends ServersTable
     requiredDuringInsert: false,
   );
   @override
-  late final GeneratedColumn<bool> licenseValid = GeneratedColumn<bool>(
-    'license_valid',
-    aliasedName,
-    true,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("license_valid" IN (0, 1))',
-    ),
-  );
-  @override
   late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
     'error_message',
     aliasedName,
@@ -122,7 +111,6 @@ class $ServersTableTable extends ServersTable
     lastSync,
     apiVersion,
     serverVersion,
-    licenseValid,
     errorMessage,
   ];
   @override
@@ -178,10 +166,6 @@ class $ServersTableTable extends ServersTable
         DriftSqlType.string,
         data['${effectivePrefix}server_version'],
       ),
-      licenseValid: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}license_valid'],
-      ),
       errorMessage: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}error_message'],
@@ -209,7 +193,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
   final DateTime? lastSync;
   final String? apiVersion;
   final String? serverVersion;
-  final bool? licenseValid;
   final String? errorMessage;
   const ServerData({
     required this.id,
@@ -222,7 +205,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
     this.lastSync,
     this.apiVersion,
     this.serverVersion,
-    this.licenseValid,
     this.errorMessage,
   });
   @override
@@ -248,9 +230,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
     if (!nullToAbsent || serverVersion != null) {
       map['server_version'] = Variable<String>(serverVersion);
     }
-    if (!nullToAbsent || licenseValid != null) {
-      map['license_valid'] = Variable<bool>(licenseValid);
-    }
     if (!nullToAbsent || errorMessage != null) {
       map['error_message'] = Variable<String>(errorMessage);
     }
@@ -275,9 +254,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
       serverVersion: serverVersion == null && nullToAbsent
           ? const Value.absent()
           : Value(serverVersion),
-      licenseValid: licenseValid == null && nullToAbsent
-          ? const Value.absent()
-          : Value(licenseValid),
       errorMessage: errorMessage == null && nullToAbsent
           ? const Value.absent()
           : Value(errorMessage),
@@ -302,7 +278,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
       lastSync: serializer.fromJson<DateTime?>(json['lastSync']),
       apiVersion: serializer.fromJson<String?>(json['apiVersion']),
       serverVersion: serializer.fromJson<String?>(json['serverVersion']),
-      licenseValid: serializer.fromJson<bool?>(json['licenseValid']),
       errorMessage: serializer.fromJson<String?>(json['errorMessage']),
     );
   }
@@ -322,7 +297,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
       'lastSync': serializer.toJson<DateTime?>(lastSync),
       'apiVersion': serializer.toJson<String?>(apiVersion),
       'serverVersion': serializer.toJson<String?>(serverVersion),
-      'licenseValid': serializer.toJson<bool?>(licenseValid),
       'errorMessage': serializer.toJson<String?>(errorMessage),
     };
   }
@@ -338,7 +312,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
     Value<DateTime?> lastSync = const Value.absent(),
     Value<String?> apiVersion = const Value.absent(),
     Value<String?> serverVersion = const Value.absent(),
-    Value<bool?> licenseValid = const Value.absent(),
     Value<String?> errorMessage = const Value.absent(),
   }) => ServerData(
     id: id ?? this.id,
@@ -353,7 +326,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
     serverVersion: serverVersion.present
         ? serverVersion.value
         : this.serverVersion,
-    licenseValid: licenseValid.present ? licenseValid.value : this.licenseValid,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
   );
   ServerData copyWithCompanion(ServersTableCompanion data) {
@@ -374,9 +346,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
       serverVersion: data.serverVersion.present
           ? data.serverVersion.value
           : this.serverVersion,
-      licenseValid: data.licenseValid.present
-          ? data.licenseValid.value
-          : this.licenseValid,
       errorMessage: data.errorMessage.present
           ? data.errorMessage.value
           : this.errorMessage,
@@ -396,7 +365,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
           ..write('lastSync: $lastSync, ')
           ..write('apiVersion: $apiVersion, ')
           ..write('serverVersion: $serverVersion, ')
-          ..write('licenseValid: $licenseValid, ')
           ..write('errorMessage: $errorMessage')
           ..write(')'))
         .toString();
@@ -414,7 +382,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
     lastSync,
     apiVersion,
     serverVersion,
-    licenseValid,
     errorMessage,
   );
   @override
@@ -431,7 +398,6 @@ class ServerData extends DataClass implements Insertable<ServerData> {
           other.lastSync == this.lastSync &&
           other.apiVersion == this.apiVersion &&
           other.serverVersion == this.serverVersion &&
-          other.licenseValid == this.licenseValid &&
           other.errorMessage == this.errorMessage);
 }
 
@@ -446,7 +412,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
   final Value<DateTime?> lastSync;
   final Value<String?> apiVersion;
   final Value<String?> serverVersion;
-  final Value<bool?> licenseValid;
   final Value<String?> errorMessage;
   final Value<int> rowid;
   const ServersTableCompanion({
@@ -460,7 +425,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
     this.lastSync = const Value.absent(),
     this.apiVersion = const Value.absent(),
     this.serverVersion = const Value.absent(),
-    this.licenseValid = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -475,7 +439,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
     this.lastSync = const Value.absent(),
     this.apiVersion = const Value.absent(),
     this.serverVersion = const Value.absent(),
-    this.licenseValid = const Value.absent(),
     this.errorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -496,7 +459,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
     Expression<DateTime>? lastSync,
     Expression<String>? apiVersion,
     Expression<String>? serverVersion,
-    Expression<bool>? licenseValid,
     Expression<String>? errorMessage,
     Expression<int>? rowid,
   }) {
@@ -511,7 +473,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
       if (lastSync != null) 'last_sync': lastSync,
       if (apiVersion != null) 'api_version': apiVersion,
       if (serverVersion != null) 'server_version': serverVersion,
-      if (licenseValid != null) 'license_valid': licenseValid,
       if (errorMessage != null) 'error_message': errorMessage,
       if (rowid != null) 'rowid': rowid,
     });
@@ -528,7 +489,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
     Value<DateTime?>? lastSync,
     Value<String?>? apiVersion,
     Value<String?>? serverVersion,
-    Value<bool?>? licenseValid,
     Value<String?>? errorMessage,
     Value<int>? rowid,
   }) {
@@ -543,7 +503,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
       lastSync: lastSync ?? this.lastSync,
       apiVersion: apiVersion ?? this.apiVersion,
       serverVersion: serverVersion ?? this.serverVersion,
-      licenseValid: licenseValid ?? this.licenseValid,
       errorMessage: errorMessage ?? this.errorMessage,
       rowid: rowid ?? this.rowid,
     );
@@ -584,9 +543,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
     if (serverVersion.present) {
       map['server_version'] = Variable<String>(serverVersion.value);
     }
-    if (licenseValid.present) {
-      map['license_valid'] = Variable<bool>(licenseValid.value);
-    }
     if (errorMessage.present) {
       map['error_message'] = Variable<String>(errorMessage.value);
     }
@@ -609,7 +565,6 @@ class ServersTableCompanion extends UpdateCompanion<ServerData> {
           ..write('lastSync: $lastSync, ')
           ..write('apiVersion: $apiVersion, ')
           ..write('serverVersion: $serverVersion, ')
-          ..write('licenseValid: $licenseValid, ')
           ..write('errorMessage: $errorMessage, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4288,7 +4243,6 @@ typedef $$ServersTableTableCreateCompanionBuilder =
       Value<DateTime?> lastSync,
       Value<String?> apiVersion,
       Value<String?> serverVersion,
-      Value<bool?> licenseValid,
       Value<String?> errorMessage,
       Value<int> rowid,
     });
@@ -4304,7 +4258,6 @@ typedef $$ServersTableTableUpdateCompanionBuilder =
       Value<DateTime?> lastSync,
       Value<String?> apiVersion,
       Value<String?> serverVersion,
-      Value<bool?> licenseValid,
       Value<String?> errorMessage,
       Value<int> rowid,
     });
@@ -4434,11 +4387,6 @@ class $$ServersTableTableFilterComposer
 
   ColumnFilters<String> get serverVersion => $composableBuilder(
     column: $table.serverVersion,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get licenseValid => $composableBuilder(
-    column: $table.licenseValid,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4582,11 +4530,6 @@ class $$ServersTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get licenseValid => $composableBuilder(
-    column: $table.licenseValid,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get errorMessage => $composableBuilder(
     column: $table.errorMessage,
     builder: (column) => ColumnOrderings(column),
@@ -4635,11 +4578,6 @@ class $$ServersTableTableAnnotationComposer
 
   GeneratedColumn<String> get serverVersion => $composableBuilder(
     column: $table.serverVersion,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get licenseValid => $composableBuilder(
-    column: $table.licenseValid,
     builder: (column) => column,
   );
 
@@ -4766,7 +4704,6 @@ class $$ServersTableTableTableManager
                 Value<DateTime?> lastSync = const Value.absent(),
                 Value<String?> apiVersion = const Value.absent(),
                 Value<String?> serverVersion = const Value.absent(),
-                Value<bool?> licenseValid = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServersTableCompanion(
@@ -4780,7 +4717,6 @@ class $$ServersTableTableTableManager
                 lastSync: lastSync,
                 apiVersion: apiVersion,
                 serverVersion: serverVersion,
-                licenseValid: licenseValid,
                 errorMessage: errorMessage,
                 rowid: rowid,
               ),
@@ -4796,7 +4732,6 @@ class $$ServersTableTableTableManager
                 Value<DateTime?> lastSync = const Value.absent(),
                 Value<String?> apiVersion = const Value.absent(),
                 Value<String?> serverVersion = const Value.absent(),
-                Value<bool?> licenseValid = const Value.absent(),
                 Value<String?> errorMessage = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServersTableCompanion.insert(
@@ -4810,7 +4745,6 @@ class $$ServersTableTableTableManager
                 lastSync: lastSync,
                 apiVersion: apiVersion,
                 serverVersion: serverVersion,
-                licenseValid: licenseValid,
                 errorMessage: errorMessage,
                 rowid: rowid,
               ),

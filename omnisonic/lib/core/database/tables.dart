@@ -16,7 +16,6 @@ class ServersTable extends Table {
   DateTimeColumn get lastSync => dateTime().nullable()();
   TextColumn get apiVersion => text().nullable()();
   TextColumn get serverVersion => text().nullable()();
-  BoolColumn get licenseValid => boolean().nullable()();
   TextColumn get errorMessage => text().nullable()();
 
   @override

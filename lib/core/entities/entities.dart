@@ -6,6 +6,7 @@ export 'music_server.dart';
 export 'playlist.dart';
 export 'cache_entry.dart';
 export 'lyrics.dart';
+export 'genre.dart';
 
 // Value objects
 export 'audio_quality.dart';

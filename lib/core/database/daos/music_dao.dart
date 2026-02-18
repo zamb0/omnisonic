@@ -34,6 +34,7 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       coverArtUrl: data.coverArtUrl,
       isCached: data.isCached,
       cachePath: data.cachePath,
+      isStarred: data.isStarred,
     );
   }
 
@@ -58,6 +59,7 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       coverArtUrl: Value.absentIfNull(track.coverArtUrl),
       isCached: Value(track.isCached),
       cachePath: Value.absentIfNull(track.cachePath),
+      isStarred: Value(track.isStarred),
     );
   }
 

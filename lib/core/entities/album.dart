@@ -14,6 +14,7 @@ class Album extends Equatable {
     this.duration,
     this.coverArtUrl,
     this.description,
+    this.isStarred = false,
   });
 
   final String id;
@@ -28,6 +29,7 @@ class Album extends Equatable {
   final Duration? duration;
   final String? coverArtUrl;
   final String? description;
+  final bool isStarred;
 
   /// Validates that the album has all required fields
   bool get isValid {
@@ -79,6 +81,7 @@ class Album extends Equatable {
     Duration? duration,
     String? coverArtUrl,
     String? description,
+    bool? isStarred,
   }) {
     return Album(
       id: id ?? this.id,
@@ -93,6 +96,7 @@ class Album extends Equatable {
       duration: duration ?? this.duration,
       coverArtUrl: coverArtUrl ?? this.coverArtUrl,
       description: description ?? this.description,
+      isStarred: isStarred ?? this.isStarred,
     );
   }
 
@@ -110,6 +114,7 @@ class Album extends Equatable {
         duration,
         coverArtUrl,
         description,
+        isStarred,
       ];
 
   @override

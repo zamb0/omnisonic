@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
@@ -34,6 +35,17 @@ class MusicLibraryViewModel extends ChangeNotifier {
   UnifiedCollection? _collection;
   List<Track> _recentlyPlayed = [];
   List<Track> _recentlyAdded = [];
+  List<Track> _mostPlayed = [];
+  List<Album> _recentlyAddedAlbums = [];
+  List<Album> _recentlyPlayedAlbums = [];
+  List<Album> _mostPlayedAlbums = [];
+  List<Album> _starredAlbums = [];
+  List<Artist> _starredArtists = [];
+  List<Track> _starredTracks = [];
+  List<Genre> _genres = [];
+  String? _selectedGenre;
+  bool _showStarredOnly = false;
+  Set<String> _starredAlbumIds = {}; // Track starred album IDs for immediate UI updates
   SearchResults? _searchResults;
   bool _isLoading = false;
   bool _isSyncing = false;
@@ -43,10 +55,38 @@ class MusicLibraryViewModel extends ChangeNotifier {
   // Getters
   UnifiedCollection? get collection => _collection;
   List<Track> get tracks => _collection?.tracks ?? [];
-  List<Album> get albums => _collection?.albums ?? [];
+  /// Fetches collection stream observable
+  List<Album> get albums {
+    if (_collection?.albums == null) return [];
+    
+    // Update isStarred status dynamically based on starred albums list
+    final starredIds = _starredAlbums.map((a) => a.id).toSet();
+    
+    return _collection!.albums.map((album) {
+      // Update isStarred if it's in the starred albums list or in optimistic updates
+      if ((_starredAlbumIds.contains(album.id) || starredIds.contains(album.id)) && !album.isStarred) {
+        return album.copyWith(isStarred: true);
+      }
+      // Revert isStarred if it was unstarred
+      if (!_starredAlbumIds.contains(album.id) && !starredIds.contains(album.id) && album.isStarred) {
+        return album.copyWith(isStarred: false);
+      }
+      return album;
+    }).toList();
+  }
   List<Artist> get artists => _collection?.artists ?? [];
   List<Track> get recentlyPlayed => _recentlyPlayed;
   List<Track> get recentlyAdded => _recentlyAdded;
+  List<Track> get mostPlayed => _mostPlayed;
+  List<Album> get recentlyAddedAlbums => _recentlyAddedAlbums;
+  List<Album> get recentlyPlayedAlbums => _recentlyPlayedAlbums;
+  List<Album> get mostPlayedAlbums => _mostPlayedAlbums;
+  List<Album> get starredAlbums => _starredAlbums;
+  List<Artist> get starredArtists => _starredArtists;
+  List<Track> get starredTracks => _starredTracks;
+  List<Genre> get genres => _genres;
+  String? get selectedGenre => _selectedGenre;
+  bool get showStarredOnly => _showStarredOnly;
   SearchResults? get searchResults => _searchResults;
   bool get isLoading => _isLoading;
   bool get isSyncing => _isSyncing;
@@ -159,7 +199,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Loads smart collections (recently played, recently added)
+  /// Loads smart collections (recently played, recently added, most played)
   Future<void> _loadSmartCollections() async {
     try {
       // Load recently played tracks
@@ -174,6 +214,62 @@ class MusicLibraryViewModel extends ChangeNotifier {
       recentlyAddedResult.fold(
         (failure) => AppLog.warn('Failed to load recently added: ${failure.message}'),
         (tracks) => _recentlyAdded = tracks,
+      );
+
+      // Load most played tracks
+      final mostPlayedResult = await _musicRepository.getMostPlayed();
+      mostPlayedResult.fold(
+        (failure) => AppLog.warn('Failed to load most played: ${failure.message}'),
+        (tracks) => _mostPlayed = tracks,
+      );
+
+      // Load recently added albums
+      final recentlyAddedAlbumsResult = await _musicRepository.getRecentlyAddedAlbums();
+      recentlyAddedAlbumsResult.fold(
+        (failure) => AppLog.warn('Failed to load recently added albums: ${failure.message}'),
+        (albums) => _recentlyAddedAlbums = albums,
+      );
+
+      // Load recently played albums
+      final recentlyPlayedAlbumsResult = await _musicRepository.getRecentlyPlayedAlbums();
+      recentlyPlayedAlbumsResult.fold(
+        (failure) => AppLog.warn('Failed to load recently played albums: ${failure.message}'),
+        (albums) => _recentlyPlayedAlbums = albums,
+      );
+
+      // Load most played albums
+      final mostPlayedAlbumsResult = await _musicRepository.getMostPlayedAlbums();
+      mostPlayedAlbumsResult.fold(
+        (failure) => AppLog.warn('Failed to load most played albums: ${failure.message}'),
+        (albums) => _mostPlayedAlbums = albums,
+      );
+
+      // Load starred albums
+      final starredAlbumsResult = await _musicRepository.getStarredAlbums();
+      starredAlbumsResult.fold(
+        (failure) => AppLog.warn('Failed to load starred albums: ${failure.message}'),
+        (albums) => _starredAlbums = albums,
+      );
+
+      // Load starred artists
+      final starredArtistsResult = await _musicRepository.getStarredArtists();
+      starredArtistsResult.fold(
+        (failure) => AppLog.warn('Failed to load starred artists: ${failure.message}'),
+        (artists) => _starredArtists = artists,
+      );
+
+      // Load starred tracks
+      final starredTracksResult = await _musicRepository.getStarredTracks();
+      starredTracksResult.fold(
+        (failure) => AppLog.warn('Failed to load starred tracks: ${failure.message}'),
+        (tracks) => _starredTracks = tracks,
+      );
+
+      // Load genres
+      final genresResult = await _musicRepository.getGenres();
+      genresResult.fold(
+        (failure) => AppLog.warn('Failed to load genres: ${failure.message}'),
+        (genres) => _genres = genres,
       );
 
       notifyListeners();
@@ -277,6 +373,156 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void clearError() {
     _clearError();
     notifyListeners();
+  }
+
+  /// Sets the selected genre filter
+  void setGenreFilter(String? genre) {
+    if (_selectedGenre != genre) {
+      _selectedGenre = genre;
+      notifyListeners();
+    }
+  }
+
+  /// Toggles the starred-only filter
+  void toggleStarredFilter() {
+    _showStarredOnly = !_showStarredOnly;
+    notifyListeners();
+  }
+
+  /// Sets the starred-only filter
+  void setStarredFilter(bool value) {
+    if (_showStarredOnly != value) {
+      _showStarredOnly = value;
+      notifyListeners();
+    }
+  }
+
+  /// Clears all filters
+  void clearFilters() {
+    _selectedGenre = null;
+    _showStarredOnly = false;
+    notifyListeners();
+  }
+
+  /// Gets filtered albums based on current filter settings
+  List<Album> get filteredAlbums {
+    var result = albums;
+    
+    // Apply starred filter - check both local optimistic updates and server data
+    if (_showStarredOnly) {
+      result = result.where((album) => _starredAlbumIds.contains(album.id) || album.isStarred).toList();
+    }
+    
+    // Apply genre filter
+    if (_selectedGenre != null) {
+      result = result.where((album) => album.genre?.toLowerCase() == _selectedGenre?.toLowerCase()).toList();
+    }
+    
+    return result;
+  }
+
+  /// Gets filtered artists based on current filter settings
+  List<Artist> get filteredArtists {
+    if (_showStarredOnly) {
+      // Check both local optimistic updates and server data
+      final starredIds = _starredArtists.map((a) => a.id).toSet();
+      return artists.where((artist) => _starredAlbumIds.contains(artist.id) || starredIds.contains(artist.id)).toList();
+    }
+    
+    return artists;
+  }
+
+  /// Gets filtered tracks based on current filter settings
+  List<Track> get filteredTracks {
+    var result = tracks;
+    
+    // Apply starred filter - check both local optimistic updates and server data
+    if (_showStarredOnly) {
+      final starredIds = _starredTracks.map((t) => t.id).toSet();
+      result = result.where((track) => _starredAlbumIds.contains(track.id) || starredIds.contains(track.id)).toList();
+    }
+    
+    // Apply genre filter
+    if (_selectedGenre != null) {
+      result = result.where((track) => track.genre?.toLowerCase() == _selectedGenre?.toLowerCase()).toList();
+    }
+    
+    return result;
+  }
+
+  /// Checks if an album is starred (includes both optimistic updates and server data)
+  bool isAlbumStarred(Album album) {
+    return _starredAlbumIds.contains(album.id) || album.isStarred;
+  }
+
+  /// Checks if an artist is starred (includes both optimistic updates and server data)
+  bool isArtistStarred(Artist artist) {
+    return _starredArtists.any((a) => a.id == artist.id);
+  }
+
+  /// Checks if a track is starred (includes both optimistic updates and server data)
+  bool isTrackStarred(Track track) {
+    return _starredTracks.any((t) => t.id == track.id);
+  }
+
+  /// Stars an album (adds to favorites)
+  Future<void> starAlbum(Album album) async {
+    try {
+      // Optimistic update: add to starred immediately for instant UI feedback
+      _starredAlbumIds.add(album.id);
+      notifyListeners();
+      
+      final result = await _musicRepository.starAlbum(album.id);
+      
+      if (result.isRight()) {
+        // Refresh starred albums list from server to sync state
+        await _loadSmartCollections();
+        AppLog.info('Successfully starred album: ${album.title}');
+      } else {
+        // Revert optimistic update on failure
+        _starredAlbumIds.remove(album.id);
+        final failure = result.fold((f) => f, (v) => null) as Failure?;
+        _setError('Failed to star album: ${failure?.message}');
+        AppLog.warn('Star album failure: ${failure?.message}');
+      }
+      notifyListeners();
+    } catch (e) {
+      // Revert optimistic update on error
+      _starredAlbumIds.remove(album.id);
+      _setError('Error starring album: $e');
+      AppLog.error('Error starring album: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Unstars an album (removes from favorites)
+  Future<void> unstarAlbum(Album album) async {
+    try {
+      // Optimistic update: remove from starred immediately for instant UI feedback
+      _starredAlbumIds.remove(album.id);
+      notifyListeners();
+      
+      final result = await _musicRepository.unstarAlbum(album.id);
+      
+      if (result.isRight()) {
+        // Refresh starred albums list from server to sync state
+        await _loadSmartCollections();
+        AppLog.info('Successfully unstarred album: ${album.title}');
+      } else {
+        // Revert optimistic update on failure
+        _starredAlbumIds.add(album.id);
+        final failure = result.fold((f) => f, (v) => null) as Failure?;
+        _setError('Failed to unstar album: ${failure?.message}');
+        AppLog.warn('Unstar album failure: ${failure?.message}');
+      }
+      notifyListeners();
+    } catch (e) {
+      // Revert optimistic update on error
+      _starredAlbumIds.add(album.id);
+      _setError('Error unstarring album: $e');
+      AppLog.error('Error unstarring album: $e');
+      notifyListeners();
+    }
   }
 
   /// DEBUG: Clear all data and resync (for testing unique IDs)

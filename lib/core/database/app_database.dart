@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -47,13 +47,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        // Handle future migrations here
+        // Handle migrations
         if (from < 2) {
           // Migration for version 2: Remove license_valid column
-          // Drift/SQLite doesn't support dropping columns directly,
-          // so we'll let Drift handle it automatically on schema changes
           await m.deleteTable('servers');
           await m.createTable(serversTable);
+        }
+        if (from < 3) {
+          // Migration for version 3: Add isStarred column to tracks
+          await m.addColumn(tracksTable, tracksTable.isStarred);
         }
       },
     );

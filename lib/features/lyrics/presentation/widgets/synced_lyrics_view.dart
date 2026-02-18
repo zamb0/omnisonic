@@ -23,6 +23,7 @@ class SyncedLyricsView extends StatefulWidget {
 
 class _SyncedLyricsViewState extends State<SyncedLyricsView> {
   final ScrollController _controller = ScrollController();
+  final Map<int, GlobalKey> _itemKeys = {};
   int _activeIndex = -1;
 
   @override
@@ -35,6 +36,13 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
   void initState() {
     super.initState();
     _updateActiveIndex();
+  }
+
+  GlobalKey _getKeyForIndex(int index) {
+    if (!_itemKeys.containsKey(index)) {
+      _itemKeys[index] = GlobalKey();
+    }
+    return _itemKeys[index]!;
   }
 
   int _findActiveIndex(int timeMs) {
@@ -59,14 +67,21 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
       });
 
       if (widget.follow && index >= 0 && _controller.hasClients) {
-        final textStyle = Theme.of(context).textTheme.bodyLarge;
-        final lineHeight = (textStyle?.fontSize ?? 16) * 2.0;
-        final targetOffset = (index * lineHeight) - (lineHeight * 2);
-        _controller.animateTo(
-          targetOffset.clamp(0, _controller.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          
+          final key = _getKeyForIndex(index);
+          final context = key.currentContext;
+          
+          if (context != null) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              alignment: 0.5, // Center the item in the viewport
+            );
+          }
+        });
       }
     }
   }
@@ -74,7 +89,6 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
   @override
   Widget build(BuildContext context) {
     final textStyle = Theme.of(context).textTheme.bodyLarge;
-    final lineHeight = (textStyle?.fontSize ?? 16) * 2.0;
 
     if (widget.lines.isEmpty) {
       return Center(
@@ -87,26 +101,28 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
 
     return ListView.builder(
       controller: _controller,
-      itemExtent: lineHeight,
       itemCount: widget.lines.length,
-      padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.lg,
+      ),
       itemBuilder: (context, index) {
         final line = widget.lines[index];
         final isActive = index == _activeIndex;
         final colorScheme = Theme.of(context).colorScheme;
 
-        return Center(
+        return Padding(
+          key: _getKeyForIndex(index),
+          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 180),
             style: (textStyle ?? const TextStyle()).copyWith(
               color: isActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              height: 1.2,
+              height: 1.4,
             ),
             child: Text(
               line.text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
             ),
           ),

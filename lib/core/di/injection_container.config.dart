@@ -250,6 +250,12 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i106.SearchBloc>(
       () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
     );
+    gh.factory<_i502.ServerManagementViewModel>(
+      () => _i502.ServerManagementViewModel(
+        gh<_i331.ServerRepository>(),
+        gh<_i503.SyncMusicCollectionUseCase>(),
+      ),
+    );
     gh.factory<_i984.PlaybackViewModel>(
       () => _i984.PlaybackViewModel(
         gh<_i331.PlaybackRepository>(),
@@ -258,12 +264,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i79.SubsonicApiClient>(),
         gh<_i331.ServerRepository>(),
         gh<_i1002.AdaptiveStreamingService>(),
-      ),
-    );
-    gh.factory<_i502.ServerManagementViewModel>(
-      () => _i502.ServerManagementViewModel(
-        gh<_i331.ServerRepository>(),
-        gh<_i503.SyncMusicCollectionUseCase>(),
+        gh<_i350.AppDatabase>(),
       ),
     );
     return this;

@@ -263,28 +263,564 @@ class MusicRepositoryImpl implements MusicRepository {
 
   @override
   Future<Result<List<Track>>> getRecentlyPlayed({int limit = 50}) async {
-    // This would require playback history tracking
-    // For now, return empty list as this feature needs playback integration
-    return ResultHelper.success([]);
+    try {
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allTracks = <Track>[];
+
+      // Get recently played albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'recent',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            // Get tracks from each album
+            for (final album in albumsResponse.data!.album.take(10)) {
+              try {
+                final albumDetailResponse = await _apiClient.getAlbum(server, password, album.id);
+                if (albumDetailResponse.isSuccess && albumDetailResponse.data?.song != null) {
+                  for (final song in albumDetailResponse.data!.song) {
+                    final streamUrl = _apiClient.getStreamUrl(server, password, song.id);
+                    final track = song.toDomainTrack(server.id, streamUrl, server, password, _apiClient);
+                    allTracks.add(track);
+                  }
+                }
+              } catch (e) {
+                AppLog.warn('Failed to get tracks for album ${album.id}: $e');
+              }
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get recently played from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allTracks.take(limit).toList());
+    } catch (e) {
+      AppLog.warn('Error getting recently played: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get recently played: $e'));
+    }
   }
 
   @override
   Future<Result<List<Track>>> getRecentlyAdded({int limit = 50}) async {
     try {
-      final allTracksResult = await _localDataSource.getAllTracks();
-      if (allTracksResult.isFailure) {
-        return ResultHelper.failure(allTracksResult.failureOrNull!);
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
       }
 
-      final tracks = allTracksResult.valueOrNull!;
-      
-      // Sort by creation date (using lastModified as proxy) and take most recent
-      tracks.sort((a, b) => b.lastModified.compareTo(a.lastModified));
-      final recentTracks = tracks.take(limit).toList();
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
 
-      return ResultHelper.success(recentTracks);
+      final allTracks = <Track>[];
+
+      // Get recently added albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'newest',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            // Get tracks from each album
+            for (final album in albumsResponse.data!.album.take(10)) {
+              try {
+                final albumDetailResponse = await _apiClient.getAlbum(server, password, album.id);
+                if (albumDetailResponse.isSuccess && albumDetailResponse.data?.song != null) {
+                  for (final song in albumDetailResponse.data!.song) {
+                    final streamUrl = _apiClient.getStreamUrl(server, password, song.id);
+                    final track = song.toDomainTrack(server.id, streamUrl, server, password, _apiClient);
+                    allTracks.add(track);
+                  }
+                }
+              } catch (e) {
+                AppLog.warn('Failed to get tracks for album ${album.id}: $e');
+              }
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get recently added from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allTracks.take(limit).toList());
     } catch (e) {
+      AppLog.warn('Error getting recently added: $e');
       return ResultHelper.failure(UnknownFailure('Failed to get recently added: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Track>>> getMostPlayed({int limit = 50}) async {
+    try {
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allTracks = <Track>[];
+
+      // Get most played albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'frequent',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            // Get tracks from each album
+            for (final album in albumsResponse.data!.album.take(10)) {
+              try {
+                final albumDetailResponse = await _apiClient.getAlbum(server, password, album.id);
+                if (albumDetailResponse.isSuccess && albumDetailResponse.data?.song != null) {
+                  for (final song in albumDetailResponse.data!.song) {
+                    final streamUrl = _apiClient.getStreamUrl(server, password, song.id);
+                    final track = song.toDomainTrack(server.id, streamUrl, server, password, _apiClient);
+                    allTracks.add(track);
+                  }
+                }
+              } catch (e) {
+                AppLog.warn('Failed to get tracks for album ${album.id}: $e');
+              }
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get most played from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allTracks.take(limit).toList());
+    } catch (e) {
+      AppLog.warn('Error getting most played: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get most played: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Album>>> getRecentlyAddedAlbums({int limit = 20}) async {
+    try {
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allAlbums = <Album>[];
+
+      // Get recently added albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'newest',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            for (final album in albumsResponse.data!.album) {
+              allAlbums.add(album.toDomainAlbum(server.id, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get recently added albums from server ${server.name}: $e');
+        }
+      }
+
+      // Sort by last modified and limit
+      allAlbums.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+      return ResultHelper.success(allAlbums.take(limit).toList());
+    } catch (e) {
+      AppLog.warn('Error getting recently added albums: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get recently added albums: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Album>>> getRecentlyPlayedAlbums({int limit = 20}) async {
+    try {
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allAlbums = <Album>[];
+
+      // Get recently played albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'recent',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            for (final album in albumsResponse.data!.album) {
+              allAlbums.add(album.toDomainAlbum(server.id, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get recently played albums from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allAlbums.take(limit).toList());
+    } catch (e) {
+      AppLog.warn('Error getting recently played albums: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get recently played albums: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Album>>> getMostPlayedAlbums({int limit = 20}) async {
+    try {
+      // Get all active servers
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allAlbums = <Album>[];
+
+      // Get most played albums from each server
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final albumsResponse = await _apiClient.getAlbums(
+            server,
+            password,
+            type: 'frequent',
+            size: limit,
+          );
+
+          if (albumsResponse.isSuccess && albumsResponse.data?.album != null) {
+            for (final album in albumsResponse.data!.album) {
+              allAlbums.add(album.toDomainAlbum(server.id, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get most played albums from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allAlbums.take(limit).toList());
+    } catch (e) {
+      AppLog.warn('Error getting most played albums: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get most played albums: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Album>>> getStarredAlbums() async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allStarredAlbums = <Album>[];
+
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final starredResponse = await _apiClient.getStarred2(server, password);
+
+          if (starredResponse.isSuccess && starredResponse.data?.album != null) {
+            for (final album in starredResponse.data!.album!) {
+              allStarredAlbums.add(album.toDomainAlbum(server.id, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get starred albums from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allStarredAlbums);
+    } catch (e) {
+      AppLog.warn('Error getting starred albums: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get starred albums: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Artist>>> getStarredArtists() async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allStarredArtists = <Artist>[];
+
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final starredResponse = await _apiClient.getStarred2(server, password);
+
+          if (starredResponse.isSuccess && starredResponse.data?.artist != null) {
+            for (final artist in starredResponse.data!.artist!) {
+              allStarredArtists.add(artist.toDomainArtist(server.id, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get starred artists from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allStarredArtists);
+    } catch (e) {
+      AppLog.warn('Error getting starred artists: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get starred artists: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Track>>> getStarredTracks() async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allStarredTracks = <Track>[];
+
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final starredResponse = await _apiClient.getStarred2(server, password);
+
+          if (starredResponse.isSuccess && starredResponse.data?.song != null) {
+            for (final song in starredResponse.data!.song!) {
+              final streamUrl = _apiClient.getStreamUrl(server, password, song.id);
+              allStarredTracks.add(song.toDomainTrack(server.id, streamUrl, server, password, _apiClient));
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get starred tracks from server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(allStarredTracks);
+    } catch (e) {
+      AppLog.warn('Error getting starred tracks: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get starred tracks: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<Genre>>> getGenres() async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success([]);
+      }
+
+      final allGenres = <Genre>[];
+      final genreNames = <String>{};
+
+      for (final server in servers) {
+        try {
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          final genresResponse = await _apiClient.getGenres(server, password);
+
+          if (genresResponse.isSuccess && genresResponse.data?.genre != null) {
+            for (final genre in genresResponse.data!.genre) {
+              // Deduplicate genres by name across servers
+              if (!genreNames.contains(genre.name)) {
+                genreNames.add(genre.name);
+                allGenres.add(genre.toDomain());
+              }
+            }
+          }
+        } catch (e) {
+          AppLog.warn('Failed to get genres from server ${server.name}: $e');
+        }
+      }
+
+      // Sort genres alphabetically
+      allGenres.sort((a, b) => a.name.compareTo(b.name));
+
+      return ResultHelper.success(allGenres);
+    } catch (e) {
+      AppLog.warn('Error getting genres: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to get genres: $e'));
+    }
+  }
+
+  @override
+  Future<Result<void>> starAlbum(String albumId) async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success(null);
+      }
+
+      for (final server in servers) {
+        try {
+          // Extract the original album ID from the unique ID if needed
+          final originalAlbumId = albumId.contains('|') ? albumId.split('|')[1] : albumId;
+          
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          await _apiClient.star(server, password, albumId: originalAlbumId);
+          
+          AppLog.info('⭐ Starred album $albumId on server ${server.name}');
+        } catch (e) {
+          AppLog.warn('Failed to star album on server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(null);
+    } catch (e) {
+      AppLog.warn('Error starring album: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to star album: $e'));
+    }
+  }
+
+  @override
+  Future<Result<void>> unstarAlbum(String albumId) async {
+    try {
+      final serversResult = await _serverRepository.getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
+      }
+
+      final servers = serversResult.valueOrNull!.where((s) => s.isAvailable).toList();
+      if (servers.isEmpty) {
+        return ResultHelper.success(null);
+      }
+
+      for (final server in servers) {
+        try {
+          // Extract the original album ID from the unique ID if needed
+          final originalAlbumId = albumId.contains('|') ? albumId.split('|')[1] : albumId;
+          
+          final passwordResult = await _connectionService.getServerPassword(server.id);
+          if (passwordResult.isFailure) continue;
+          
+          final password = passwordResult.valueOrNull!;
+          await _apiClient.unstar(server, password, albumId: originalAlbumId);
+          
+          AppLog.info('⭐ Unstarred album $albumId on server ${server.name}');
+        } catch (e) {
+          AppLog.warn('Failed to unstar album on server ${server.name}: $e');
+        }
+      }
+
+      return ResultHelper.success(null);
+    } catch (e) {
+      AppLog.warn('Error unstarring album: $e');
+      return ResultHelper.failure(UnknownFailure('Failed to unstar album: $e'));
     }
   }
 

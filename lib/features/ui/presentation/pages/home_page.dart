@@ -36,8 +36,10 @@ class _HomePageState extends State<HomePage> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            _buildFeaturedAlbumsSection(),
-            _buildRecentAlbumsSection(),
+            _buildAppBar(),
+            _buildRecentlyAddedSection(),
+            _buildRecentlyPlayedSection(),
+            _buildMostPlayedSection(),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -45,153 +47,204 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFeaturedAlbumsSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        final albums = viewModel.albums.take(10).toList();
-        if (albums.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
-        }
-
-        return SliverToBoxAdapter(
-          child: SizedBox(
-            height: 330,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              itemCount: albums.length,
-              itemBuilder: (context, index) {
-                final album = albums[index];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: _buildFeaturedAlbumCard(album),
-                );
-              },
+  Widget _buildAppBar() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Home',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFeaturedAlbumCard(Album album) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 220,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: _HoverAlbumCard(
-          album: album,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    _getColorForAlbum(album).withOpacity(0.15),
-                    scheme.surface,
-                  ],
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Title at top
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-                      child: Text(
-                      album.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                        maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
+            const SizedBox(height: 4),
+            Text(
+              'Discover your music',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  // Album artwork
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: _buildAlbumArtwork(album),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Artist and genre/year
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Column(
-                      children: [
-                        Text(
-                          album.artist,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: scheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          _getAlbumMetadata(album),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAlbumArtwork(Album album) {
+  Widget _buildRecentlyAddedSection() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        final albums = viewModel.recentlyAddedAlbums;
+        if (albums.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return _buildAlbumSection(
+          title: 'Recently Added',
+          albums: albums,
+          icon: Icons.fiber_new_rounded,
+        );
+      },
+    );
+  }
+
+  Widget _buildRecentlyPlayedSection() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        final albums = viewModel.recentlyPlayedAlbums;
+        if (albums.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return _buildAlbumSection(
+          title: 'Recently Played',
+          albums: albums,
+          icon: Icons.history_rounded,
+        );
+      },
+    );
+  }
+
+  Widget _buildMostPlayedSection() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        final albums = viewModel.mostPlayedAlbums;
+        if (albums.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return _buildAlbumSection(
+          title: 'Most Played',
+          albums: albums,
+          icon: Icons.trending_up_rounded,
+        );
+      },
+    );
+  }
+
+  Widget _buildAlbumSection({
+    required String title,
+    required List<Album> albums,
+    required IconData icon,
+  }) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        color: scheme.surfaceVariant,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 240,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: albums.length,
+              itemBuilder: (context, index) {
+                final album = albums[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _buildAlbumCard(album),
+                );
+              },
+            ),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: album.coverArtUrl != null
-            ? CachedNetworkImage(
-                imageUrl: album.coverArtUrl!.withCoverArtSize(320),
-                cacheKey: album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
-                cacheManager: OmnisonicImageCacheManager.instance,
-                fit: BoxFit.cover,
-                memCacheWidth: 320,
-                memCacheHeight: 320,
-                fadeInDuration: const Duration(milliseconds: 120),
-                useOldImageOnUrlChange: true,
-                placeholder: (context, url) => _buildPlaceholderArt(),
-                errorWidget: (context, url, error) =>
-                    coverArtErrorWidget(_buildPlaceholderArt(), url, error),
-              )
-            : _buildPlaceholderArt(),
+    );
+  }
+
+  Widget _buildAlbumCard(Album album) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 160,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: _HoverAlbumCard(
+          album: album,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: scheme.surfaceVariant,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: album.coverArtUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: album.coverArtUrl!.withCoverArtSize(320),
+                            cacheKey: album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
+                            cacheManager: OmnisonicImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 320,
+                            memCacheHeight: 320,
+                            fadeInDuration: const Duration(milliseconds: 150),
+                            placeholder: (context, url) => _buildPlaceholderArt(),
+                            errorWidget: (context, url, error) =>
+                                coverArtErrorWidget(_buildPlaceholderArt(), url, error),
+                          )
+                        : _buildPlaceholderArt(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                album.title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                album.artist,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -208,159 +261,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Color _getColorForAlbum(Album album) {
-    final colors = [
-      const Color(0xFFC4A942), // Gold
-      const Color(0xFFB94A48), // Red
-      const Color(0xFF7A7A7A), // Gray
-      const Color(0xFF8B6F47), // Brown
-      const Color(0xFF5B7C99), // Blue
-      const Color(0xFF7B68A6), // Purple
-      const Color(0xFF6B9B7D), // Green
-    ];
-    return colors[album.title.hashCode.abs() % colors.length];
-  }
-
-  String _getAlbumMetadata(Album album) {
-    final parts = <String>[];
-    if (album.genre != null && album.genre!.isNotEmpty) {
-      parts.add(album.genre!.toUpperCase());
-    }
-    if (album.year != null) {
-      parts.add(album.year.toString());
-    }
-    return parts.join(' • ');
-  }
-
-  Widget _buildRecentAlbumsSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        // Get albums from recently played tracks
-        final recentAlbumIds = <String>{};
-        final recentAlbums = <Album>[];
-        
-        for (final track in viewModel.recentlyPlayed) {
-          final albumId = track.albumId;
-          if (albumId != null && !recentAlbumIds.contains(albumId)) {
-            final album = viewModel.albums.where((a) => a.id == albumId).firstOrNull;
-            if (album != null) {
-              recentAlbumIds.add(albumId);
-              recentAlbums.add(album);
-            }
-          }
-        }
-
-        if (recentAlbums.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
-        }
-
-        return SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Most played',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: View more
-                      },
-                      child: Text(
-                        'View more',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: recentAlbums.take(10).length,
-                  itemBuilder: (context, index) {
-                    final album = recentAlbums[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: _buildMostPlayedAlbumCard(album),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMostPlayedAlbumCard(Album album) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 160,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: _HoverAlbumCard(
-          album: album,
-          compact: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: scheme.surfaceVariant,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: album.coverArtUrl != null
-                          ? Image.network(
-                              album.coverArtUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildPlaceholderArt(),
-                            )
-                          : _buildPlaceholderArt(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  album.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  album.artist,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-    );
-  }
-
   Future<void> _onRefresh() async {
     final viewModel = context.read<MusicLibraryViewModel>();
     await viewModel.refreshSmartCollections();
@@ -371,12 +271,10 @@ class _HoverAlbumCard extends StatefulWidget {
   const _HoverAlbumCard({
     required this.album,
     required this.child,
-    this.compact = false,
   });
 
   final Album album;
   final Widget child;
-  final bool compact;
 
   @override
   State<_HoverAlbumCard> createState() => _HoverAlbumCardState();
@@ -399,8 +297,8 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(widget.compact ? 6 : 8),
-                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.black.withOpacity(0.6),
                   ),
                   child: Center(
                     child: Row(

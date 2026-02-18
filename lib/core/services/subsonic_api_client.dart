@@ -292,6 +292,8 @@ class SubsonicApiClient {
       if (albumId != null) queryParams['albumId'] = albumId;
       if (artistId != null) queryParams['artistId'] = artistId;
       
+      AppLog.info('⭐ Calling star API - server: ${server.name}, id: $id');
+      
       final response = await _makeRequest(
         server: server,
         password: password,
@@ -299,11 +301,14 @@ class SubsonicApiClient {
         queryParams: queryParams,
       );
       
+      AppLog.debug('Star API response status: ${response.statusCode}');
+      
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
+      AppLog.error('Star API error: $e');
       throw _handleException(e);
     }
   }
@@ -327,6 +332,8 @@ class SubsonicApiClient {
       if (albumId != null) queryParams['albumId'] = albumId;
       if (artistId != null) queryParams['artistId'] = artistId;
       
+      AppLog.info('⭐ Calling unstar API - server: ${server.name}, id: $id');
+      
       final response = await _makeRequest(
         server: server,
         password: password,
@@ -334,11 +341,68 @@ class SubsonicApiClient {
         queryParams: queryParams,
       );
       
+      AppLog.debug('Unstar API response status: ${response.statusCode}');
+      
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
       );
     } catch (e) {
+      AppLog.error('Unstar API error: $e');
+      throw _handleException(e);
+    }
+  }
+
+  /// Gets all starred albums, artists, and songs
+  /// Returns a [StarredResponse] containing lists of starred items
+  Future<SubsonicResponse<StarredResponse>> getStarred2(
+    MusicServer server,
+    String password,
+  ) async {
+    try {
+      AppLog.info('⭐ Calling getStarred2 API - server: ${server.name}');
+      
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'getStarred2',
+      );
+      
+      AppLog.debug('getStarred2 API response status: ${response.statusCode}');
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => StarredResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      AppLog.error('getStarred2 API error: $e');
+      throw _handleException(e);
+    }
+  }
+
+  /// Gets all music genres available on the server
+  /// Returns a [GenresResponse] containing a list of genres with their statistics
+  Future<SubsonicResponse<GenresResponse>> getGenres(
+    MusicServer server,
+    String password,
+  ) async {
+    try {
+      AppLog.info('🎵 Calling getGenres API - server: ${server.name}');
+      
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'getGenres',
+      );
+      
+      AppLog.debug('getGenres API response status: ${response.statusCode}');
+      
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => GenresResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      AppLog.error('getGenres API error: $e');
       throw _handleException(e);
     }
   }

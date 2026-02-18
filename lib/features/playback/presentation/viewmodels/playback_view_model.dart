@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/database/app_database.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/id_generator.dart';
 import '../../data/datasources/playback_tracking_service.dart';
 import '../../data/datasources/adaptive_streaming_service.dart';
 
@@ -26,6 +28,7 @@ class PlaybackViewModel extends ChangeNotifier {
     this._apiClient,
     this._serverRepository,
     this._adaptiveStreamingService,
+    this._database,
   ) {
     _initialize();
   }
@@ -36,6 +39,7 @@ class PlaybackViewModel extends ChangeNotifier {
   final SubsonicApiClient _apiClient;
   final ServerRepository _serverRepository;
   final AdaptiveStreamingService _adaptiveStreamingService;
+  final AppDatabase _database;
 
   StreamSubscription<PlaybackState>? _playbackStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
@@ -611,6 +615,8 @@ class PlaybackViewModel extends ChangeNotifier {
   /// Toggles the favorite (starred) status of a track
   Future<void> toggleFavorite(Track track) async {
     try {
+      AppLog.info('🌟 Toggle favorite for track: ${track.title} (current: ${track.isStarred})');
+      
       // Get server credentials
       final serversResult = await _serverRepository.getOnlineServers();
       
@@ -626,6 +632,7 @@ class PlaybackViewModel extends ChangeNotifier {
             _setError('No server connection available');
           } else {
             server = servers.first;
+            AppLog.debug('Using server: ${server!.name}');
           }
         },
       );
@@ -648,19 +655,38 @@ class PlaybackViewModel extends ChangeNotifier {
       if (password == null) return;
       
       // Extract subsonic ID from composite ID
-      final subsonicId = _extractSubsonicId(track.id);
+      final subsonicId = IdGenerator.extractSubsonicId(track.id);
+      AppLog.info('📋 Track ID extraction:');
+      AppLog.info('  - Composite ID: ${track.id}');
+      AppLog.info('  - Extracted Subsonic ID: $subsonicId');
+      AppLog.info('  - Server ID: ${IdGenerator.extractServerId(track.id)}');
       
       // Toggle favorite status
       if (track.isStarred) {
-        await _apiClient.unstar(server!, password!, id: subsonicId);
+        AppLog.info('📤 Sending unstar request to server...');
+        final response = await _apiClient.unstar(server!, password!, id: subsonicId);
+        AppLog.info('✓ Unstar response status: ${response.subsonicResponse.status}, isSuccess: ${response.isSuccess}');
+        if (!response.isSuccess) {
+          AppLog.error('❌ Server returned error: ${response.error?.message ?? "Unknown error"}');
+          _setError('Failed to unstar track: ${response.error?.message ?? "Unknown error"}');
+          return;
+        }
         AppLog.info('✓ Unstarred track: ${track.title}');
       } else {
-        await _apiClient.star(server!, password!, id: subsonicId);
+        AppLog.info('📤 Sending star request to server...');
+        final response = await _apiClient.star(server!, password!, id: subsonicId);
+        AppLog.info('✓ Star response status: ${response.subsonicResponse.status}, isSuccess: ${response.isSuccess}');
+        if (!response.isSuccess) {
+          AppLog.error('❌ Server returned error: ${response.error?.message ?? "Unknown error"}');
+          _setError('Failed to star track: ${response.error?.message ?? "Unknown error"}');
+          return;
+        }
         AppLog.info('✓ Starred track: ${track.title}');
       }
       
       // Update track in current state
       final updatedTrack = track.copyWith(isStarred: !track.isStarred);
+      AppLog.debug('Updated track isStarred: ${updatedTrack.isStarred}');
       
       // Update queue if this track is in it
       final updatedQueue = queue.map((t) => t.id == track.id ? updatedTrack : t).toList();
@@ -671,18 +697,21 @@ class PlaybackViewModel extends ChangeNotifier {
         queue: updatedQueue,
       );
       
+      // Persist to local database
+      try {
+        await _database.musicDao.updateTrack(updatedTrack);
+        AppLog.info('💾 Updated track in local database: ${updatedTrack.title}');
+      } catch (e) {
+        AppLog.warn('Failed to update track in local database: $e');
+        // Don't fail the whole operation if local update fails
+      }
+      
       notifyListeners();
+      AppLog.info('✨ UI notified of favorite change');
     } catch (e) {
-      AppLog.warn('Failed to toggle favorite: $e');
+      AppLog.error('❌ Failed to toggle favorite: $e');
       _setError('Failed to update favorite status');
     }
-  }
-
-  /// Extracts the original Subsonic ID from our composite ID
-  String _extractSubsonicId(String compositeId) {
-    // Our IDs are in format "serverId_subsonicId"
-    final parts = compositeId.split('_');
-    return parts.length > 1 ? parts.sublist(1).join('_') : compositeId;
   }
 
   @override

@@ -9,20 +9,26 @@ class AlbumCard extends StatelessWidget {
   final Album album;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onStar;
+  final VoidCallback? onUnstar;
   final double? width;
   final bool showArtist;
   final String? serverName;
   final bool showMeta;
+  final bool? isStarred; // Override album.isStarred for optimistic UI updates
 
   const AlbumCard({
     super.key,
     required this.album,
     this.onTap,
     this.onLongPress,
+    this.onStar,
+    this.onUnstar,
     this.width,
     this.showArtist = true,
     this.serverName,
     this.showMeta = true,
+    this.isStarred,
   });
 
   @override
@@ -36,12 +42,17 @@ class AlbumCard extends StatelessWidget {
            : null))
       : null;
 
+    // Use the provided isStarred value or fall back to album.isStarred
+    final starred = isStarred ?? album.isStarred;
+
     return FeishinCard(
       title: album.title,
       subtitle: subtitle,
       meta: meta,
       imageUrl: album.coverArtUrl,
       onTap: onTap,
+      onStar: starred ? onUnstar : onStar,
+      isStarred: starred,
       width: width,
       titleMaxLines: 1,
     );

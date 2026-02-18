@@ -278,3 +278,45 @@ Map<String, dynamic> _$PlayQueueResponseToJson(PlayQueueResponse instance) =>
       'changedBy': instance.changedBy,
       'entry': instance.entries,
     };
+
+StarredResponse _$StarredResponseFromJson(Map<String, dynamic> json) =>
+    StarredResponse(
+      album: (json['album'] as List<dynamic>?)
+          ?.map((e) => SubsonicAlbum.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      artist: (json['artist'] as List<dynamic>?)
+          ?.map((e) => SubsonicArtist.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      song: (json['song'] as List<dynamic>?)
+          ?.map((e) => SubsonicSong.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$StarredResponseToJson(StarredResponse instance) =>
+    <String, dynamic>{
+      'album': instance.album,
+      'artist': instance.artist,
+      'song': instance.song,
+    };
+
+Genre _$GenreFromJson(Map<String, dynamic> json) => Genre(
+  name: json['value'] as String,
+  songCount: (json['songCount'] as num).toInt(),
+  albumCount: (json['albumCount'] as num).toInt(),
+);
+
+Map<String, dynamic> _$GenreToJson(Genre instance) => <String, dynamic>{
+  'value': instance.name,
+  'songCount': instance.songCount,
+  'albumCount': instance.albumCount,
+};
+
+GenresResponse _$GenresResponseFromJson(Map<String, dynamic> json) =>
+    GenresResponse(
+      genre: (json['genre'] as List<dynamic>)
+          .map((e) => Genre.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$GenresResponseToJson(GenresResponse instance) =>
+    <String, dynamic>{'genre': instance.genre};

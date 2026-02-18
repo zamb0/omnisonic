@@ -200,6 +200,21 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       ),
                     ),
                     // Compact controls
+                    Consumer<PlaybackViewModel>(
+                      builder: (context, vm, child) {
+                        final isStarred = track.isStarred;
+                        return _iconBtn(
+                          isStarred ? Icons.favorite : Icons.favorite_border,
+                          18,
+                          isStarred ? Colors.red : scheme.onSurface.withOpacity(0.7),
+                          () {
+                            debugPrint('💙 Like button clicked (mobile) - track: ${track.title}, isStarred: $isStarred');
+                            vm.toggleFavorite(track);
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
                     _iconBtn(
                       Icons.skip_previous,
                       22,
@@ -469,8 +484,30 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _iconBtn(Icons.favorite_border, 18, scheme.onSurfaceVariant, () {}),
-          const SizedBox(width: 4),
+          Consumer<PlaybackViewModel>(
+            builder: (context, vm, child) {
+              final track = vm.currentTrack;
+              final isStarred = track?.isStarred ?? false;
+              
+              return IconButton(
+                icon: Icon(
+                  isStarred ? Icons.favorite : Icons.favorite_border,
+                  size: 18,
+                  color: isStarred ? Colors.red : scheme.onSurfaceVariant,
+                ),
+                onPressed: track != null ? () {
+                  debugPrint('💙 Like button clicked - track: ${track.title}, isStarred: ${track.isStarred}');
+                  vm.toggleFavorite(track);
+                } : null,
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+                splashRadius: 16,
+              );
+            },
+          ),
           _iconBtn(Icons.volume_up, 18, scheme.onSurfaceVariant, () {}),
           const SizedBox(width: 4),
           // Volume slider

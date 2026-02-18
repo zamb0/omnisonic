@@ -42,6 +42,36 @@ abstract class MusicRepository {
   /// Gets recently added tracks
   Future<Result<List<Track>>> getRecentlyAdded({int limit = 50});
   
+  /// Gets most played tracks
+  Future<Result<List<Track>>> getMostPlayed({int limit = 50});
+  
+  /// Gets recently added albums from the server
+  Future<Result<List<Album>>> getRecentlyAddedAlbums({int limit = 20});
+  
+  /// Gets recently played albums from the server
+  Future<Result<List<Album>>> getRecentlyPlayedAlbums({int limit = 20});
+  
+  /// Gets most played albums from the server
+  Future<Result<List<Album>>> getMostPlayedAlbums({int limit = 20});
+  
+  /// Gets all starred (favorited) albums from all servers
+  Future<Result<List<Album>>> getStarredAlbums();
+  
+  /// Gets all starred (favorited) artists from all servers
+  Future<Result<List<Artist>>> getStarredArtists();
+  
+  /// Gets all starred (favorited) tracks from all servers
+  Future<Result<List<Track>>> getStarredTracks();
+  
+  /// Gets all available genres from all servers
+  Future<Result<List<Genre>>> getGenres();
+  
+  /// Stars (favorites) an album on all servers that have it
+  Future<Result<void>> starAlbum(String albumId);
+  
+  /// Unstars (removes from favorites) an album on all servers
+  Future<Result<void>> unstarAlbum(String albumId);
+  
   /// Filters tracks by various criteria
   Future<Result<List<Track>>> filterTracks({
     String? genre,

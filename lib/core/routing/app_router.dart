@@ -6,6 +6,7 @@ import '../../core/constants/animation_constants.dart';
 import '../../features/ui/presentation/pages/home_page.dart';
 import '../../features/ui/presentation/pages/library_page.dart';
 import '../../features/ui/presentation/pages/search_page.dart';
+import '../../features/ui/presentation/pages/favorites_page.dart';
 import '../../features/ui/presentation/pages/now_playing_page.dart';
 import '../../features/ui/presentation/pages/album_detail_page.dart';
 import '../../features/ui/presentation/pages/artist_detail_page.dart';
@@ -22,6 +23,7 @@ class AppRouter {
   static const String nowPlaying = '/now-playing';
   static const String albumDetail = '/album-detail';
   static const String artistDetail = '/artist-detail';
+  static const String favorites = '/favorites';
   static const String servers = '/servers';
   static const String playlistManagement = '/playlist-management';
   static const String playlistDetail = '/playlist-detail';
@@ -54,6 +56,14 @@ class AppRouter {
             pageBuilder: (context, state) => _fadePage(
               state: state,
               child: const SearchPage(),
+            ),
+          ),
+          GoRoute(
+            path: favorites,
+            name: 'favorites',
+            pageBuilder: (context, state) => _fadePage(
+              state: state,
+              child: const FavoritesPage(),
             ),
           ),
           GoRoute(

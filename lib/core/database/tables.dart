@@ -44,6 +44,7 @@ class TracksTable extends Table {
   TextColumn get coverArtUrl => text().nullable()();
   BoolColumn get isCached => boolean().withDefault(const Constant(false))();
   TextColumn get cachePath => text().nullable()();
+  BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -4,6 +4,7 @@ import '../entities/album.dart';
 import '../entities/artist.dart';
 import '../entities/audio_quality.dart';
 import '../entities/music_server.dart';
+import '../entities/genre.dart' as domain;
 import '../utils/id_generator.dart';
 import 'subsonic_api_client.dart';
 
@@ -71,6 +72,10 @@ class SubsonicResponseData<T> {
       data = fromJsonT(json['album']);
     } else if (json.containsKey('playQueue')) {
       data = fromJsonT(json['playQueue']);
+    } else if (json.containsKey('starred2')) {
+      data = fromJsonT(json['starred2']);
+    } else if (json.containsKey('genres')) {
+      data = fromJsonT(json['genres']);
     } else if (json['status'] == 'ok') {
       // For ping and other simple responses
       data = fromJsonT(<String, dynamic>{});
@@ -247,6 +252,7 @@ class SubsonicAlbum {
       trackCount: songCount,
       duration: Duration(seconds: duration),
       coverArtUrl: coverArtUrl,
+      isStarred: starred != null,
     );
   }
 }
@@ -476,4 +482,65 @@ class PlayQueueResponse {
       _$PlayQueueResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlayQueueResponseToJson(this);
+}
+
+/// Starred content response (albums, artists, songs)
+@JsonSerializable()
+class StarredResponse {
+  final List<SubsonicAlbum>? album;
+  final List<SubsonicArtist>? artist;
+  final List<SubsonicSong>? song;
+
+  const StarredResponse({
+    this.album,
+    this.artist,
+    this.song,
+  });
+
+  factory StarredResponse.fromJson(Map<String, dynamic> json) =>
+      _$StarredResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StarredResponseToJson(this);
+}
+
+/// Genre information
+@JsonSerializable()
+class Genre {
+  @JsonKey(name: 'value')
+  final String name;
+  final int songCount;
+  final int albumCount;
+
+  const Genre({
+    required this.name,
+    required this.songCount,
+    required this.albumCount,
+  });
+
+  factory Genre.fromJson(Map<String, dynamic> json) =>
+      _$GenreFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GenreToJson(this);
+
+  /// Converts to domain Genre entity
+  domain.Genre toDomain() {
+    return domain.Genre(
+      name: name,
+      songCount: songCount,
+      albumCount: albumCount,
+    );
+  }
+}
+
+/// Genres list response
+@JsonSerializable()
+class GenresResponse {
+  final List<Genre> genre;
+
+  const GenresResponse({required this.genre});
+
+  factory GenresResponse.fromJson(Map<String, dynamic> json) =>
+      _$GenresResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GenresResponseToJson(this);
 }

@@ -16,6 +16,8 @@ class FeishinCard extends StatefulWidget {
     this.meta,
     this.imageUrl,
     this.onTap,
+    this.onStar,
+    this.isStarred = false,
     this.width,
     this.imageShape = FeishinImageShape.rounded,
     this.imageSize,
@@ -27,6 +29,8 @@ class FeishinCard extends StatefulWidget {
   final String? meta;
   final String? imageUrl;
   final VoidCallback? onTap;
+  final VoidCallback? onStar;
+  final bool isStarred;
   final double? width;
   final FeishinImageShape imageShape;
   final double? imageSize;
@@ -67,25 +71,55 @@ class _FeishinCardState extends State<FeishinCard> {
                       fit: StackFit.expand,
                       children: [
                         _buildImage(context, scheme),
-                        // Hover overlay with play button
+                        // Hover overlay with play and star buttons
                         AnimatedOpacity(
                           opacity: _isHovering ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 150),
                           child: Container(
                             color: Colors.black.withOpacity(0.4),
                             child: Center(
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: scheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.play_arrow,
-                                  color: scheme.onPrimary,
-                                  size: 24,
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Star button
+                                  if (widget.onStar != null)
+                                    GestureDetector(
+                                      onTap: widget.onStar,
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: scheme.tertiary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          widget.isStarred ? Icons.star : Icons.star_outline,
+                                          color: scheme.onTertiary,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 12),
+                                  // Play button
+                                  GestureDetector(
+                                    onTap: widget.onTap,
+                                    behavior: HitTestBehavior.opaque,
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: scheme.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.play_arrow,
+                                        color: scheme.onPrimary,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

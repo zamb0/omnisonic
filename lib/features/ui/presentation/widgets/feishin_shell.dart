@@ -126,6 +126,16 @@ class FeishinShell extends StatelessWidget {
             onTap: () => _goToLibraryTab(context, LibraryTab.playlists),
             compact: true,
           ),
+          const SizedBox(height: 12),
+          _buildSectionHeader(context, 'Favorites'),
+          _buildNavItem(
+            context,
+            icon: Icons.star_outline,
+            activeIcon: Icons.star,
+            label: 'Starred',
+            selected: path == AppRouter.favorites,
+            onTap: () => context.go(AppRouter.favorites),
+          ),
           const Spacer(),
           _buildSectionHeader(context, 'Manage'),
           _buildNavItem(

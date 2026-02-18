@@ -90,8 +90,8 @@ class _LibraryPageState extends State<LibraryPage> {
           return _buildLoadingGrid();
         }
 
-        final albums = viewModel.albums;
-        if (albums.isEmpty) {
+        final albums = viewModel.filteredAlbums;
+        if (albums.isEmpty && !viewModel.showStarredOnly && viewModel.selectedGenre == null) {
           return EmptyState(
             icon: Icons.album,
             title: 'No Albums',
@@ -109,19 +109,40 @@ class _LibraryPageState extends State<LibraryPage> {
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
-          child: ResponsiveGridView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            minItemWidth: 160,
-            spacing: 20,
-            childAspectRatio: 0.72,
-            children: sortedAlbums.map((album) {
-              return AlbumCard(
-                album: album,
-                onTap: () => _onAlbumTapped(album),
-                showArtist: true,
-                showMeta: true,
-              );
-            }).toList(),
+          child: Column(
+            children: [
+              _buildFilterSection(viewModel),
+              Expanded(
+                child: sortedAlbums.isEmpty
+                    ? EmptyState(
+                        icon: Icons.filter_alt_off,
+                        title: 'No Results',
+                        subtitle: 'No albums match your current filters',
+                        action: TextButton(
+                          onPressed: () => viewModel.clearFilters(),
+                          child: const Text('Clear Filters'),
+                        ),
+                      )
+                    : ResponsiveGridView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        minItemWidth: 160,
+                        spacing: 20,
+                        childAspectRatio: 0.72,
+                        children: sortedAlbums.map((album) {
+                          final isStarred = viewModel.isAlbumStarred(album);
+                          return AlbumCard(
+                            album: album,
+                            onTap: () => _onAlbumTapped(album),
+                            onStar: !isStarred ? () => viewModel.starAlbum(album) : null,
+                            onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
+                            isStarred: isStarred,
+                            showArtist: true,
+                            showMeta: true,
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
           ),
         );
       },
@@ -254,6 +275,120 @@ class _LibraryPageState extends State<LibraryPage> {
       itemBuilder: (context, index) {
         return const ShimmerCard();
       },
+    );
+  }
+
+  Widget _buildFilterSection(MusicLibraryViewModel viewModel) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.filter_list,
+                size: 20,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Filters',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const Spacer(),
+              if (viewModel.showStarredOnly || viewModel.selectedGenre != null)
+                TextButton.icon(
+                  onPressed: () => viewModel.clearFilters(),
+                  icon: const Icon(Icons.clear, size: 16),
+                  label: const Text('Clear'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // Starred filter chip
+              FilterChip(
+                label: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star, size: 16),
+                    SizedBox(width: 4),
+                    Text('Starred'),
+                  ],
+                ),
+                selected: viewModel.showStarredOnly,
+                onSelected: (_) => viewModel.toggleStarredFilter(),
+              ),
+              // Genre filter chips
+              if (viewModel.genres.isNotEmpty)
+                PopupMenuButton<String>(
+                  child: Chip(
+                    avatar: Icon(
+                      Icons.music_note,
+                      size: 16,
+                      color: viewModel.selectedGenre != null 
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    label: Text(viewModel.selectedGenre ?? 'All Genres'),
+                    deleteIcon: viewModel.selectedGenre != null 
+                        ? const Icon(Icons.close, size: 16)
+                        : null,
+                    onDeleted: viewModel.selectedGenre != null 
+                        ? () => viewModel.setGenreFilter(null)
+                        : null,
+                    backgroundColor: viewModel.selectedGenre != null
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : null,
+                  ),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      value: null,
+                      child: Text('All Genres'),
+                    ),
+                    const PopupMenuDivider(),
+                    ...viewModel.genres.map((genre) {
+                      return PopupMenuItem<String>(
+                        value: genre.name,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                genre.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '${genre.albumCount}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                  onSelected: (value) => viewModel.setGenreFilter(value),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

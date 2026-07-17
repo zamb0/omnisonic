@@ -8,7 +8,8 @@ class DesignSystemCheckpointApp extends StatefulWidget {
   const DesignSystemCheckpointApp({super.key});
 
   @override
-  State<DesignSystemCheckpointApp> createState() => _DesignSystemCheckpointAppState();
+  State<DesignSystemCheckpointApp> createState() =>
+      _DesignSystemCheckpointAppState();
 }
 
 class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
@@ -18,7 +19,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
   late AnimationController _testAnimationController;
   late Animation<double> _scaleAnimation;
   late Animation<Color?> _colorAnimation;
-  
+
   int _selectedIndex = 0;
   bool _isAnimating = false;
   final List<String> _testResults = [];
@@ -33,7 +34,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
   void _initializeManagers() {
     _themeManager = OmnisonicThemeManager();
     _themeManager.initialize();
-    
+
     _animationManager = AnimationManager();
     _animationManager.initialize(enablePerformanceMonitoring: true);
   }
@@ -79,9 +80,11 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
           title: const Text('Design System Checkpoint'),
           actions: [
             IconButton(
-              icon: Icon(_themeManager.isDark(context) 
-                ? Icons.light_mode 
-                : Icons.dark_mode),
+              icon: Icon(
+                _themeManager.isDark(context)
+                    ? Icons.light_mode
+                    : Icons.dark_mode,
+              ),
               onPressed: () async {
                 await _themeManager.toggleTheme();
                 setState(() {});
@@ -108,13 +111,8 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
   Widget _buildTabletLayout() {
     return Row(
       children: [
-        SizedBox(
-          width: 200,
-          child: _buildSideNavigation(),
-        ),
-        Expanded(
-          child: _buildMainContent(isMobile: false),
-        ),
+        SizedBox(width: 200, child: _buildSideNavigation()),
+        Expanded(child: _buildMainContent(isMobile: false)),
       ],
     );
   }
@@ -122,17 +120,9 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
   Widget _buildDesktopLayout() {
     return Row(
       children: [
-        SizedBox(
-          width: 250,
-          child: _buildSideNavigation(),
-        ),
-        Expanded(
-          child: _buildMainContent(isMobile: false),
-        ),
-        SizedBox(
-          width: 300,
-          child: _buildTestPanel(),
-        ),
+        SizedBox(width: 250, child: _buildSideNavigation()),
+        Expanded(child: _buildMainContent(isMobile: false)),
+        SizedBox(width: 300, child: _buildTestPanel()),
       ],
     );
   }
@@ -170,12 +160,9 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Color System Test',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Color System Test', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Primary colors
             Row(
               children: [
@@ -185,7 +172,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ],
             ),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Gradient test
             Container(
               height: 60,
@@ -204,7 +191,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ),
             ),
             const SizedBox(height: OmnisonicSpacing.sm),
-            
+
             // Animated color test
             AnimatedBuilder(
               animation: _colorAnimation,
@@ -244,10 +231,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ),
             ),
             const SizedBox(height: OmnisonicSpacing.xs),
-            Text(
-              name,
-              style: context.textTheme.labelSmall,
-            ),
+            Text(name, style: context.textTheme.labelSmall),
           ],
         ),
       ),
@@ -261,22 +245,19 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Typography Test',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Typography Test', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             Text('Display Large', style: context.textTheme.displayLarge),
             Text('Headline Medium', style: context.textTheme.headlineMedium),
             Text('Title Large', style: context.textTheme.titleLarge),
             Text('Body Large', style: context.textTheme.bodyLarge),
             Text('Label Medium', style: context.textTheme.labelMedium),
-            
+
             const SizedBox(height: OmnisonicSpacing.md),
             const Divider(),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Music-specific typography
             Text('Track Title Example', style: context.textTheme.trackTitle),
             Text('Artist Name Example', style: context.textTheme.artistName),
@@ -295,17 +276,16 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Animation Test',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Animation Test', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             Row(
               children: [
                 ElevatedButton(
                   onPressed: _isAnimating ? null : _testAnimations,
-                  child: Text(_isAnimating ? 'Animating...' : 'Test Animations'),
+                  child: Text(
+                    _isAnimating ? 'Animating...' : 'Test Animations',
+                  ),
                 ),
                 const SizedBox(width: OmnisonicSpacing.md),
                 Text(
@@ -315,7 +295,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ],
             ),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Animated test widget
             AnimatedBuilder(
               animation: _scaleAnimation,
@@ -347,27 +327,26 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
   Widget _buildResponsiveTest() {
     final screenType = ResponsiveBreakpoints.getScreenType(context);
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Card(
       child: Padding(
         padding: OmnisonicInsets.card,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Responsive Test',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Responsive Test', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             Text('Screen Type: ${screenType.name}'),
-            Text('Screen Size: ${screenSize.width.toInt()} x ${screenSize.height.toInt()}'),
+            Text(
+              'Screen Size: ${screenSize.width.toInt()} x ${screenSize.height.toInt()}',
+            ),
             Text('Is Mobile: ${ResponsiveBreakpoints.isMobile(context)}'),
             Text('Is Tablet: ${ResponsiveBreakpoints.isTablet(context)}'),
             Text('Is Desktop: ${ResponsiveBreakpoints.isDesktop(context)}'),
-            
+
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Responsive grid test
             ResponsiveGrid(
               mobileColumns: 2,
@@ -379,9 +358,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
                     color: context.colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                   ),
-                  child: Center(
-                    child: Text('$index'),
-                  ),
+                  child: Center(child: Text('$index')),
                 );
               }),
             ),
@@ -398,12 +375,9 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Components Test',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Components Test', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Buttons
             Row(
               children: [
@@ -430,7 +404,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ],
             ),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Chips
             Wrap(
               spacing: OmnisonicSpacing.sm,
@@ -447,11 +421,12 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
               ],
             ),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             // Slider
             Slider(
               value: 0.5,
-              onChanged: (value) => _addTestResult('Slider: ${value.toStringAsFixed(2)}'),
+              onChanged: (value) =>
+                  _addTestResult('Slider: ${value.toStringAsFixed(2)}'),
             ),
           ],
         ),
@@ -466,18 +441,15 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Test Results',
-              style: context.textTheme.headlineSmall,
-            ),
+            Text('Test Results', style: context.textTheme.headlineSmall),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             ElevatedButton(
               onPressed: _runAllTests,
               child: const Text('Run All Tests'),
             ),
             const SizedBox(height: OmnisonicSpacing.md),
-            
+
             Expanded(
               child: ListView.builder(
                 itemCount: _testResults.length,
@@ -508,10 +480,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         _addTestResult('Navigation item $index selected');
       },
       destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.home),
-          label: Text('Home'),
-        ),
+        NavigationRailDestination(icon: Icon(Icons.home), label: Text('Home')),
         NavigationRailDestination(
           icon: Icon(Icons.music_note),
           label: Text('Music'),
@@ -528,7 +497,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
     if (!ResponsiveBreakpoints.isMobile(context)) {
       return const SizedBox.shrink();
     }
-    
+
     return BottomNavigationBar(
       currentIndex: _selectedIndex,
       onTap: (index) {
@@ -538,18 +507,9 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
         _addTestResult('Bottom nav item $index selected');
       },
       items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.music_note),
-          label: 'Music',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.music_note), label: 'Music'),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );
   }
@@ -566,7 +526,9 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
 
   void _addTestResult(String result) {
     setState(() {
-      _testResults.add('${DateTime.now().toLocal().toString().substring(11, 19)}: $result');
+      _testResults.add(
+        '${DateTime.now().toLocal().toString().substring(11, 19)}: $result',
+      );
     });
   }
 
@@ -574,7 +536,7 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
     setState(() {
       _isAnimating = true;
     });
-    
+
     try {
       await _animationManager.executeAnimation(
         controller: _testAnimationController,
@@ -596,31 +558,33 @@ class _DesignSystemCheckpointAppState extends State<DesignSystemCheckpointApp>
 
   Future<void> _runAllTests() async {
     _testResults.clear();
-    
+
     // Test theme switching
     _addTestResult('Testing theme switching...');
     await _themeManager.toggleTheme();
     await Future.delayed(const Duration(milliseconds: 500));
     await _themeManager.toggleTheme();
     _addTestResult('Theme switching test completed');
-    
+
     // Test animations
     _addTestResult('Testing animations...');
     await _testAnimations();
-    
+
     // Test responsive behavior
     _addTestResult('Testing responsive behavior...');
     final screenType = ResponsiveBreakpoints.getScreenType(context);
     _addTestResult('Current screen type: ${screenType.name}');
-    
+
     // Test performance
     _addTestResult('Testing performance...');
     final performanceData = _animationManager.getPerformanceData();
-    _addTestResult('Active animations: ${_animationManager.activeAnimationCount}');
+    _addTestResult(
+      'Active animations: ${_animationManager.activeAnimationCount}',
+    );
     _addTestResult('Performance data entries: ${performanceData.length}');
-    
+
     _addTestResult('All tests completed successfully!');
-    
+
     setState(() {});
   }
 }

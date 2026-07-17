@@ -6,7 +6,8 @@ import 'package:audio_service/audio_service.dart' hide PlaybackState;
 import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
+import '../../../../core/repositories/playback_repository.dart'
+    show PlaybackState, RepeatMode;
 import '../../../../core/utils/app_log.dart';
 import '../repositories/playback_repository_impl.dart';
 import 'audio_player_data_source.dart';
@@ -21,10 +22,10 @@ class PlaybackService {
     required AudioServiceHandler audioServiceHandler,
     required AudioFocusManager audioFocusManager,
     required MprisHandler mprisHandler,
-  })  : _audioPlayerDataSource = audioPlayerDataSource,
-        _audioServiceHandler = audioServiceHandler,
-        _audioFocusManager = audioFocusManager,
-        _mprisHandler = mprisHandler;
+  }) : _audioPlayerDataSource = audioPlayerDataSource,
+       _audioServiceHandler = audioServiceHandler,
+       _audioFocusManager = audioFocusManager,
+       _mprisHandler = mprisHandler;
 
   final AudioPlayerDataSource _audioPlayerDataSource;
   final AudioServiceHandler _audioServiceHandler;
@@ -72,9 +73,11 @@ class PlaybackService {
       }
 
       // Listen to playback state for gapless playback management
-      _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {
-        _handlePlaybackStateForGapless(state);
-      });
+      _playbackStateSubscription = _audioPlayerDataSource
+          .observePlaybackState()
+          .listen((state) {
+            _handlePlaybackStateForGapless(state);
+          });
 
       _isInitialized = true;
       AppLog.info('Audio service initialized successfully');
@@ -96,7 +99,7 @@ class PlaybackService {
   /// Plays a track with gapless preparation
   Future<Result<void>> playTrack(Track track) async {
     await _ensureInitialized();
-    
+
     try {
       final result = await _audioPlayerDataSource.play(track);
       if (result.isSuccess) {
@@ -109,11 +112,17 @@ class PlaybackService {
   }
 
   /// Sets a queue and prepares for gapless playback
-  Future<Result<void>> setQueueWithGapless(List<Track> tracks, {int startIndex = 0}) async {
+  Future<Result<void>> setQueueWithGapless(
+    List<Track> tracks, {
+    int startIndex = 0,
+  }) async {
     await _ensureInitialized();
-    
+
     try {
-      final result = await _audioPlayerDataSource.setQueue(tracks, startIndex: startIndex);
+      final result = await _audioPlayerDataSource.setQueue(
+        tracks,
+        startIndex: startIndex,
+      );
       if (result.isSuccess) {
         await _prepareNextTrackForGapless();
       }
@@ -129,10 +138,10 @@ class PlaybackService {
       final currentState = _audioPlayerDataSource.getCurrentState();
       final queue = currentState.queue;
       final currentIndex = currentState.currentIndex;
-      
+
       // Determine next track index based on repeat and shuffle modes
       int? nextIndex;
-      
+
       if (currentState.shuffleEnabled) {
         // In shuffle mode, we can't easily predict the next track
         // Just ensure we have tracks available
@@ -147,7 +156,7 @@ class PlaybackService {
           nextIndex = 0; // Loop back to first track
         }
       }
-      
+
       // Pre-cache the next track if available and not already cached
       if (nextIndex != null && nextIndex < queue.length) {
         final nextTrack = queue[nextIndex];
@@ -168,7 +177,7 @@ class PlaybackService {
     // 1. Starting a background download of the track
     // 2. Storing it in a temporary cache
     // 3. Making it available for immediate playback
-    // 
+    //
     // For now, this is a placeholder as the actual caching
     // implementation would depend on the caching strategy
     AppLog.info('Starting background cache for next track');
@@ -179,7 +188,7 @@ class PlaybackService {
     // When a track is near completion, prepare the next one
     if (state.currentTrack != null && state.duration.inMilliseconds > 0) {
       final remainingTime = state.duration - state.position;
-      
+
       // Prepare next track when 10 seconds remaining
       if (remainingTime.inSeconds <= 10 && remainingTime.inSeconds > 8) {
         _prepareNextTrackForGapless();
@@ -215,9 +224,8 @@ class PlaybackService {
   }
 
   /// Gets the underlying playback repository for direct access
-  PlaybackRepositoryImpl get repository => PlaybackRepositoryImpl(
-    audioPlayerDataSource: _audioPlayerDataSource,
-  );
+  PlaybackRepositoryImpl get repository =>
+      PlaybackRepositoryImpl(audioPlayerDataSource: _audioPlayerDataSource);
 
   /// Disposes of resources
   void dispose() {

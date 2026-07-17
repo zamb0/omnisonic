@@ -39,7 +39,9 @@ void main() {
       await database.serverDao.insertServer(server, 'guest');
 
       // 2. Verify server was inserted
-      final retrievedServer = await database.serverDao.getServerById('test-server');
+      final retrievedServer = await database.serverDao.getServerById(
+        'test-server',
+      );
       expect(retrievedServer, isNotNull);
       expect(retrievedServer!.name, 'Test Music Server');
 
@@ -119,7 +121,10 @@ void main() {
 
       final allTracks = await database.musicDao.getAllTracks();
       expect(allTracks.length, 2);
-      expect(allTracks.map((t) => t.title), containsAll(['Song One', 'Song Two']));
+      expect(
+        allTracks.map((t) => t.title),
+        containsAll(['Song One', 'Song Two']),
+      );
 
       // 7. Test API client URL generation
       final streamUrl = apiClient.getStreamUrl(server, 'guest', 'track1');

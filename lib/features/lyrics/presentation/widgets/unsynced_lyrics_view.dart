@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/design_system/spacing.dart';
 
 class UnsyncedLyricsView extends StatelessWidget {
-  const UnsyncedLyricsView({
-    super.key,
-    required this.text,
-  });
+  const UnsyncedLyricsView({super.key, required this.text});
 
   final String text;
 

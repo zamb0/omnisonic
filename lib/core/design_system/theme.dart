@@ -21,7 +21,7 @@ class OmnisonicTheme {
       ),
       scaffoldBackgroundColor: OmnisonicColors.lightColorScheme.background,
       canvasColor: OmnisonicColors.lightColorScheme.background,
-      
+
       // App Bar Theme
       appBarTheme: AppBarTheme(
         elevation: OmnisonicElevation.appBar,
@@ -33,11 +33,9 @@ class OmnisonicTheme {
         ),
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
-      
+
       // Card Theme
       cardTheme: const CardThemeData(
         elevation: 0,
@@ -48,7 +46,7 @@ class OmnisonicTheme {
         shadowColor: Colors.transparent,
         margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -61,7 +59,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -73,7 +71,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -85,7 +83,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Icon Button Theme
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
@@ -96,7 +94,7 @@ class OmnisonicTheme {
           iconSize: OmnisonicIconSizes.medium,
         ),
       ),
-      
+
       // Floating Action Button Theme
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: OmnisonicElevation.fab,
@@ -105,7 +103,7 @@ class OmnisonicTheme {
         ),
         iconSize: OmnisonicIconSizes.large,
       ),
-      
+
       // List Tile Theme
       listTileTheme: ListTileThemeData(
         contentPadding: OmnisonicInsets.listItem,
@@ -118,7 +116,7 @@ class OmnisonicTheme {
         textColor: OmnisonicColors.lightColorScheme.onSurface,
         iconColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -144,13 +142,11 @@ class OmnisonicTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.lightColorScheme.error,
-          ),
+          borderSide: BorderSide(color: OmnisonicColors.lightColorScheme.error),
         ),
         contentPadding: OmnisonicInsets.allMd,
       ),
-      
+
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: OmnisonicColors.lightColorScheme.surface,
@@ -167,18 +163,20 @@ class OmnisonicTheme {
           color: OmnisonicColors.lightColorScheme.onSecondaryContainer,
         ),
       ),
-      
+
       // Dialog Theme
       dialogTheme: const DialogThemeData(
         elevation: OmnisonicElevation.modal,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.modal)),
+          borderRadius: BorderRadius.all(
+            Radius.circular(OmnisonicRadius.modal),
+          ),
         ),
         backgroundColor: OmnisonicColors.surfaceLight,
         titleTextStyle: OmnisonicTypography.headlineSmall,
         contentTextStyle: OmnisonicTypography.bodyMedium,
       ),
-      
+
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
         elevation: OmnisonicElevation.modal,
@@ -213,7 +211,9 @@ class OmnisonicTheme {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: OmnisonicColors.lightColorScheme.primary,
-        selectionColor: OmnisonicColors.lightColorScheme.primary.withValues(alpha: 0.2),
+        selectionColor: OmnisonicColors.lightColorScheme.primary.withValues(
+          alpha: 0.2,
+        ),
         selectionHandleColor: OmnisonicColors.lightColorScheme.primary,
       ),
       iconTheme: IconThemeData(
@@ -224,7 +224,7 @@ class OmnisonicTheme {
         color: OmnisonicColors.lightColorScheme.onPrimary,
         size: OmnisonicIconSizes.medium,
       ),
-      
+
       // Slider Theme
       sliderTheme: SliderThemeData(
         trackHeight: 4,
@@ -233,16 +233,18 @@ class OmnisonicTheme {
         activeTrackColor: OmnisonicColors.lightColorScheme.primary,
         inactiveTrackColor: OmnisonicColors.lightColorScheme.outline,
         thumbColor: OmnisonicColors.lightColorScheme.primary,
-        overlayColor: OmnisonicColors.lightColorScheme.primary.withValues(alpha: 0.2),
+        overlayColor: OmnisonicColors.lightColorScheme.primary.withValues(
+          alpha: 0.2,
+        ),
       ),
-      
+
       // Progress Indicator Theme
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: OmnisonicColors.lightColorScheme.primary,
         linearTrackColor: OmnisonicColors.lightColorScheme.outline,
         circularTrackColor: OmnisonicColors.lightColorScheme.outline,
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: OmnisonicColors.lightColorScheme.surfaceVariant,
@@ -276,18 +278,18 @@ class OmnisonicTheme {
           ),
         ),
       ),
-      
+
       // Extensions
       extensions: const [
         OmnisonicColorExtension.light,
         OmnisonicAnimationExtension(),
       ],
     );
-    
+
     // Add platform-specific extensions
     return addPlatformExtensions(baseTheme);
   }
-  
+
   /// Dark theme configuration
   static ThemeData get darkTheme {
     final baseTheme = ThemeData(
@@ -300,7 +302,7 @@ class OmnisonicTheme {
       ),
       scaffoldBackgroundColor: OmnisonicColors.darkColorScheme.background,
       canvasColor: OmnisonicColors.darkColorScheme.background,
-      
+
       // App Bar Theme
       appBarTheme: AppBarTheme(
         elevation: OmnisonicElevation.appBar,
@@ -312,11 +314,9 @@ class OmnisonicTheme {
         ),
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       ),
-      
+
       // Card Theme
       cardTheme: const CardThemeData(
         elevation: 0,
@@ -327,7 +327,7 @@ class OmnisonicTheme {
         shadowColor: Colors.transparent,
         margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -340,7 +340,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -352,7 +352,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -364,7 +364,7 @@ class OmnisonicTheme {
           minimumSize: const Size(0, OmnisonicTouchTargets.button),
         ),
       ),
-      
+
       // Icon Button Theme
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
@@ -375,7 +375,7 @@ class OmnisonicTheme {
           iconSize: OmnisonicIconSizes.medium,
         ),
       ),
-      
+
       // Floating Action Button Theme
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: OmnisonicElevation.fab,
@@ -384,7 +384,7 @@ class OmnisonicTheme {
         ),
         iconSize: OmnisonicIconSizes.large,
       ),
-      
+
       // List Tile Theme
       listTileTheme: ListTileThemeData(
         contentPadding: OmnisonicInsets.listItem,
@@ -397,7 +397,7 @@ class OmnisonicTheme {
         textColor: OmnisonicColors.darkColorScheme.onSurface,
         iconColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -423,13 +423,11 @@ class OmnisonicTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.darkColorScheme.error,
-          ),
+          borderSide: BorderSide(color: OmnisonicColors.darkColorScheme.error),
         ),
         contentPadding: OmnisonicInsets.allMd,
       ),
-      
+
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: OmnisonicColors.darkColorScheme.surface,
@@ -446,18 +444,20 @@ class OmnisonicTheme {
           color: OmnisonicColors.darkColorScheme.onSecondaryContainer,
         ),
       ),
-      
+
       // Dialog Theme
       dialogTheme: const DialogThemeData(
         elevation: OmnisonicElevation.modal,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.modal)),
+          borderRadius: BorderRadius.all(
+            Radius.circular(OmnisonicRadius.modal),
+          ),
         ),
         backgroundColor: OmnisonicColors.surfaceDark,
         titleTextStyle: OmnisonicTypography.headlineSmall,
         contentTextStyle: OmnisonicTypography.bodyMedium,
       ),
-      
+
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
         elevation: OmnisonicElevation.modal,
@@ -492,7 +492,9 @@ class OmnisonicTheme {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: OmnisonicColors.darkColorScheme.primary,
-        selectionColor: OmnisonicColors.darkColorScheme.primary.withValues(alpha: 0.25),
+        selectionColor: OmnisonicColors.darkColorScheme.primary.withValues(
+          alpha: 0.25,
+        ),
         selectionHandleColor: OmnisonicColors.darkColorScheme.primary,
       ),
       iconTheme: IconThemeData(
@@ -503,7 +505,7 @@ class OmnisonicTheme {
         color: OmnisonicColors.darkColorScheme.onPrimary,
         size: OmnisonicIconSizes.medium,
       ),
-      
+
       // Slider Theme
       sliderTheme: SliderThemeData(
         trackHeight: 4,
@@ -512,16 +514,18 @@ class OmnisonicTheme {
         activeTrackColor: OmnisonicColors.darkColorScheme.primary,
         inactiveTrackColor: OmnisonicColors.darkColorScheme.outline,
         thumbColor: OmnisonicColors.darkColorScheme.primary,
-        overlayColor: OmnisonicColors.darkColorScheme.primary.withValues(alpha: 0.2),
+        overlayColor: OmnisonicColors.darkColorScheme.primary.withValues(
+          alpha: 0.2,
+        ),
       ),
-      
+
       // Progress Indicator Theme
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: OmnisonicColors.darkColorScheme.primary,
         linearTrackColor: OmnisonicColors.darkColorScheme.outline,
         circularTrackColor: OmnisonicColors.darkColorScheme.outline,
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: OmnisonicColors.darkColorScheme.surfaceVariant,
@@ -555,14 +559,14 @@ class OmnisonicTheme {
           ),
         ),
       ),
-      
+
       // Extensions
       extensions: const [
         OmnisonicColorExtension.dark,
         OmnisonicAnimationExtension(),
       ],
     );
-    
+
     // Add platform-specific extensions
     return addPlatformExtensions(baseTheme);
   }
@@ -574,35 +578,55 @@ extension OmnisonicThemeExtension on BuildContext {
     return Theme.of(this).extension<OmnisonicColorExtension>() ??
         OmnisonicColorExtension.light;
   }
-  
+
   OmnisonicAnimationExtension get omnisonicAnimations {
     return Theme.of(this).extension<OmnisonicAnimationExtension>() ??
         const OmnisonicAnimationExtension();
   }
-  
+
   ColorScheme get colorScheme => Theme.of(this).colorScheme;
   TextTheme get textTheme => Theme.of(this).textTheme;
-  
+
   // Music-specific color getters
-  Color get playingIndicatorColor => omnisonicColors.playingIndicator ?? OmnisonicColors.playingIndicator;
-  Color get pausedIndicatorColor => omnisonicColors.pausedIndicator ?? OmnisonicColors.pausedIndicator;
-  Color get queueIndicatorColor => omnisonicColors.queueIndicator ?? OmnisonicColors.queueIndicator;
-  Color get favoriteIndicatorColor => omnisonicColors.favoriteIndicator ?? OmnisonicColors.favoriteIndicator;
-  
+  Color get playingIndicatorColor =>
+      omnisonicColors.playingIndicator ?? OmnisonicColors.playingIndicator;
+  Color get pausedIndicatorColor =>
+      omnisonicColors.pausedIndicator ?? OmnisonicColors.pausedIndicator;
+  Color get queueIndicatorColor =>
+      omnisonicColors.queueIndicator ?? OmnisonicColors.queueIndicator;
+  Color get favoriteIndicatorColor =>
+      omnisonicColors.favoriteIndicator ?? OmnisonicColors.favoriteIndicator;
+
   // Gradient getters
-  LinearGradient get primaryGradient => omnisonicColors.primaryGradient ?? OmnisonicColors.primaryGradient;
-  LinearGradient get accentGradient => omnisonicColors.accentGradient ?? OmnisonicColors.accentGradient;
-  LinearGradient get heroGradient => omnisonicColors.heroGradient ?? OmnisonicColors.heroGradient;
-  LinearGradient get subtleGradient => omnisonicColors.subtleGradient ?? OmnisonicColors.subtleGradient;
-  LinearGradient get primaryAnimatedGradient => omnisonicColors.primaryAnimatedGradient ?? OmnisonicColors.primaryAnimatedGradient;
-  LinearGradient get accentAnimatedGradient => omnisonicColors.accentAnimatedGradient ?? OmnisonicColors.accentAnimatedGradient;
-  RadialGradient get cardDepthGradient => omnisonicColors.cardDepthGradient ?? OmnisonicColors.cardDepthGradient;
-  LinearGradient get shimmerGradient => omnisonicColors.shimmerGradient ?? OmnisonicColors.shimmerGradient;
-  LinearGradient get glassMorphismGradient => omnisonicColors.glassMorphismGradient ?? OmnisonicColors.glassMorphismLight;
-  LinearGradient get nowPlayingGradient => omnisonicColors.nowPlayingGradient ?? OmnisonicColors.nowPlayingGradient;
-  LinearGradient get albumArtOverlay => omnisonicColors.albumArtOverlay ?? OmnisonicColors.albumArtOverlay;
-  LinearGradient get progressBarGradient => omnisonicColors.progressBarGradient ?? OmnisonicColors.progressBarGradient;
-  
+  LinearGradient get primaryGradient =>
+      omnisonicColors.primaryGradient ?? OmnisonicColors.primaryGradient;
+  LinearGradient get accentGradient =>
+      omnisonicColors.accentGradient ?? OmnisonicColors.accentGradient;
+  LinearGradient get heroGradient =>
+      omnisonicColors.heroGradient ?? OmnisonicColors.heroGradient;
+  LinearGradient get subtleGradient =>
+      omnisonicColors.subtleGradient ?? OmnisonicColors.subtleGradient;
+  LinearGradient get primaryAnimatedGradient =>
+      omnisonicColors.primaryAnimatedGradient ??
+      OmnisonicColors.primaryAnimatedGradient;
+  LinearGradient get accentAnimatedGradient =>
+      omnisonicColors.accentAnimatedGradient ??
+      OmnisonicColors.accentAnimatedGradient;
+  RadialGradient get cardDepthGradient =>
+      omnisonicColors.cardDepthGradient ?? OmnisonicColors.cardDepthGradient;
+  LinearGradient get shimmerGradient =>
+      omnisonicColors.shimmerGradient ?? OmnisonicColors.shimmerGradient;
+  LinearGradient get glassMorphismGradient =>
+      omnisonicColors.glassMorphismGradient ??
+      OmnisonicColors.glassMorphismLight;
+  LinearGradient get nowPlayingGradient =>
+      omnisonicColors.nowPlayingGradient ?? OmnisonicColors.nowPlayingGradient;
+  LinearGradient get albumArtOverlay =>
+      omnisonicColors.albumArtOverlay ?? OmnisonicColors.albumArtOverlay;
+  LinearGradient get progressBarGradient =>
+      omnisonicColors.progressBarGradient ??
+      OmnisonicColors.progressBarGradient;
+
   // Animation getters
   Duration get fastAnimationDuration => omnisonicAnimations.fastDuration;
   Duration get normalAnimationDuration => omnisonicAnimations.normalDuration;
@@ -610,8 +634,10 @@ extension OmnisonicThemeExtension on BuildContext {
   Curve get standardAnimationCurve => omnisonicAnimations.standardCurve;
   Curve get fastAnimationCurve => omnisonicAnimations.fastCurve;
   Curve get slowAnimationCurve => omnisonicAnimations.slowCurve;
-  bool get enableMicroInteractions => omnisonicAnimations.enableMicroInteractions;
+  bool get enableMicroInteractions =>
+      omnisonicAnimations.enableMicroInteractions;
   bool get enablePageTransitions => omnisonicAnimations.enablePageTransitions;
-  bool get enableLoadingAnimations => omnisonicAnimations.enableLoadingAnimations;
+  bool get enableLoadingAnimations =>
+      omnisonicAnimations.enableLoadingAnimations;
   double get animationScale => omnisonicAnimations.animationScale;
 }

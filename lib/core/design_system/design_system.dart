@@ -1,5 +1,5 @@
 // Omnisonic Design System
-// 
+//
 // This file exports all design system components for easy importing
 // throughout the application.
 

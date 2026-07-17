@@ -10,11 +10,7 @@ import 'synced_lyrics_view.dart';
 import 'unsynced_lyrics_view.dart';
 
 class LyricsPanel extends StatefulWidget {
-  const LyricsPanel({
-    super.key,
-    required this.track,
-    required this.position,
-  });
+  const LyricsPanel({super.key, required this.track, required this.position});
 
   final Track? track;
   final Duration position;
@@ -52,9 +48,9 @@ class _LyricsPanelState extends State<LyricsPanel> {
       return Center(
         child: Text(
           'No track playing',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }
@@ -63,10 +59,7 @@ class _LyricsPanelState extends State<LyricsPanel> {
 
     return Column(
       children: [
-        _LyricsControls(
-          viewModel: viewModel,
-          track: widget.track!,
-        ),
+        _LyricsControls(viewModel: viewModel, track: widget.track!),
         const SizedBox(height: OmnisonicSpacing.md),
         Expanded(
           child: _LyricsBody(
@@ -81,10 +74,7 @@ class _LyricsPanelState extends State<LyricsPanel> {
 }
 
 class _LyricsControls extends StatelessWidget {
-  const _LyricsControls({
-    required this.viewModel,
-    required this.track,
-  });
+  const _LyricsControls({required this.viewModel, required this.track});
 
   final LyricsViewModel viewModel;
   final Track track;
@@ -163,10 +153,7 @@ class _LyricsControls extends StatelessWidget {
 }
 
 class _SourceDropdown extends StatelessWidget {
-  const _SourceDropdown({
-    required this.value,
-    required this.onChanged,
-  });
+  const _SourceDropdown({required this.value, required this.onChanged});
 
   final LyricsSource? value;
   final ValueChanged<LyricsSource?> onChanged;
@@ -177,14 +164,8 @@ class _SourceDropdown extends StatelessWidget {
       child: DropdownButton<LyricsSource?>(
         value: value,
         items: const [
-          DropdownMenuItem(
-            value: null,
-            child: Text('Auto'),
-          ),
-          DropdownMenuItem(
-            value: LyricsSource.lrclib,
-            child: Text('LRCLIB'),
-          ),
+          DropdownMenuItem(value: null, child: Text('Auto')),
+          DropdownMenuItem(value: LyricsSource.lrclib, child: Text('LRCLIB')),
           DropdownMenuItem(
             value: LyricsSource.lyricsOvh,
             child: Text('lyrics.ovh'),

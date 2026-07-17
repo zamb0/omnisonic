@@ -25,9 +25,7 @@ class Artist extends Equatable {
 
   /// Validates that the artist has all required fields
   bool get isValid {
-    return id.isNotEmpty &&
-        name.isNotEmpty &&
-        serverId.isNotEmpty;
+    return id.isNotEmpty && name.isNotEmpty && serverId.isNotEmpty;
   }
 
   /// Returns a similarity score with another artist for deduplication
@@ -42,8 +40,8 @@ class Artist extends Equatable {
     }
 
     // MusicBrainz ID match (if available)
-    if (musicBrainzId != null && 
-        other.musicBrainzId != null && 
+    if (musicBrainzId != null &&
+        other.musicBrainzId != null &&
         musicBrainzId == other.musicBrainzId) {
       score += 0.2;
     }
@@ -82,16 +80,16 @@ class Artist extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        serverId,
-        lastModified,
-        albumCount,
-        biography,
-        imageUrl,
-        musicBrainzId,
-        lastFmUrl,
-      ];
+    id,
+    name,
+    serverId,
+    lastModified,
+    albumCount,
+    biography,
+    imageUrl,
+    musicBrainzId,
+    lastFmUrl,
+  ];
 
   @override
   String toString() => 'Artist(id: $id, name: $name, albumCount: $albumCount)';

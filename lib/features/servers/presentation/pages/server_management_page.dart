@@ -91,11 +91,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[300],
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -117,10 +113,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
           return TabBarView(
             controller: _tabController,
-            children: [
-              _buildServersTab(viewModel),
-              _buildStatusTab(viewModel),
-            ],
+            children: [_buildServersTab(viewModel), _buildStatusTab(viewModel)],
           );
         },
       ),
@@ -134,7 +127,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       return EmptyState(
         icon: Icons.dns,
         title: 'No Servers Connected',
-        subtitle: 'Add your first Subsonic server to get started with music streaming',
+        subtitle:
+            'Add your first Subsonic server to get started with music streaming',
         action: ElevatedButton.icon(
           onPressed: () => _showAddServerDialog(context),
           icon: const Icon(Icons.add),
@@ -159,8 +153,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   isLoading: viewModel.isServerLoading(server.id),
                   onTap: () => _showServerDetails(context, server),
                   onEdit: () => _showEditServerDialog(context, server),
-                  onTest: () => _testServerConnection(context, server, viewModel),
-                  onDelete: () => _showDeleteConfirmation(context, server, viewModel),
+                  onTest: () =>
+                      _testServerConnection(context, server, viewModel),
+                  onDelete: () =>
+                      _showDeleteConfirmation(context, server, viewModel),
                 );
               },
             ),
@@ -241,7 +237,9 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 subtitle: 'Add servers to see detailed status information',
               )
             else
-              ...viewModel.servers.map((server) => _buildServerStatusDetail(server)),
+              ...viewModel.servers.map(
+                (server) => _buildServerStatusDetail(server),
+              ),
           ],
         ),
       ),
@@ -337,10 +335,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             const SizedBox(height: 8),
             Text(
               server.url,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
             const SizedBox(height: 12),
             Row(
@@ -354,10 +349,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               const SizedBox(height: 8),
               Text(
                 'Last sync: ${_formatDateTime(server.lastSync!)}',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ],
@@ -447,10 +439,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   void _showAddServerDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const ServerAddDialog(),
-    );
+    showDialog(context: context, builder: (context) => const ServerAddDialog());
   }
 
   void _showEditServerDialog(BuildContext context, MusicServer server) {
@@ -516,7 +505,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     ServerManagementViewModel viewModel,
   ) async {
     final result = await viewModel.testConnection(server);
-    
+
     if (context.mounted) {
       if (result != null && result.isSuccessful) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -561,9 +550,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               final success = await viewModel.removeServer(server.id);
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Deleted "${server.name}"'),
-                  ),
+                  SnackBar(content: Text('Deleted "${server.name}"')),
                 );
               }
             },
@@ -577,14 +564,14 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
   void _refreshServers(BuildContext context) {
     context.read<ServerManagementViewModel>().refreshServers();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Refreshing servers...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Refreshing servers...')));
   }
 
   void _syncAllServers(BuildContext context) {
     final viewModel = context.read<ServerManagementViewModel>();
-    
+
     // Show confirmation dialog
     showDialog(
       context: context,

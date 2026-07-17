@@ -91,18 +91,19 @@ class MusicServer extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        url,
-        username,
-        status,
-        createdAt,
-        lastSync,
-        apiVersion,
-        serverVersion,
-        errorMessage,
-      ];
+    id,
+    name,
+    url,
+    username,
+    status,
+    createdAt,
+    lastSync,
+    apiVersion,
+    serverVersion,
+    errorMessage,
+  ];
 
   @override
-  String toString() => 'MusicServer(id: $id, name: $name, url: $url, status: $status)';
+  String toString() =>
+      'MusicServer(id: $id, name: $name, url: $url, status: $status)';
 }

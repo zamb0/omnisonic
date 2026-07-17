@@ -9,25 +9,28 @@ import '../errors/failures.dart';
 class SourceSelectionService {
   final ServerRepository _serverRepository;
 
-  SourceSelectionService({
-    required ServerRepository serverRepository,
-  }) : _serverRepository = serverRepository;
+  SourceSelectionService({required ServerRepository serverRepository})
+    : _serverRepository = serverRepository;
 
   /// Selects the best available track from a list of duplicate tracks
   /// Based on audio quality, server availability, and other factors
   Future<Result<Track>> selectBestSource(List<Track> duplicateTracks) async {
     if (duplicateTracks.isEmpty) {
-      return ResultHelper.failure(ValidationFailure('No tracks provided for source selection'));
+      return ResultHelper.failure(
+        ValidationFailure('No tracks provided for source selection'),
+      );
     }
 
     if (duplicateTracks.length == 1) {
       final track = duplicateTracks.first;
       final isAvailable = await _isTrackAvailable(track);
-      
+
       if (isAvailable) {
         return ResultHelper.success(track);
       } else {
-        return ResultHelper.failure(ServerFailure('Track source is unavailable'));
+        return ResultHelper.failure(
+          ServerFailure('Track source is unavailable'),
+        );
       }
     }
 
@@ -43,12 +46,14 @@ class SourceSelectionService {
         .toList();
 
     if (availableTracks.isEmpty) {
-      return ResultHelper.failure(ServerFailure('No available sources for track'));
+      return ResultHelper.failure(
+        ServerFailure('No available sources for track'),
+      );
     }
 
     // Rank tracks by quality and other factors
     final rankedTracks = await _rankTracksByQuality(availableTracks);
-    
+
     return ResultHelper.success(rankedTracks.first);
   }
 
@@ -146,7 +151,7 @@ class SourceSelectionService {
     if (daysSinceModified <= 30) return 3.0;
     if (daysSinceModified <= 90) return 2.0;
     if (daysSinceModified <= 365) return 1.0;
-    
+
     return 0.0;
   }
 
@@ -160,7 +165,9 @@ class SourceSelectionService {
       }
 
       // Check server availability
-      final serverResult = await _serverRepository.getServerById(track.serverId);
+      final serverResult = await _serverRepository.getServerById(
+        track.serverId,
+      );
       if (serverResult.isFailure) return false;
 
       final server = serverResult.valueOrNull;
@@ -183,14 +190,18 @@ class SourceSelectionService {
         .toList();
 
     if (availableTracks.isEmpty) {
-      return ResultHelper.failure(ServerFailure('No fallback sources available'));
+      return ResultHelper.failure(
+        ServerFailure('No fallback sources available'),
+      );
     }
 
     return selectBestSource(availableTracks);
   }
 
   /// Gets all available sources for a track, ranked by quality
-  Future<Result<List<Track>>> getAvailableSources(List<Track> duplicateTracks) async {
+  Future<Result<List<Track>>> getAvailableSources(
+    List<Track> duplicateTracks,
+  ) async {
     final availableTracks = <Track>[];
 
     for (final track in duplicateTracks) {
@@ -224,7 +235,10 @@ class SourceSelectionService {
   }
 
   /// Updates server availability status
-  Future<void> updateServerAvailability(String serverId, bool isAvailable) async {
+  Future<void> updateServerAvailability(
+    String serverId,
+    bool isAvailable,
+  ) async {
     try {
       final status = isAvailable ? ServerStatus.online : ServerStatus.offline;
       await _serverRepository.updateServerStatus(serverId, status);
@@ -239,7 +253,10 @@ class SourceSelectionService {
   }
 
   /// Calculates quality preference score
-  double _calculateQualityPreference(AudioQuality quality, AudioQuality? preferredQuality) {
+  double _calculateQualityPreference(
+    AudioQuality quality,
+    AudioQuality? preferredQuality,
+  ) {
     if (preferredQuality == null) {
       return _getQualityScore(quality);
     }
@@ -250,9 +267,10 @@ class SourceSelectionService {
     }
 
     // Penalty for being far from preferred quality
-    final qualityDiff = (quality.qualityScore - preferredQuality.qualityScore).abs();
+    final qualityDiff = (quality.qualityScore - preferredQuality.qualityScore)
+        .abs();
     final penalty = qualityDiff * 2.0;
-    
+
     return (_getQualityScore(quality) - penalty).clamp(0.0, 60.0);
   }
 }
@@ -260,9 +278,9 @@ class SourceSelectionService {
 /// Exception thrown when no suitable source can be found
 class NoSuitableSourceException implements Exception {
   final String message;
-  
+
   const NoSuitableSourceException(this.message);
-  
+
   @override
   String toString() => 'NoSuitableSourceException: $message';
 }
@@ -271,9 +289,9 @@ class NoSuitableSourceException implements Exception {
 class ServerAvailabilityException implements Exception {
   final String serverId;
   final String message;
-  
+
   const ServerAvailabilityException(this.serverId, this.message);
-  
+
   @override
   String toString() => 'ServerAvailabilityException for $serverId: $message';
 }

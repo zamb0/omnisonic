@@ -6,11 +6,7 @@ class LoadingIndicator extends StatelessWidget {
   final String? message;
   final double? size;
 
-  const LoadingIndicator({
-    super.key,
-    this.message,
-    this.size,
-  });
+  const LoadingIndicator({super.key, this.message, this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +23,7 @@ class LoadingIndicator extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -45,11 +38,7 @@ class ShimmerCard extends StatefulWidget {
   final double? width;
   final double? height;
 
-  const ShimmerCard({
-    super.key,
-    this.width,
-    this.height,
-  });
+  const ShimmerCard({super.key, this.width, this.height});
 
   @override
   State<ShimmerCard> createState() => _ShimmerCardState();
@@ -68,7 +57,10 @@ class _ShimmerCardState extends State<ShimmerCard>
       vsync: this,
     );
     _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _animationController, curve: AnimationConstants.loadingCurve),
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AnimationConstants.loadingCurve,
+      ),
     );
     _animationController.repeat();
   }
@@ -92,11 +84,7 @@ class _ShimmerCardState extends State<ShimmerCard>
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                Colors.grey[300]!,
-                Colors.grey[100]!,
-                Colors.grey[300]!,
-              ],
+              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
               stops: [
                 _animation.value - 0.3,
                 _animation.value,

@@ -31,10 +31,7 @@ class DraggableTrackTile extends StatelessWidget {
       ),
       child: ListTile(
         visualDensity: VisualDensity.compact,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 0,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         leading: _buildLeading(),
         title: Text(
           track.title,
@@ -98,7 +95,9 @@ class DraggableTrackTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: CachedNetworkImage(
                 imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                cacheKey: track.coverArtUrl!
+                    .withCoverArtSize(128)
+                    .subsonicCacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 128,
@@ -107,11 +106,19 @@ class DraggableTrackTile extends StatelessWidget {
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],
-                  child: const Icon(Icons.music_note, color: Colors.grey, size: 16),
+                  child: const Icon(
+                    Icons.music_note,
+                    color: Colors.grey,
+                    size: 16,
+                  ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: Colors.grey[300],
-                  child: const Icon(Icons.music_note, color: Colors.grey, size: 16),
+                  child: const Icon(
+                    Icons.music_note,
+                    color: Colors.grey,
+                    size: 16,
+                  ),
                 ),
               ),
             )
@@ -160,7 +167,10 @@ class DraggableTrackTile extends StatelessWidget {
               value: 'remove',
               child: ListTile(
                 leading: Icon(Icons.remove, color: Colors.red),
-                title: Text('Remove from Playlist', style: TextStyle(color: Colors.red)),
+                title: Text(
+                  'Remove from Playlist',
+                  style: TextStyle(color: Colors.red),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),

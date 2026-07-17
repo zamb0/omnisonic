@@ -35,12 +35,12 @@ class AlbumCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final subtitle = showArtist ? album.artist : null;
     final meta = showMeta
-      ? (album.year?.toString() ?? 
-         serverName ??
-         (album.trackCount != null
-           ? '${album.trackCount} track${album.trackCount != 1 ? 's' : ''}'
-           : null))
-      : null;
+        ? (album.year?.toString() ??
+              serverName ??
+              (album.trackCount != null
+                  ? '${album.trackCount} track${album.trackCount != 1 ? 's' : ''}'
+                  : null))
+        : null;
 
     // Use the provided isStarred value or fall back to album.isStarred
     final starred = isStarred ?? album.isStarred;

@@ -39,7 +39,9 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
         child: ResponsiveBehaviorValidatorWidget(
           child: Scaffold(
             appBar: AppBar(
-              title: Text('Platform: ${PlatformOptimizations().currentPlatform.name}'),
+              title: Text(
+                'Platform: ${PlatformOptimizations().currentPlatform.name}',
+              ),
               actions: [
                 PlatformIconButton(
                   icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
@@ -134,15 +136,9 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
             ),
           ),
           const SizedBox(width: OmnisonicSpacing.xl),
-          Expanded(
-            flex: 2,
-            child: _buildCardShowcase(),
-          ),
+          Expanded(flex: 2, child: _buildCardShowcase()),
           const SizedBox(width: OmnisonicSpacing.xl),
-          Expanded(
-            flex: 1,
-            child: _buildAnimationShowcase(),
-          ),
+          Expanded(flex: 1, child: _buildAnimationShowcase()),
         ],
       ),
     );
@@ -151,7 +147,7 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
   Widget _buildPlatformInfoCard() {
     final platform = PlatformOptimizations();
     final platformTheme = context.platformTheme;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(OmnisonicSpacing.md),
@@ -165,8 +161,14 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
             const SizedBox(height: OmnisonicSpacing.sm),
             _buildInfoRow('Platform', platform.currentPlatform.name),
             _buildInfoRow('Supports Hover', platform.supportsHover.toString()),
-            _buildInfoRow('Supports Haptics', platform.supportsHaptics.toString()),
-            _buildInfoRow('Touch Target Size', '${platformTheme.touchTargetSize}px'),
+            _buildInfoRow(
+              'Supports Haptics',
+              platform.supportsHaptics.toString(),
+            ),
+            _buildInfoRow(
+              'Touch Target Size',
+              '${platformTheme.touchTargetSize}px',
+            ),
             _buildInfoRow('Border Radius', '${platformTheme.borderRadius}px'),
             _buildInfoRow('Default Elevation', '${platformTheme.elevation}px'),
           ],
@@ -182,9 +184,12 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          )),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
@@ -374,28 +379,19 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
         _showSnackBar('Tab ${index + 1} selected');
       },
       items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(
           icon: Icon(Icons.library_music),
           label: 'Library',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );
   }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -408,12 +404,18 @@ class _CrossPlatformDemoHomeState extends State<CrossPlatformDemoHome> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Current Platform: ${PlatformOptimizations().currentPlatform.name}'),
+            Text(
+              'Current Platform: ${PlatformOptimizations().currentPlatform.name}',
+            ),
             const SizedBox(height: 8),
             Text('Supports Hover: ${PlatformOptimizations().supportsHover}'),
-            Text('Supports Haptics: ${PlatformOptimizations().supportsHaptics}'),
+            Text(
+              'Supports Haptics: ${PlatformOptimizations().supportsHaptics}',
+            ),
             const SizedBox(height: 8),
-            Text('Touch Target Size: ${context.platformTheme.touchTargetSize}px'),
+            Text(
+              'Touch Target Size: ${context.platformTheme.touchTargetSize}px',
+            ),
             Text('Border Radius: ${context.platformTheme.borderRadius}px'),
             Text('Elevation: ${context.platformTheme.elevation}px'),
           ],
@@ -442,29 +444,29 @@ class _PlatformAnimationDemoState extends State<PlatformAnimationDemo>
   late AnimationController _scaleController;
   late AnimationController _slideController;
   late AnimationController _fadeController;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _scaleController = AnimationController(
       duration: platformAnimations.durations.medium,
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: platformAnimations.durations.medium,
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: platformAnimations.durations.medium,
       vsync: this,
     );
   }
-  
+
   @override
   void dispose() {
     _scaleController.dispose();
@@ -476,7 +478,7 @@ class _PlatformAnimationDemoState extends State<PlatformAnimationDemo>
   @override
   Widget build(BuildContext context) {
     final platformAnimations = PlatformAnimations();
-    
+
     return Column(
       children: [
         Row(

@@ -59,10 +59,7 @@ class _LibraryPageState extends State<LibraryPage> {
         switchInCurve: AnimationConstants.smoothCurve,
         switchOutCurve: AnimationConstants.smoothCurve,
         transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         child: KeyedSubtree(
           key: ValueKey(activeTab),
@@ -91,11 +88,14 @@ class _LibraryPageState extends State<LibraryPage> {
         }
 
         final albums = viewModel.filteredAlbums;
-        if (albums.isEmpty && !viewModel.showStarredOnly && viewModel.selectedGenre == null) {
+        if (albums.isEmpty &&
+            !viewModel.showStarredOnly &&
+            viewModel.selectedGenre == null) {
           return EmptyState(
             icon: Icons.album,
             title: 'No Albums',
-            subtitle: 'Connect to servers and sync your library to see albums here',
+            subtitle:
+                'Connect to servers and sync your library to see albums here',
             action: ElevatedButton(
               onPressed: _syncLibrary,
               child: const Text('Sync Library'),
@@ -105,7 +105,10 @@ class _LibraryPageState extends State<LibraryPage> {
 
         final dedupedAlbums = _dedupeAlbumsByServer(albums);
         final sortOption = _sortState.getOption(LibraryTab.albums);
-        final sortedAlbums = LibrarySortService.sortAlbums(dedupedAlbums, sortOption);
+        final sortedAlbums = LibrarySortService.sortAlbums(
+          dedupedAlbums,
+          sortOption,
+        );
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -124,7 +127,10 @@ class _LibraryPageState extends State<LibraryPage> {
                         ),
                       )
                     : ResponsiveGridView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
                         minItemWidth: 160,
                         spacing: 20,
                         childAspectRatio: 0.72,
@@ -133,8 +139,12 @@ class _LibraryPageState extends State<LibraryPage> {
                           return AlbumCard(
                             album: album,
                             onTap: () => _onAlbumTapped(album),
-                            onStar: !isStarred ? () => viewModel.starAlbum(album) : null,
-                            onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
+                            onStar: !isStarred
+                                ? () => viewModel.starAlbum(album)
+                                : null,
+                            onUnstar: isStarred
+                                ? () => viewModel.unstarAlbum(album)
+                                : null,
                             isStarred: isStarred,
                             showArtist: true,
                             showMeta: true,
@@ -161,7 +171,8 @@ class _LibraryPageState extends State<LibraryPage> {
           return EmptyState(
             icon: Icons.person,
             title: 'No Artists',
-            subtitle: 'Connect to servers and sync your library to see artists here',
+            subtitle:
+                'Connect to servers and sync your library to see artists here',
             action: ElevatedButton(
               onPressed: _syncLibrary,
               child: const Text('Sync Library'),
@@ -170,7 +181,10 @@ class _LibraryPageState extends State<LibraryPage> {
         }
 
         final sortOption = _sortState.getOption(LibraryTab.artists);
-        final sortedArtists = LibrarySortService.sortArtists(artists, sortOption);
+        final sortedArtists = LibrarySortService.sortArtists(
+          artists,
+          sortOption,
+        );
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -213,17 +227,26 @@ class _LibraryPageState extends State<LibraryPage> {
         }
 
         final sortOption = _sortState.getOption(LibraryTab.playlists);
-        final sortedPlaylists = LibrarySortService.sortPlaylists(playlists, sortOption);
+        final sortedPlaylists = LibrarySortService.sortPlaylists(
+          playlists,
+          sortOption,
+        );
 
         return RefreshIndicator(
           onRefresh: viewModel.refreshPlaylists,
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.playlist_play, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    Icon(
+                      Icons.playlist_play,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '${sortedPlaylists.length} playlist${sortedPlaylists.length != 1 ? 's' : ''}',
@@ -300,10 +323,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 color: Theme.of(context).textTheme.bodySmall?.color,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Filters',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('Filters', style: Theme.of(context).textTheme.titleSmall),
               const Spacer(),
               if (viewModel.showStarredOnly || viewModel.selectedGenre != null)
                 TextButton.icon(
@@ -311,7 +331,10 @@ class _LibraryPageState extends State<LibraryPage> {
                   icon: const Icon(Icons.clear, size: 16),
                   label: const Text('Clear'),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                   ),
                 ),
             ],
@@ -341,15 +364,15 @@ class _LibraryPageState extends State<LibraryPage> {
                     avatar: Icon(
                       Icons.music_note,
                       size: 16,
-                      color: viewModel.selectedGenre != null 
+                      color: viewModel.selectedGenre != null
                           ? Theme.of(context).colorScheme.primary
                           : null,
                     ),
                     label: Text(viewModel.selectedGenre ?? 'All Genres'),
-                    deleteIcon: viewModel.selectedGenre != null 
+                    deleteIcon: viewModel.selectedGenre != null
                         ? const Icon(Icons.close, size: 16)
                         : null,
-                    onDeleted: viewModel.selectedGenre != null 
+                    onDeleted: viewModel.selectedGenre != null
                         ? () => viewModel.setGenreFilter(null)
                         : null,
                     backgroundColor: viewModel.selectedGenre != null
@@ -408,9 +431,9 @@ class _LibraryPageState extends State<LibraryPage> {
 
   void _syncLibrary() {
     context.read<MusicLibraryViewModel>().syncCollection();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Syncing library...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Syncing library...')));
   }
 
   void _showSortOptions() {
@@ -463,5 +486,4 @@ class _LibraryPageState extends State<LibraryPage> {
   String _normalizeAlbumKey(String input) {
     return input.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
   }
-
 }

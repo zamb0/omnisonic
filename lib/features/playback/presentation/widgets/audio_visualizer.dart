@@ -6,7 +6,7 @@ import '../../../../core/design_system/animation_manager.dart';
 import '../../../../core/design_system/colors.dart';
 
 /// Audio visualizer widget with animated equalizer and waveform displays
-/// 
+///
 /// Features:
 /// - Animated equalizer visualizations
 /// - Waveform displays during playback
@@ -48,18 +48,14 @@ class _AudioVisualizerState extends State<AudioVisualizer>
 
   void _initializeAnimations() {
     _animationController = AnimationController(
-      duration: Duration(
-        milliseconds: (1000 / widget.animationSpeed).round(),
-      ),
+      duration: Duration(milliseconds: (1000 / widget.animationSpeed).round()),
       vsync: this,
     );
 
     _barControllers = List.generate(
       widget.barCount,
       (index) => AnimationController(
-        duration: Duration(
-          milliseconds: (200 + (index * 50) % 800).round(),
-        ),
+        duration: Duration(milliseconds: (200 + (index * 50) % 800).round()),
         vsync: this,
       ),
     );
@@ -68,10 +64,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
       return Tween<double>(
         begin: 0.1,
         end: 1.0,
-      ).animate(CurvedAnimation(
-        parent: controller,
-        curve: Curves.easeInOut,
-      ));
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
     }).toList();
 
     if (widget.isPlaying) {
@@ -82,7 +75,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   @override
   void didUpdateWidget(AudioVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (widget.isPlaying != oldWidget.isPlaying) {
       if (widget.isPlaying) {
         _startAnimations();
@@ -94,7 +87,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
 
   void _startAnimations() {
     _animationController.repeat();
-    
+
     for (int i = 0; i < _barControllers.length; i++) {
       Future.delayed(Duration(milliseconds: i * 50), () {
         if (mounted && widget.isPlaying) {
@@ -153,7 +146,9 @@ class _AudioVisualizerState extends State<AudioVisualizer>
                     end: Alignment.topCenter,
                     colors: [
                       widget.color ?? OmnisonicColors.primaryPurple,
-                      (widget.color ?? OmnisonicColors.primaryBlue).withOpacity(0.6),
+                      (widget.color ?? OmnisonicColors.primaryBlue).withOpacity(
+                        0.6,
+                      ),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(1),
@@ -230,17 +225,18 @@ class WaveformPainter extends CustomPainter {
 
     final path = Path();
     final centerY = size.height / 2;
-    
+
     // Generate waveform points
     for (double x = 0; x < size.width; x += 2) {
       final normalizedX = x / size.width;
       final frequency = 4 + (normalizedX * 8); // Varying frequency
-      final amplitude = (size.height / 4) * 
-          math.sin(normalizedX * math.pi * 2) * 
+      final amplitude =
+          (size.height / 4) *
+          math.sin(normalizedX * math.pi * 2) *
           math.sin((progress + normalizedX) * math.pi * frequency);
-      
+
       final y = centerY + amplitude;
-      
+
       if (x == 0) {
         path.moveTo(x, y);
       } else {
@@ -253,8 +249,8 @@ class WaveformPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(WaveformPainter oldDelegate) {
-    return progress != oldDelegate.progress || 
-           isPlaying != oldDelegate.isPlaying;
+    return progress != oldDelegate.progress ||
+        isPlaying != oldDelegate.isPlaying;
   }
 }
 
@@ -278,21 +274,20 @@ class CircularVisualizerPainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2 - 20;
-    
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
+
+    final paint = Paint()..style = PaintingStyle.fill;
 
     for (int i = 0; i < barAnimations.length; i++) {
       final angle = (i / barAnimations.length) * 2 * math.pi;
       final barHeight = 20 * barAnimations[i].value;
-      
+
       final startX = center.dx + math.cos(angle) * radius;
       final startY = center.dy + math.sin(angle) * radius;
       final endX = center.dx + math.cos(angle) * (radius + barHeight);
       final endY = center.dy + math.sin(angle) * (radius + barHeight);
-      
+
       paint.color = color.withOpacity(0.3 + (barAnimations[i].value * 0.7));
-      
+
       canvas.drawLine(
         Offset(startX, startY),
         Offset(endX, endY),
@@ -303,8 +298,8 @@ class CircularVisualizerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CircularVisualizerPainter oldDelegate) {
-    return progress != oldDelegate.progress || 
-           isPlaying != oldDelegate.isPlaying;
+    return progress != oldDelegate.progress ||
+        isPlaying != oldDelegate.isPlaying;
   }
 }
 
@@ -328,40 +323,34 @@ class _QueueUpdateAnimationState extends State<QueueUpdateAnimation>
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
-  
+
   int _previousQueueLength = 0;
 
   @override
   void initState() {
     super.initState();
     _previousQueueLength = widget.queueLength;
-    
+
     _controller = AnimationController(
       duration: AnimationManager.normalDuration,
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 0.8,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+
     _opacityAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
   void didUpdateWidget(QueueUpdateAnimation oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (widget.queueLength != _previousQueueLength) {
       _controller.reset();
       _controller.forward();
@@ -382,10 +371,7 @@ class _QueueUpdateAnimationState extends State<QueueUpdateAnimation>
       builder: (context, child) {
         return Transform.scale(
           scale: _scaleAnimation.value,
-          child: Opacity(
-            opacity: _opacityAnimation.value,
-            child: widget.child,
-          ),
+          child: Opacity(opacity: _opacityAnimation.value, child: widget.child),
         );
       },
     );
@@ -393,8 +379,4 @@ class _QueueUpdateAnimationState extends State<QueueUpdateAnimation>
 }
 
 /// Types of audio visualizations
-enum AudioVisualizerType {
-  equalizer,
-  waveform,
-  circular,
-}
+enum AudioVisualizerType { equalizer, waveform, circular }

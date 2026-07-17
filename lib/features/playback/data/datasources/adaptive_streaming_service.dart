@@ -16,9 +16,9 @@ class AdaptiveStreamingService {
   }
 
   final Connectivity _connectivity = Connectivity();
-  final BehaviorSubject<NetworkCondition> _networkConditionController = 
+  final BehaviorSubject<NetworkCondition> _networkConditionController =
       BehaviorSubject<NetworkCondition>.seeded(NetworkCondition.excellent);
-  final BehaviorSubject<AudioQuality> _recommendedQualityController = 
+  final BehaviorSubject<AudioQuality> _recommendedQualityController =
       BehaviorSubject<AudioQuality>.seeded(AudioQuality.ultra);
 
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
@@ -27,7 +27,8 @@ class AdaptiveStreamingService {
 
   // Network monitoring state
   NetworkCondition _currentCondition = NetworkCondition.excellent;
-  AudioQuality _currentRecommendedQuality = AudioQuality.ultra; // Start with best quality
+  AudioQuality _currentRecommendedQuality =
+      AudioQuality.ultra; // Start with best quality
   double _estimatedBandwidth = 100.0; // Mbps - Optimistic default
   int _bufferHealth = 100; // Percentage
   bool _isBuffering = false;
@@ -37,17 +38,22 @@ class AdaptiveStreamingService {
   int _stableStreak = 0;
 
   // Adaptive streaming configuration
-  static const Duration _bandwidthTestInterval = Duration(seconds: 30); // Currently unused
+  static const Duration _bandwidthTestInterval = Duration(
+    seconds: 30,
+  ); // Currently unused
   static const Duration _bufferMonitorInterval = Duration(seconds: 5);
-  static const int _minBufferHealthPercent = 12;  // Slightly more conservative
-  static const int _goodBufferHealthPercent = 60; // Require healthier buffer before upgrading
+  static const int _minBufferHealthPercent = 12; // Slightly more conservative
+  static const int _goodBufferHealthPercent =
+      60; // Require healthier buffer before upgrading
   static const Duration _minQualityChangeInterval = Duration(seconds: 20);
   static const Duration _bufferingGracePeriod = Duration(seconds: 8);
   static const Duration _stableUpgradeWindow = Duration(seconds: 60);
 
   void _init() {
     // Monitor connectivity changes
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((results) {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
+      results,
+    ) {
       _handleConnectivityChange(results);
     });
 
@@ -83,7 +89,7 @@ class AdaptiveStreamingService {
       _estimatedBandwidth = 5.0;
       AppLog.info('Connected via unknown type');
     }
-    
+
     // Always stay at excellent condition - let buffering drive quality adjustments
     _updateNetworkCondition(NetworkCondition.excellent);
   }
@@ -112,7 +118,7 @@ class AdaptiveStreamingService {
       // Offline - don't stream, use cached content only
       return;
     }
-    
+
     // Note: Quality is now adjusted reactively in _checkBufferHealth()
     // based on actual buffering, not predicted network conditions
   }
@@ -123,13 +129,17 @@ class AdaptiveStreamingService {
 
     if (_isBuffering) {
       // Actually buffering - this is a real problem, downgrade quality
-      _bufferHealth = max(0, _bufferHealth - 10);  // Slower drain to avoid aggressive drops
+      _bufferHealth = max(
+        0,
+        _bufferHealth - 10,
+      ); // Slower drain to avoid aggressive drops
       _bufferingStreak += 1;
       _stableStreak = 0;
       _lastBufferingAt ??= now;
 
       final bufferingDuration = now.difference(_lastBufferingAt!);
-      final canChangeQuality = _lastQualityChangeAt == null ||
+      final canChangeQuality =
+          _lastQualityChangeAt == null ||
           now.difference(_lastQualityChangeAt!) >= _minQualityChangeInterval;
 
       if (_bufferHealth < _minBufferHealthPercent &&
@@ -146,10 +156,13 @@ class AdaptiveStreamingService {
       _stableStreak += 1;
       _lastBufferingAt = null;
 
-      final canChangeQuality = _lastQualityChangeAt == null ||
+      final canChangeQuality =
+          _lastQualityChangeAt == null ||
           now.difference(_lastQualityChangeAt!) >= _minQualityChangeInterval;
 
-      final stableDuration = Duration(seconds: _stableStreak * _bufferMonitorInterval.inSeconds);
+      final stableDuration = Duration(
+        seconds: _stableStreak * _bufferMonitorInterval.inSeconds,
+      );
 
       // If we've been streaming smoothly for a while, try upgrading
       if (_bufferHealth >= _goodBufferHealthPercent &&
@@ -172,28 +185,32 @@ class AdaptiveStreamingService {
       _lastBufferingAt = null;
     }
   }
-  
+
   /// Downgrade quality by one step due to buffering
   void _downgradeQuality() {
     final qualities = AudioQuality.values;
     final currentIndex = qualities.indexOf(_currentRecommendedQuality);
-    
+
     if (currentIndex > 0) {
       final newQuality = qualities[currentIndex - 1];
-      AppLog.info('Quality downgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (buffering)');
+      AppLog.info(
+        'Quality downgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (buffering)',
+      );
       _currentRecommendedQuality = newQuality;
       _recommendedQualityController.add(newQuality);
     }
   }
-  
+
   /// Upgrade quality by one step when streaming is smooth
   void _upgradeQuality() {
     final qualities = AudioQuality.values;
     final currentIndex = qualities.indexOf(_currentRecommendedQuality);
-    
+
     if (currentIndex < qualities.length - 1) {
       final newQuality = qualities[currentIndex + 1];
-      AppLog.info('Quality upgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (smooth streaming)');
+      AppLog.info(
+        'Quality upgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (smooth streaming)',
+      );
       _currentRecommendedQuality = newQuality;
       _recommendedQualityController.add(newQuality);
     }
@@ -214,30 +231,34 @@ class AdaptiveStreamingService {
   double get estimatedBandwidth => _estimatedBandwidth;
 
   /// Observes network condition changes
-  Stream<NetworkCondition> observeNetworkCondition() => _networkConditionController.stream;
+  Stream<NetworkCondition> observeNetworkCondition() =>
+      _networkConditionController.stream;
 
   /// Observes recommended quality changes
-  Stream<AudioQuality> observeRecommendedQuality() => _recommendedQualityController.stream;
+  Stream<AudioQuality> observeRecommendedQuality() =>
+      _recommendedQualityController.stream;
 
   /// Gets the optimal quality for a given track and current conditions
   Future<Result<AudioQuality>> getOptimalQuality(Track track) async {
     try {
       // Consider track's available quality
       AudioQuality optimalQuality = _currentRecommendedQuality;
-      
+
       // Don't recommend higher quality than what the track supports
       if (track.quality.qualityScore < optimalQuality.qualityScore) {
         optimalQuality = track.quality;
       }
-      
+
       // For cached tracks, always use the cached quality
       if (track.isCached) {
         optimalQuality = track.quality;
       }
-      
+
       return ResultHelper.success(optimalQuality);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to determine optimal quality: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to determine optimal quality: $e'),
+      );
     }
   }
 
@@ -366,5 +387,6 @@ class BufferingStrategy {
   final int rebufferMs;
 
   @override
-  String toString() => 'BufferingStrategy(initial: ${initialBufferMs}ms, max: ${maxBufferMs}ms, rebuffer: ${rebufferMs}ms)';
+  String toString() =>
+      'BufferingStrategy(initial: ${initialBufferMs}ms, max: ${maxBufferMs}ms, rebuffer: ${rebufferMs}ms)';
 }

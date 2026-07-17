@@ -48,7 +48,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
   late Animation<Color?> _colorAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -57,44 +57,49 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       vsync: this,
       debugLabel: 'EnhancedAlbumCard_${widget.album.id}',
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
-    
-    _elevationAnimation = Tween<double>(
-      begin: OmnisonicElevation.xs,
-      end: OmnisonicElevation.sm,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AnimationManager.hoverCurve,
+      ),
+    );
+
+    _elevationAnimation =
+        Tween<double>(
+          begin: OmnisonicElevation.xs,
+          end: OmnisonicElevation.sm,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: AnimationManager.hoverCurve,
+          ),
+        );
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Initialize color animation here since it needs Theme.of(context)
-    _colorAnimation = ColorTween(
-      begin: null,
-      end: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
+    _colorAnimation =
+        ColorTween(
+          begin: null,
+          end: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: AnimationManager.hoverCurve,
+          ),
+        );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     if (isHovering) {
       _animationController.forward();
@@ -102,7 +107,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       _animationController.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final cardWidth = widget.width ?? _getDefaultWidth();
@@ -112,7 +117,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       trackCount: widget.album.trackCount,
       year: widget.album.year,
     );
-    
+
     return Semantics(
       label: semanticLabel,
       hint: OmnisonicSemantics.interactionHint('play album'),
@@ -128,11 +133,15 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(OmnisonicRadius.card),
                 color: widget.isSelected
-                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.3)
                     : null,
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).shadowColor.withValues(alpha: 0.15),
+                    color: Theme.of(
+                      context,
+                    ).shadowColor.withValues(alpha: 0.15),
                     blurRadius: _elevationAnimation.value,
                     offset: Offset(0, _elevationAnimation.value / 2),
                   ),
@@ -180,7 +189,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ),
     );
   }
-  
+
   Widget _buildCardContent(double cardWidth) {
     switch (widget.layout) {
       case CardLayout.grid:
@@ -191,22 +200,20 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
         return _buildCompactLayout(cardWidth);
     }
   }
-  
+
   Widget _buildGridLayout(double cardWidth) {
     final artSize = cardWidth - (OmnisonicSpacing.cardPadding * 2);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildAlbumArt(artSize, artSize),
         const SizedBox(height: OmnisonicSpacing.sm),
-        Flexible(
-          child: _buildAlbumInfo(),
-        ),
+        Flexible(child: _buildAlbumInfo()),
       ],
     );
   }
-  
+
   Widget _buildListLayout(double cardWidth) {
     return Row(
       children: [
@@ -217,7 +224,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ],
     );
   }
-  
+
   Widget _buildCompactLayout(double cardWidth) {
     return Row(
       children: [
@@ -249,7 +256,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ],
     );
   }
-  
+
   Widget _buildAlbumInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,14 +307,14 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ],
     );
   }
-  
+
   Widget _buildAlbumArt(double width, double height) {
     final altText = OmnisonicAlternativeText.albumArtworkAlt(
       albumTitle: widget.album.title,
       artistName: widget.album.artist,
       hasArtwork: widget.album.coverArtUrl != null,
     );
-    
+
     return Semantics(
       label: altText,
       image: true,
@@ -323,7 +330,9 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
           child: widget.album.coverArtUrl != null
               ? CachedNetworkImage(
                   imageUrl: widget.album.coverArtUrl!.withCoverArtSize(600),
-                  cacheKey: widget.album.coverArtUrl!.withCoverArtSize(600).subsonicCacheKey,
+                  cacheKey: widget.album.coverArtUrl!
+                      .withCoverArtSize(600)
+                      .subsonicCacheKey,
                   cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
                   memCacheWidth: 600,
@@ -338,12 +347,10 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ),
     );
   }
-  
+
   Widget _buildPlaceholder() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: context.subtleGradient,
-      ),
+      decoration: BoxDecoration(gradient: context.subtleGradient),
       child: Icon(
         Icons.album,
         color: context.colorScheme.onSurface.withValues(alpha: 0.4),
@@ -351,10 +358,10 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ),
     );
   }
-  
+
   Widget _buildYearChip() {
     if (widget.album.year == null) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OmnisonicSpacing.sm,
@@ -373,7 +380,7 @@ class _EnhancedAlbumCardState extends State<EnhancedAlbumCard>
       ),
     );
   }
-  
+
   double _getDefaultWidth() {
     switch (widget.layout) {
       case CardLayout.grid:
@@ -414,7 +421,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -423,30 +430,32 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       vsync: this,
       debugLabel: 'EnhancedArtistCard_${widget.artist.id}',
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
-    
-    _elevationAnimation = Tween<double>(
-      begin: OmnisonicElevation.card,
-      end: OmnisonicElevation.cardHover,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AnimationManager.hoverCurve,
+      ),
+    );
+
+    _elevationAnimation =
+        Tween<double>(
+          begin: OmnisonicElevation.card,
+          end: OmnisonicElevation.cardHover,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: AnimationManager.hoverCurve,
+          ),
+        );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     if (isHovering) {
       _animationController.forward();
@@ -454,7 +463,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       _animationController.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final cardWidth = widget.width ?? _getDefaultWidth();
@@ -462,7 +471,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       name: widget.artist.name,
       albumCount: widget.artist.albumCount,
     );
-    
+
     return Semantics(
       label: semanticLabel,
       hint: OmnisonicSemantics.interactionHint('view artist'),
@@ -527,7 +536,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ),
     );
   }
-  
+
   Widget _buildCardContent(double cardWidth) {
     switch (widget.layout) {
       case CardLayout.grid:
@@ -538,10 +547,10 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
         return _buildCompactLayout();
     }
   }
-  
+
   Widget _buildGridLayout(double cardWidth) {
     final imageSize = cardWidth - (OmnisonicSpacing.cardPadding * 2);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -552,7 +561,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ],
     );
   }
-  
+
   Widget _buildListLayout() {
     return Row(
       children: [
@@ -563,7 +572,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ],
     );
   }
-  
+
   Widget _buildCompactLayout() {
     return Row(
       children: [
@@ -595,11 +604,11 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ],
     );
   }
-  
+
   Widget _buildArtistInfo() {
     return Column(
-      crossAxisAlignment: widget.layout == CardLayout.grid 
-          ? CrossAxisAlignment.center 
+      crossAxisAlignment: widget.layout == CardLayout.grid
+          ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -610,32 +619,33 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          textAlign: widget.layout == CardLayout.grid 
-              ? TextAlign.center 
+          textAlign: widget.layout == CardLayout.grid
+              ? TextAlign.center
               : TextAlign.start,
         ),
-        if (widget.artist.albumCount != null && widget.artist.albumCount! > 0) ...[
+        if (widget.artist.albumCount != null &&
+            widget.artist.albumCount! > 0) ...[
           const SizedBox(height: OmnisonicSpacing.xs),
           Text(
             '${widget.artist.albumCount} album${widget.artist.albumCount != 1 ? 's' : ''}',
             style: context.textTheme.bodyMedium?.copyWith(
               color: context.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
-            textAlign: widget.layout == CardLayout.grid 
-                ? TextAlign.center 
+            textAlign: widget.layout == CardLayout.grid
+                ? TextAlign.center
                 : TextAlign.start,
           ),
         ],
       ],
     );
   }
-  
+
   Widget _buildArtistImage(double size) {
     final altText = OmnisonicAlternativeText.artistImageAlt(
       artistName: widget.artist.name,
       hasImage: widget.artist.imageUrl != null,
     );
-    
+
     return Semantics(
       label: altText,
       image: true,
@@ -671,7 +681,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ),
     );
   }
-  
+
   Widget _buildPlaceholder() {
     return Container(
       decoration: BoxDecoration(
@@ -685,10 +695,10 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ),
     );
   }
-  
+
   Widget _buildAlbumCountChip() {
     if (widget.artist.albumCount == null) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: OmnisonicSpacing.sm,
@@ -707,7 +717,7 @@ class _EnhancedArtistCardState extends State<EnhancedArtistCard>
       ),
     );
   }
-  
+
   double _getDefaultWidth() {
     switch (widget.layout) {
       case CardLayout.grid:
@@ -749,7 +759,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -758,22 +768,21 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       vsync: this,
       debugLabel: 'EnhancedTrackCard_${widget.track.id}',
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.hoverCurve,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AnimationManager.hoverCurve,
+      ),
+    );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     if (isHovering) {
       _animationController.forward();
@@ -781,7 +790,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       _animationController.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final semanticLabel = OmnisonicSemantics.trackSemanticLabel(
@@ -790,7 +799,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       duration: widget.track.duration,
       isPlaying: widget.isPlaying,
     );
-    
+
     return Semantics(
       label: semanticLabel,
       hint: OmnisonicSemantics.interactionHint('play track'),
@@ -803,15 +812,12 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
             scale: _scaleAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                color: widget.isSelected 
+                color: widget.isSelected
                     ? context.colorScheme.primary.withValues(alpha: 0.1)
                     : null,
                 borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                 border: widget.isPlaying
-                    ? Border.all(
-                        color: context.playingIndicatorColor,
-                        width: 2,
-                      )
+                    ? Border.all(color: context.playingIndicatorColor, width: 2)
                     : null,
               ),
               child: Material(
@@ -846,7 +852,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       ),
     );
   }
-  
+
   Widget _buildTrackContent() {
     return Row(
       children: [
@@ -863,7 +869,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       ],
     );
   }
-  
+
   Widget _buildTrackNumber() {
     return SizedBox(
       width: 32,
@@ -882,7 +888,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
             ),
     );
   }
-  
+
   Widget _buildTrackArt() {
     return Container(
       width: 40,
@@ -901,7 +907,9 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
         borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
         child: CachedNetworkImage(
           imageUrl: widget.track.coverArtUrl!.withCoverArtSize(128),
-          cacheKey: widget.track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+          cacheKey: widget.track.coverArtUrl!
+              .withCoverArtSize(128)
+              .subsonicCacheKey,
           cacheManager: OmnisonicImageCacheManager.instance,
           fit: BoxFit.cover,
           memCacheWidth: 80,
@@ -928,7 +936,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       ),
     );
   }
-  
+
   Widget _buildTrackInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -937,12 +945,8 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
         Text(
           widget.track.title,
           style: context.textTheme.titleSmall?.copyWith(
-            color: widget.isPlaying 
-                ? context.playingIndicatorColor 
-                : null,
-            fontWeight: widget.isPlaying 
-                ? FontWeight.w600 
-                : FontWeight.w500,
+            color: widget.isPlaying ? context.playingIndicatorColor : null,
+            fontWeight: widget.isPlaying ? FontWeight.w600 : FontWeight.w500,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -959,12 +963,12 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       ],
     );
   }
-  
+
   Widget _buildDuration() {
     final duration = widget.track.duration;
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
-    
+
     return Text(
       '${minutes.toString().padLeft(1, '0')}:${seconds.toString().padLeft(2, '0')}',
       style: context.textTheme.bodySmall?.copyWith(
@@ -972,10 +976,10 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
       ),
     );
   }
-  
+
   Widget _buildPlayingIndicator() {
     if (!widget.isPlaying) return const SizedBox(width: 16);
-    
+
     return SizedBox(
       width: 16,
       height: 16,
@@ -994,7 +998,7 @@ class _EnhancedTrackCardState extends State<EnhancedTrackCard>
 
 /// Card layout options for different display contexts
 enum CardLayout {
-  grid,    // Square cards in a grid
-  list,    // Horizontal cards in a list
+  grid, // Square cards in a grid
+  list, // Horizontal cards in a list
   compact, // Minimal horizontal cards
 }

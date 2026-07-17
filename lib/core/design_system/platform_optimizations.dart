@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 
 /// Platform-specific optimizations for UI components and interactions
 class PlatformOptimizations {
-  static const PlatformOptimizations _instance = PlatformOptimizations._internal();
+  static const PlatformOptimizations _instance =
+      PlatformOptimizations._internal();
   factory PlatformOptimizations() => _instance;
   const PlatformOptimizations._internal();
 
@@ -148,7 +149,7 @@ class PlatformOptimizations {
   /// Get platform-appropriate focus highlight color
   Color getFocusHighlightColor(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     switch (currentPlatform) {
       case PlatformType.ios:
         return theme.colorScheme.primary.withValues(alpha: 0.3);
@@ -200,26 +201,25 @@ class _PlatformHoverEffectState extends State<PlatformHoverEffect>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: widget.duration ?? 
-        Duration(milliseconds: (200 * PlatformOptimizations().animationDurationMultiplier).round()),
+      duration:
+          widget.duration ??
+          Duration(
+            milliseconds:
+                (200 * PlatformOptimizations().animationDurationMultiplier)
+                    .round(),
+          ),
       vsync: this,
     );
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: widget.hoverScale ?? _getDefaultHoverScale(),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _elevationAnimation = Tween<double>(
       begin: PlatformOptimizations().defaultElevation,
       end: widget.hoverElevation ?? _getDefaultHoverElevation(),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   double _getDefaultHoverScale() {
@@ -250,7 +250,7 @@ class _PlatformHoverEffectState extends State<PlatformHoverEffect>
 
   void _handleHover(bool isHovering) {
     if (!PlatformOptimizations().supportsHover) return;
-    
+
     if (isHovering) {
       _controller.forward();
       widget.onHover?.call();
@@ -269,10 +269,7 @@ class _PlatformHoverEffectState extends State<PlatformHoverEffect>
   @override
   Widget build(BuildContext context) {
     if (!PlatformOptimizations().supportsHover) {
-      return GestureDetector(
-        onTap: _handleTap,
-        child: widget.child,
-      );
+      return GestureDetector(onTap: _handleTap, child: widget.child);
     }
 
     return MouseRegion(
@@ -288,7 +285,9 @@ class _PlatformHoverEffectState extends State<PlatformHoverEffect>
               scale: _scaleAnimation.value,
               child: Material(
                 elevation: _elevationAnimation.value,
-                borderRadius: BorderRadius.circular(PlatformOptimizations().defaultBorderRadius),
+                borderRadius: BorderRadius.circular(
+                  PlatformOptimizations().defaultBorderRadius,
+                ),
                 color: widget.hoverColor ?? Colors.transparent,
                 child: widget.child,
               ),
@@ -316,7 +315,7 @@ class PlatformTouchTarget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final targetSize = minSize ?? PlatformOptimizations().touchTargetSize;
-    
+
     return SizedBox(
       width: targetSize,
       height: targetSize,
@@ -324,7 +323,9 @@ class PlatformTouchTarget extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(PlatformOptimizations().defaultBorderRadius),
+          borderRadius: BorderRadius.circular(
+            PlatformOptimizations().defaultBorderRadius,
+          ),
           child: Center(child: child),
         ),
       ),
@@ -375,9 +376,4 @@ enum PlatformType {
 }
 
 /// Haptic feedback types
-enum HapticFeedbackType {
-  light,
-  medium,
-  heavy,
-  selection,
-}
+enum HapticFeedbackType { light, medium, heavy, selection }

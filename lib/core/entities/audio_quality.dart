@@ -5,10 +5,7 @@ enum AudioQuality {
   lossless(bitrate: 1411, format: 'FLAC'),
   ultra(bitrate: 2822, format: 'FLAC');
 
-  const AudioQuality({
-    required this.bitrate,
-    required this.format,
-  });
+  const AudioQuality({required this.bitrate, required this.format});
 
   final int bitrate;
   final String format;

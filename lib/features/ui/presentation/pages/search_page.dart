@@ -122,7 +122,7 @@ class _SearchPageState extends State<SearchPage> {
     } else if (state.isFailure) {
       return _buildErrorState(state.errorMessage ?? 'Unknown error');
     }
-    
+
     return _buildSearchSuggestions();
   }
 
@@ -151,9 +151,9 @@ class _SearchPageState extends State<SearchPage> {
       children: [
         Text(
           'Quick Search',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -189,14 +189,17 @@ class _SearchPageState extends State<SearchPage> {
       children: [
         Text(
           'Search Tips',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         _buildTipItem(context, 'Search by track name, artist, or album'),
         _buildTipItem(context, 'Use quotes for exact matches: "Dark Side"'),
-        _buildTipItem(context, 'Search across all connected servers simultaneously'),
+        _buildTipItem(
+          context,
+          'Search across all connected servers simultaneously',
+        ),
         _buildTipItem(context, 'Results are deduplicated automatically'),
       ],
     );
@@ -218,8 +221,8 @@ class _SearchPageState extends State<SearchPage> {
             child: Text(
               tip,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -265,7 +268,9 @@ class _SearchPageState extends State<SearchPage> {
         SectionHeader(
           title: 'Tracks',
           subtitle: '${tracks.length} result${tracks.length != 1 ? 's' : ''}',
-          onSeeAllPressed: tracks.length > 5 ? () => _showAllTracks(tracks) : null,
+          onSeeAllPressed: tracks.length > 5
+              ? () => _showAllTracks(tracks)
+              : null,
         ),
         ListView.builder(
           shrinkWrap: true,
@@ -292,7 +297,9 @@ class _SearchPageState extends State<SearchPage> {
         SectionHeader(
           title: 'Albums',
           subtitle: '${albums.length} result${albums.length != 1 ? 's' : ''}',
-          onSeeAllPressed: albums.length > 5 ? () => _showAllAlbums(albums) : null,
+          onSeeAllPressed: albums.length > 5
+              ? () => _showAllAlbums(albums)
+              : null,
         ),
         SizedBox(
           height: 220,
@@ -324,7 +331,9 @@ class _SearchPageState extends State<SearchPage> {
         SectionHeader(
           title: 'Artists',
           subtitle: '${artists.length} result${artists.length != 1 ? 's' : ''}',
-          onSeeAllPressed: artists.length > 5 ? () => _showAllArtists(artists) : null,
+          onSeeAllPressed: artists.length > 5
+              ? () => _showAllArtists(artists)
+              : null,
         ),
         SizedBox(
           height: 200,
@@ -368,7 +377,11 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onTrackTapped(Track track, List<Track> playlist, int index) {
-    context.read<PlaybackViewModel>().playTrack(track, queue: playlist, startIndex: index);
+    context.read<PlaybackViewModel>().playTrack(
+      track,
+      queue: playlist,
+      startIndex: index,
+    );
   }
 
   void _onAlbumTapped(Album album) {
@@ -403,9 +416,9 @@ class _SearchPageState extends State<SearchPage> {
               onTap: () {
                 Navigator.pop(context);
                 context.read<PlaybackViewModel>().addToQueue(track);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Added to queue')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Added to queue')));
               },
             ),
             ListTile(
@@ -415,7 +428,9 @@ class _SearchPageState extends State<SearchPage> {
                 Navigator.pop(context);
                 // TODO: Implement add to playlist
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add to playlist - Coming soon')),
+                  const SnackBar(
+                    content: Text('Add to playlist - Coming soon'),
+                  ),
                 );
               },
             ),

@@ -27,8 +27,7 @@ class Playlist extends Equatable {
 
   /// Validates that the playlist has all required fields
   bool get isValid {
-    return id.isNotEmpty &&
-        name.isNotEmpty;
+    return id.isNotEmpty && name.isNotEmpty;
   }
 
   /// Returns the number of tracks in the playlist
@@ -43,7 +42,7 @@ class Playlist extends Equatable {
   /// Adds a track ID to the playlist
   Playlist addTrack(String trackId) {
     if (trackIds.contains(trackId)) return this;
-    
+
     return copyWith(
       trackIds: [...trackIds, trackId],
       updatedAt: DateTime.now(),
@@ -53,14 +52,11 @@ class Playlist extends Equatable {
   /// Removes a track ID from the playlist
   Playlist removeTrack(String trackId) {
     if (!trackIds.contains(trackId)) return this;
-    
+
     final newTrackIds = List<String>.from(trackIds);
     newTrackIds.remove(trackId);
-    
-    return copyWith(
-      trackIds: newTrackIds,
-      updatedAt: DateTime.now(),
-    );
+
+    return copyWith(trackIds: newTrackIds, updatedAt: DateTime.now());
   }
 
   /// Reorders tracks in the playlist
@@ -70,28 +66,24 @@ class Playlist extends Equatable {
         !newTrackIds.every((id) => trackIds.contains(id))) {
       throw ArgumentError('Invalid track IDs for reordering');
     }
-    
-    return copyWith(
-      trackIds: newTrackIds,
-      updatedAt: DateTime.now(),
-    );
+
+    return copyWith(trackIds: newTrackIds, updatedAt: DateTime.now());
   }
 
   /// Moves a track from one position to another
   Playlist moveTrack(int fromIndex, int toIndex) {
-    if (fromIndex < 0 || fromIndex >= trackIds.length ||
-        toIndex < 0 || toIndex >= trackIds.length) {
+    if (fromIndex < 0 ||
+        fromIndex >= trackIds.length ||
+        toIndex < 0 ||
+        toIndex >= trackIds.length) {
       throw RangeError('Invalid index for moving track');
     }
-    
+
     final newTrackIds = List<String>.from(trackIds);
     final trackId = newTrackIds.removeAt(fromIndex);
     newTrackIds.insert(toIndex, trackId);
-    
-    return copyWith(
-      trackIds: newTrackIds,
-      updatedAt: DateTime.now(),
-    );
+
+    return copyWith(trackIds: newTrackIds, updatedAt: DateTime.now());
   }
 
   /// Creates a copy of this playlist with updated fields
@@ -123,18 +115,19 @@ class Playlist extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        createdAt,
-        updatedAt,
-        description,
-        trackIds,
-        duration,
-        isPublic,
-        coverArtUrl,
-        owner,
-      ];
+    id,
+    name,
+    createdAt,
+    updatedAt,
+    description,
+    trackIds,
+    duration,
+    isPublic,
+    coverArtUrl,
+    owner,
+  ];
 
   @override
-  String toString() => 'Playlist(id: $id, name: $name, trackCount: $trackCount)';
+  String toString() =>
+      'Playlist(id: $id, name: $name, trackCount: $trackCount)';
 }

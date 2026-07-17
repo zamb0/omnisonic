@@ -15,7 +15,9 @@ class LocalPlaylistDataSource {
       final playlists = await _database.playlistDao.getAllPlaylists();
       return ResultHelper.success(playlists);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get playlists: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get playlists: $e'),
+      );
     }
   }
 
@@ -25,7 +27,9 @@ class LocalPlaylistDataSource {
       final playlist = await _database.playlistDao.getPlaylistById(id);
       return ResultHelper.success(playlist);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get playlist: $e'),
+      );
     }
   }
 
@@ -35,7 +39,9 @@ class LocalPlaylistDataSource {
       await _database.playlistDao.insertPlaylist(playlist);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert playlist: $e'),
+      );
     }
   }
 
@@ -45,7 +51,9 @@ class LocalPlaylistDataSource {
       await _database.playlistDao.updatePlaylist(playlist);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update playlist: $e'),
+      );
     }
   }
 
@@ -55,47 +63,77 @@ class LocalPlaylistDataSource {
       await _database.playlistDao.deletePlaylist(id);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete playlist: $e'),
+      );
     }
   }
 
   /// Add track to playlist
-  Future<Result<void>> addTrackToPlaylist(String playlistId, String trackId) async {
+  Future<Result<void>> addTrackToPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
     try {
       await _database.playlistDao.addTrackToPlaylist(playlistId, trackId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to add track to playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to add track to playlist: $e'),
+      );
     }
   }
 
   /// Remove track from playlist
-  Future<Result<void>> removeTrackFromPlaylist(String playlistId, String trackId) async {
+  Future<Result<void>> removeTrackFromPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
     try {
       await _database.playlistDao.removeTrackFromPlaylist(playlistId, trackId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to remove track from playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to remove track from playlist: $e'),
+      );
     }
   }
 
   /// Reorder tracks in playlist
-  Future<Result<void>> reorderPlaylistTracks(String playlistId, List<String> newTrackIds) async {
+  Future<Result<void>> reorderPlaylistTracks(
+    String playlistId,
+    List<String> newTrackIds,
+  ) async {
     try {
-      await _database.playlistDao.reorderPlaylistTracks(playlistId, newTrackIds);
+      await _database.playlistDao.reorderPlaylistTracks(
+        playlistId,
+        newTrackIds,
+      );
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to reorder playlist tracks: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to reorder playlist tracks: $e'),
+      );
     }
   }
 
   /// Move track within playlist
-  Future<Result<void>> moveTrackInPlaylist(String playlistId, int fromIndex, int toIndex) async {
+  Future<Result<void>> moveTrackInPlaylist(
+    String playlistId,
+    int fromIndex,
+    int toIndex,
+  ) async {
     try {
-      await _database.playlistDao.moveTrackInPlaylist(playlistId, fromIndex, toIndex);
+      await _database.playlistDao.moveTrackInPlaylist(
+        playlistId,
+        fromIndex,
+        toIndex,
+      );
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to move track in playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to move track in playlist: $e'),
+      );
     }
   }
 
@@ -115,12 +153,16 @@ class LocalPlaylistDataSource {
       final playlist = await _database.playlistDao.getPlaylistById(id);
       return ResultHelper.success(playlist != null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to check playlist existence: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to check playlist existence: $e'),
+      );
     }
   }
 
   /// Get playlists containing a specific track
-  Future<Result<List<Playlist>>> getPlaylistsContainingTrack(String trackId) async {
+  Future<Result<List<Playlist>>> getPlaylistsContainingTrack(
+    String trackId,
+  ) async {
     try {
       final allPlaylists = await _database.playlistDao.getAllPlaylists();
       final playlistsWithTrack = allPlaylists
@@ -128,7 +170,9 @@ class LocalPlaylistDataSource {
           .toList();
       return ResultHelper.success(playlistsWithTrack);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get playlists containing track: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get playlists containing track: $e'),
+      );
     }
   }
 
@@ -141,12 +185,16 @@ class LocalPlaylistDataSource {
       }
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to clear playlists: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to clear playlists: $e'),
+      );
     }
   }
 
   /// Create a new playlist with tracks
-  Future<Result<Playlist>> createPlaylistWithTracks(String name, List<String> trackIds, {
+  Future<Result<Playlist>> createPlaylistWithTracks(
+    String name,
+    List<String> trackIds, {
     String? description,
     bool isPublic = false,
   }) async {
@@ -165,16 +213,25 @@ class LocalPlaylistDataSource {
       await _database.playlistDao.insertPlaylist(playlist);
       return ResultHelper.success(playlist);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to create playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to create playlist: $e'),
+      );
     }
   }
 
   /// Duplicate an existing playlist
-  Future<Result<Playlist>> duplicatePlaylist(String playlistId, String newName) async {
+  Future<Result<Playlist>> duplicatePlaylist(
+    String playlistId,
+    String newName,
+  ) async {
     try {
-      final originalPlaylist = await _database.playlistDao.getPlaylistById(playlistId);
+      final originalPlaylist = await _database.playlistDao.getPlaylistById(
+        playlistId,
+      );
       if (originalPlaylist == null) {
-        return ResultHelper.failure(DatabaseFailure('Original playlist not found'));
+        return ResultHelper.failure(
+          DatabaseFailure('Original playlist not found'),
+        );
       }
 
       final now = DateTime.now();
@@ -191,7 +248,9 @@ class LocalPlaylistDataSource {
       await _database.playlistDao.insertPlaylist(duplicatedPlaylist);
       return ResultHelper.success(duplicatedPlaylist);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to duplicate playlist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to duplicate playlist: $e'),
+      );
     }
   }
 
@@ -199,12 +258,19 @@ class LocalPlaylistDataSource {
   Future<Result<Map<String, dynamic>>> getPlaylistStats() async {
     try {
       final playlists = await _database.playlistDao.getAllPlaylists();
-      
+
       final stats = {
         'totalPlaylists': playlists.length,
-        'totalTracks': playlists.fold<int>(0, (sum, playlist) => sum + playlist.trackCount),
-        'averageTracksPerPlaylist': playlists.isNotEmpty 
-            ? playlists.fold<int>(0, (sum, playlist) => sum + playlist.trackCount) / playlists.length
+        'totalTracks': playlists.fold<int>(
+          0,
+          (sum, playlist) => sum + playlist.trackCount,
+        ),
+        'averageTracksPerPlaylist': playlists.isNotEmpty
+            ? playlists.fold<int>(
+                    0,
+                    (sum, playlist) => sum + playlist.trackCount,
+                  ) /
+                  playlists.length
             : 0.0,
         'publicPlaylists': playlists.where((p) => p.isPublic).length,
         'privatePlaylists': playlists.where((p) => !p.isPublic).length,
@@ -213,7 +279,9 @@ class LocalPlaylistDataSource {
 
       return ResultHelper.success(stats);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get playlist stats: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get playlist stats: $e'),
+      );
     }
   }
 
@@ -226,6 +294,9 @@ class LocalPlaylistDataSource {
   String _generateRandomString(int length) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final random = DateTime.now().millisecondsSinceEpoch;
-    return List.generate(length, (index) => chars[(random + index) % chars.length]).join();
+    return List.generate(
+      length,
+      (index) => chars[(random + index) % chars.length],
+    ).join();
   }
 }

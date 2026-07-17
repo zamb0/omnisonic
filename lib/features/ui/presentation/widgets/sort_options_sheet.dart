@@ -24,7 +24,9 @@ class SortOptionsSheet extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          ...SortOption.values.map((option) => _buildSortOption(context, option)),
+          ...SortOption.values.map(
+            (option) => _buildSortOption(context, option),
+          ),
         ],
       ),
     );
@@ -40,9 +42,7 @@ class SortOptionsSheet extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(subtitle, style: const TextStyle(fontSize: 12))
           : null,
-      trailing: isSelected
-          ? const Icon(Icons.check, color: Colors.blue)
-          : null,
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
       onTap: () {
         Navigator.pop(context);
         onOptionSelected(option);

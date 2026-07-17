@@ -35,7 +35,7 @@ void main() {
 
       // Retrieve server
       final retrievedServer = await database.serverDao.getServerById('server1');
-      
+
       expect(retrievedServer, isNotNull);
       expect(retrievedServer!.id, server.id);
       expect(retrievedServer.name, server.name);
@@ -62,7 +62,7 @@ void main() {
 
       // Retrieve track
       final retrievedTrack = await database.musicDao.getTrackById('track1');
-      
+
       expect(retrievedTrack, isNotNull);
       expect(retrievedTrack!.id, track.id);
       expect(retrievedTrack.title, track.title);
@@ -99,7 +99,7 @@ void main() {
 
       // Retrieve all servers
       final servers = await database.serverDao.getAllServers();
-      
+
       expect(servers.length, 2);
       expect(servers.map((s) => s.id), containsAll(['server1', 'server2']));
     });

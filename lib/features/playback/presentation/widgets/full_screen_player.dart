@@ -41,11 +41,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         final progress = playbackViewModel.progress;
 
         if (currentTrack == null) {
-          return const Scaffold(
-            body: Center(
-              child: Text('No track playing'),
-            ),
-          );
+          return const Scaffold(body: Center(child: Text('No track playing')));
         }
 
         return Scaffold(
@@ -146,7 +142,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                       const SizedBox(height: OmnisonicSpacing.lg),
                       _buildTrackInfo(context, track),
                       const SizedBox(height: OmnisonicSpacing.lg),
-                      _buildSeekBar(playbackViewModel, position, duration, progress),
+                      _buildSeekBar(
+                        playbackViewModel,
+                        position,
+                        duration,
+                        progress,
+                      ),
                       const SizedBox(height: OmnisonicSpacing.lg),
                       _buildPrimaryControls(context, playbackViewModel),
                       const SizedBox(height: OmnisonicSpacing.md),
@@ -184,25 +185,29 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           const SizedBox(width: 8),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const Spacer(),
           Consumer<PlaybackViewModel>(
             builder: (context, viewModel, child) {
               final track = viewModel.currentTrack;
               final isStarred = track?.isStarred ?? false;
-              
+
               return IconButton(
-                onPressed: track != null ? () {
-                  viewModel.toggleFavorite(track);
-                } : null,
+                onPressed: track != null
+                    ? () {
+                        viewModel.toggleFavorite(track);
+                      }
+                    : null,
                 icon: Icon(
                   isStarred ? Icons.favorite : Icons.favorite_border,
                   color: isStarred ? Colors.red : scheme.onSurfaceVariant,
                 ),
-                tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
+                tooltip: isStarred
+                    ? 'Remove from favorites'
+                    : 'Add to favorites',
               );
             },
           ),
@@ -234,7 +239,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             child: track.coverArtUrl != null
                 ? CachedNetworkImage(
                     imageUrl: track.coverArtUrl!.withCoverArtSize(800),
-                    cacheKey: track.coverArtUrl!.withCoverArtSize(800).subsonicCacheKey,
+                    cacheKey: track.coverArtUrl!
+                        .withCoverArtSize(800)
+                        .subsonicCacheKey,
                     cacheManager: OmnisonicImageCacheManager.instance,
                     fit: BoxFit.cover,
                     memCacheWidth: 800,
@@ -242,7 +249,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     fadeInDuration: const Duration(milliseconds: 120),
                     useOldImageOnUrlChange: true,
                     placeholder: (context, url) => _buildFallbackArtwork(),
-                    errorWidget: (context, url, error) => _buildFallbackArtwork(),
+                    errorWidget: (context, url, error) =>
+                        _buildFallbackArtwork(),
                   )
                 : _buildFallbackArtwork(),
           ),
@@ -270,9 +278,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       children: [
         Text(
           track.title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -280,9 +288,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         const SizedBox(height: 6),
         Text(
           track.artist,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -291,9 +299,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           const SizedBox(height: 4),
           Text(
             track.album,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -325,15 +333,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           children: [
             Text(
               _formatDuration(elapsed),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             Text(
               _formatDuration(duration),
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -366,13 +374,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       ],
     );
   }
-  
-  Widget _buildQualityIndicator(BuildContext context, PlaybackViewModel playbackViewModel) {
+
+  Widget _buildQualityIndicator(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final quality = playbackViewModel.currentQuality;
     final maxQuality = playbackViewModel.maxQuality;
-    final ratio = (playbackViewModel.streamingQualityRatio * 100).clamp(0, 100).round();
-    
+    final ratio = (playbackViewModel.streamingQualityRatio * 100)
+        .clamp(0, 100)
+        .round();
+
     return Align(
       alignment: Alignment.centerRight,
       child: Opacity(
@@ -380,10 +393,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         child: Text(
           '${quality.format} ${quality.bitrate} kbps • ${ratio}% of max ${maxQuality.bitrate}',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontSize: 10,
-                letterSpacing: 0.2,
-              ),
+            color: scheme.onSurfaceVariant,
+            fontSize: 10,
+            letterSpacing: 0.2,
+          ),
         ),
       ),
     );
@@ -419,8 +432,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         ),
         const SizedBox(width: 12),
         IconButton(
-          onPressed:
-              playbackViewModel.hasNext ? () => playbackViewModel.skipToNext() : null,
+          onPressed: playbackViewModel.hasNext
+              ? () => playbackViewModel.skipToNext()
+              : null,
           icon: const Icon(Icons.skip_next),
           iconSize: 36,
         ),
@@ -473,11 +487,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           builder: (context, viewModel, child) {
             final track = viewModel.currentTrack;
             final isStarred = track?.isStarred ?? false;
-            
+
             return IconButton(
-              onPressed: track != null ? () {
-                viewModel.toggleFavorite(track);
-              } : null,
+              onPressed: track != null
+                  ? () {
+                      viewModel.toggleFavorite(track);
+                    }
+                  : null,
               icon: Icon(
                 isStarred ? Icons.favorite : Icons.favorite_border,
                 color: isStarred ? Colors.red : scheme.onSurfaceVariant,
@@ -497,7 +513,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   }) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: EdgeInsets.all(compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg),
+      padding: EdgeInsets.all(
+        compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: scheme.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
@@ -529,7 +547,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 150),
-              child: _buildPanelContent(context, playbackViewModel, key: _panel),
+              child: _buildPanelContent(
+                context,
+                playbackViewModel,
+                key: _panel,
+              ),
             ),
           ),
         ],
@@ -552,7 +574,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     }
   }
 
-  Widget _buildQueuePanel(BuildContext context, PlaybackViewModel playbackViewModel) {
+  Widget _buildQueuePanel(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
     final queue = playbackViewModel.queue;
     final currentIndex = playbackViewModel.currentIndex;
     final scheme = Theme.of(context).colorScheme;
@@ -561,9 +586,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       return Center(
         child: Text(
           'Queue is empty',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
       );
     }
@@ -577,7 +602,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
         return ListTile(
           dense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
           leading: Container(
             width: 40,
             height: 40,
@@ -590,7 +618,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               child: track.coverArtUrl != null
                   ? CachedNetworkImage(
                       imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                      cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                      cacheKey: track.coverArtUrl!
+                          .withCoverArtSize(128)
+                          .subsonicCacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 80,
@@ -610,16 +640,16 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
-                ),
+              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+            ),
           ),
           subtitle: Text(
             track.artist,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           trailing: isCurrent
               ? Icon(
@@ -637,7 +667,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildLyricsPanel(BuildContext context, PlaybackViewModel playbackViewModel) {
+  Widget _buildLyricsPanel(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
     return LyricsPanel(
       track: playbackViewModel.currentTrack,
       position: playbackViewModel.position,
@@ -660,8 +693,4 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   }
 }
 
-enum _NowPlayingPanel {
-  queue,
-  lyrics,
-  visualizer,
-}
+enum _NowPlayingPanel { queue, lyrics, visualizer }

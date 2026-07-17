@@ -28,11 +28,11 @@ void main() async {
   final imageCache = PaintingBinding.instance.imageCache;
   imageCache.maximumSizeBytes = AppConstants.maxImageCacheSize;
   imageCache.maximumSize = 1000;
-  
+
   try {
     // Initialize dependency injection
     await configureDependencies();
-    
+
     // Initialize audio service for background playback
     // Use a timeout to prevent hanging on iOS if AudioService.init() blocks
     try {
@@ -49,7 +49,7 @@ void main() async {
   } catch (e) {
     debugPrint('App initialization failed: $e');
   }
-  
+
   runApp(const OmnisonicApp());
 }
 
@@ -60,7 +60,8 @@ class OmnisonicApp extends StatefulWidget {
   State<OmnisonicApp> createState() => _OmnisonicAppState();
 }
 
-class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver {
+class _OmnisonicAppState extends State<OmnisonicApp>
+    with WidgetsBindingObserver {
   PlaybackViewModel? _playbackViewModel;
 
   @override
@@ -78,11 +79,11 @@ class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     debugPrint('App lifecycle changed to: $state');
-    
+
     // Save queue when app goes to background or is about to close
-    if (state == AppLifecycleState.paused || 
+    if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached) {
       debugPrint('Saving queue due to lifecycle state: $state');
@@ -95,8 +96,9 @@ class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver
       if (_playbackViewModel == null) {
         _playbackViewModel = getIt<PlaybackViewModel>();
       }
-      
-      if (_playbackViewModel!.hasQueue && _playbackViewModel!.currentIndex >= 0) {
+
+      if (_playbackViewModel!.hasQueue &&
+          _playbackViewModel!.currentIndex >= 0) {
         final trackingService = getIt<PlaybackTrackingService>();
         await trackingService.savePlayQueue(
           _playbackViewModel!.queue,
@@ -105,7 +107,9 @@ class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver
         );
         debugPrint('✓ Queue saved successfully on lifecycle change');
       } else {
-        debugPrint('No queue to save (hasQueue: ${_playbackViewModel!.hasQueue}, index: ${_playbackViewModel!.currentIndex})');
+        debugPrint(
+          'No queue to save (hasQueue: ${_playbackViewModel!.hasQueue}, index: ${_playbackViewModel!.currentIndex})',
+        );
       }
     } catch (e) {
       debugPrint('✗ Failed to save queue: $e');
@@ -132,17 +136,11 @@ class _OmnisonicAppState extends State<OmnisonicApp> with WidgetsBindingObserver
         ChangeNotifierProvider<LyricsViewModel>(
           create: (_) => getIt<LyricsViewModel>(),
         ),
-        
+
         // BLoCs
-        BlocProvider<SyncBloc>(
-          create: (_) => getIt<SyncBloc>(),
-        ),
-        BlocProvider<SearchBloc>(
-          create: (_) => getIt<SearchBloc>(),
-        ),
-        BlocProvider<PlaybackBloc>(
-          create: (_) => getIt<PlaybackBloc>(),
-        ),
+        BlocProvider<SyncBloc>(create: (_) => getIt<SyncBloc>()),
+        BlocProvider<SearchBloc>(create: (_) => getIt<SearchBloc>()),
+        BlocProvider<PlaybackBloc>(create: (_) => getIt<PlaybackBloc>()),
       ],
       child: MaterialApp.router(
         title: 'Omnisonic',

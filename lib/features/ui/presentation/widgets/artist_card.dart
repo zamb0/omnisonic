@@ -8,12 +8,7 @@ class ArtistCard extends StatelessWidget {
   final VoidCallback? onTap;
   final double? width;
 
-  const ArtistCard({
-    super.key,
-    required this.artist,
-    this.onTap,
-    this.width,
-  });
+  const ArtistCard({super.key, required this.artist, this.onTap, this.width});
 
   @override
   Widget build(BuildContext context) {

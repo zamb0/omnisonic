@@ -26,7 +26,8 @@ class ServersTable extends Table {
 @DataClassName('TrackData')
 class TracksTable extends Table {
   TextColumn get id => text()();
-  TextColumn get serverId => text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get serverId =>
+      text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
   TextColumn get title => text()();
   TextColumn get artist => text()();
   TextColumn get album => text()();
@@ -54,7 +55,8 @@ class TracksTable extends Table {
 @DataClassName('AlbumData')
 class AlbumsTable extends Table {
   TextColumn get id => text()();
-  TextColumn get serverId => text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get serverId =>
+      text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
   TextColumn get title => text()();
   TextColumn get artist => text()();
   DateTimeColumn get lastModified => dateTime()();
@@ -74,7 +76,8 @@ class AlbumsTable extends Table {
 @DataClassName('ArtistData')
 class ArtistsTable extends Table {
   TextColumn get id => text()();
-  TextColumn get serverId => text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get serverId =>
+      text().references(ServersTable, #id, onDelete: KeyAction.cascade)();
   TextColumn get name => text()();
   DateTimeColumn get lastModified => dateTime()();
   IntColumn get albumCount => integer().nullable()();
@@ -107,8 +110,10 @@ class PlaylistsTable extends Table {
 // Playlist tracks junction table
 @DataClassName('PlaylistTrackData')
 class PlaylistTracksTable extends Table {
-  TextColumn get playlistId => text().references(PlaylistsTable, #id, onDelete: KeyAction.cascade)();
-  TextColumn get trackId => text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get playlistId =>
+      text().references(PlaylistsTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get trackId =>
+      text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
   IntColumn get position => integer()();
 
   @override
@@ -119,7 +124,8 @@ class PlaylistTracksTable extends Table {
 @DataClassName('DuplicateGroupData')
 class DuplicateGroupsTable extends Table {
   TextColumn get id => text()();
-  TextColumn get representativeTrackId => text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get representativeTrackId =>
+      text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -129,8 +135,13 @@ class DuplicateGroupsTable extends Table {
 // Duplicate group members table
 @DataClassName('DuplicateGroupMemberData')
 class DuplicateGroupMembersTable extends Table {
-  TextColumn get groupId => text().references(DuplicateGroupsTable, #id, onDelete: KeyAction.cascade)();
-  TextColumn get trackId => text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get groupId => text().references(
+    DuplicateGroupsTable,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get trackId =>
+      text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
   RealColumn get similarityScore => real()();
 
   @override
@@ -140,7 +151,8 @@ class DuplicateGroupMembersTable extends Table {
 // Cache entries table for offline content
 @DataClassName('CacheEntryData')
 class CacheEntriesTable extends Table {
-  TextColumn get trackId => text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
+  TextColumn get trackId =>
+      text().references(TracksTable, #id, onDelete: KeyAction.cascade)();
   TextColumn get filePath => text()();
   IntColumn get fileSize => integer()();
   DateTimeColumn get cachedAt => dateTime()();

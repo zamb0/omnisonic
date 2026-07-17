@@ -44,9 +44,9 @@ class PlaylistListTile extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 playlist.description!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -128,7 +128,9 @@ class PlaylistListTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: CachedNetworkImage(
                 imageUrl: playlist.coverArtUrl!.withCoverArtSize(112),
-                cacheKey: playlist.coverArtUrl!.withCoverArtSize(112).subsonicCacheKey,
+                cacheKey: playlist.coverArtUrl!
+                    .withCoverArtSize(112)
+                    .subsonicCacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 112,
@@ -153,11 +155,7 @@ class PlaylistListTile extends StatelessWidget {
                 ),
               ),
             )
-          : const Icon(
-              Icons.playlist_play,
-              color: Colors.grey,
-              size: 24,
-            ),
+          : const Icon(Icons.playlist_play, color: Colors.grey, size: 24),
     );
   }
 

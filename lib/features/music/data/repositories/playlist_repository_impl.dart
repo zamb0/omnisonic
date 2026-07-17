@@ -14,8 +14,8 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   const PlaylistRepositoryImpl({
     required LocalPlaylistDataSource localPlaylistDataSource,
     required LocalMusicDataSource localMusicDataSource,
-  })  : _localPlaylistDataSource = localPlaylistDataSource,
-        _localMusicDataSource = localMusicDataSource;
+  }) : _localPlaylistDataSource = localPlaylistDataSource,
+       _localMusicDataSource = localMusicDataSource;
 
   final LocalPlaylistDataSource _localPlaylistDataSource;
   final LocalMusicDataSource _localMusicDataSource;
@@ -36,13 +36,17 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
 
   @override
   Future<Result<Playlist>> updatePlaylist(Playlist playlist) async {
-    final updateResult = await _localPlaylistDataSource.updatePlaylist(playlist);
+    final updateResult = await _localPlaylistDataSource.updatePlaylist(
+      playlist,
+    );
     if (updateResult.isFailure) {
       return Left(updateResult.failureOrNull!);
     }
 
     // Return the updated playlist
-    final getResult = await _localPlaylistDataSource.getPlaylistById(playlist.id);
+    final getResult = await _localPlaylistDataSource.getPlaylistById(
+      playlist.id,
+    );
     if (getResult.isFailure) {
       return Left(getResult.failureOrNull!);
     }
@@ -73,7 +77,9 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   @override
   Future<Result<List<Track>>> getPlaylistTracks(String playlistId) async {
     // Get the playlist first
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -110,20 +116,27 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> addTrackToPlaylist(String playlistId, String trackId) async {
+  Future<Result<Playlist>> addTrackToPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
     // Verify track exists
     final allTracksResult = await _localMusicDataSource.getAllTracks();
     if (allTracksResult.isFailure) {
       return Left(allTracksResult.failureOrNull!);
     }
 
-    final trackExists = allTracksResult.valueOrNull!.any((track) => track.id == trackId);
+    final trackExists = allTracksResult.valueOrNull!.any(
+      (track) => track.id == trackId,
+    );
     if (!trackExists) {
       return Left(DataFailure('Track not found: $trackId'));
     }
 
     // Get current playlist
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -135,7 +148,9 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
 
     // Add track to playlist
     final updatedPlaylist = playlist.addTrack(trackId);
-    final updateResult = await _localPlaylistDataSource.updatePlaylist(updatedPlaylist);
+    final updateResult = await _localPlaylistDataSource.updatePlaylist(
+      updatedPlaylist,
+    );
     if (updateResult.isFailure) {
       return Left(updateResult.failureOrNull!);
     }
@@ -144,9 +159,14 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> removeTrackFromPlaylist(String playlistId, String trackId) async {
+  Future<Result<Playlist>> removeTrackFromPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
     // Get current playlist
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -158,7 +178,9 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
 
     // Remove track from playlist
     final updatedPlaylist = playlist.removeTrack(trackId);
-    final updateResult = await _localPlaylistDataSource.updatePlaylist(updatedPlaylist);
+    final updateResult = await _localPlaylistDataSource.updatePlaylist(
+      updatedPlaylist,
+    );
     if (updateResult.isFailure) {
       return Left(updateResult.failureOrNull!);
     }
@@ -167,9 +189,14 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> reorderPlaylistTracks(String playlistId, List<String> trackIds) async {
+  Future<Result<Playlist>> reorderPlaylistTracks(
+    String playlistId,
+    List<String> trackIds,
+  ) async {
     // Get current playlist
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -182,7 +209,9 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     try {
       // Reorder tracks in playlist
       final updatedPlaylist = playlist.reorderTracks(trackIds);
-      final updateResult = await _localPlaylistDataSource.updatePlaylist(updatedPlaylist);
+      final updateResult = await _localPlaylistDataSource.updatePlaylist(
+        updatedPlaylist,
+      );
       if (updateResult.isFailure) {
         return Left(updateResult.failureOrNull!);
       }
@@ -194,9 +223,15 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> moveTrackInPlaylist(String playlistId, int fromIndex, int toIndex) async {
+  Future<Result<Playlist>> moveTrackInPlaylist(
+    String playlistId,
+    int fromIndex,
+    int toIndex,
+  ) async {
     // Get current playlist
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -209,7 +244,9 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     try {
       // Move track in playlist
       final updatedPlaylist = playlist.moveTrack(fromIndex, toIndex);
-      final updateResult = await _localPlaylistDataSource.updatePlaylist(updatedPlaylist);
+      final updateResult = await _localPlaylistDataSource.updatePlaylist(
+        updatedPlaylist,
+      );
       if (updateResult.isFailure) {
         return Left(updateResult.failureOrNull!);
       }
@@ -239,8 +276,12 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
 
     final allPlaylists = allPlaylistsResult.valueOrNull!;
     final filteredPlaylists = allPlaylists.where((playlist) {
-      final nameMatch = playlist.name.toLowerCase().contains(query.toLowerCase());
-      final descriptionMatch = playlist.description?.toLowerCase().contains(query.toLowerCase()) ?? false;
+      final nameMatch = playlist.name.toLowerCase().contains(
+        query.toLowerCase(),
+      );
+      final descriptionMatch =
+          playlist.description?.toLowerCase().contains(query.toLowerCase()) ??
+          false;
       return nameMatch || descriptionMatch;
     }).toList();
 
@@ -281,12 +322,21 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> duplicatePlaylist(String playlistId, String newName) async {
-    return await _localPlaylistDataSource.duplicatePlaylist(playlistId, newName);
+  Future<Result<Playlist>> duplicatePlaylist(
+    String playlistId,
+    String newName,
+  ) async {
+    return await _localPlaylistDataSource.duplicatePlaylist(
+      playlistId,
+      newName,
+    );
   }
 
   @override
-  Future<Result<String>> exportPlaylist(String playlistId, {String format = 'm3u'}) async {
+  Future<Result<String>> exportPlaylist(
+    String playlistId, {
+    String format = 'm3u',
+  }) async {
     // Get playlist tracks
     final tracksResult = await getPlaylistTracks(playlistId);
     if (tracksResult.isFailure) {
@@ -294,9 +344,11 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     }
 
     final tracks = tracksResult.valueOrNull!;
-    
+
     // Get playlist info
-    final playlistResult = await _localPlaylistDataSource.getPlaylistById(playlistId);
+    final playlistResult = await _localPlaylistDataSource.getPlaylistById(
+      playlistId,
+    );
     if (playlistResult.isFailure) {
       return Left(playlistResult.failureOrNull!);
     }
@@ -318,10 +370,14 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   }
 
   @override
-  Future<Result<Playlist>> importPlaylist(String content, String format, String name) async {
+  Future<Result<Playlist>> importPlaylist(
+    String content,
+    String format,
+    String name,
+  ) async {
     try {
       List<String> trackIds;
-      
+
       switch (format.toLowerCase()) {
         case 'm3u':
           trackIds = _parseM3UContent(content);
@@ -334,7 +390,10 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       }
 
       // Create playlist with parsed track IDs
-      return await _localPlaylistDataSource.createPlaylistWithTracks(name, trackIds);
+      return await _localPlaylistDataSource.createPlaylistWithTracks(
+        name,
+        trackIds,
+      );
     } catch (e) {
       return Left(DataFailure('Failed to import playlist: $e'));
     }
@@ -345,12 +404,14 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     final buffer = StringBuffer();
     buffer.writeln('#EXTM3U');
     buffer.writeln('#PLAYLIST:${playlist.name}');
-    
+
     for (final track in tracks) {
-      buffer.writeln('#EXTINF:${track.duration.inSeconds},${track.artist} - ${track.title}');
+      buffer.writeln(
+        '#EXTINF:${track.duration.inSeconds},${track.artist} - ${track.title}',
+      );
       buffer.writeln(track.streamUrl);
     }
-    
+
     return buffer.toString();
   }
 
@@ -358,7 +419,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   String _generatePLSContent(Playlist playlist, List<Track> tracks) {
     final buffer = StringBuffer();
     buffer.writeln('[playlist]');
-    
+
     for (int i = 0; i < tracks.length; i++) {
       final track = tracks[i];
       final index = i + 1;
@@ -366,10 +427,10 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       buffer.writeln('Title$index=${track.artist} - ${track.title}');
       buffer.writeln('Length$index=${track.duration.inSeconds}');
     }
-    
+
     buffer.writeln('NumberOfEntries=${tracks.length}');
     buffer.writeln('Version=2');
-    
+
     return buffer.toString();
   }
 
@@ -378,7 +439,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     // Simplified parsing - in real implementation, would need to match URLs to track IDs
     final lines = content.split('\n');
     final trackIds = <String>[];
-    
+
     for (final line in lines) {
       if (line.trim().isNotEmpty && !line.startsWith('#')) {
         // This would need to match the URL to an existing track ID
@@ -386,7 +447,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
         trackIds.add('track_${trackIds.length}');
       }
     }
-    
+
     return trackIds;
   }
 
@@ -395,7 +456,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     // Simplified parsing - in real implementation, would need to match URLs to track IDs
     final lines = content.split('\n');
     final trackIds = <String>[];
-    
+
     for (final line in lines) {
       if (line.startsWith('File')) {
         // This would need to match the URL to an existing track ID
@@ -403,7 +464,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
         trackIds.add('track_${trackIds.length}');
       }
     }
-    
+
     return trackIds;
   }
 }

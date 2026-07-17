@@ -26,7 +26,7 @@ abstract class Params extends Equatable {
 /// Empty parameters for use cases that don't need input
 class NoParams extends Params {
   const NoParams();
-  
+
   @override
   List<Object?> get props => [];
 }

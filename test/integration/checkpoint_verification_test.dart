@@ -9,7 +9,7 @@ import 'package:omnisonic/core/errors/result.dart';
 import 'package:omnisonic/core/errors/failures.dart';
 
 /// Checkpoint verification test for core business logic
-/// 
+///
 /// This test verifies that all core components are properly integrated
 /// and can work together without compilation errors.
 void main() {
@@ -52,7 +52,7 @@ void main() {
         quality: AudioQuality.high,
         lastModified: DateTime.now(),
       );
-      
+
       expect(track.id, equals('test-track-1'));
       expect(track.title, equals('Test Song'));
       expect(track.isValid, isTrue);
@@ -66,7 +66,7 @@ void main() {
         status: ServerStatus.online,
         createdAt: DateTime.now(),
       );
-      
+
       expect(server.id, equals('test-server-1'));
       expect(server.name, equals('Test Server'));
       expect(server.isValid, isTrue);
@@ -83,7 +83,7 @@ void main() {
         trackCount: 10,
         duration: Duration(minutes: 45),
       );
-      
+
       expect(album.id, equals('test-album-1'));
       expect(album.title, equals('Test Album'));
 
@@ -95,7 +95,7 @@ void main() {
         lastModified: DateTime.now(),
         albumCount: 5,
       );
-      
+
       expect(artist.id, equals('test-artist-1'));
       expect(artist.name, equals('Test Artist'));
 
@@ -107,7 +107,7 @@ void main() {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       expect(playlist.id, equals('test-playlist-1'));
       expect(playlist.name, equals('Test Playlist'));
       expect(playlist.trackCount, equals(2));
@@ -115,7 +115,7 @@ void main() {
 
     test('should verify deduplication engine functionality', () {
       final deduplicationEngine = getIt<DeduplicationEngine>();
-      
+
       // Create test tracks with similar metadata
       final track1 = Track(
         id: 'track-1',
@@ -157,15 +157,15 @@ void main() {
       expect(musicRepository.getAllTracks, isA<Function>());
       expect(musicRepository.getAllAlbums, isA<Function>());
       expect(musicRepository.getAllArtists, isA<Function>());
-      
+
       expect(serverRepository.getAllServers, isA<Function>());
       expect(serverRepository.addServer, isA<Function>());
       expect(serverRepository.removeServer, isA<Function>());
-      
+
       expect(playbackRepository.play, isA<Function>());
       expect(playbackRepository.pause, isA<Function>());
       expect(playbackRepository.stop, isA<Function>());
-      
+
       expect(playlistRepository.getAllPlaylists, isA<Function>());
       expect(playlistRepository.createPlaylist, isA<Function>());
       expect(playlistRepository.deletePlaylist, isA<Function>());
@@ -178,7 +178,9 @@ void main() {
       expect(successResult.isFailure, isFalse);
       expect(successResult.valueOrNull, equals('test value'));
 
-      final failureResult = ResultHelper.failure<String>(UnknownFailure('test error'));
+      final failureResult = ResultHelper.failure<String>(
+        UnknownFailure('test error'),
+      );
       expect(failureResult.isSuccess, isFalse);
       expect(failureResult.isFailure, isTrue);
       expect(failureResult.valueOrNull, isNull);

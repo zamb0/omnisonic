@@ -23,14 +23,11 @@ class OmnisonicGradientAnimations {
       height: height,
       padding: padding,
       margin: margin,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: borderRadius,
-      ),
+      decoration: BoxDecoration(gradient: gradient, borderRadius: borderRadius),
       child: child,
     );
   }
-  
+
   /// Create a shimmer loading effect with gradient animation
   static Widget shimmerEffect({
     required Widget child,
@@ -49,7 +46,7 @@ class OmnisonicGradientAnimations {
           : child,
     );
   }
-  
+
   /// Create a glass morphism effect with gradient background
   static Widget glassMorphismEffect({
     required Widget child,
@@ -78,7 +75,7 @@ class OmnisonicGradientAnimations {
       ),
     );
   }
-  
+
   /// Create a depth effect with multiple shadow layers
   static Widget depthEffect({
     required Widget child,
@@ -117,7 +114,7 @@ class OmnisonicGradientAnimations {
       child: child,
     );
   }
-  
+
   /// Create an animated progress bar with gradient
   static Widget animatedProgressBar({
     required double progress,
@@ -151,7 +148,7 @@ class OmnisonicGradientAnimations {
       ),
     );
   }
-  
+
   /// Create a pulsing gradient effect for emphasis
   static Widget pulsingGradient({
     required Widget child,
@@ -175,13 +172,13 @@ class _ShimmerWidget extends StatefulWidget {
   final Widget child;
   final Duration duration;
   final LinearGradient gradient;
-  
+
   const _ShimmerWidget({
     required this.child,
     required this.duration,
     required this.gradient,
   });
-  
+
   @override
   State<_ShimmerWidget> createState() => _ShimmerWidgetState();
 }
@@ -190,31 +187,25 @@ class _ShimmerWidgetState extends State<_ShimmerWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  
+
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
     _animation = Tween<double>(
       begin: -1.0,
       end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _controller.repeat();
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -244,7 +235,7 @@ class _PulsingGradientWidget extends StatefulWidget {
   final Duration duration;
   final double minOpacity;
   final double maxOpacity;
-  
+
   const _PulsingGradientWidget({
     required this.child,
     required this.gradient,
@@ -252,7 +243,7 @@ class _PulsingGradientWidget extends StatefulWidget {
     required this.minOpacity,
     required this.maxOpacity,
   });
-  
+
   @override
   State<_PulsingGradientWidget> createState() => _PulsingGradientWidgetState();
 }
@@ -261,31 +252,25 @@ class _PulsingGradientWidgetState extends State<_PulsingGradientWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
-  
+
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
     _animation = Tween<double>(
       begin: widget.minOpacity,
       end: widget.maxOpacity,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _controller.repeat(reverse: true);
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -294,9 +279,7 @@ class _PulsingGradientWidgetState extends State<_PulsingGradientWidget>
         return Opacity(
           opacity: _animation.value,
           child: Container(
-            decoration: BoxDecoration(
-              gradient: widget.gradient,
-            ),
+            decoration: BoxDecoration(gradient: widget.gradient),
             child: widget.child,
           ),
         );

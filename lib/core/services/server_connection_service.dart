@@ -17,13 +17,13 @@ class ServerConnectionService {
   final AppDatabase _database;
   final Map<String, String> _passwordCache = {};
   final Map<String, Timer> _connectionTimers = {};
-  
+
   // Flag to track if secure storage is available
   bool _secureStorageAvailable = true;
 
   static const String _passwordPrefix = 'server_password_';
   static const Duration _connectionTestInterval = Duration(minutes: 5);
-  
+
   // Persistent storage fallback for development
   static const String _fallbackStorageKey = 'omnisonic_server_passwords';
 
@@ -31,17 +31,15 @@ class ServerConnectionService {
     SubsonicApiClient? apiClient,
     FlutterSecureStorage? secureStorage,
     required AppDatabase database,
-  })  : _apiClient = apiClient ?? SubsonicApiClient(),
-        _secureStorage = secureStorage ?? _createSecureStorage(),
-        _database = database;
+  }) : _apiClient = apiClient ?? SubsonicApiClient(),
+       _secureStorage = secureStorage ?? _createSecureStorage(),
+       _database = database;
 
   /// Creates secure storage with fallback for development
   static FlutterSecureStorage? _createSecureStorage() {
     try {
       return const FlutterSecureStorage(
-        aOptions: AndroidOptions(
-          encryptedSharedPreferences: true,
-        ),
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
         iOptions: IOSOptions(
           accessibility: KeychainAccessibility.first_unlock_this_device,
         ),
@@ -73,17 +71,13 @@ class ServerConnectionService {
 
       // Test connection with ping
       final response = await _apiClient.ping(server, password);
-      
+
       if (!response.isSuccess) {
         final error = response.error;
         if (error != null) {
-          return ResultHelper.failure(
-            _mapSubsonicError(error),
-          );
+          return ResultHelper.failure(_mapSubsonicError(error));
         } else {
-          return ResultHelper.failure(
-            ServerFailure('Unknown server error'),
-          );
+          return ResultHelper.failure(ServerFailure('Unknown server error'));
         }
       }
 
@@ -110,10 +104,10 @@ class ServerConnectionService {
     String password,
   ) async {
     AppLog.info('Storing password for server: $serverId');
-    
+
     // Always cache in memory first
     _passwordCache[serverId] = password;
-    
+
     // Try secure storage first (most secure)
     if (_secureStorage != null && _secureStorageAvailable) {
       try {
@@ -121,46 +115,54 @@ class ServerConnectionService {
           key: '$_passwordPrefix$serverId',
           value: password,
         );
-        
+
         AppLog.info('Password stored in secure storage');
         return ResultHelper.success(null);
       } catch (e) {
         AppLog.warn('Secure storage write failed: $e');
         _secureStorageAvailable = false;
-        
+
         // Don't return failure yet, try database fallback
         AppLog.info('Falling back to database storage');
       }
     }
-    
+
     // Fallback to encrypted database storage
     try {
       final encryptedPassword = PasswordEncryption.encryptPassword(password);
-      
+
       // Update the server record with encrypted password
       final server = await _database.getServerById(serverId);
       if (server != null) {
         await _database.updateServer(
-          server.copyWith(encryptedPassword: encryptedPassword).toCompanion(false),
+          server
+              .copyWith(encryptedPassword: encryptedPassword)
+              .toCompanion(false),
         );
         AppLog.info('Password stored in encrypted database');
-        
+
         // Verify by reading it back immediately
         final verifyServer = await _database.getServerById(serverId);
         if (verifyServer != null && verifyServer.encryptedPassword.isNotEmpty) {
           try {
-            final testDecrypt = PasswordEncryption.decryptPassword(verifyServer.encryptedPassword);
+            final testDecrypt = PasswordEncryption.decryptPassword(
+              verifyServer.encryptedPassword,
+            );
             if (testDecrypt != password) {
-              AppLog.warn('Password verification failed after database storage');
+              AppLog.warn(
+                'Password verification failed after database storage',
+              );
             }
           } catch (e) {
             AppLog.warn('Password verification failed: $e');
           }
         }
-        
+
         return ResultHelper.success(null);
       } else {
-        AppLog.warn('Server not found in database for password storage: $serverId');
+        AppLog.warn(
+          'Server not found in database for password storage: $serverId',
+        );
         return ResultHelper.failure(
           DatabaseFailure('Server not found for password storage'),
         );
@@ -176,7 +178,7 @@ class ServerConnectionService {
   /// Retrieves stored password for a server
   Future<Result<String>> getServerPassword(String serverId) async {
     AppLog.info('Retrieving password for server: $serverId');
-    
+
     // Check memory cache first
     if (_passwordCache.containsKey(serverId)) {
       AppLog.debug('Password found in memory cache');
@@ -196,7 +198,9 @@ class ServerConnectionService {
           _passwordCache[serverId] = password;
           return ResultHelper.success(password);
         } else {
-          AppLog.warn('No password found in secure storage for server: $serverId');
+          AppLog.warn(
+            'No password found in secure storage for server: $serverId',
+          );
         }
       } catch (e) {
         AppLog.warn('Failed to retrieve from secure storage: $e');
@@ -212,16 +216,20 @@ class ServerConnectionService {
     try {
       AppLog.info('Falling back to database password storage');
       final server = await _database.getServerById(serverId);
-      
+
       if (server != null && server.encryptedPassword.isNotEmpty) {
-        final decryptedPassword = PasswordEncryption.decryptPassword(server.encryptedPassword);
+        final decryptedPassword = PasswordEncryption.decryptPassword(
+          server.encryptedPassword,
+        );
         AppLog.info('Password retrieved from encrypted database');
-        
+
         // Cache in memory
         _passwordCache[serverId] = decryptedPassword;
         return ResultHelper.success(decryptedPassword);
       } else {
-        AppLog.warn('No encrypted password found in database for server: $serverId');
+        AppLog.warn(
+          'No encrypted password found in database for server: $serverId',
+        );
       }
     } catch (e) {
       AppLog.error('Failed to retrieve password from database: $e');
@@ -232,6 +240,7 @@ class ServerConnectionService {
       AuthenticationFailure('No stored password found for server $serverId'),
     );
   }
+
   /// Removes stored password for a server
   Future<Result<void>> removeServerPassword(String serverId) async {
     try {
@@ -239,10 +248,10 @@ class ServerConnectionService {
       if (_secureStorage != null) {
         await _secureStorage!.delete(key: '$_passwordPrefix$serverId');
       }
-      
+
       // Remove from memory cache
       _passwordCache.remove(serverId);
-      
+
       // Remove from database
       final server = await _database.getServerById(serverId);
       if (server != null) {
@@ -250,7 +259,7 @@ class ServerConnectionService {
           server.copyWith(encryptedPassword: '').toCompanion(false),
         );
       }
-      
+
       return ResultHelper.success(null);
     } catch (e) {
       return ResultHelper.failure(
@@ -273,7 +282,7 @@ class ServerConnectionService {
 
     // Test the connection
     final connectionResult = await testConnection(server, password);
-    
+
     if (connectionResult.isFailure) {
       return connectionResult;
     }
@@ -291,7 +300,7 @@ class ServerConnectionService {
   void startConnectionMonitoring(String serverId) {
     // Cancel existing timer if any
     _connectionTimers[serverId]?.cancel();
-    
+
     // Start periodic connection testing
     _connectionTimers[serverId] = Timer.periodic(
       _connectionTestInterval,
@@ -363,11 +372,11 @@ class ServerConnectionService {
       // Test write and read
       const testKey = 'omnisonic_test_key';
       const testValue = 'test_value';
-      
+
       await _secureStorage!.write(key: testKey, value: testValue);
       final readValue = await _secureStorage!.read(key: testKey);
       await _secureStorage!.delete(key: testKey);
-      
+
       if (readValue == testValue) {
         _secureStorageAvailable = true;
         return ResultHelper.success(true);

@@ -18,14 +18,14 @@ void main() {
         createdAt: DateTime.now(),
         lastSync: DateTime.now(),
       );
-      
+
       apiClient = SubsonicApiClient();
     });
 
     test('should generate correct stream URL', () {
       const trackId = 'track123';
       final streamUrl = apiClient.getStreamUrl(testServer, 'guest', trackId);
-      
+
       expect(streamUrl, contains('http://demo.subsonic.org/rest/stream'));
       expect(streamUrl, contains('id=track123'));
       expect(streamUrl, contains('u=guest'));
@@ -35,8 +35,12 @@ void main() {
 
     test('should generate correct cover art URL', () {
       const coverArtId = 'cover123';
-      final coverUrl = apiClient.getCoverArtUrl(testServer, 'guest', coverArtId);
-      
+      final coverUrl = apiClient.getCoverArtUrl(
+        testServer,
+        'guest',
+        coverArtId,
+      );
+
       expect(coverUrl, contains('http://demo.subsonic.org/rest/getCoverArt'));
       expect(coverUrl, contains('id=cover123'));
       expect(coverUrl, contains('u=guest'));
@@ -47,11 +51,11 @@ void main() {
     test('should handle authentication parameters correctly', () {
       const trackId = 'track123';
       final streamUrl = apiClient.getStreamUrl(testServer, 'guest', trackId);
-      
+
       // Should contain either token-based auth (t= and s=) or password-based auth (p=)
       final hasTokenAuth = streamUrl.contains('t=') && streamUrl.contains('s=');
       final hasPasswordAuth = streamUrl.contains('p=');
-      
+
       expect(hasTokenAuth || hasPasswordAuth, isTrue);
     });
   });

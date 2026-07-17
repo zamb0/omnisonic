@@ -27,14 +27,17 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
     );
   }
 
-  ServersTableCompanion _toCompanion(MusicServer server, {String? encryptedPassword}) {
+  ServersTableCompanion _toCompanion(
+    MusicServer server, {
+    String? encryptedPassword,
+  }) {
     return ServersTableCompanion(
       id: Value(server.id),
       name: Value(server.name),
       url: Value(server.url),
       username: Value(server.username),
-      encryptedPassword: encryptedPassword != null 
-          ? Value(encryptedPassword) 
+      encryptedPassword: encryptedPassword != null
+          ? Value(encryptedPassword)
           : const Value.absent(),
       status: Value(server.status),
       createdAt: Value(server.createdAt),
@@ -52,37 +55,53 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
   }
 
   Future<MusicServer?> getServerById(String id) async {
-    final data = await (select(serversTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    final data = await (select(
+      serversTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     return data != null ? _fromData(data) : null;
   }
 
   Future<List<MusicServer>> getOnlineServers() async {
-    final data = await (select(serversTable)..where((tbl) => tbl.status.equals(ServerStatus.online.name))).get();
+    final data = await (select(
+      serversTable,
+    )..where((tbl) => tbl.status.equals(ServerStatus.online.name))).get();
     return data.map(_fromData).toList();
   }
 
-  Future<void> insertServer(MusicServer server, String encryptedPassword) async {
-    await into(serversTable).insert(_toCompanion(server, encryptedPassword: encryptedPassword));
+  Future<void> insertServer(
+    MusicServer server,
+    String encryptedPassword,
+  ) async {
+    await into(
+      serversTable,
+    ).insert(_toCompanion(server, encryptedPassword: encryptedPassword));
   }
 
-  Future<void> updateServer(MusicServer server, {String? encryptedPassword}) async {
+  Future<void> updateServer(
+    MusicServer server, {
+    String? encryptedPassword,
+  }) async {
     await (update(serversTable)..where((tbl) => tbl.id.equals(server.id)))
         .write(_toCompanion(server, encryptedPassword: encryptedPassword));
   }
 
-  Future<void> updateServerStatus(String serverId, ServerStatus status, {String? errorMessage}) async {
-    await (update(serversTable)..where((tbl) => tbl.id.equals(serverId)))
-        .write(ServersTableCompanion(
-          status: Value(status),
-          errorMessage: Value.absentIfNull(errorMessage),
-        ));
+  Future<void> updateServerStatus(
+    String serverId,
+    ServerStatus status, {
+    String? errorMessage,
+  }) async {
+    await (update(serversTable)..where((tbl) => tbl.id.equals(serverId))).write(
+      ServersTableCompanion(
+        status: Value(status),
+        errorMessage: Value.absentIfNull(errorMessage),
+      ),
+    );
   }
 
   Future<void> updateServerLastSync(String serverId, DateTime lastSync) async {
-    await (update(serversTable)..where((tbl) => tbl.id.equals(serverId)))
-        .write(ServersTableCompanion(
-          lastSync: Value(lastSync),
-        ));
+    await (update(serversTable)..where((tbl) => tbl.id.equals(serverId))).write(
+      ServersTableCompanion(lastSync: Value(lastSync)),
+    );
   }
 
   Future<void> deleteServer(String id) async {
@@ -91,7 +110,9 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
 
   // Watch for changes
   Stream<List<MusicServer>> watchAllServers() {
-    return select(serversTable).watch().map((data) => data.map(_fromData).toList());
+    return select(
+      serversTable,
+    ).watch().map((data) => data.map(_fromData).toList());
   }
 
   Stream<MusicServer?> watchServerById(String id) {

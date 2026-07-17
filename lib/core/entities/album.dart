@@ -102,21 +102,22 @@ class Album extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        artist,
-        serverId,
-        lastModified,
-        artistId,
-        year,
-        genre,
-        trackCount,
-        duration,
-        coverArtUrl,
-        description,
-        isStarred,
-      ];
+    id,
+    title,
+    artist,
+    serverId,
+    lastModified,
+    artistId,
+    year,
+    genre,
+    trackCount,
+    duration,
+    coverArtUrl,
+    description,
+    isStarred,
+  ];
 
   @override
-  String toString() => 'Album(id: $id, title: $title, artist: $artist, year: $year)';
+  String toString() =>
+      'Album(id: $id, title: $title, artist: $artist, year: $year)';
 }

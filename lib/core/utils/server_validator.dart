@@ -44,7 +44,7 @@ class ServerValidator {
 
     try {
       final uri = Uri.parse(url);
-      
+
       if (!uri.hasScheme) {
         return ResultHelper.failure(
           ValidationFailure('URL must include protocol (http:// or https://)'),
@@ -66,15 +66,15 @@ class ServerValidator {
       // Check for common URL issues
       if (uri.path.isNotEmpty && uri.path != '/') {
         return ResultHelper.failure(
-          ValidationFailure('URL should not include a path (e.g., use http://server.com not http://server.com/subsonic)'),
+          ValidationFailure(
+            'URL should not include a path (e.g., use http://server.com not http://server.com/subsonic)',
+          ),
         );
       }
 
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(
-        ValidationFailure('Invalid URL format: $e'),
-      );
+      return ResultHelper.failure(ValidationFailure('Invalid URL format: $e'));
     }
   }
 
@@ -122,17 +122,17 @@ class ServerValidator {
   /// Normalizes URL by removing trailing slashes and ensuring proper format
   static String normalizeUrl(String url) {
     if (url.isEmpty) return url;
-    
+
     // Remove trailing slash
     if (url.endsWith('/')) {
       url = url.substring(0, url.length - 1);
     }
-    
+
     // Add protocol if missing
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://$url';
     }
-    
+
     return url;
   }
 }

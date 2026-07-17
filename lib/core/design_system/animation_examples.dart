@@ -10,9 +10,7 @@ class AnimationExamples extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Animation Framework Examples'),
-      ),
+      appBar: AppBar(title: const Text('Animation Framework Examples')),
       body: const SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -63,7 +61,10 @@ class _InteractiveButtonExample extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: const Text(
                 'Primary Button',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             MicroInteractions.interactiveButton(
@@ -128,10 +129,7 @@ class _InteractiveCardExample extends StatelessWidget {
                       'Album Title',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    Text(
-                      'Artist Name',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                    Text('Artist Name', style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -158,10 +156,7 @@ class _InteractiveCardExample extends StatelessWidget {
                       'Playlist',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    Text(
-                      '24 songs',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                    Text('24 songs', style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),
@@ -203,22 +198,26 @@ class _InteractiveListExample extends StatelessWidget {
             children: tracks.asMap().entries.map((entry) {
               final index = entry.key;
               final track = entry.value;
-              
+
               return MicroInteractions.interactiveListItem(
                 index: index,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$track tapped!')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('$track tapped!')));
                 },
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: OmnisonicColors.primaryGradient.colors[index % 2],
+                        color:
+                            OmnisonicColors.primaryGradient.colors[index % 2],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -234,10 +233,7 @@ class _InteractiveListExample extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
-                    const Icon(
-                      Icons.more_vert,
-                      color: Colors.grey,
-                    ),
+                    const Icon(Icons.more_vert, color: Colors.grey),
                   ],
                 ),
               );
@@ -270,12 +266,12 @@ class _HoverEffectExample extends StatelessWidget {
               curve: AnimationManager.hoverCurve,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isHovering 
+                color: isHovering
                     ? OmnisonicColors.primaryPurple.withValues(alpha: 0.1)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isHovering 
+                  color: isHovering
                       ? OmnisonicColors.primaryPurple
                       : Colors.grey.withValues(alpha: 0.3),
                   width: isHovering ? 2 : 1,
@@ -285,7 +281,7 @@ class _HoverEffectExample extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.computer,
-                    color: isHovering 
+                    color: isHovering
                         ? OmnisonicColors.primaryPurple
                         : Colors.grey,
                   ),
@@ -293,10 +289,8 @@ class _HoverEffectExample extends StatelessWidget {
                   Text(
                     'Hover over me (desktop only)',
                     style: TextStyle(
-                      color: isHovering 
-                          ? OmnisonicColors.primaryPurple
-                          : null,
-                      fontWeight: isHovering 
+                      color: isHovering ? OmnisonicColors.primaryPurple : null,
+                      fontWeight: isHovering
                           ? FontWeight.w600
                           : FontWeight.normal,
                     ),
@@ -360,10 +354,12 @@ class AnimationPerformanceMonitor extends StatefulWidget {
   const AnimationPerformanceMonitor({super.key});
 
   @override
-  State<AnimationPerformanceMonitor> createState() => _AnimationPerformanceMonitorState();
+  State<AnimationPerformanceMonitor> createState() =>
+      _AnimationPerformanceMonitorState();
 }
 
-class _AnimationPerformanceMonitorState extends State<AnimationPerformanceMonitor> {
+class _AnimationPerformanceMonitorState
+    extends State<AnimationPerformanceMonitor> {
   final AnimationManager _animationManager = AnimationManager();
 
   @override

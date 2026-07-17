@@ -33,7 +33,10 @@ class LyricsCacheDataSource {
   Future<void> setCachedLyrics(String trackId, LyricsData data) async {
     _lyricsCache[trackId] = data;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$_cachePrefix$trackId', jsonEncode(_encodeLyrics(data)));
+    await prefs.setString(
+      '$_cachePrefix$trackId',
+      jsonEncode(_encodeLyrics(data)),
+    );
   }
 
   Future<LyricsOverride?> getOverride(String trackId) async {
@@ -129,7 +132,8 @@ class LyricsCacheDataSource {
       raw: data['raw'] as String? ?? '',
       providerId: data['providerId'] as String?,
       offsetMs: data['offsetMs'] as int?,
-      fetchedAt: DateTime.tryParse(data['fetchedAt'] as String? ?? '') ??
+      fetchedAt:
+          DateTime.tryParse(data['fetchedAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }

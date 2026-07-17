@@ -23,10 +23,10 @@ class CacheManager {
 
   /// Maximum cache size in bytes
   final int maxCacheSize;
-  
+
   /// Cache eviction strategy
   final CacheEvictionStrategy evictionStrategy;
-  
+
   /// Threshold for automatic cleanup (0.0 to 1.0)
   final double cleanupThreshold;
 
@@ -67,7 +67,9 @@ class CacheManager {
 
       return ResultHelper.success(stats);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to calculate cache stats: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to calculate cache stats: $e'),
+      );
     }
   }
 
@@ -75,14 +77,17 @@ class CacheManager {
   Future<Result<bool>> needsCleanup(List<CacheEntry> entries) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure) return ResultHelper.failure(statsResult.failureOrNull!);
+      if (statsResult.isFailure)
+        return ResultHelper.failure(statsResult.failureOrNull!);
 
       final stats = statsResult.valueOrNull!;
       final usageRatio = stats.totalSize / maxCacheSize;
 
       return ResultHelper.success(usageRatio >= cleanupThreshold);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to check cleanup need: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to check cleanup need: $e'),
+      );
     }
   }
 
@@ -94,7 +99,7 @@ class CacheManager {
     try {
       // Filter out pinned entries
       final evictableEntries = entries.where((e) => !e.isPinned).toList();
-      
+
       if (evictableEntries.isEmpty) {
         return ResultHelper.success([]);
       }
@@ -108,14 +113,16 @@ class CacheManager {
 
       for (final entry in evictableEntries) {
         if (freedSpace >= targetFreeSpace) break;
-        
+
         toEvict.add(entry);
         freedSpace += entry.fileSize;
       }
 
       return ResultHelper.success(toEvict);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to select entries for eviction: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to select entries for eviction: $e'),
+      );
     }
   }
 
@@ -126,16 +133,21 @@ class CacheManager {
   }) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure) return ResultHelper.failure(statsResult.failureOrNull!);
+      if (statsResult.isFailure)
+        return ResultHelper.failure(statsResult.failureOrNull!);
 
       final stats = statsResult.valueOrNull!;
-      
+
       // Calculate target free space if not provided
       targetFreeSpace ??= (maxCacheSize * 0.3).round(); // Free up 30%
 
       // Select entries for eviction
-      final evictionResult = await selectEntriesForEviction(entries, targetFreeSpace);
-      if (evictionResult.isFailure) return ResultHelper.failure(evictionResult.failureOrNull!);
+      final evictionResult = await selectEntriesForEviction(
+        entries,
+        targetFreeSpace,
+      );
+      if (evictionResult.isFailure)
+        return ResultHelper.failure(evictionResult.failureOrNull!);
 
       final toEvict = evictionResult.valueOrNull!;
       int freedSpace = 0;
@@ -156,18 +168,22 @@ class CacheManager {
 
       return ResultHelper.success(freedSpace);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to perform cleanup: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to perform cleanup: $e'),
+      );
     }
   }
 
   /// Validates cache integrity and removes invalid entries
-  Future<Result<List<String>>> validateCacheIntegrity(List<CacheEntry> entries) async {
+  Future<Result<List<String>>> validateCacheIntegrity(
+    List<CacheEntry> entries,
+  ) async {
     try {
       final invalidEntries = <String>[];
 
       for (final entry in entries) {
         final file = File(entry.filePath);
-        
+
         if (!await file.exists()) {
           invalidEntries.add(entry.trackId);
           continue;
@@ -188,7 +204,9 @@ class CacheManager {
 
       return ResultHelper.success(invalidEntries);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to validate cache integrity: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to validate cache integrity: $e'),
+      );
     }
   }
 
@@ -199,10 +217,11 @@ class CacheManager {
   ) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure) return ResultHelper.failure(statsResult.failureOrNull!);
+      if (statsResult.isFailure)
+        return ResultHelper.failure(statsResult.failureOrNull!);
 
       final stats = statsResult.valueOrNull!;
-      
+
       // Check if we have enough available space
       if (stats.availableSpace >= downloadSize) {
         return ResultHelper.success(true);
@@ -218,7 +237,9 @@ class CacheManager {
       final spaceNeeded = downloadSize - stats.availableSpace;
       return ResultHelper.success(totalEvictableSize >= spaceNeeded);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to check download accommodation: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to check download accommodation: $e'),
+      );
     }
   }
 
@@ -227,7 +248,7 @@ class CacheManager {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final cacheDir = Directory('${appDir.path}/omnisonic_cache');
-      
+
       if (!await cacheDir.exists()) {
         return ResultHelper.success(0);
       }
@@ -246,7 +267,9 @@ class CacheManager {
 
       return ResultHelper.success(totalSize);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to calculate cache directory size: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to calculate cache directory size: $e'),
+      );
     }
   }
 
@@ -256,15 +279,15 @@ class CacheManager {
       case CacheEvictionStrategy.lru:
         // Least recently used first
         return a.lastAccessed.compareTo(b.lastAccessed);
-        
+
       case CacheEvictionStrategy.lfu:
         // For LFU, we'd need access count - using last accessed as proxy
         return a.lastAccessed.compareTo(b.lastAccessed);
-        
+
       case CacheEvictionStrategy.fifo:
         // First in, first out
         return a.cachedAt.compareTo(b.cachedAt);
-        
+
       case CacheEvictionStrategy.size:
         // Largest files first
         return b.fileSize.compareTo(a.fileSize);
@@ -275,18 +298,20 @@ class CacheManager {
   static Future<Result<int>> getRecommendedCacheSize() async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      
+
       // Use 10% of available space, max 5GB, min 500MB
       const minSize = 500 * 1024 * 1024; // 500MB
       const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
-      
+
       // This is a simplified calculation - in reality you'd want to check
       // actual available disk space
       final recommendedSize = (2 * 1024 * 1024 * 1024).clamp(minSize, maxSize);
-      
+
       return ResultHelper.success(recommendedSize);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to calculate recommended cache size: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to calculate recommended cache size: $e'),
+      );
     }
   }
 }

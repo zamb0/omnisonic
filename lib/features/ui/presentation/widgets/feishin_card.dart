@@ -3,10 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 
-enum FeishinImageShape {
-  rounded,
-  circle,
-}
+enum FeishinImageShape { rounded, circle }
 
 class FeishinCard extends StatefulWidget {
   const FeishinCard({
@@ -94,7 +91,9 @@ class _FeishinCardState extends State<FeishinCard> {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          widget.isStarred ? Icons.star : Icons.star_outline,
+                                          widget.isStarred
+                                              ? Icons.star
+                                              : Icons.star_outline,
                                           color: scheme.onTertiary,
                                           size: 20,
                                         ),
@@ -181,11 +180,7 @@ class _FeishinCardState extends State<FeishinCard> {
   Widget _buildImage(BuildContext context, ColorScheme scheme) {
     final placeholder = Container(
       color: scheme.surfaceContainerHighest,
-      child: Icon(
-        Icons.music_note,
-        color: scheme.onSurfaceVariant,
-        size: 32,
-      ),
+      child: Icon(Icons.music_note, color: scheme.onSurfaceVariant, size: 32),
     );
 
     if (widget.imageUrl == null) return placeholder;
@@ -202,7 +197,8 @@ class _FeishinCardState extends State<FeishinCard> {
       fadeInDuration: const Duration(milliseconds: 120),
       useOldImageOnUrlChange: true,
       placeholder: (context, url) => placeholder,
-      errorWidget: (context, url, error) => coverArtErrorWidget(placeholder, url, error),
+      errorWidget: (context, url, error) =>
+          coverArtErrorWidget(placeholder, url, error),
     );
   }
 }

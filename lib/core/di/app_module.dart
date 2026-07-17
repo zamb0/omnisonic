@@ -73,12 +73,12 @@ abstract class AppModule {
   LocalPlaylistDataSource localPlaylistDataSource(AppDatabase database) =>
       LocalPlaylistDataSource(database);
 
-    @lazySingleton
-    LyricsRemoteDataSource lyricsRemoteDataSource(Dio dio) =>
+  @lazySingleton
+  LyricsRemoteDataSource lyricsRemoteDataSource(Dio dio) =>
       LyricsRemoteDataSource(dio: dio);
 
-    @lazySingleton
-    LyricsCacheDataSource lyricsCacheDataSource() => LyricsCacheDataSource();
+  @lazySingleton
+  LyricsCacheDataSource lyricsCacheDataSource() => LyricsCacheDataSource();
 
   // Services
   @lazySingleton
@@ -89,12 +89,11 @@ abstract class AppModule {
     SubsonicApiClient apiClient,
     FlutterSecureStorage secureStorage,
     AppDatabase database,
-  ) =>
-      ServerConnectionService(
-        apiClient: apiClient,
-        secureStorage: secureStorage,
-        database: database,
-      );
+  ) => ServerConnectionService(
+    apiClient: apiClient,
+    secureStorage: secureStorage,
+    database: database,
+  );
 
   @lazySingleton
   ServerStatusMonitor serverStatusMonitor(
@@ -114,12 +113,14 @@ abstract class AppModule {
 
   // Playback components
   @lazySingleton
-  AdaptiveStreamingService adaptiveStreamingService() => AdaptiveStreamingService();
+  AdaptiveStreamingService adaptiveStreamingService() =>
+      AdaptiveStreamingService();
 
   @lazySingleton
   AudioPlayerDataSource audioPlayerDataSource(
     AdaptiveStreamingService adaptiveStreamingService,
-  ) => AudioPlayerDataSource(adaptiveStreamingService: adaptiveStreamingService);
+  ) =>
+      AudioPlayerDataSource(adaptiveStreamingService: adaptiveStreamingService);
 
   @lazySingleton
   AudioServiceHandler audioServiceHandler(
@@ -132,9 +133,8 @@ abstract class AppModule {
   ) => AudioFocusManager(audioPlayerDataSource: audioPlayerDataSource);
 
   @lazySingleton
-  MprisHandler mprisHandler(
-    AudioPlayerDataSource audioPlayerDataSource,
-  ) => MprisHandler(audioPlayerDataSource: audioPlayerDataSource);
+  MprisHandler mprisHandler(AudioPlayerDataSource audioPlayerDataSource) =>
+      MprisHandler(audioPlayerDataSource: audioPlayerDataSource);
 
   @lazySingleton
   PlaybackService playbackService(
@@ -143,11 +143,11 @@ abstract class AppModule {
     AudioFocusManager audioFocusManager,
     MprisHandler mprisHandler,
   ) => PlaybackService(
-        audioPlayerDataSource: audioPlayerDataSource,
-        audioServiceHandler: audioServiceHandler,
-        audioFocusManager: audioFocusManager,
-        mprisHandler: mprisHandler,
-      );
+    audioPlayerDataSource: audioPlayerDataSource,
+    audioServiceHandler: audioServiceHandler,
+    audioFocusManager: audioFocusManager,
+    mprisHandler: mprisHandler,
+  );
 
   // Repository implementations
   @LazySingleton(as: ServerRepository)
@@ -156,13 +156,12 @@ abstract class AppModule {
     ServerConnectionService connectionService,
     ServerStatusMonitor statusMonitor,
     ServerValidator validator,
-  ) =>
-      ServerRepositoryImpl(
-        localDataSource: localDataSource,
-        connectionService: connectionService,
-        statusMonitor: statusMonitor,
-        validator: validator,
-      );
+  ) => ServerRepositoryImpl(
+    localDataSource: localDataSource,
+    connectionService: connectionService,
+    statusMonitor: statusMonitor,
+    validator: validator,
+  );
 
   @LazySingleton(as: MusicRepository)
   MusicRepositoryImpl musicRepository(
@@ -172,31 +171,26 @@ abstract class AppModule {
     ServerConnectionService connectionService,
     DeduplicationEngine deduplicationEngine,
     SourceSelectionService sourceSelectionService,
-  ) =>
-      MusicRepositoryImpl(
-        localDataSource: localDataSource,
-        apiClient: apiClient,
-        serverRepository: serverRepository,
-        connectionService: connectionService,
-        deduplicationEngine: deduplicationEngine,
-        sourceSelectionService: sourceSelectionService,
-      );
+  ) => MusicRepositoryImpl(
+    localDataSource: localDataSource,
+    apiClient: apiClient,
+    serverRepository: serverRepository,
+    connectionService: connectionService,
+    deduplicationEngine: deduplicationEngine,
+    sourceSelectionService: sourceSelectionService,
+  );
 
   @LazySingleton(as: PlaybackRepository)
   PlaybackRepositoryImpl playbackRepository(
     AudioPlayerDataSource audioPlayerDataSource,
-  ) =>
-      PlaybackRepositoryImpl(
-        audioPlayerDataSource: audioPlayerDataSource,
-      );
+  ) => PlaybackRepositoryImpl(audioPlayerDataSource: audioPlayerDataSource);
 
   @LazySingleton(as: LyricsRepository)
   LyricsRepositoryImpl lyricsRepository(
     LyricsRemoteDataSource remoteDataSource,
     LyricsCacheDataSource cacheDataSource,
-  ) =>
-      LyricsRepositoryImpl(
-        remoteDataSource: remoteDataSource,
-        cacheDataSource: cacheDataSource,
-      );
+  ) => LyricsRepositoryImpl(
+    remoteDataSource: remoteDataSource,
+    cacheDataSource: cacheDataSource,
+  );
 }

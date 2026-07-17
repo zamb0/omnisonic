@@ -9,11 +9,8 @@ import '../widgets/feishin_shell.dart';
 /// Main shell widget that provides the bottom navigation structure
 class MainShell extends StatelessWidget {
   final Widget child;
-  
-  const MainShell({
-    super.key,
-    required this.child,
-  });
+
+  const MainShell({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -40,16 +37,13 @@ class MainShell extends StatelessWidget {
 
   Widget _buildDesktopShell(BuildContext context, {required bool extended}) {
     return Scaffold(
-      body: FeishinShell(
-        child: child,
-        extended: extended,
-      ),
+      body: FeishinShell(child: child, extended: extended),
     );
   }
 
   Widget _buildBottomNavigation(BuildContext context) {
     final currentIndex = _calculateSelectedIndex(context);
-    
+
     return NavigationBar(
       selectedIndex: currentIndex,
       height: 64,

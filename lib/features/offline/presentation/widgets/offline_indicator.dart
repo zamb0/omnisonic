@@ -61,10 +61,7 @@ class OfflineIndicator extends StatelessWidget {
 
 /// Widget that shows network quality indicator
 class NetworkQualityIndicator extends StatelessWidget {
-  const NetworkQualityIndicator({
-    super.key,
-    this.showLabel = true,
-  });
+  const NetworkQualityIndicator({super.key, this.showLabel = true});
 
   final bool showLabel;
 
@@ -90,11 +87,7 @@ class NetworkQualityIndicator extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: color,
-              ),
+              Icon(icon, size: 14, color: color),
               if (showLabel) ...[
                 const SizedBox(width: 4),
                 Text(
@@ -168,11 +161,7 @@ class OfflineContentBadge extends StatelessWidget {
         color: Colors.green,
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        Icons.offline_pin,
-        size: size * 0.7,
-        color: Colors.white,
-      ),
+      child: Icon(Icons.offline_pin, size: size * 0.7, color: Colors.white),
     );
   }
 }
@@ -209,11 +198,7 @@ class ConnectionTypeIndicator extends StatelessWidget {
 
         return Tooltip(
           message: label,
-          child: Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          child: Icon(icon, size: 16, color: color),
         );
       },
     );
@@ -238,11 +223,7 @@ class OfflineModeBanner extends StatelessWidget {
           color: Colors.orange.withOpacity(0.1),
           child: Row(
             children: [
-              const Icon(
-                Icons.cloud_off,
-                size: 20,
-                color: Colors.orange,
-              ),
+              const Icon(Icons.cloud_off, size: 20, color: Colors.orange),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

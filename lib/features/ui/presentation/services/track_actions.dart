@@ -13,7 +13,8 @@ class TrackActions {
   void showOptions(Track track, {VoidCallback? onPlayNow}) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => _buildTrackOptionsSheet(track, onPlayNow: onPlayNow),
+      builder: (context) =>
+          _buildTrackOptionsSheet(track, onPlayNow: onPlayNow),
     );
   }
 
@@ -63,9 +64,9 @@ class TrackActions {
   /// Add track to playback queue
   void addToQueue(Track track) {
     context.read<PlaybackViewModel>().addToQueue(track);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Added to queue')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Added to queue')));
   }
 
   /// Add track to a playlist (placeholder for future implementation)
@@ -88,7 +89,8 @@ class TrackActions {
             _buildInfoRow('Artist', track.artist),
             _buildInfoRow('Album', track.album),
             _buildInfoRow('Duration', _formatDuration(track.duration)),
-            if (track.year != null) _buildInfoRow('Year', track.year.toString()),
+            if (track.year != null)
+              _buildInfoRow('Year', track.year.toString()),
             if (track.genre != null) _buildInfoRow('Genre', track.genre!),
             _buildInfoRow('Quality', track.quality.toString()),
           ],

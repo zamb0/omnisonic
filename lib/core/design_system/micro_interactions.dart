@@ -38,7 +38,7 @@ class MicroInteractions {
       child: child,
     );
   }
-  
+
   /// Create an interactive card with hover and tap animations
   static Widget interactiveCard({
     required Widget child,
@@ -79,7 +79,7 @@ class MicroInteractions {
       child: child,
     );
   }
-  
+
   /// Create an interactive list item with smooth animations
   static Widget interactiveListItem({
     required Widget child,
@@ -110,7 +110,7 @@ class MicroInteractions {
       child: child,
     );
   }
-  
+
   /// Create a hover effect for desktop platforms
   static Widget hoverEffect({
     required Widget child,
@@ -118,12 +118,13 @@ class MicroInteractions {
     Duration duration = AnimationManager.hoverDuration,
     Curve curve = AnimationManager.hoverCurve,
   }) {
-    if (!kIsWeb && (defaultTargetPlatform != TargetPlatform.windows && 
-                   defaultTargetPlatform != TargetPlatform.macOS && 
-                   defaultTargetPlatform != TargetPlatform.linux)) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform != TargetPlatform.windows &&
+            defaultTargetPlatform != TargetPlatform.macOS &&
+            defaultTargetPlatform != TargetPlatform.linux)) {
       return child;
     }
-    
+
     return _HoverEffect(
       duration: duration,
       curve: curve,
@@ -131,21 +132,21 @@ class MicroInteractions {
       child: child,
     );
   }
-  
+
   /// Trigger haptic feedback with different intensities
   static void triggerHapticFeedback({
     bool lightImpact = true,
     bool respectUserSettings = true,
   }) {
     if (!respectUserSettings) return;
-    
+
     if (lightImpact) {
       HapticFeedback.lightImpact();
     } else {
       HapticFeedback.mediumImpact();
     }
   }
-  
+
   /// Create a ripple effect animation
   static Widget rippleEffect({
     required Widget child,
@@ -166,7 +167,7 @@ class MicroInteractions {
       ),
     );
   }
-  
+
   /// Create a pulsing animation for emphasis
   static Widget pulseAnimation({
     required Widget child,
@@ -177,7 +178,7 @@ class MicroInteractions {
     Curve curve = AnimationManager.pulsingCurve,
   }) {
     if (!enabled) return child;
-    
+
     return _PulseAnimation(
       duration: duration,
       minScale: minScale,
@@ -203,7 +204,7 @@ class _InteractiveButton extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final Color? backgroundColor;
   final double? elevation;
-  
+
   const _InteractiveButton({
     required this.child,
     required this.onPressed,
@@ -219,7 +220,7 @@ class _InteractiveButton extends StatefulWidget {
     this.backgroundColor,
     this.elevation,
   });
-  
+
   @override
   State<_InteractiveButton> createState() => _InteractiveButtonState();
 }
@@ -228,7 +229,7 @@ class _InteractiveButtonState extends State<_InteractiveButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -237,20 +238,20 @@ class _InteractiveButtonState extends State<_InteractiveButton>
       vsync: this,
       debugLabel: 'InteractiveButton',
     );
-    
+
     _scaleAnimation = AnimationUtilities.createScaleAnimation(
       controller: _controller,
       minScale: widget.scaleAmount,
       maxScale: 1.0,
     );
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   void _handleTapDown(TapDownDetails details) {
     if (widget.enableScaleAnimation) {
       _controller.forward();
@@ -259,40 +260,37 @@ class _InteractiveButtonState extends State<_InteractiveButton>
       HapticFeedback.lightImpact();
     }
   }
-  
+
   void _handleTapUp(TapUpDetails details) {
     if (widget.enableScaleAnimation) {
       _controller.reverse();
     }
   }
-  
+
   void _handleTapCancel() {
     if (widget.enableScaleAnimation) {
       _controller.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     Widget button = widget.child;
-    
+
     if (widget.padding != null) {
       button = Padding(padding: widget.padding!, child: button);
     }
-    
+
     if (widget.enableScaleAnimation) {
       button = AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
+          return Transform.scale(scale: _scaleAnimation.value, child: child);
         },
         child: button,
       );
     }
-    
+
     if (widget.backgroundColor != null || widget.elevation != null) {
       button = Card(
         color: widget.backgroundColor,
@@ -303,7 +301,7 @@ class _InteractiveButtonState extends State<_InteractiveButton>
         child: button,
       );
     }
-    
+
     if (widget.enableRippleEffect) {
       button = Material(
         color: Colors.transparent,
@@ -329,7 +327,7 @@ class _InteractiveButtonState extends State<_InteractiveButton>
         child: button,
       );
     }
-    
+
     return button;
   }
 }
@@ -353,7 +351,7 @@ class _InteractiveCard extends StatefulWidget {
   final Color? shadowColor;
   final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? padding;
-  
+
   const _InteractiveCard({
     required this.child,
     this.onTap,
@@ -373,7 +371,7 @@ class _InteractiveCard extends StatefulWidget {
     this.margin,
     this.padding,
   });
-  
+
   @override
   State<_InteractiveCard> createState() => _InteractiveCardState();
 }
@@ -385,65 +383,67 @@ class _InteractiveCardState extends State<_InteractiveCard>
   late Animation<double> _elevationAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _tapScaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _hoverController = AnimationManager().createController(
       duration: widget.hoverDuration,
       vsync: this,
       debugLabel: 'InteractiveCard_Hover',
     );
-    
+
     _tapController = AnimationManager().createController(
       duration: widget.tapDuration,
       vsync: this,
       debugLabel: 'InteractiveCard_Tap',
     );
-    
-    _elevationAnimation = Tween<double>(
-      begin: widget.restingElevation,
-      end: widget.hoverElevation,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: AnimationManager.hoverCurve,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.hoverScale,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: AnimationManager.hoverCurve,
-    ));
-    
-    _tapScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.tapScale,
-    ).animate(CurvedAnimation(
-      parent: _tapController,
-      curve: AnimationManager.tapCurve,
-    ));
+
+    _elevationAnimation =
+        Tween<double>(
+          begin: widget.restingElevation,
+          end: widget.hoverElevation,
+        ).animate(
+          CurvedAnimation(
+            parent: _hoverController,
+            curve: AnimationManager.hoverCurve,
+          ),
+        );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.hoverScale).animate(
+      CurvedAnimation(
+        parent: _hoverController,
+        curve: AnimationManager.hoverCurve,
+      ),
+    );
+
+    _tapScaleAnimation = Tween<double>(begin: 1.0, end: widget.tapScale)
+        .animate(
+          CurvedAnimation(
+            parent: _tapController,
+            curve: AnimationManager.tapCurve,
+          ),
+        );
   }
-  
+
   @override
   void dispose() {
     _hoverController.dispose();
     _tapController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     if (!widget.enableHoverAnimation) return;
-    
+
     if (isHovering) {
       _hoverController.forward();
     } else {
       _hoverController.reverse();
     }
   }
-  
+
   void _handleTapDown(TapDownDetails details) {
     if (widget.enableTapAnimation) {
       _tapController.forward();
@@ -452,19 +452,19 @@ class _InteractiveCardState extends State<_InteractiveCard>
       HapticFeedback.lightImpact();
     }
   }
-  
+
   void _handleTapUp(TapUpDetails details) {
     if (widget.enableTapAnimation) {
       _tapController.reverse();
     }
   }
-  
+
   void _handleTapCancel() {
     if (widget.enableTapAnimation) {
       _tapController.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -488,10 +488,7 @@ class _InteractiveCardState extends State<_InteractiveCard>
               onTapCancel: _handleTapCancel,
               onHover: _handleHover,
               borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
-              child: Container(
-                padding: widget.padding,
-                child: widget.child,
-              ),
+              child: Container(padding: widget.padding, child: widget.child),
             ),
           ),
         );
@@ -514,7 +511,7 @@ class _InteractiveListItem extends StatefulWidget {
   final Color? backgroundColor;
   final Color? hoverColor;
   final int? index;
-  
+
   const _InteractiveListItem({
     required this.child,
     this.onTap,
@@ -529,7 +526,7 @@ class _InteractiveListItem extends StatefulWidget {
     this.hoverColor,
     this.index,
   });
-  
+
   @override
   State<_InteractiveListItem> createState() => _InteractiveListItemState();
 }
@@ -539,29 +536,29 @@ class _InteractiveListItemState extends State<_InteractiveListItem>
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationManager().createController(
       duration: widget.animationDuration,
       vsync: this,
       debugLabel: 'InteractiveListItem_${widget.index ?? 0}',
     );
-    
+
     _slideAnimation = AnimationUtilities.createSlideAnimation(
       controller: _controller,
       begin: const Offset(0.3, 0.0),
       end: Offset.zero,
       curve: widget.animationCurve,
     );
-    
+
     _fadeAnimation = AnimationUtilities.createFadeAnimation(
       controller: _controller,
       curve: widget.animationCurve,
     );
-    
+
     // Stagger the animation based on index
     if (widget.index != null) {
       Future.delayed(Duration(milliseconds: widget.index! * 50), () {
@@ -573,61 +570,61 @@ class _InteractiveListItemState extends State<_InteractiveListItem>
       _controller.forward();
     }
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   void _handleTap() {
     if (widget.enableHapticFeedback) {
       HapticFeedback.selectionClick();
     }
     widget.onTap?.call();
   }
-  
+
   void _handleLongPress() {
     if (widget.enableHapticFeedback) {
       HapticFeedback.mediumImpact();
     }
     widget.onLongPress?.call();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     Widget item = widget.child;
-    
+
     if (widget.padding != null) {
       item = Padding(padding: widget.padding!, child: item);
     }
-    
+
     if (widget.enableSlideAnimation || widget.enableFadeAnimation) {
       item = AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
           Widget animatedChild = child!;
-          
+
           if (widget.enableSlideAnimation) {
             animatedChild = SlideTransition(
               position: _slideAnimation,
               child: animatedChild,
             );
           }
-          
+
           if (widget.enableFadeAnimation) {
             animatedChild = FadeTransition(
               opacity: _fadeAnimation,
               child: animatedChild,
             );
           }
-          
+
           return animatedChild;
         },
         child: item,
       );
     }
-    
+
     return Material(
       color: widget.backgroundColor ?? Colors.transparent,
       child: InkWell(
@@ -646,14 +643,14 @@ class _HoverEffect extends StatefulWidget {
   final Widget Function(bool isHovering) builder;
   final Duration duration;
   final Curve curve;
-  
+
   const _HoverEffect({
     required this.child,
     required this.builder,
     this.duration = AnimationManager.hoverDuration,
     this.curve = AnimationManager.hoverCurve,
   });
-  
+
   @override
   State<_HoverEffect> createState() => _HoverEffectState();
 }
@@ -662,7 +659,7 @@ class _HoverEffectState extends State<_HoverEffect>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   bool _isHovering = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -672,25 +669,25 @@ class _HoverEffectState extends State<_HoverEffect>
       debugLabel: 'HoverEffect',
     );
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     setState(() {
       _isHovering = isHovering;
     });
-    
+
     if (isHovering) {
       _controller.forward();
     } else {
       _controller.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
@@ -713,7 +710,7 @@ class _PulseAnimation extends StatefulWidget {
   final double minScale;
   final double maxScale;
   final Curve curve;
-  
+
   const _PulseAnimation({
     required this.child,
     this.duration = AnimationManager.pulsingDuration,
@@ -721,7 +718,7 @@ class _PulseAnimation extends StatefulWidget {
     this.maxScale = 1.05,
     this.curve = AnimationManager.pulsingCurve,
   });
-  
+
   @override
   State<_PulseAnimation> createState() => _PulseAnimationState();
 }
@@ -730,43 +727,37 @@ class _PulseAnimationState extends State<_PulseAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationManager().createController(
       duration: widget.duration,
       vsync: this,
       debugLabel: 'PulseAnimation',
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: widget.minScale,
       end: widget.maxScale,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+
     _controller.repeat(reverse: true);
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
       },
       child: widget.child,
     );

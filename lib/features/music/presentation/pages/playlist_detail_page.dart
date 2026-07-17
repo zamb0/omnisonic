@@ -14,10 +14,7 @@ import '../../../ui/presentation/widgets/loading_indicator.dart';
 class PlaylistDetailPage extends StatefulWidget {
   final String playlistId;
 
-  const PlaylistDetailPage({
-    super.key,
-    required this.playlistId,
-  });
+  const PlaylistDetailPage({super.key, required this.playlistId});
 
   @override
   State<PlaylistDetailPage> createState() => _PlaylistDetailPageState();
@@ -48,11 +45,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[300],
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -74,9 +67,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
 
           final playlist = viewModel.selectedPlaylist;
           if (playlist == null) {
-            return const Center(
-              child: Text('Playlist not found'),
-            );
+            return const Center(child: Text('Playlist not found'));
           }
 
           return CustomScrollView(
@@ -126,7 +117,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   children: [
                     CachedNetworkImage(
                       imageUrl: playlist.coverArtUrl!.withCoverArtSize(600),
-                      cacheKey: playlist.coverArtUrl!.withCoverArtSize(600).subsonicCacheKey,
+                      cacheKey: playlist.coverArtUrl!
+                          .withCoverArtSize(600)
+                          .subsonicCacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 600,
@@ -205,7 +198,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               value: 'delete',
               child: ListTile(
                 leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Delete Playlist', style: TextStyle(color: Colors.red)),
+                title: Text(
+                  'Delete Playlist',
+                  style: TextStyle(color: Colors.red),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -236,9 +232,8 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                         const SizedBox(height: 4),
                         Text(
                           playlist.description!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
                       const SizedBox(height: 8),
@@ -252,9 +247,8 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                           const SizedBox(width: 4),
                           Text(
                             playlist.isPublic ? 'Public' : 'Private',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),
@@ -289,11 +283,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.music_note,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.music_note, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
                 'No tracks in this playlist',
@@ -313,11 +303,8 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     if (_isReorderMode) {
       return SliverReorderableList(
         itemCount: tracks.length,
-        onReorder: (oldIndex, newIndex) => _reorderTracks(
-          oldIndex,
-          newIndex,
-          viewModel,
-        ),
+        onReorder: (oldIndex, newIndex) =>
+            _reorderTracks(oldIndex, newIndex, viewModel),
         itemBuilder: (context, index) {
           final track = tracks[index];
           return ReorderableDragStartListener(
@@ -336,23 +323,24 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final track = tracks[index];
-          return DraggableTrackTile(
-            track: track,
-            index: index,
-            onTap: () => _playTrack(track, tracks, index),
-            onRemove: () => _removeTrack(track, viewModel),
-            showDragHandle: false,
-          );
-        },
-        childCount: tracks.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final track = tracks[index];
+        return DraggableTrackTile(
+          track: track,
+          index: index,
+          onTap: () => _playTrack(track, tracks, index),
+          onRemove: () => _removeTrack(track, viewModel),
+          showDragHandle: false,
+        );
+      }, childCount: tracks.length),
     );
   }
 
-  void _handleMenuAction(String action, Playlist playlist, PlaylistViewModel viewModel) {
+  void _handleMenuAction(
+    String action,
+    Playlist playlist,
+    PlaylistViewModel viewModel,
+  ) {
     switch (action) {
       case 'edit':
         _showEditDialog(playlist);
@@ -382,18 +370,14 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void _sharePlaylist(Playlist playlist) {
     // TODO: Implement playlist sharing functionality
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Playlist sharing coming soon!'),
-      ),
+      const SnackBar(content: Text('Playlist sharing coming soon!')),
     );
   }
 
   void _exportPlaylist(Playlist playlist) {
     // TODO: Implement playlist export functionality
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Playlist export coming soon!'),
-      ),
+      const SnackBar(content: Text('Playlist export coming soon!')),
     );
   }
 
@@ -427,11 +411,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   newName,
                 );
                 if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Created "$newName"'),
-                    ),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Created "$newName"')));
                 }
               }
             },
@@ -462,9 +444,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               if (success && mounted) {
                 Navigator.of(context).pop(); // Go back to previous screen
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Deleted "${playlist.name}"'),
-                  ),
+                  SnackBar(content: Text('Deleted "${playlist.name}"')),
                 );
               }
             },
@@ -481,11 +461,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       newIndex -= 1;
     }
 
-    viewModel.moveTrackInPlaylist(
-      widget.playlistId,
-      oldIndex,
-      newIndex,
-    );
+    viewModel.moveTrackInPlaylist(widget.playlistId, oldIndex, newIndex);
   }
 
   void _playTrack(Track track, List<Track> tracks, int index) {
@@ -505,9 +481,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Track'),
-        content: Text(
-          'Remove "${track.title}" from this playlist?',
-        ),
+        content: Text('Remove "${track.title}" from this playlist?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -522,9 +496,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               );
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Removed "${track.title}"'),
-                  ),
+                  SnackBar(content: Text('Removed "${track.title}"')),
                 );
               }
             },

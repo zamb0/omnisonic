@@ -41,15 +41,12 @@ class PlatformAnimations {
     }
 
     final curve = _getPlatformSlideCurve();
-    
+
     return SlideTransition(
       position: Tween<Offset>(
         begin: begin,
         end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: curve,
-      )),
+      ).animate(CurvedAnimation(parent: animation, curve: curve)),
       child: child,
     );
   }
@@ -75,13 +72,9 @@ class PlatformAnimations {
     double beginScale = 0.0,
   }) {
     return ScaleTransition(
-      scale: Tween<double>(
-        begin: beginScale,
-        end: 1.0,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: _getPlatformScaleCurve(),
-      )),
+      scale: Tween<double>(begin: beginScale, end: 1.0).animate(
+        CurvedAnimation(parent: animation, curve: _getPlatformScaleCurve()),
+      ),
       child: child,
     );
   }
@@ -93,13 +86,9 @@ class PlatformAnimations {
     double turns = 0.25,
   }) {
     return RotationTransition(
-      turns: Tween<double>(
-        begin: turns,
-        end: 0.0,
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: _getPlatformRotationCurve(),
-      )),
+      turns: Tween<double>(begin: turns, end: 0.0).animate(
+        CurvedAnimation(parent: animation, curve: _getPlatformRotationCurve()),
+      ),
       child: child,
     );
   }
@@ -189,10 +178,7 @@ class FadeOnlyPageTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     return FadeTransition(
-      opacity: CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      ),
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
       child: child,
     );
   }
@@ -324,17 +310,14 @@ class PlatformListAnimations {
     switch (PlatformOptimizations().currentPlatform) {
       case PlatformType.ios:
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          position:
+              Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.android:
         return SizeTransition(
@@ -342,30 +325,18 @@ class PlatformListAnimations {
             parent: animation,
             curve: Curves.fastOutSlowIn,
           ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.web:
       case PlatformType.macos:
       case PlatformType.windows:
       case PlatformType.linux:
         return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutBack,
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.unknown:
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
     }
   }
 
@@ -377,17 +348,14 @@ class PlatformListAnimations {
     switch (PlatformOptimizations().currentPlatform) {
       case PlatformType.ios:
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset.zero,
-            end: const Offset(-1.0, 0.0),
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInCubic,
-          )),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          position:
+              Tween<Offset>(
+                begin: Offset.zero,
+                end: const Offset(-1.0, 0.0),
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeInCubic),
+              ),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.android:
         return SizeTransition(
@@ -395,46 +363,24 @@ class PlatformListAnimations {
             parent: animation,
             curve: Curves.fastOutSlowIn,
           ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.web:
       case PlatformType.macos:
       case PlatformType.windows:
       case PlatformType.linux:
         return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInBack,
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeInBack),
+          child: FadeTransition(opacity: animation, child: child),
         );
       case PlatformType.unknown:
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
     }
   }
 }
 
 /// Animation types for duration selection
-enum AnimationType {
-  microInteraction,
-  pageTransition,
-  loading,
-  emphasis,
-}
+enum AnimationType { microInteraction, pageTransition, loading, emphasis }
 
 /// Slide direction for slide transitions
-enum SlideDirection {
-  fromLeft,
-  fromRight,
-  fromTop,
-  fromBottom,
-}
+enum SlideDirection { fromLeft, fromRight, fromTop, fromBottom }

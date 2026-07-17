@@ -24,11 +24,16 @@ List<LyricLine> parseLrc(String input) {
       final millis = millisRaw == null
           ? 0
           : millisRaw.length == 3
-              ? int.tryParse(millisRaw) ?? 0
-              : (int.tryParse(millisRaw) ?? 0) * 10;
+          ? int.tryParse(millisRaw) ?? 0
+          : (int.tryParse(millisRaw) ?? 0) * 10;
 
       final totalMs = (minutes * 60 + seconds) * 1000 + millis;
-      lines.add(LyricLine(time: Duration(milliseconds: totalMs), text: text));
+      lines.add(
+        LyricLine(
+          time: Duration(milliseconds: totalMs),
+          text: text,
+        ),
+      );
     }
   }
 

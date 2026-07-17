@@ -53,7 +53,10 @@ class LibrarySortService {
   }
 
   /// Sort playlists by the current sort option
-  static List<Playlist> sortPlaylists(List<Playlist> playlists, SortOption option) {
+  static List<Playlist> sortPlaylists(
+    List<Playlist> playlists,
+    SortOption option,
+  ) {
     return sortItems<Playlist>(
       items: playlists,
       option: option,

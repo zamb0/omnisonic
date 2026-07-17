@@ -46,11 +46,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red[300],
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -73,9 +69,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
           return Column(
             children: [
               _buildSearchAndFilters(viewModel),
-              Expanded(
-                child: _buildPlaylistList(viewModel),
-              ),
+              Expanded(child: _buildPlaylistList(viewModel)),
             ],
           );
         },
@@ -164,11 +158,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.playlist_play,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.playlist_play, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty
@@ -206,8 +196,10 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
             playlist: playlist,
             onTap: () => _navigateToPlaylistDetail(context, playlist),
             onEdit: () => _showEditPlaylistDialog(context, playlist),
-            onDelete: () => _showDeleteConfirmation(context, playlist, viewModel),
-            onDuplicate: () => _showDuplicateDialog(context, playlist, viewModel),
+            onDelete: () =>
+                _showDeleteConfirmation(context, playlist, viewModel),
+            onDuplicate: () =>
+                _showDuplicateDialog(context, playlist, viewModel),
           );
         },
       ),
@@ -269,9 +261,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               final success = await viewModel.deletePlaylist(playlist.id);
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Deleted "${playlist.name}"'),
-                  ),
+                  SnackBar(content: Text('Deleted "${playlist.name}"')),
                 );
               }
             },
@@ -317,11 +307,9 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                   newName,
                 );
                 if (success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Created "$newName"'),
-                    ),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Created "$newName"')));
                 }
               }
             },

@@ -10,7 +10,8 @@ class LoadingFeedbackExamples extends StatefulWidget {
   const LoadingFeedbackExamples({Key? key}) : super(key: key);
 
   @override
-  State<LoadingFeedbackExamples> createState() => _LoadingFeedbackExamplesState();
+  State<LoadingFeedbackExamples> createState() =>
+      _LoadingFeedbackExamplesState();
 }
 
 class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
@@ -45,7 +46,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
               itemBuilder: (context, index) {
                 final example = _examples[index];
                 final isSelected = example == _selectedExample;
-                
+
                 return Padding(
                   padding: EdgeInsets.only(right: OmnisonicSpacing.sm),
                   child: OmnisonicGestureFeedback.pressableScale(
@@ -57,9 +58,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     child: Container(
                       padding: OmnisonicInsets.horizontalMd,
                       decoration: BoxDecoration(
-                        color: isSelected 
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.surface,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: Theme.of(context).colorScheme.outline,
@@ -69,10 +70,12 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                         child: Text(
                           example,
                           style: TextStyle(
-                            color: isSelected 
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurface,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurface,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -82,7 +85,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
               },
             ),
           ),
-          
+
           // Content area
           Expanded(
             child: SingleChildScrollView(
@@ -116,20 +119,21 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
       children: [
         _buildSectionTitle('Skeleton Loading'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Track list skeleton
         Card(
           child: Column(
-            children: List.generate(3, (index) => 
-              OmnisonicLoadingStates.trackListItemSkeleton()
+            children: List.generate(
+              3,
+              (index) => OmnisonicLoadingStates.trackListItemSkeleton(),
             ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Album Cards Skeleton'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Album cards skeleton
         SizedBox(
           height: 220,
@@ -142,11 +146,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Artist Cards Skeleton'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Artist cards skeleton
         SizedBox(
           height: 160,
@@ -159,11 +163,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Progress Indicators'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Progress indicators
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -191,11 +195,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Linear Progress'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Linear progress examples
         Column(
           children: [
@@ -206,18 +210,20 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             OmnisonicLoadingStates.linearProgress(), // Indeterminate
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Contextual Loading Animations'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Contextual loading examples
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Column(
               children: [
-                OmnisonicLoadingStates.musicLoading(message: 'Loading music...'),
+                OmnisonicLoadingStates.musicLoading(
+                  message: 'Loading music...',
+                ),
                 SizedBox(height: OmnisonicSpacing.sm),
                 const Text('Music Loading'),
               ],
@@ -231,15 +237,17 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.lg),
-        
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Column(
               children: [
-                OmnisonicLoadingStates.syncLoading(message: 'Syncing library...'),
+                OmnisonicLoadingStates.syncLoading(
+                  message: 'Syncing library...',
+                ),
                 SizedBox(height: OmnisonicSpacing.sm),
                 const Text('Sync Loading'),
               ],
@@ -256,11 +264,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Adaptive Loading'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Adaptive loading examples
         Column(
           children: [
@@ -287,7 +295,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
       children: [
         _buildSectionTitle('Tap Feedback'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Ripple effect
         Card(
           child: OmnisonicGestureFeedback.rippleEffect(
@@ -308,11 +316,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Scale Feedback'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Scale feedback
         Row(
           children: [
@@ -329,19 +337,17 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Center(
-                    child: Text('Press me'),
-                  ),
+                  child: const Center(child: Text('Press me')),
                 ),
               ),
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Long Press Feedback'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Long press feedback
         Row(
           children: [
@@ -363,31 +369,29 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     color: Theme.of(context).colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Center(
-                    child: Text('Tap or hold me'),
-                  ),
+                  child: const Center(child: Text('Tap or hold me')),
                 ),
               ),
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Swipe Feedback'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Swipe feedback
         Card(
           child: OmnisonicGestureFeedback.swipeable(
             onSwipeLeft: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Swiped left!')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Swiped left!')));
             },
             onSwipeRight: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Swiped right!')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Swiped right!')));
             },
             child: Container(
               padding: OmnisonicInsets.allXl,
@@ -403,11 +407,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('State Change Animations'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         // State change examples
         Column(
           children: [
@@ -419,7 +423,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     child: Container(
                       padding: OmnisonicInsets.allMd,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(child: Text('Selected State')),
@@ -433,7 +439,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     child: Container(
                       padding: OmnisonicInsets.allMd,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(child: Text('Disabled State')),
@@ -451,7 +459,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     child: Container(
                       padding: OmnisonicInsets.allMd,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(child: Text('Loading State')),
@@ -465,7 +475,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                     child: Container(
                       padding: OmnisonicInsets.allMd,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Center(child: Text('Error State')),
@@ -486,36 +498,36 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
       children: [
         _buildSectionTitle('Network Error'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         OmnisonicErrorStates.networkError(
           onRetry: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Retrying...')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Retrying...')));
           },
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Server Error'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         OmnisonicErrorStates.serverError(
           onRetry: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Trying again...')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Trying again...')));
           },
           onContactSupport: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Opening support...')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Opening support...')));
           },
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Empty Library'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         OmnisonicErrorStates.emptyLibrary(
           onBrowseMusic: () {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -528,11 +540,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             );
           },
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Inline Error'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -547,11 +559,11 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Snackbar Error'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         ElevatedButton(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -559,9 +571,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                 message: 'Something went wrong!',
                 actionLabel: 'Retry',
                 onAction: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Retrying...')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Retrying...')));
                 },
               ),
             );
@@ -578,7 +590,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
       children: [
         _buildSectionTitle('Loading Overlay'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         Row(
           children: [
             ElevatedButton(
@@ -586,7 +598,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                 setState(() {
                   _isLoading = true;
                 });
-                
+
                 // Simulate loading
                 Future.delayed(const Duration(seconds: 3), () {
                   if (mounted) {
@@ -609,9 +621,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
             ),
           ],
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
-        
+
         // Interactive content area
         OmnisonicLoadingStates.screenOverlay(
           isLoading: _isLoading,
@@ -623,40 +635,40 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: _showError
-              ? Center(
-                  child: OmnisonicErrorStates.playbackError(
-                    onRetry: () {
-                      setState(() {
-                        _showError = false;
-                      });
-                    },
-                    onSkip: () {
-                      setState(() {
-                        _showError = false;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Skipped track')),
-                      );
-                    },
+                ? Center(
+                    child: OmnisonicErrorStates.playbackError(
+                      onRetry: () {
+                        setState(() {
+                          _showError = false;
+                        });
+                      },
+                      onSkip: () {
+                        setState(() {
+                          _showError = false;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Skipped track')),
+                        );
+                      },
+                    ),
+                  )
+                : const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.music_note, size: 64),
+                        SizedBox(height: 16),
+                        Text('Your music content would appear here'),
+                      ],
+                    ),
                   ),
-                )
-              : const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.music_note, size: 64),
-                      SizedBox(height: 16),
-                      Text('Your music content would appear here'),
-                    ],
-                  ),
-                ),
           ),
         ),
-        
+
         SizedBox(height: OmnisonicSpacing.xl),
         _buildSectionTitle('Drag and Drop'),
         SizedBox(height: OmnisonicSpacing.md),
-        
+
         Row(
           children: [
             // Draggable item
@@ -684,9 +696,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                 ),
               ),
             ),
-            
+
             SizedBox(width: OmnisonicSpacing.lg),
-            
+
             // Drop target
             Expanded(
               child: OmnisonicGestureFeedback.dropTarget<String>(
@@ -709,10 +721,7 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
                   child: const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.playlist_add),
-                        Text('Drop here'),
-                      ],
+                      children: [Icon(Icons.playlist_add), Text('Drop here')],
                     ),
                   ),
                 ),
@@ -727,9 +736,9 @@ class _LoadingFeedbackExamplesState extends State<LoadingFeedbackExamples> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 }

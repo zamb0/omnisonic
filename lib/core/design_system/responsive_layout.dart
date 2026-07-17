@@ -6,33 +6,33 @@ class ResponsiveBreakpoints {
   static const double tablet = 768;
   static const double desktop = 1024;
   static const double largeDesktop = 1440;
-  
+
   /// Check if current screen is mobile
   static bool isMobile(BuildContext context) {
     return MediaQuery.of(context).size.width < mobile;
   }
-  
+
   /// Check if current screen is tablet
   static bool isTablet(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return width >= mobile && width < desktop;
   }
-  
+
   /// Check if current screen is desktop
   static bool isDesktop(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return width >= desktop && width < largeDesktop;
   }
-  
+
   /// Check if current screen is large desktop
   static bool isLargeDesktop(BuildContext context) {
     return MediaQuery.of(context).size.width >= largeDesktop;
   }
-  
+
   /// Get current screen type
   static ScreenType getScreenType(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    
+
     if (width < mobile) {
       return ScreenType.mobile;
     } else if (width < desktop) {
@@ -46,12 +46,7 @@ class ResponsiveBreakpoints {
 }
 
 /// Screen type enumeration
-enum ScreenType {
-  mobile,
-  tablet,
-  desktop,
-  largeDesktop,
-}
+enum ScreenType { mobile, tablet, desktop, largeDesktop }
 
 /// Responsive layout widget that adapts to different screen sizes
 class ResponsiveLayout extends StatelessWidget {
@@ -59,7 +54,7 @@ class ResponsiveLayout extends StatelessWidget {
   final Widget? tablet;
   final Widget? desktop;
   final Widget? largeDesktop;
-  
+
   const ResponsiveLayout({
     super.key,
     required this.mobile,
@@ -67,13 +62,13 @@ class ResponsiveLayout extends StatelessWidget {
     this.desktop,
     this.largeDesktop,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        
+
         if (width >= ResponsiveBreakpoints.largeDesktop) {
           return largeDesktop ?? desktop ?? tablet ?? mobile;
         } else if (width >= ResponsiveBreakpoints.desktop) {
@@ -97,7 +92,7 @@ class LayoutConfiguration {
   final double cardAspectRatio;
   final bool enableHoverEffects;
   final double maxContentWidth;
-  
+
   const LayoutConfiguration({
     required this.gridSpacing,
     required this.columnsPortrait,
@@ -107,7 +102,7 @@ class LayoutConfiguration {
     this.enableHoverEffects = true,
     required this.maxContentWidth,
   });
-  
+
   /// Create layout configuration for specific screen size
   factory LayoutConfiguration.forScreenSize(double width) {
     if (width >= ResponsiveBreakpoints.largeDesktop) {
@@ -149,7 +144,7 @@ class LayoutConfiguration {
       );
     }
   }
-  
+
   /// Create layout configuration for current context
   factory LayoutConfiguration.forContext(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -168,7 +163,7 @@ class ResponsiveGrid extends StatelessWidget {
   final int? largeDesktopColumns;
   final double? childAspectRatio;
   final EdgeInsets? padding;
-  
+
   const ResponsiveGrid({
     super.key,
     required this.children,
@@ -181,12 +176,12 @@ class ResponsiveGrid extends StatelessWidget {
     this.childAspectRatio,
     this.padding,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final config = LayoutConfiguration.forContext(context);
     final screenType = ResponsiveBreakpoints.getScreenType(context);
-    
+
     int columns;
     switch (screenType) {
       case ScreenType.mobile:
@@ -202,7 +197,7 @@ class ResponsiveGrid extends StatelessWidget {
         columns = largeDesktopColumns ?? config.columnsPortrait;
         break;
     }
-    
+
     return Padding(
       padding: padding ?? config.contentPadding,
       child: GridView.count(
@@ -222,7 +217,7 @@ class ResponsiveContainer extends StatelessWidget {
   final double? maxWidth;
   final EdgeInsets? padding;
   final bool centerContent;
-  
+
   const ResponsiveContainer({
     super.key,
     required this.child,
@@ -230,25 +225,23 @@ class ResponsiveContainer extends StatelessWidget {
     this.padding,
     this.centerContent = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final config = LayoutConfiguration.forContext(context);
     final effectiveMaxWidth = maxWidth ?? config.maxContentWidth;
     final effectivePadding = padding ?? config.contentPadding;
-    
+
     Widget content = Container(
-      constraints: BoxConstraints(
-        maxWidth: effectiveMaxWidth,
-      ),
+      constraints: BoxConstraints(maxWidth: effectiveMaxWidth),
       padding: effectivePadding,
       child: child,
     );
-    
+
     if (centerContent && effectiveMaxWidth != double.infinity) {
       content = Center(child: content);
     }
-    
+
     return content;
   }
 }
@@ -259,18 +252,18 @@ class ResponsiveValue<T> {
   final T? tablet;
   final T? desktop;
   final T? largeDesktop;
-  
+
   const ResponsiveValue({
     required this.mobile,
     this.tablet,
     this.desktop,
     this.largeDesktop,
   });
-  
+
   /// Get value for current screen size
   T getValue(BuildContext context) {
     final screenType = ResponsiveBreakpoints.getScreenType(context);
-    
+
     switch (screenType) {
       case ScreenType.mobile:
         return mobile;
@@ -290,43 +283,43 @@ class ScreenSizeDetector {
   static Size getScreenSize(BuildContext context) {
     return MediaQuery.of(context).size;
   }
-  
+
   /// Get current screen width
   static double getScreenWidth(BuildContext context) {
     return MediaQuery.of(context).size.width;
   }
-  
+
   /// Get current screen height
   static double getScreenHeight(BuildContext context) {
     return MediaQuery.of(context).size.height;
   }
-  
+
   /// Get device pixel ratio
   static double getPixelRatio(BuildContext context) {
     return MediaQuery.of(context).devicePixelRatio;
   }
-  
+
   /// Check if screen is in landscape orientation
   static bool isLandscape(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return size.width > size.height;
   }
-  
+
   /// Check if screen is in portrait orientation
   static bool isPortrait(BuildContext context) {
     return !isLandscape(context);
   }
-  
+
   /// Get safe area insets
   static EdgeInsets getSafeAreaInsets(BuildContext context) {
     return MediaQuery.of(context).padding;
   }
-  
+
   /// Get view insets (keyboard, etc.)
   static EdgeInsets getViewInsets(BuildContext context) {
     return MediaQuery.of(context).viewInsets;
   }
-  
+
   /// Check if keyboard is visible
   static bool isKeyboardVisible(BuildContext context) {
     return MediaQuery.of(context).viewInsets.bottom > 0;
@@ -335,20 +328,22 @@ class ScreenSizeDetector {
 
 /// Adaptive layout that changes based on screen size and orientation
 class AdaptiveLayout extends StatelessWidget {
-  final Widget Function(BuildContext context, ScreenType screenType, bool isLandscape) builder;
-  
-  const AdaptiveLayout({
-    super.key,
-    required this.builder,
-  });
-  
+  final Widget Function(
+    BuildContext context,
+    ScreenType screenType,
+    bool isLandscape,
+  )
+  builder;
+
+  const AdaptiveLayout({super.key, required this.builder});
+
   @override
   Widget build(BuildContext context) {
     return OrientationBuilder(
       builder: (context, orientation) {
         final screenType = ResponsiveBreakpoints.getScreenType(context);
         final isLandscape = orientation == Orientation.landscape;
-        
+
         return builder(context, screenType, isLandscape);
       },
     );

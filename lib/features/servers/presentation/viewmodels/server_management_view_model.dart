@@ -8,7 +8,7 @@ import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
 
 /// ViewModel for managing server connections and configuration
-/// 
+///
 /// Handles:
 /// - Server list management and status monitoring
 /// - Adding, updating, and removing servers
@@ -38,10 +38,14 @@ class ServerManagementViewModel extends ChangeNotifier {
 
   // Getters
   List<MusicServer> get servers => _servers;
-  List<MusicServer> get onlineServers => _servers.where((s) => s.status == ServerStatus.online).toList();
-  List<MusicServer> get offlineServers => _servers.where((s) => s.status == ServerStatus.offline).toList();
-  List<MusicServer> get connectingServers => _servers.where((s) => s.status == ServerStatus.connecting).toList();
-  List<MusicServer> get errorServers => _servers.where((s) => s.status == ServerStatus.error).toList();
+  List<MusicServer> get onlineServers =>
+      _servers.where((s) => s.status == ServerStatus.online).toList();
+  List<MusicServer> get offlineServers =>
+      _servers.where((s) => s.status == ServerStatus.offline).toList();
+  List<MusicServer> get connectingServers =>
+      _servers.where((s) => s.status == ServerStatus.connecting).toList();
+  List<MusicServer> get errorServers =>
+      _servers.where((s) => s.status == ServerStatus.error).toList();
   bool get isLoading => _isLoading;
   bool get isTestingConnection => _isTestingConnection;
   String? get errorMessage => _errorMessage;
@@ -110,16 +114,15 @@ class ServerManagementViewModel extends ChangeNotifier {
         password: password,
       );
 
-      final connectionResult = testResult.fold(
-        (failure) {
-          _setError('Connection test failed: ${failure.message}');
-          return null;
-        },
-        (result) => result,
-      );
+      final connectionResult = testResult.fold((failure) {
+        _setError('Connection test failed: ${failure.message}');
+        return null;
+      }, (result) => result);
 
       if (connectionResult == null || !connectionResult.isSuccessful) {
-        _setError('Connection failed: ${connectionResult?.errorMessage ?? 'Unknown error'}');
+        _setError(
+          'Connection failed: ${connectionResult?.errorMessage ?? 'Unknown error'}',
+        );
         return false;
       }
 
@@ -137,38 +140,35 @@ class ServerManagementViewModel extends ChangeNotifier {
 
       // Add the server
       final addResult = await _serverRepository.addServer(server);
-      final addSuccess = addResult.fold(
-        (failure) {
-          _setError('Failed to add server: ${failure.message}');
-          return false;
-        },
-        (_) => true,
-      );
+      final addSuccess = addResult.fold((failure) {
+        _setError('Failed to add server: ${failure.message}');
+        return false;
+      }, (_) => true);
 
       if (!addSuccess) return false;
 
       // Store credentials
-      final credentialsResult = await _serverRepository.storeCredentials(server.id, password);
-      final credentialsSuccess = credentialsResult.fold(
-        (failure) {
-          // If credential storage fails, remove the server to maintain consistency
-          _serverRepository.removeServer(server.id);
-          _setError('Failed to store credentials securely: ${failure.message}');
-          return false;
-        },
-        (_) => true,
+      final credentialsResult = await _serverRepository.storeCredentials(
+        server.id,
+        password,
       );
+      final credentialsSuccess = credentialsResult.fold((failure) {
+        // If credential storage fails, remove the server to maintain consistency
+        _serverRepository.removeServer(server.id);
+        _setError('Failed to store credentials securely: ${failure.message}');
+        return false;
+      }, (_) => true);
 
       if (!credentialsSuccess) {
         return false;
       }
 
       _clearError();
-      
+
       // Automatically sync the music collection from the new server
       AppLog.info('Starting automatic sync for new server');
       _triggerAutoSync(server.id);
-      
+
       return true;
     } catch (e) {
       _setError('Unexpected error adding server: $e');
@@ -188,13 +188,10 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     try {
       final result = await _serverRepository.updateServer(server);
-      return result.fold(
-        (failure) {
-          _setError('Failed to update server: ${failure.message}');
-          return false;
-        },
-        (_) => true,
-      );
+      return result.fold((failure) {
+        _setError('Failed to update server: ${failure.message}');
+        return false;
+      }, (_) => true);
     } catch (e) {
       _setError('Unexpected error updating server: $e');
       return false;
@@ -216,13 +213,10 @@ class ServerManagementViewModel extends ChangeNotifier {
 
       // Remove the server
       final result = await _serverRepository.removeServer(serverId);
-      return result.fold(
-        (failure) {
-          _setError('Failed to remove server: ${failure.message}');
-          return false;
-        },
-        (_) => true,
-      );
+      return result.fold((failure) {
+        _setError('Failed to remove server: ${failure.message}');
+        return false;
+      }, (_) => true);
     } catch (e) {
       _setError('Unexpected error removing server: $e');
       return false;
@@ -242,15 +236,12 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     try {
       final result = await _serverRepository.testConnection(server);
-      
-      _lastConnectionTest = result.fold(
-        (failure) {
-          _setError('Connection test failed: ${failure.message}');
-          return null;
-        },
-        (connectionResult) => connectionResult,
-      );
-      
+
+      _lastConnectionTest = result.fold((failure) {
+        _setError('Connection test failed: ${failure.message}');
+        return null;
+      }, (connectionResult) => connectionResult);
+
       return _lastConnectionTest;
     } catch (e) {
       _setError('Unexpected error testing connection: $e');
@@ -281,14 +272,11 @@ class ServerManagementViewModel extends ChangeNotifier {
         password: password,
       );
 
-      _lastConnectionTest = result.fold(
-        (failure) {
-          _setError('Connection test failed: ${failure.message}');
-          return null;
-        },
-        (connectionResult) => connectionResult,
-      );
-      
+      _lastConnectionTest = result.fold((failure) {
+        _setError('Connection test failed: ${failure.message}');
+        return null;
+      }, (connectionResult) => connectionResult);
+
       return _lastConnectionTest;
     } catch (e) {
       _setError('Unexpected error testing connection: $e');
@@ -317,7 +305,8 @@ class ServerManagementViewModel extends ChangeNotifier {
   Future<void> updateServerStatus(String serverId, ServerStatus status) async {
     final result = await _serverRepository.updateServerStatus(serverId, status);
     result.fold(
-      (failure) => _setError('Failed to update server status: ${failure.message}'),
+      (failure) =>
+          _setError('Failed to update server status: ${failure.message}'),
       (_) => AppLog.debug('Server status updated to $status'),
     );
   }
@@ -346,7 +335,7 @@ class ServerManagementViewModel extends ChangeNotifier {
           serverId: serverId,
           forceRefresh: false,
         );
-        
+
         final result = await _syncMusicCollectionUseCase(params);
         result.fold(
           (failure) {
@@ -354,7 +343,9 @@ class ServerManagementViewModel extends ChangeNotifier {
             // Don't show error to user for background sync
           },
           (collection) {
-            AppLog.info('Auto-sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
+            AppLog.info(
+              'Auto-sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums',
+            );
           },
         );
       } catch (e) {
@@ -372,14 +363,16 @@ class ServerManagementViewModel extends ChangeNotifier {
           serverId: null, // Sync from all servers
           forceRefresh: true, // Force refresh for manual sync
         );
-        
+
         final result = await _syncMusicCollectionUseCase(params);
         result.fold(
           (failure) {
             AppLog.warn('Manual sync failed: ${failure.message}');
           },
           (collection) {
-            AppLog.info('Manual sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums');
+            AppLog.info(
+              'Manual sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums',
+            );
           },
         );
       } catch (e) {

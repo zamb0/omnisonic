@@ -4,9 +4,9 @@ import 'package:equatable/equatable.dart';
 abstract class Failure extends Equatable {
   final String message;
   final String? code;
-  
+
   const Failure(this.message, [this.code]);
-  
+
   @override
   List<Object?> get props => [message, code];
 }
@@ -28,7 +28,8 @@ class CacheFailure extends Failure {
 
 /// Authentication-related failures
 class AuthenticationFailure extends Failure {
-  const AuthenticationFailure(String message, [String? code]) : super(message, code);
+  const AuthenticationFailure(String message, [String? code])
+    : super(message, code);
 }
 
 /// Database-related failures
@@ -43,7 +44,8 @@ class AudioFailure extends Failure {
 
 /// Validation failures
 class ValidationFailure extends Failure {
-  const ValidationFailure(String message, [String? code]) : super(message, code);
+  const ValidationFailure(String message, [String? code])
+    : super(message, code);
 }
 
 /// Data-related failures

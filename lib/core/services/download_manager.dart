@@ -11,9 +11,7 @@ typedef DownloadProgressCallback = void Function(int received, int total);
 
 /// Download manager for offline content
 class DownloadManager {
-  DownloadManager({
-    required Dio dio,
-  }) : _dio = dio;
+  DownloadManager({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
   final Map<String, CancelToken> _activeDownloads = {};
@@ -26,7 +24,9 @@ class DownloadManager {
     try {
       // Check if already downloading
       if (_activeDownloads.containsKey(track.id)) {
-        return ResultHelper.failure(CacheFailure('Track is already being downloaded'));
+        return ResultHelper.failure(
+          CacheFailure('Track is already being downloaded'),
+        );
       }
 
       // Create cancel token for this download
@@ -35,7 +35,7 @@ class DownloadManager {
 
       // Get cache directory
       final cacheDir = await _getCacheDirectory();
-      
+
       // Create filename with track info
       final filename = _generateFilename(track);
       final filePath = path.join(cacheDir.path, filename);
@@ -84,15 +84,19 @@ class DownloadManager {
       }
     } on DioException catch (e) {
       _activeDownloads.remove(track.id);
-      
+
       if (e.type == DioExceptionType.cancel) {
         return ResultHelper.failure(CacheFailure('Download was cancelled'));
       }
-      
-      return ResultHelper.failure(NetworkFailure('Download failed: ${e.message}'));
+
+      return ResultHelper.failure(
+        NetworkFailure('Download failed: ${e.message}'),
+      );
     } catch (e) {
       _activeDownloads.remove(track.id);
-      return ResultHelper.failure(UnknownFailure('Unexpected download error: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Unexpected download error: $e'),
+      );
     }
   }
 
@@ -105,10 +109,14 @@ class DownloadManager {
         _activeDownloads.remove(trackId);
         return ResultHelper.success(null);
       }
-      
-      return ResultHelper.failure(CacheFailure('No active download found for track'));
+
+      return ResultHelper.failure(
+        CacheFailure('No active download found for track'),
+      );
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to cancel download: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to cancel download: $e'),
+      );
     }
   }
 
@@ -129,7 +137,9 @@ class DownloadManager {
       }
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to delete cached file: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to delete cached file: $e'),
+      );
     }
   }
 
@@ -137,15 +147,19 @@ class DownloadManager {
   Future<Result<bool>> verifyCachedFile(CacheEntry entry) async {
     try {
       final file = File(entry.filePath);
-      
+
       if (!await file.exists()) {
         return ResultHelper.success(false);
       }
 
       final actualSize = await file.length();
-      return ResultHelper.success(actualSize == entry.fileSize && entry.isComplete);
+      return ResultHelper.success(
+        actualSize == entry.fileSize && entry.isComplete,
+      );
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to verify cached file: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to verify cached file: $e'),
+      );
     }
   }
 
@@ -161,7 +175,7 @@ class DownloadManager {
     final safeTitle = _sanitizeFilename(track.title);
     final safeArtist = _sanitizeFilename(track.artist);
     final extension = _getFileExtension(track.streamUrl);
-    
+
     return '${track.id}_${safeArtist}_${safeTitle}$extension';
   }
 
@@ -178,16 +192,16 @@ class DownloadManager {
   String _getFileExtension(String url) {
     final uri = Uri.parse(url);
     final pathSegments = uri.pathSegments;
-    
+
     if (pathSegments.isNotEmpty) {
       final lastSegment = pathSegments.last;
       final dotIndex = lastSegment.lastIndexOf('.');
-      
+
       if (dotIndex != -1 && dotIndex < lastSegment.length - 1) {
         return lastSegment.substring(dotIndex);
       }
     }
-    
+
     return '.mp3'; // Default extension
   }
 

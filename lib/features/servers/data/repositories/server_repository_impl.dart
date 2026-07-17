@@ -21,10 +21,10 @@ class ServerRepositoryImpl implements ServerRepository {
     required ServerConnectionService connectionService,
     required ServerStatusMonitor statusMonitor,
     required ServerValidator validator,
-  })  : _localDataSource = localDataSource,
-        _connectionService = connectionService,
-        _statusMonitor = statusMonitor,
-        _validator = validator;
+  }) : _localDataSource = localDataSource,
+       _connectionService = connectionService,
+       _statusMonitor = statusMonitor,
+       _validator = validator;
 
   @override
   Future<Result<void>> addServer(MusicServer server) async {
@@ -79,7 +79,9 @@ class ServerRepositoryImpl implements ServerRepository {
 
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to remove server: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to remove server: $e'),
+      );
     }
   }
 
@@ -104,7 +106,9 @@ class ServerRepositoryImpl implements ServerRepository {
 
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to update server: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to update server: $e'),
+      );
     }
   }
 
@@ -124,16 +128,22 @@ class ServerRepositoryImpl implements ServerRepository {
   }
 
   @override
-  Future<Result<ServerConnectionResult>> testConnection(MusicServer server) async {
+  Future<Result<ServerConnectionResult>> testConnection(
+    MusicServer server,
+  ) async {
     try {
       // Get stored password for the server
-      final passwordResult = await _connectionService.getServerPassword(server.id);
+      final passwordResult = await _connectionService.getServerPassword(
+        server.id,
+      );
       if (passwordResult.isFailure) {
-        return ResultHelper.success(ServerConnectionResult(
-          isSuccessful: false,
-          serverInfo: null,
-          errorMessage: 'No stored credentials for server',
-        ));
+        return ResultHelper.success(
+          ServerConnectionResult(
+            isSuccessful: false,
+            serverInfo: null,
+            errorMessage: 'No stored credentials for server',
+          ),
+        );
       }
 
       final password = passwordResult.valueOrNull!;
@@ -143,11 +153,13 @@ class ServerRepositoryImpl implements ServerRepository {
         password: password,
       );
     } catch (e) {
-      return ResultHelper.success(ServerConnectionResult(
-        isSuccessful: false,
-        serverInfo: null,
-        errorMessage: 'Connection test failed: $e',
-      ));
+      return ResultHelper.success(
+        ServerConnectionResult(
+          isSuccessful: false,
+          serverInfo: null,
+          errorMessage: 'Connection test failed: $e',
+        ),
+      );
     }
   }
 
@@ -170,72 +182,91 @@ class ServerRepositoryImpl implements ServerRepository {
       );
 
       final startTime = DateTime.now();
-      
+
       // Test connection using connection service
-      final connectionResult = await _connectionService.testConnection(testServer, password);
-      
+      final connectionResult = await _connectionService.testConnection(
+        testServer,
+        password,
+      );
+
       final responseTime = DateTime.now().difference(startTime);
 
       if (connectionResult.isSuccess) {
         final updatedServer = connectionResult.valueOrNull!;
-        
-        return ResultHelper.success(ServerConnectionResult(
-          isSuccessful: true,
-          serverInfo: ServerInfo(
-            version: updatedServer.serverVersion ?? 'Unknown',
-            apiVersion: updatedServer.apiVersion ?? 'Unknown',
-            serverName: updatedServer.name,
-            serverType: 'Subsonic',
+
+        return ResultHelper.success(
+          ServerConnectionResult(
+            isSuccessful: true,
+            serverInfo: ServerInfo(
+              version: updatedServer.serverVersion ?? 'Unknown',
+              apiVersion: updatedServer.apiVersion ?? 'Unknown',
+              serverName: updatedServer.name,
+              serverType: 'Subsonic',
+            ),
+            responseTime: responseTime,
           ),
-          responseTime: responseTime,
-        ));
+        );
       } else {
         final failure = connectionResult.failureOrNull!;
-        return ResultHelper.success(ServerConnectionResult(
-          isSuccessful: false,
-          serverInfo: null,
-          errorMessage: failure.message,
-          responseTime: responseTime,
-        ));
+        return ResultHelper.success(
+          ServerConnectionResult(
+            isSuccessful: false,
+            serverInfo: null,
+            errorMessage: failure.message,
+            responseTime: responseTime,
+          ),
+        );
       }
     } catch (e) {
-      return ResultHelper.success(ServerConnectionResult(
-        isSuccessful: false,
-        serverInfo: null,
-        errorMessage: 'Connection test failed: $e',
-      ));
+      return ResultHelper.success(
+        ServerConnectionResult(
+          isSuccessful: false,
+          serverInfo: null,
+          errorMessage: 'Connection test failed: $e',
+        ),
+      );
     }
   }
 
   @override
-  Future<Result<void>> updateServerStatus(String serverId, ServerStatus status) async {
+  Future<Result<void>> updateServerStatus(
+    String serverId,
+    ServerStatus status,
+  ) async {
     try {
       String? errorMessage;
-      
+
       // If status is error or offline, we might want to include an error message
       if (status == ServerStatus.error || status == ServerStatus.offline) {
         // This could be enhanced to include specific error details
-        errorMessage = status == ServerStatus.offline ? 'Server is offline' : 'Server error occurred';
+        errorMessage = status == ServerStatus.offline
+            ? 'Server is offline'
+            : 'Server error occurred';
       }
 
       final updateResult = await _localDataSource.updateServerStatus(
-        serverId, 
-        status, 
+        serverId,
+        status,
         errorMessage: errorMessage,
       );
-      
+
       if (updateResult.isFailure) {
         return ResultHelper.failure(updateResult.failureOrNull!);
       }
 
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to update server status: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to update server status: $e'),
+      );
     }
   }
 
   @override
-  Future<Result<void>> updateLastSync(String serverId, DateTime lastSync) async {
+  Future<Result<void>> updateLastSync(
+    String serverId,
+    DateTime lastSync,
+  ) async {
     return await _localDataSource.updateServerLastSync(serverId, lastSync);
   }
 
@@ -259,13 +290,21 @@ class ServerRepositoryImpl implements ServerRepository {
 
       return ResultHelper.success(offlineServers);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get offline servers: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get offline servers: $e'),
+      );
     }
   }
 
   @override
-  Future<Result<void>> storeCredentials(String serverId, String password) async {
-    final storeResult = await _connectionService.storeServerPassword(serverId, password);
+  Future<Result<void>> storeCredentials(
+    String serverId,
+    String password,
+  ) async {
+    final storeResult = await _connectionService.storeServerPassword(
+      serverId,
+      password,
+    );
     if (storeResult.isFailure) {
       return ResultHelper.failure(storeResult.failureOrNull!);
     }
@@ -287,7 +326,9 @@ class ServerRepositoryImpl implements ServerRepository {
 
   @override
   Future<Result<void>> removeCredentials(String serverId) async {
-    final removeResult = await _connectionService.removeServerPassword(serverId);
+    final removeResult = await _connectionService.removeServerPassword(
+      serverId,
+    );
     if (removeResult.isFailure) {
       return ResultHelper.failure(removeResult.failureOrNull!);
     }
@@ -316,7 +357,9 @@ class ServerRepositoryImpl implements ServerRepository {
       final connectionInfo = connectionResult.valueOrNull!;
       if (!connectionInfo.isSuccessful) {
         return ResultHelper.failure(
-          AuthenticationFailure(connectionInfo.errorMessage ?? 'Connection failed'),
+          AuthenticationFailure(
+            connectionInfo.errorMessage ?? 'Connection failed',
+          ),
         );
       }
 
@@ -349,7 +392,9 @@ class ServerRepositoryImpl implements ServerRepository {
 
       return ResultHelper.success(server);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to validate and add server: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to validate and add server: $e'),
+      );
     }
   }
 
@@ -368,7 +413,9 @@ class ServerRepositoryImpl implements ServerRepository {
 
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to start monitoring: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to start monitoring: $e'),
+      );
     }
   }
 
@@ -380,34 +427,48 @@ class ServerRepositoryImpl implements ServerRepository {
   /// Validates server configuration
   Result<void> _validateServerConfig(MusicServer server) {
     if (server.url.isEmpty) {
-      return ResultHelper.failure(ValidationFailure('Server URL cannot be empty'));
+      return ResultHelper.failure(
+        ValidationFailure('Server URL cannot be empty'),
+      );
     }
-    
+
     if (server.username.isEmpty) {
-      return ResultHelper.failure(ValidationFailure('Username cannot be empty'));
+      return ResultHelper.failure(
+        ValidationFailure('Username cannot be empty'),
+      );
     }
-    
+
     if (server.name.isEmpty) {
-      return ResultHelper.failure(ValidationFailure('Server name cannot be empty'));
+      return ResultHelper.failure(
+        ValidationFailure('Server name cannot be empty'),
+      );
     }
-    
+
     // Basic URL validation
     try {
       final uri = Uri.parse(server.url);
       if (!uri.hasScheme || (!uri.scheme.startsWith('http'))) {
-        return ResultHelper.failure(ValidationFailure('Invalid server URL format'));
+        return ResultHelper.failure(
+          ValidationFailure('Invalid server URL format'),
+        );
       }
     } catch (e) {
       return ResultHelper.failure(ValidationFailure('Invalid server URL: $e'));
     }
-    
+
     return ResultHelper.success(null);
   }
 
   /// Generates a unique server ID based on URL and username
   String _generateServerId(String url, String username) {
-    final normalizedUrl = url.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    final normalizedUsername = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final normalizedUrl = url.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
+    final normalizedUsername = username.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     return '${normalizedUrl}_${normalizedUsername}_$timestamp';
   }

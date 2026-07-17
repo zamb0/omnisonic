@@ -13,7 +13,9 @@ class IdGenerator {
     if (parts.length < 2) {
       return uniqueId; // Return as-is if not in expected format
     }
-    return parts.sublist(1).join('_'); // Join in case original ID had underscores
+    return parts
+        .sublist(1)
+        .join('_'); // Join in case original ID had underscores
   }
 
   /// Extracts the server ID from a unique ID

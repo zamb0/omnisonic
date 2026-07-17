@@ -19,9 +19,14 @@ class ResponsiveGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth - (padding?.horizontal ?? 0);
-        final crossAxisCount = (availableWidth / (minItemWidth + spacing)).floor().clamp(1, 6);
-        final itemWidth = (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+        final availableWidth =
+            constraints.maxWidth - (padding?.horizontal ?? 0);
+        final crossAxisCount = (availableWidth / (minItemWidth + spacing))
+            .floor()
+            .clamp(1, 6);
+        final itemWidth =
+            (availableWidth - (spacing * (crossAxisCount - 1))) /
+            crossAxisCount;
 
         return Padding(
           padding: padding ?? EdgeInsets.zero,
@@ -29,10 +34,7 @@ class ResponsiveGrid extends StatelessWidget {
             spacing: spacing,
             runSpacing: spacing,
             children: children.map((child) {
-              return SizedBox(
-                width: itemWidth,
-                child: child,
-              );
+              return SizedBox(width: itemWidth, child: child);
             }).toList(),
           ),
         );
@@ -64,8 +66,11 @@ class ResponsiveGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth - (padding?.horizontal ?? 0);
-        final crossAxisCount = (availableWidth / (minItemWidth + spacing)).floor().clamp(1, 6);
+        final availableWidth =
+            constraints.maxWidth - (padding?.horizontal ?? 0);
+        final crossAxisCount = (availableWidth / (minItemWidth + spacing))
+            .floor()
+            .clamp(1, 6);
 
         return GridView.builder(
           controller: controller,
@@ -74,7 +79,8 @@ class ResponsiveGridView extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
-            childAspectRatio: childAspectRatio ?? _calculateAspectRatio(minItemWidth),
+            childAspectRatio:
+                childAspectRatio ?? _calculateAspectRatio(minItemWidth),
           ),
           itemCount: children.length,
           itemBuilder: (context, index) => children[index],

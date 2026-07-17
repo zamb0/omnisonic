@@ -17,11 +17,14 @@ class PlaylistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final meta = '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}';
+    final meta =
+        '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}';
 
     return FeishinCard(
       title: playlist.name,
-      subtitle: playlist.description?.isNotEmpty == true ? playlist.description : null,
+      subtitle: playlist.description?.isNotEmpty == true
+          ? playlist.description
+          : null,
       meta: meta,
       imageUrl: playlist.coverArtUrl,
       onTap: onTap,

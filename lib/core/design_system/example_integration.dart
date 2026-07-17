@@ -27,33 +27,17 @@ class DesignSystemExample extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Colors Section
-            _buildSection(
-              context,
-              'Colors',
-              _buildColorsDemo(context),
-            ),
-            
+            _buildSection(context, 'Colors', _buildColorsDemo(context)),
+
             // Typography Section
-            _buildSection(
-              context,
-              'Typography',
-              _buildTypographyDemo(context),
-            ),
-            
+            _buildSection(context, 'Typography', _buildTypographyDemo(context)),
+
             // Spacing Section
-            _buildSection(
-              context,
-              'Spacing',
-              _buildSpacingDemo(context),
-            ),
-            
+            _buildSection(context, 'Spacing', _buildSpacingDemo(context)),
+
             // Components Section
-            _buildSection(
-              context,
-              'Components',
-              _buildComponentsDemo(context),
-            ),
-            
+            _buildSection(context, 'Components', _buildComponentsDemo(context)),
+
             // Music Components Section
             _buildSection(
               context,
@@ -65,22 +49,19 @@ class DesignSystemExample extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildSection(BuildContext context, String title, Widget content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: context.textTheme.headlineSmall,
-        ),
+        Text(title, style: context.textTheme.headlineSmall),
         const SizedBox(height: OmnisonicSpacing.md),
         content,
         const SizedBox(height: OmnisonicSpacing.xl),
       ],
     );
   }
-  
+
   Widget _buildColorsDemo(BuildContext context) {
     return Column(
       children: [
@@ -95,7 +76,7 @@ class DesignSystemExample extends StatelessWidget {
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Semantic Colors
         Row(
           children: [
@@ -107,7 +88,7 @@ class DesignSystemExample extends StatelessWidget {
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Gradient Demo
         Container(
           height: 80,
@@ -128,7 +109,7 @@ class DesignSystemExample extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildColorSwatch(String name, Color color) {
     return Expanded(
       child: Column(
@@ -141,15 +122,12 @@ class DesignSystemExample extends StatelessWidget {
             ),
           ),
           const SizedBox(height: OmnisonicSpacing.xs),
-          Text(
-            name,
-            style: OmnisonicTypography.labelSmall,
-          ),
+          Text(name, style: OmnisonicTypography.labelSmall),
         ],
       ),
     );
   }
-  
+
   Widget _buildTypographyDemo(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +138,7 @@ class DesignSystemExample extends StatelessWidget {
         Text('Body Large', style: context.textTheme.bodyLarge),
         Text('Label Medium', style: context.textTheme.labelMedium),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Music-specific typography
         Text('Track Title', style: context.textTheme.trackTitle),
         Text('Artist Name', style: context.textTheme.artistName),
@@ -168,7 +146,7 @@ class DesignSystemExample extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildSpacingDemo(BuildContext context) {
     return Column(
       children: [
@@ -180,7 +158,7 @@ class DesignSystemExample extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildSpacingExample(String name, double spacing) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
@@ -199,7 +177,7 @@ class DesignSystemExample extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildComponentsDemo(BuildContext context) {
     return Column(
       children: [
@@ -221,15 +199,12 @@ class DesignSystemExample extends StatelessWidget {
             ),
             const SizedBox(width: OmnisonicSpacing.md),
             Expanded(
-              child: TextButton(
-                onPressed: () {},
-                child: const Text('Text'),
-              ),
+              child: TextButton(onPressed: () {}, child: const Text('Text')),
             ),
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Cards
         Card(
           child: Padding(
@@ -237,10 +212,7 @@ class DesignSystemExample extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Card Example',
-                  style: context.textTheme.titleMedium,
-                ),
+                Text('Card Example', style: context.textTheme.titleMedium),
                 const SizedBox(height: OmnisonicSpacing.sm),
                 Text(
                   'This is an example card using the design system.',
@@ -253,7 +225,7 @@ class DesignSystemExample extends StatelessWidget {
       ],
     );
   }
-  
+
   Widget _buildMusicComponentsDemo(BuildContext context) {
     return Column(
       children: [
@@ -263,23 +235,14 @@ class DesignSystemExample extends StatelessWidget {
             padding: OmnisonicInsets.card,
             child: Row(
               children: [
-                context.albumArtwork(
-                  width: 60,
-                  height: 60,
-                ),
+                context.albumArtwork(width: 60, height: 60),
                 const SizedBox(width: OmnisonicSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Album Title',
-                        style: context.textTheme.trackTitle,
-                      ),
-                      Text(
-                        'Artist Name',
-                        style: context.textTheme.artistName,
-                      ),
+                      Text('Album Title', style: context.textTheme.trackTitle),
+                      Text('Artist Name', style: context.textTheme.artistName),
                     ],
                   ),
                 ),
@@ -289,7 +252,7 @@ class DesignSystemExample extends StatelessWidget {
           ),
         ),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Playback Controls Example
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

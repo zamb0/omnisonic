@@ -14,7 +14,8 @@ class FavoritesPage extends StatefulWidget {
   State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends State<FavoritesPage> with SingleTickerProviderStateMixin {
+class _FavoritesPageState extends State<FavoritesPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -54,11 +55,7 @@ class _FavoritesPageState extends State<FavoritesPage> with SingleTickerProvider
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildAlbumsTab(),
-          _buildArtistsTab(),
-          _buildTracksTab(),
-        ],
+        children: [_buildAlbumsTab(), _buildArtistsTab(), _buildTracksTab()],
       ),
     );
   }

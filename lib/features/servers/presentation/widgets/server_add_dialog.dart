@@ -17,7 +17,7 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
   final _urlController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isAdding = false;
   bool _isTesting = false;
   bool _obscurePassword = true;
@@ -47,166 +47,177 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Server Name *',
-                  hintText: 'My Music Server',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a server name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _urlController,
-                decoration: const InputDecoration(
-                  labelText: 'Server URL *',
-                  hintText: 'https://music.example.com',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.url,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a server URL';
-                  }
-                  final uri = Uri.tryParse(value.trim());
-                  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-                    return 'Please enter a valid URL';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username *',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password *',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Server Name *',
+                    hintText: 'My Music Server',
+                    border: OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a server name';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: _obscurePassword,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue, width: 1),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Server URL *',
+                    hintText: 'https://music.example.com',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.url,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a server URL';
+                    }
+                    final uri = Uri.tryParse(value.trim());
+                    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                      return 'Please enter a valid URL';
+                    }
+                    return null;
+                  },
                 ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info, color: Colors.blue, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Navidrome Setup Tips',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '• URL: https://your-server.com (no /rest)\n'
-                      '• Use your Navidrome username/password\n'
-                      '• Enable "Subsonic API" in Navidrome settings',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 12,
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a username';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password *',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _isTesting || _isAdding ? null : _testConnection,
-                      icon: _isTesting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.wifi_protected_setup),
-                      label: Text(_isTesting ? 'Testing...' : 'Test Connection'),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                ],
-              ),
-              if (_testResult != null) ...[
-                const SizedBox(height: 12),
+                  obscureText: _obscurePassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _testPassed ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                    color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _testPassed ? Colors.green : Colors.red,
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.blue, width: 1),
                   ),
-                  child: Row(
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        _testPassed ? Icons.check_circle : Icons.error,
-                        color: _testPassed ? Colors.green : Colors.red,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _testResult!,
-                          style: TextStyle(
-                            color: _testPassed ? Colors.green[700] : Colors.red[700],
-                            fontSize: 14,
+                      Row(
+                        children: [
+                          Icon(Icons.info, color: Colors.blue, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Navidrome Setup Tips',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '• URL: https://your-server.com (no /rest)\n'
+                        '• Use your Navidrome username/password\n'
+                        '• Enable "Subsonic API" in Navidrome settings',
+                        style: TextStyle(color: Colors.blue, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _isTesting || _isAdding
+                            ? null
+                            : _testConnection,
+                        icon: _isTesting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.wifi_protected_setup),
+                        label: Text(
+                          _isTesting ? 'Testing...' : 'Test Connection',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_testResult != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _testPassed
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _testPassed ? Colors.green : Colors.red,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _testPassed ? Icons.check_circle : Icons.error,
+                          color: _testPassed ? Colors.green : Colors.red,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _testResult!,
+                            style: TextStyle(
+                              color: _testPassed
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
             ),
           ),
         ),
@@ -253,10 +264,12 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
           _isTesting = false;
           if (result != null && result.isSuccessful) {
             _testPassed = true;
-            _testResult = 'Connection successful! Server: ${result.serverInfo?.version ?? 'Unknown'}';
+            _testResult =
+                'Connection successful! Server: ${result.serverInfo?.version ?? 'Unknown'}';
           } else {
             _testPassed = false;
-            _testResult = 'Connection failed: ${result?.errorMessage ?? 'Unknown error'}';
+            _testResult =
+                'Connection failed: ${result?.errorMessage ?? 'Unknown error'}';
           }
         });
       }
@@ -293,17 +306,16 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
         if (success) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Added "${_nameController.text.trim()}"'),
-            ),
+            SnackBar(content: Text('Added "${_nameController.text.trim()}"')),
           );
         } else {
           // Show specific error message from view model
-          final errorMessage = viewModel.errorMessage ?? 'Unknown error occurred';
+          final errorMessage =
+              viewModel.errorMessage ?? 'Unknown error occurred';
           setState(() {
             _isAdding = false;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),

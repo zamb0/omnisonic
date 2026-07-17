@@ -8,10 +8,7 @@ import '../viewmodels/server_management_view_model.dart';
 class ServerEditDialog extends StatefulWidget {
   final MusicServer server;
 
-  const ServerEditDialog({
-    super.key,
-    required this.server,
-  });
+  const ServerEditDialog({super.key, required this.server});
 
   @override
   State<ServerEditDialog> createState() => _ServerEditDialogState();
@@ -22,7 +19,7 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _urlController;
   late final TextEditingController _usernameController;
-  
+
   bool _isUpdating = false;
 
   @override
@@ -55,75 +52,72 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Server Name *',
-                  border: OutlineInputBorder(),
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Server Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a server name';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a server name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _urlController,
-                decoration: const InputDecoration(
-                  labelText: 'Server URL *',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Server URL *',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.url,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a server URL';
+                    }
+                    final uri = Uri.tryParse(value.trim());
+                    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                      return 'Please enter a valid URL';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.url,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a server URL';
-                  }
-                  final uri = Uri.tryParse(value.trim());
-                  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-                    return 'Please enter a valid URL';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username *',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username *',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a username';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue, width: 1),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.blue, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'To change the password, delete and re-add the server.',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 14,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue, width: 1),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.blue, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'To change the password, delete and re-add the server.',
+                          style: TextStyle(color: Colors.blue, fontSize: 14),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               ],
             ),
           ),
@@ -182,11 +176,9 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
       if (mounted) {
         if (success) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Updated "${name}"'),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Updated "${name}"')));
         } else {
           // Error message is handled by the view model
           setState(() {

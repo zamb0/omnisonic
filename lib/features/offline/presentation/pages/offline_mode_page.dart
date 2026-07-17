@@ -93,9 +93,7 @@ class _OfflineModePageState extends State<OfflineModePage>
       body: Consumer<OfflineModeViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (viewModel.errorMessage != null) {
@@ -119,9 +117,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                     child: Text(
                       viewModel.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -155,9 +153,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                     child: Text(
                       'Download music for offline listening to see it here.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     ),
                   ),
                 ],
@@ -169,10 +167,10 @@ class _OfflineModePageState extends State<OfflineModePage>
             children: [
               // Offline mode banner
               const OfflineModeBanner(),
-              
+
               // Statistics summary
               _buildStatsSummary(context, viewModel),
-              
+
               // Content tabs
               Expanded(
                 child: TabBarView(
@@ -192,7 +190,10 @@ class _OfflineModePageState extends State<OfflineModePage>
     );
   }
 
-  Widget _buildStatsSummary(BuildContext context, OfflineModeViewModel viewModel) {
+  Widget _buildStatsSummary(
+    BuildContext context,
+    OfflineModeViewModel viewModel,
+  ) {
     final stats = viewModel.cacheStats;
     if (stats == null) return const SizedBox.shrink();
 
@@ -249,25 +250,13 @@ class _OfflineModePageState extends State<OfflineModePage>
       children: [
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         Text(
           percentage,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[500],
-          ),
+          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
         ),
       ],
     );
@@ -275,11 +264,9 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   Widget _buildTracksTab(OfflineModeViewModel viewModel) {
     final tracks = viewModel.offlineTracks;
-    
+
     if (tracks.isEmpty) {
-      return const Center(
-        child: Text('No offline tracks available'),
-      );
+      return const Center(child: Text('No offline tracks available'));
     }
 
     return ListView.builder(
@@ -299,11 +286,9 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   Widget _buildAlbumsTab(OfflineModeViewModel viewModel) {
     final albums = viewModel.offlineAlbums;
-    
+
     if (albums.isEmpty) {
-      return const Center(
-        child: Text('No offline albums available'),
-      );
+      return const Center(child: Text('No offline albums available'));
     }
 
     return GridView.builder(
@@ -338,11 +323,9 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   Widget _buildArtistsTab(OfflineModeViewModel viewModel) {
     final artists = viewModel.offlineArtists;
-    
+
     if (artists.isEmpty) {
-      return const Center(
-        child: Text('No offline artists available'),
-      );
+      return const Center(child: Text('No offline artists available'));
     }
 
     return GridView.builder(
@@ -377,11 +360,9 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   Widget _buildPlaylistsTab(OfflineModeViewModel viewModel) {
     final playlists = viewModel.offlinePlaylists;
-    
+
     if (playlists.isEmpty) {
-      return const Center(
-        child: Text('No offline playlists available'),
-      );
+      return const Center(child: Text('No offline playlists available'));
     }
 
     return GridView.builder(
@@ -416,7 +397,7 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   void _handleMenuAction(BuildContext context, String action) {
     final viewModel = context.read<OfflineModeViewModel>();
-    
+
     switch (action) {
       case 'stats':
         _showStatsDialog(context, viewModel);
@@ -448,7 +429,8 @@ class _OfflineModePageState extends State<OfflineModePage>
 
             final stats = snapshot.data!;
             final cacheStats = stats['cacheStats'] as Map<String, dynamic>;
-            final collectionStats = stats['collectionStats'] as Map<String, dynamic>;
+            final collectionStats =
+                stats['collectionStats'] as Map<String, dynamic>;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -457,11 +439,19 @@ class _OfflineModePageState extends State<OfflineModePage>
                 Text('Cache Size: ${cacheStats['formattedTotalSize']}'),
                 Text('Available: ${cacheStats['formattedAvailableSpace']}'),
                 Text('Files: ${cacheStats['fileCount']}'),
-                Text('Usage: ${cacheStats['usagePercentage'].toStringAsFixed(1)}%'),
+                Text(
+                  'Usage: ${cacheStats['usagePercentage'].toStringAsFixed(1)}%',
+                ),
                 const SizedBox(height: 16),
-                Text('Tracks: ${collectionStats['cachedTracks']}/${collectionStats['totalTracks']}'),
-                Text('Albums: ${collectionStats['cachedAlbums']}/${collectionStats['totalAlbums']}'),
-                Text('Artists: ${collectionStats['cachedArtists']}/${collectionStats['totalArtists']}'),
+                Text(
+                  'Tracks: ${collectionStats['cachedTracks']}/${collectionStats['totalTracks']}',
+                ),
+                Text(
+                  'Albums: ${collectionStats['cachedAlbums']}/${collectionStats['totalAlbums']}',
+                ),
+                Text(
+                  'Artists: ${collectionStats['cachedArtists']}/${collectionStats['totalArtists']}',
+                ),
               ],
             );
           },
@@ -476,7 +466,10 @@ class _OfflineModePageState extends State<OfflineModePage>
     );
   }
 
-  void _showSettingsDialog(BuildContext context, OfflineModeViewModel viewModel) {
+  void _showSettingsDialog(
+    BuildContext context,
+    OfflineModeViewModel viewModel,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -50,8 +50,14 @@ class PlaybackRepositoryImpl implements PlaybackRepository {
   }
 
   @override
-  Future<Result<void>> setQueue(List<Track> tracks, {int startIndex = 0}) async {
-    return await _audioPlayerDataSource.setQueue(tracks, startIndex: startIndex);
+  Future<Result<void>> setQueue(
+    List<Track> tracks, {
+    int startIndex = 0,
+  }) async {
+    return await _audioPlayerDataSource.setQueue(
+      tracks,
+      startIndex: startIndex,
+    );
   }
 
   @override
@@ -115,7 +121,9 @@ class PlaybackRepositoryImpl implements PlaybackRepository {
       final state = _audioPlayerDataSource.getCurrentState();
       return ResultHelper.success(state);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get current state: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get current state: $e'),
+      );
     }
   }
 
@@ -125,7 +133,9 @@ class PlaybackRepositoryImpl implements PlaybackRepository {
       final queue = _audioPlayerDataSource.getCurrentQueue();
       return ResultHelper.success(queue);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get current queue: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get current queue: $e'),
+      );
     }
   }
 
@@ -135,7 +145,9 @@ class PlaybackRepositoryImpl implements PlaybackRepository {
       final track = _audioPlayerDataSource.getCurrentTrack();
       return ResultHelper.success(track);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get current track: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get current track: $e'),
+      );
     }
   }
 }

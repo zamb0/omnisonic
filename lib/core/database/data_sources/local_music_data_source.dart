@@ -28,7 +28,9 @@ class LocalMusicDataSource {
       final tracks = await _database.musicDao.getTracksByServerId(serverId);
       return ResultHelper.success(tracks);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get tracks by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get tracks by server: $e'),
+      );
     }
   }
 
@@ -38,7 +40,9 @@ class LocalMusicDataSource {
       final tracks = await _database.musicDao.getTracksByAlbumId(albumId);
       return ResultHelper.success(tracks);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get tracks by album: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get tracks by album: $e'),
+      );
     }
   }
 
@@ -48,7 +52,9 @@ class LocalMusicDataSource {
       final tracks = await _database.musicDao.getTracksByArtistId(artistId);
       return ResultHelper.success(tracks);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get tracks by artist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get tracks by artist: $e'),
+      );
     }
   }
 
@@ -68,7 +74,9 @@ class LocalMusicDataSource {
       final tracks = await _database.musicDao.getCachedTracks();
       return ResultHelper.success(tracks);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get cached tracks: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get cached tracks: $e'),
+      );
     }
   }
 
@@ -78,7 +86,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertTrack(track);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert track: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert track: $e'),
+      );
     }
   }
 
@@ -88,7 +98,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertTracks(tracks);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert tracks: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert tracks: $e'),
+      );
     }
   }
 
@@ -98,17 +110,29 @@ class LocalMusicDataSource {
       await _database.musicDao.updateTrack(track);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update track: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update track: $e'),
+      );
     }
   }
 
   /// Update track cache status
-  Future<Result<void>> updateTrackCacheStatus(String trackId, bool isCached, String? cachePath) async {
+  Future<Result<void>> updateTrackCacheStatus(
+    String trackId,
+    bool isCached,
+    String? cachePath,
+  ) async {
     try {
-      await _database.musicDao.updateTrackCacheStatus(trackId, isCached, cachePath);
+      await _database.musicDao.updateTrackCacheStatus(
+        trackId,
+        isCached,
+        cachePath,
+      );
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update track cache status: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update track cache status: $e'),
+      );
     }
   }
 
@@ -118,7 +142,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteTrack(id);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete track: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete track: $e'),
+      );
     }
   }
 
@@ -128,7 +154,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteTracksByServerId(serverId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete tracks by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete tracks by server: $e'),
+      );
     }
   }
 
@@ -149,7 +177,9 @@ class LocalMusicDataSource {
       final albums = await _database.musicDao.getAlbumsByServerId(serverId);
       return ResultHelper.success(albums);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get albums by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get albums by server: $e'),
+      );
     }
   }
 
@@ -159,7 +189,9 @@ class LocalMusicDataSource {
       final albums = await _database.musicDao.getAlbumsByArtistId(artistId);
       return ResultHelper.success(albums);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get albums by artist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get albums by artist: $e'),
+      );
     }
   }
 
@@ -179,7 +211,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertAlbum(album);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert album: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert album: $e'),
+      );
     }
   }
 
@@ -189,7 +223,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertAlbums(albums);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert albums: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert albums: $e'),
+      );
     }
   }
 
@@ -199,7 +235,9 @@ class LocalMusicDataSource {
       await _database.musicDao.updateAlbum(album);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update album: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update album: $e'),
+      );
     }
   }
 
@@ -209,7 +247,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteAlbum(id);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete album: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete album: $e'),
+      );
     }
   }
 
@@ -219,7 +259,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteAlbumsByServerId(serverId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete albums by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete albums by server: $e'),
+      );
     }
   }
 
@@ -240,7 +282,9 @@ class LocalMusicDataSource {
       final artists = await _database.musicDao.getArtistsByServerId(serverId);
       return ResultHelper.success(artists);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get artists by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get artists by server: $e'),
+      );
     }
   }
 
@@ -260,7 +304,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertArtist(artist);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert artist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert artist: $e'),
+      );
     }
   }
 
@@ -270,7 +316,9 @@ class LocalMusicDataSource {
       await _database.musicDao.insertArtists(artists);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert artists: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert artists: $e'),
+      );
     }
   }
 
@@ -280,7 +328,9 @@ class LocalMusicDataSource {
       await _database.musicDao.updateArtist(artist);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update artist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update artist: $e'),
+      );
     }
   }
 
@@ -290,7 +340,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteArtist(id);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete artist: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete artist: $e'),
+      );
     }
   }
 
@@ -300,7 +352,9 @@ class LocalMusicDataSource {
       await _database.musicDao.deleteArtistsByServerId(serverId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete artists by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete artists by server: $e'),
+      );
     }
   }
 
@@ -311,7 +365,9 @@ class LocalMusicDataSource {
       final tracks = await _database.musicDao.searchTracks(query);
       return ResultHelper.success(tracks);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to search tracks: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to search tracks: $e'),
+      );
     }
   }
 
@@ -321,7 +377,9 @@ class LocalMusicDataSource {
       final albums = await _database.musicDao.searchAlbums(query);
       return ResultHelper.success(albums);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to search albums: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to search albums: $e'),
+      );
     }
   }
 
@@ -331,7 +389,9 @@ class LocalMusicDataSource {
       final artists = await _database.musicDao.searchArtists(query);
       return ResultHelper.success(artists);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to search artists: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to search artists: $e'),
+      );
     }
   }
 
@@ -358,12 +418,15 @@ class LocalMusicDataSource {
       await _database.clearServerData(serverId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to clear server data: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to clear server data: $e'),
+      );
     }
   }
 
   /// Sync music data from server (replace existing data)
-  Future<Result<void>> syncMusicData(String serverId, {
+  Future<Result<void>> syncMusicData(
+    String serverId, {
     List<Track>? tracks,
     List<Album>? albums,
     List<Artist>? artists,
@@ -388,7 +451,9 @@ class LocalMusicDataSource {
       });
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to sync music data: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to sync music data: $e'),
+      );
     }
   }
 

@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart' hide PlaybackState;
 
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
+import '../../../../core/repositories/playback_repository.dart'
+    show PlaybackState, RepeatMode;
 import 'audio_player_data_source.dart';
 
 /// Audio service handler for background playback and system integration
-class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
-  AudioServiceHandler({
-    required AudioPlayerDataSource audioPlayerDataSource,
-  }) : _audioPlayerDataSource = audioPlayerDataSource {
+class AudioServiceHandler extends BaseAudioHandler
+    with QueueHandler, SeekHandler {
+  AudioServiceHandler({required AudioPlayerDataSource audioPlayerDataSource})
+    : _audioPlayerDataSource = audioPlayerDataSource {
     _init();
   }
 
@@ -20,9 +21,11 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
 
   void _init() {
     // Listen to playback state changes and update media session
-    _playbackStateSubscription = _audioPlayerDataSource.observePlaybackState().listen((state) {
-      _updateMediaSession(state);
-    });
+    _playbackStateSubscription = _audioPlayerDataSource
+        .observePlaybackState()
+        .listen((state) {
+          _updateMediaSession(state);
+        });
 
     // Listen to queue changes and update media session queue
     _queueSubscription = _audioPlayerDataSource.observeQueue().listen((queue) {
@@ -33,62 +36,47 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
   @override
   Future<void> play() async {
     final result = await _audioPlayerDataSource.resume();
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> pause() async {
     final result = await _audioPlayerDataSource.pause();
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> stop() async {
     final result = await _audioPlayerDataSource.stop();
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> seek(Duration position) async {
     final result = await _audioPlayerDataSource.seek(position);
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> skipToNext() async {
     final result = await _audioPlayerDataSource.skipToNext();
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> skipToPrevious() async {
     final result = await _audioPlayerDataSource.skipToPrevious();
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> skipToQueueItem(int index) async {
     final queue = _audioPlayerDataSource.getCurrentQueue();
     if (index >= 0 && index < queue.length) {
-      final result = await _audioPlayerDataSource.setQueue(queue, startIndex: index);
+      final result = await _audioPlayerDataSource.setQueue(
+        queue,
+        startIndex: index,
+      );
       result.fold(
         (failure) => throw Exception(failure.toString()),
         (_) => null,
@@ -101,10 +89,7 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
   Future<void> addQueueItem(MediaItem mediaItem) async {
     final track = _mediaItemToTrack(mediaItem);
     final result = await _audioPlayerDataSource.addToQueue(track);
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
@@ -136,66 +121,62 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
       default:
         mode = RepeatMode.none;
     }
-    
+
     final result = await _audioPlayerDataSource.setRepeatMode(mode);
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   @override
   Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
     final enabled = shuffleMode == AudioServiceShuffleMode.all;
     final result = await _audioPlayerDataSource.setShuffleMode(enabled);
-    result.fold(
-      (failure) => throw Exception(failure.toString()),
-      (_) => null,
-    );
+    result.fold((failure) => throw Exception(failure.toString()), (_) => null);
   }
 
   /// Updates the media session with current playback state
   void _updateMediaSession(PlaybackState state) {
     final controls = <MediaControl>[];
-    
+
     // Always show skip buttons if there's a queue
     final hasQueue = state.queue.isNotEmpty && state.queue.length > 1;
-    
+
     // Add previous control
     if (hasQueue) {
       controls.add(MediaControl.skipToPrevious);
     }
-    
+
     // Add play/pause control
     if (state.isPlaying) {
       controls.add(MediaControl.pause);
     } else {
       controls.add(MediaControl.play);
     }
-    
+
     // Add next control
     if (hasQueue) {
       controls.add(MediaControl.skipToNext);
     }
 
     // Update playback state
-    playbackState.add(playbackState.value.copyWith(
-      controls: controls,
-      systemActions: const {
-        MediaAction.seek,
-        MediaAction.seekForward,
-        MediaAction.seekBackward,
-      },
-      androidCompactActionIndices: hasQueue 
-          ? [0, 1, 2]  // Show all three: previous, play/pause, next
-          : [0],  // Show only play/pause
-      processingState: _mapProcessingState(state),
-      playing: state.isPlaying,
-      updatePosition: state.position,
-      bufferedPosition: state.position, // Simplified - could be enhanced
-      speed: state.isPlaying ? 1.0 : 0.0,
-      queueIndex: state.currentIndex,
-    ));
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: controls,
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+        },
+        androidCompactActionIndices: hasQueue
+            ? [0, 1, 2] // Show all three: previous, play/pause, next
+            : [0], // Show only play/pause
+        processingState: _mapProcessingState(state),
+        playing: state.isPlaying,
+        updatePosition: state.position,
+        bufferedPosition: state.position, // Simplified - could be enhanced
+        speed: state.isPlaying ? 1.0 : 0.0,
+        queueIndex: state.currentIndex,
+      ),
+    );
 
     // Update media item if there's a current track
     if (state.currentTrack != null) {
@@ -259,7 +240,7 @@ class AudioServiceHandler extends BaseAudioHandler with QueueHandler, SeekHandle
     if (state.currentTrack == null) {
       return AudioProcessingState.idle;
     }
-    
+
     if (state.isPlaying) {
       return AudioProcessingState.ready;
     } else {

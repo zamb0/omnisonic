@@ -5,10 +5,7 @@ import '../../../../core/usecases/usecase.dart';
 
 /// Parameters for downloading a track
 class DownloadTrackParams {
-  const DownloadTrackParams({
-    required this.track,
-    this.onProgress,
-  });
+  const DownloadTrackParams({required this.track, this.onProgress});
 
   final Track track;
   final void Function(int received, int total)? onProgress;
@@ -16,9 +13,8 @@ class DownloadTrackParams {
 
 /// Use case for downloading a track for offline use
 class DownloadTrackUseCase implements UseCase<CacheEntry, DownloadTrackParams> {
-  DownloadTrackUseCase({
-    required OfflineRepository offlineRepository,
-  }) : _offlineRepository = offlineRepository;
+  DownloadTrackUseCase({required OfflineRepository offlineRepository})
+    : _offlineRepository = offlineRepository;
 
   final OfflineRepository _offlineRepository;
 
@@ -30,14 +26,18 @@ class DownloadTrackUseCase implements UseCase<CacheEntry, DownloadTrackParams> {
     }
 
     // Check if already cached
-    final isCachedResult = await _offlineRepository.isTrackCached(params.track.id);
+    final isCachedResult = await _offlineRepository.isTrackCached(
+      params.track.id,
+    );
     if (isCachedResult.isFailure) {
       return ResultHelper.failure(isCachedResult.failureOrNull!);
     }
 
     if (isCachedResult.valueOrNull!) {
       // Already cached, get the entry
-      final entryResult = await _offlineRepository.getCachedEntry(params.track.id);
+      final entryResult = await _offlineRepository.getCachedEntry(
+        params.track.id,
+      );
       if (entryResult.isFailure) {
         return ResultHelper.failure(entryResult.failureOrNull!);
       }
@@ -50,7 +50,9 @@ class DownloadTrackUseCase implements UseCase<CacheEntry, DownloadTrackParams> {
 
     // Check if already downloading
     if (_offlineRepository.isTrackDownloading(params.track.id)) {
-      return ResultHelper.failure(CacheFailure('Track is already being downloaded'));
+      return ResultHelper.failure(
+        CacheFailure('Track is already being downloaded'),
+      );
     }
 
     // Start download

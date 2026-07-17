@@ -1,8 +1,5 @@
 /// Available sort options for library content
-enum SortOption {
-  alphabetical,
-  recentlyAdded,
-}
+enum SortOption { alphabetical, recentlyAdded }
 
 /// Extension to provide display information for sort options
 extension SortOptionDisplay on SortOption {

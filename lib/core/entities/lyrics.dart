@@ -1,20 +1,11 @@
 import 'package:equatable/equatable.dart';
 
-enum LyricsSource {
-  lrclib,
-  lyricsOvh,
-}
+enum LyricsSource { lrclib, lyricsOvh }
 
-enum LyricsType {
-  synced,
-  unsynced,
-}
+enum LyricsType { synced, unsynced }
 
 class LyricLine extends Equatable {
-  const LyricLine({
-    required this.time,
-    required this.text,
-  });
+  const LyricLine({required this.time, required this.text});
 
   final Duration time;
   final String text;
@@ -48,15 +39,15 @@ class LyricsData extends Equatable {
 
   @override
   List<Object?> get props => [
-        title,
-        artist,
-        source,
-        type,
-        raw,
-        providerId,
-        offsetMs,
-        fetchedAt,
-      ];
+    title,
+    artist,
+    source,
+    type,
+    raw,
+    providerId,
+    offsetMs,
+    fetchedAt,
+  ];
 
   LyricsData copyWith({
     String? title,

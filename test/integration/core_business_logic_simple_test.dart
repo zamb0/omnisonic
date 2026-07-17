@@ -9,7 +9,7 @@ import 'package:omnisonic/core/repositories/repositories.dart';
 import 'package:omnisonic/core/usecases/usecases.dart';
 
 /// Simple integration test for core business logic without Flutter dependencies
-/// 
+///
 /// This test verifies that the core components work together properly
 /// and that Checkpoint 10 requirements are met.
 void main() {
@@ -27,7 +27,7 @@ void main() {
         quality: AudioQuality.high,
         lastModified: DateTime.now(),
       );
-      
+
       expect(track.id, equals('test-track-1'));
       expect(track.title, equals('Test Song'));
       expect(track.isValid, isTrue);
@@ -41,7 +41,7 @@ void main() {
         status: ServerStatus.online,
         createdAt: DateTime.now(),
       );
-      
+
       expect(server.id, equals('test-server-1'));
       expect(server.name, equals('Test Server'));
       expect(server.isValid, isTrue);
@@ -58,7 +58,7 @@ void main() {
         trackCount: 10,
         duration: Duration(minutes: 45),
       );
-      
+
       expect(album.id, equals('test-album-1'));
       expect(album.title, equals('Test Album'));
 
@@ -70,7 +70,7 @@ void main() {
         lastModified: DateTime.now(),
         albumCount: 5,
       );
-      
+
       expect(artist.id, equals('test-artist-1'));
       expect(artist.name, equals('Test Artist'));
 
@@ -82,7 +82,7 @@ void main() {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       expect(playlist.id, equals('test-playlist-1'));
       expect(playlist.name, equals('Test Playlist'));
       expect(playlist.trackCount, equals(2));
@@ -90,7 +90,7 @@ void main() {
 
     test('should verify deduplication engine functionality', () {
       final deduplicationEngine = DeduplicationEngine();
-      
+
       // Create test tracks with similar metadata
       final track1 = Track(
         id: 'track-1',
@@ -130,7 +130,9 @@ void main() {
       expect(successResult.isFailure, isFalse);
       expect(successResult.valueOrNull, equals('test value'));
 
-      final failureResult = ResultHelper.failure<String>(UnknownFailure('test error'));
+      final failureResult = ResultHelper.failure<String>(
+        UnknownFailure('test error'),
+      );
       expect(failureResult.isSuccess, isFalse);
       expect(failureResult.isFailure, isTrue);
       expect(failureResult.valueOrNull, isNull);

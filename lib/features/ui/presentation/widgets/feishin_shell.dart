@@ -6,11 +6,7 @@ import '../models/library_tab.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 
 class FeishinShell extends StatelessWidget {
-  const FeishinShell({
-    super.key,
-    required this.child,
-    required this.extended,
-  });
+  const FeishinShell({super.key, required this.child, required this.extended});
 
   final Widget child;
   final bool extended;
@@ -27,9 +23,7 @@ class FeishinShell extends StatelessWidget {
             ],
           ),
         ),
-        AnimatedNowPlayingBar(
-          onTap: () => context.push(AppRouter.nowPlaying),
-        ),
+        AnimatedNowPlayingBar(onTap: () => context.push(AppRouter.nowPlaying)),
       ],
     );
   }
@@ -40,17 +34,18 @@ class FeishinShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri;
     final path = location.path;
     final isLibrary =
-        path == AppRouter.library || path == AppRouter.albumDetail || path == AppRouter.artistDetail;
+        path == AppRouter.library ||
+        path == AppRouter.albumDetail ||
+        path == AppRouter.artistDetail;
     final activeLibraryTab =
-        LibraryTab.fromName(location.queryParameters['tab']) ?? LibraryTab.albums;
+        LibraryTab.fromName(location.queryParameters['tab']) ??
+        LibraryTab.albums;
 
     return Container(
       width: extended ? 264 : 76,
       decoration: BoxDecoration(
         color: scheme.surfaceVariant,
-        border: Border(
-          right: BorderSide(color: scheme.outlineVariant),
-        ),
+        border: Border(right: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Column(
         children: [
@@ -60,13 +55,11 @@ class FeishinShell extends StatelessWidget {
               vertical: 20,
             ),
             child: Row(
-              mainAxisAlignment:
-                  extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+              mainAxisAlignment: extended
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.graphic_eq_rounded,
-                  color: scheme.primary,
-                ),
+                Icon(Icons.graphic_eq_rounded, color: scheme.primary),
                 if (extended) ...[
                   const SizedBox(width: 12),
                   Text(
@@ -163,9 +156,9 @@ class FeishinShell extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 1.1,
-            ),
+          color: scheme.onSurfaceVariant,
+          letterSpacing: 1.1,
+        ),
       ),
     );
   }
@@ -183,7 +176,9 @@ class FeishinShell extends StatelessWidget {
     final labelStyle = compact
         ? Theme.of(context).textTheme.labelMedium
         : Theme.of(context).textTheme.titleSmall;
-    final color = selected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+    final color = selected
+        ? scheme.onPrimaryContainer
+        : scheme.onSurfaceVariant;
     final background = selected ? scheme.primaryContainer : Colors.transparent;
 
     if (!extended) {
@@ -225,10 +220,7 @@ class FeishinShell extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    label,
-                    style: labelStyle?.copyWith(color: color),
-                  ),
+                  child: Text(label, style: labelStyle?.copyWith(color: color)),
                 ),
               ],
             ),
@@ -243,4 +235,3 @@ class FeishinShell extends StatelessWidget {
     context.go('${AppRouter.library}?tab=$tabName');
   }
 }
-

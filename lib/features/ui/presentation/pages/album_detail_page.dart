@@ -16,10 +16,7 @@ import '../widgets/widgets.dart';
 class AlbumDetailPage extends StatefulWidget {
   final Album album;
 
-  const AlbumDetailPage({
-    super.key,
-    required this.album,
-  });
+  const AlbumDetailPage({super.key, required this.album});
 
   @override
   State<AlbumDetailPage> createState() => _AlbumDetailPageState();
@@ -48,7 +45,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
     try {
       final musicRepository = context.read<MusicLibraryViewModel>();
-      
+
       // Use proper getAlbumTracks method which queries by albumId
       // and fetches from server if not found locally
       final albumTracks = await musicRepository.getAlbumTracks(_album.id);
@@ -108,38 +105,36 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               ),
           ],
         ),
+        SliverToBoxAdapter(child: _buildAlbumHeader(context)),
+
+        // Tracks section header
         SliverToBoxAdapter(
-          child: _buildAlbumHeader(context),
-        ),
-          
-          // Tracks section header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Text(
-                    'Tracks',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Tracks',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                if (_tracks.isNotEmpty)
+                  IconButton(
+                    onPressed: _loadTracks,
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh',
                   ),
-                  const Spacer(),
-                  if (_tracks.isNotEmpty)
-                    IconButton(
-                      onPressed: _loadTracks,
-                      icon: const Icon(Icons.refresh),
-                      tooltip: 'Refresh',
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
-          
-          // Tracks content
-          _buildTracksContent(),
-        ],
-      );
+        ),
+
+        // Tracks content
+        _buildTracksContent(),
+      ],
+    );
   }
 
   Widget _buildTracksContent() {
@@ -161,11 +156,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             padding: const EdgeInsets.all(32),
             child: Column(
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load tracks',
@@ -196,18 +187,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             padding: EdgeInsets.all(32),
             child: Column(
               children: [
-                Icon(
-                  Icons.music_note_outlined,
-                  size: 48,
-                  color: Colors.grey,
-                ),
+                Icon(Icons.music_note_outlined, size: 48, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
                   'No tracks found',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -217,18 +201,15 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final track = _tracks[index];
-          return TrackTile(
-            track: track,
-            showTrackNumber: true,
-            onTap: () => _onTrackTapped(track, index),
-            onMorePressed: () => _showTrackOptions(track),
-          );
-        },
-        childCount: _tracks.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final track = _tracks[index];
+        return TrackTile(
+          track: track,
+          showTrackNumber: true,
+          onTap: () => _onTrackTapped(track, index),
+          onMorePressed: () => _showTrackOptions(track),
+        );
+      }, childCount: _tracks.length),
     );
   }
 
@@ -278,16 +259,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       children: [
         Text(
           _album.title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
           _album.artist,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
         if (_albumVariants.length > 1) ...[
           const SizedBox(height: 12),
@@ -305,11 +286,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 '${_album.year}',
               ),
             if (_album.genre != null)
-              _buildMetadataChip(
-                context,
-                Icons.music_note,
-                _album.genre!,
-              ),
+              _buildMetadataChip(context, Icons.music_note, _album.genre!),
             _buildMetadataChip(
               context,
               Icons.queue_music,
@@ -337,7 +314,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Play'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -346,7 +326,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 icon: const Icon(Icons.shuffle),
                 label: const Text('Shuffle'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],
@@ -374,11 +357,13 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         ),
         child: ClipRRect(
           borderRadius: borderRadius,
-            child: _album.coverArtUrl != null
+          child: _album.coverArtUrl != null
               ? CachedNetworkImage(
-                imageUrl: _album.coverArtUrl!.withCoverArtSize(800),
-                cacheKey: _album.coverArtUrl!.withCoverArtSize(800).subsonicCacheKey,
-                cacheManager: OmnisonicImageCacheManager.instance,
+                  imageUrl: _album.coverArtUrl!.withCoverArtSize(800),
+                  cacheKey: _album.coverArtUrl!
+                      .withCoverArtSize(800)
+                      .subsonicCacheKey,
+                  cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
                   memCacheWidth: 800,
                   memCacheHeight: 800,
@@ -420,7 +405,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   Widget _buildServerPicker(BuildContext context, ColorScheme scheme) {
     final serverViewModel = context.read<ServerManagementViewModel>();
-    final serverMap = {for (var server in serverViewModel.servers) server.id: server.name};
+    final serverMap = {
+      for (var server in serverViewModel.servers) server.id: server.name,
+    };
     final selected = _albumVariants.firstWhere(
       (album) => album.id == _album.id,
       orElse: () => _albumVariants.first,
@@ -438,11 +425,15 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           value: selected,
           isDense: true,
           dropdownColor: scheme.surface,
-          icon: Icon(Icons.expand_more, color: scheme.onSurfaceVariant, size: 18),
+          icon: Icon(
+            Icons.expand_more,
+            color: scheme.onSurfaceVariant,
+            size: 18,
+          ),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
           items: _albumVariants.map((album) {
             final serverName = serverMap[album.serverId] ?? album.serverId;
             final trackCount = album.trackCount ?? 0;
@@ -475,18 +466,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: scheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -532,11 +519,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       0,
       (sum, track) => sum + track.duration.inSeconds,
     );
-    
+
     final duration = Duration(seconds: totalSeconds);
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else {
@@ -575,34 +562,42 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   void _playAlbum() {
     if (_tracks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tracks to play')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No tracks to play')));
       return;
     }
-    
+
     final playbackViewModel = context.read<PlaybackViewModel>();
     playbackViewModel.playTrack(_tracks.first, queue: _tracks, startIndex: 0);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Playing ${_album.title} (${_tracks.length} tracks)')),
+      SnackBar(
+        content: Text('Playing ${_album.title} (${_tracks.length} tracks)'),
+      ),
     );
   }
 
   void _shuffleAlbum() {
     if (_tracks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tracks to shuffle')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No tracks to shuffle')));
       return;
     }
-    
+
     final playbackViewModel = context.read<PlaybackViewModel>();
     final shuffledTracks = List<Track>.from(_tracks)..shuffle();
-    playbackViewModel.playTrack(shuffledTracks.first, queue: shuffledTracks, startIndex: 0);
-    
+    playbackViewModel.playTrack(
+      shuffledTracks.first,
+      queue: shuffledTracks,
+      startIndex: 0,
+    );
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Shuffling ${_album.title} (${_tracks.length} tracks)')),
+      SnackBar(
+        content: Text('Shuffling ${_album.title} (${_tracks.length} tracks)'),
+      ),
     );
   }
 
@@ -634,9 +629,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               onTap: () {
                 context.pop();
                 context.read<PlaybackViewModel>().addToQueue(track);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Added to queue')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Added to queue')));
               },
             ),
             ListTile(
@@ -665,9 +660,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             _buildInfoRow('Artist', track.artist),
             _buildInfoRow('Album', track.album),
             _buildInfoRow('Duration', _formatDuration(track.duration)),
-            if (track.year != null) _buildInfoRow('Year', track.year.toString()),
+            if (track.year != null)
+              _buildInfoRow('Year', track.year.toString()),
             if (track.genre != null) _buildInfoRow('Genre', track.genre!),
-            if (track.trackNumber != null) _buildInfoRow('Track', track.trackNumber.toString()),
+            if (track.trackNumber != null)
+              _buildInfoRow('Track', track.trackNumber.toString()),
             _buildInfoRow('Quality', track.quality.toString()),
             _buildInfoRow('Server', _getTrackServerName(track)),
           ],

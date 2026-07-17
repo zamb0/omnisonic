@@ -54,7 +54,11 @@ class OmnisonicLoadingStates {
       padding: OmnisonicInsets.allMd,
       child: Row(
         children: [
-          skeleton(width: 48, height: 48, borderRadius: BorderRadius.circular(4)),
+          skeleton(
+            width: 48,
+            height: 48,
+            borderRadius: BorderRadius.circular(4),
+          ),
           SizedBox(width: OmnisonicSpacing.md),
           Expanded(
             child: Column(
@@ -74,10 +78,7 @@ class OmnisonicLoadingStates {
   }
 
   /// Creates a skeleton for album cards
-  static Widget albumCardSkeleton({
-    double width = 160,
-    double height = 200,
-  }) {
+  static Widget albumCardSkeleton({double width = 160, double height = 200}) {
     return Container(
       width: width,
       height: height,
@@ -100,9 +101,7 @@ class OmnisonicLoadingStates {
   }
 
   /// Creates a skeleton for artist cards
-  static Widget artistCardSkeleton({
-    double size = 120,
-  }) {
+  static Widget artistCardSkeleton({double size = 120}) {
     return Container(
       width: size,
       padding: OmnisonicInsets.allSm,
@@ -131,9 +130,7 @@ class OmnisonicLoadingStates {
       height: size,
       child: CircularProgressIndicator(
         strokeWidth: strokeWidth,
-        valueColor: color != null 
-          ? AlwaysStoppedAnimation<Color>(color)
-          : null,
+        valueColor: color != null ? AlwaysStoppedAnimation<Color>(color) : null,
       ),
     );
   }
@@ -156,9 +153,9 @@ class OmnisonicLoadingStates {
         child: LinearProgressIndicator(
           value: value,
           backgroundColor: backgroundColor,
-          valueColor: valueColor != null 
-            ? AlwaysStoppedAnimation<Color>(valueColor)
-            : null,
+          valueColor: valueColor != null
+              ? AlwaysStoppedAnimation<Color>(valueColor)
+              : null,
         ),
       ),
     );
@@ -216,10 +213,7 @@ class OmnisonicLoadingStates {
                     SizedBox(height: OmnisonicSpacing.lg),
                     Text(
                       message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ],
                 ],
@@ -244,10 +238,7 @@ class OmnisonicLoadingStates {
   }
 
   /// Creates a music-specific loading animation
-  static Widget musicLoading({
-    String? message,
-    Color? color,
-  }) {
+  static Widget musicLoading({String? message, Color? color}) {
     return contextualLoading(
       context: LoadingContext.music,
       message: message,
@@ -256,10 +247,7 @@ class OmnisonicLoadingStates {
   }
 
   /// Creates a search-specific loading animation
-  static Widget searchLoading({
-    String? message,
-    Color? color,
-  }) {
+  static Widget searchLoading({String? message, Color? color}) {
     return contextualLoading(
       context: LoadingContext.search,
       message: message,
@@ -268,10 +256,7 @@ class OmnisonicLoadingStates {
   }
 
   /// Creates a sync-specific loading animation
-  static Widget syncLoading({
-    String? message,
-    Color? color,
-  }) {
+  static Widget syncLoading({String? message, Color? color}) {
     return contextualLoading(
       context: LoadingContext.sync,
       message: message,
@@ -340,13 +325,9 @@ class _SkeletonWidgetState extends State<_SkeletonWidget>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _animation = Tween<double>(
-      begin: -1.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutSine,
-    ));
+    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
     _controller.repeat();
   }
 
@@ -360,11 +341,12 @@ class _SkeletonWidgetState extends State<_SkeletonWidget>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    final baseColor = widget.baseColor ?? 
-      (isDark ? Colors.grey[800]! : Colors.grey[300]!);
-    final highlightColor = widget.highlightColor ?? 
-      (isDark ? Colors.grey[700]! : Colors.grey[100]!);
+
+    final baseColor =
+        widget.baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!);
+    final highlightColor =
+        widget.highlightColor ??
+        (isDark ? Colors.grey[700]! : Colors.grey[100]!);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -377,11 +359,7 @@ class _SkeletonWidgetState extends State<_SkeletonWidget>
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
+              colors: [baseColor, highlightColor, baseColor],
               stops: [
                 (_animation.value - 0.3).clamp(0.0, 1.0),
                 _animation.value.clamp(0.0, 1.0),
@@ -423,16 +401,14 @@ class _PulsingDotsWidgetState extends State<_PulsingDotsWidget>
     super.initState();
     _controllers = List.generate(
       widget.count,
-      (index) => AnimationController(
-        duration: widget.duration,
-        vsync: this,
-      ),
+      (index) => AnimationController(duration: widget.duration, vsync: this),
     );
-    
+
     _animations = _controllers.map((controller) {
-      return Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-      );
+      return Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
     }).toList();
 
     // Start animations with staggered delays
@@ -455,7 +431,7 @@ class _PulsingDotsWidgetState extends State<_PulsingDotsWidget>
   @override
   Widget build(BuildContext context) {
     final color = widget.color ?? Theme.of(context).colorScheme.primary;
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(widget.count, (index) {
@@ -468,7 +444,9 @@ class _PulsingDotsWidgetState extends State<_PulsingDotsWidget>
               height: widget.size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.3 + (_animations[index].value * 0.7)),
+                color: color.withValues(
+                  alpha: 0.3 + (_animations[index].value * 0.7),
+                ),
               ),
             );
           },
@@ -506,16 +484,14 @@ class _WaveIndicatorWidgetState extends State<_WaveIndicatorWidget>
     super.initState();
     _controllers = List.generate(
       widget.barCount,
-      (index) => AnimationController(
-        duration: widget.duration,
-        vsync: this,
-      ),
+      (index) => AnimationController(duration: widget.duration, vsync: this),
     );
-    
+
     _animations = _controllers.map((controller) {
-      return Tween<double>(begin: 0.2, end: 1.0).animate(
-        CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-      );
+      return Tween<double>(
+        begin: 0.2,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
     }).toList();
 
     // Start animations with staggered delays
@@ -539,7 +515,7 @@ class _WaveIndicatorWidgetState extends State<_WaveIndicatorWidget>
   Widget build(BuildContext context) {
     final color = widget.color ?? Theme.of(context).colorScheme.primary;
     final barWidth = widget.size / (widget.barCount * 2);
-    
+
     return SizedBox(
       width: widget.size,
       height: widget.size,
@@ -579,7 +555,8 @@ class _ContextualLoadingWidget extends StatefulWidget {
   });
 
   @override
-  State<_ContextualLoadingWidget> createState() => _ContextualLoadingWidgetState();
+  State<_ContextualLoadingWidget> createState() =>
+      _ContextualLoadingWidgetState();
 }
 
 class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
@@ -594,9 +571,10 @@ class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
       duration: _getDurationForContext(widget.context),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.repeat();
   }
 
@@ -669,7 +647,7 @@ class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
             final delay = index * 0.2;
             final animValue = (_animation.value + delay) % 1.0;
             final height = 20 + (sin(animValue * 2 * pi) * 15);
-            
+
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 2),
               width: 4,
@@ -705,11 +683,7 @@ class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
             ),
             Transform.rotate(
               angle: _animation.value * 2 * pi,
-              child: Icon(
-                Icons.search,
-                color: color,
-                size: 20,
-              ),
+              child: Icon(Icons.search, color: color, size: 20),
             ),
           ],
         );
@@ -726,11 +700,7 @@ class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Icon(
-                Icons.sync,
-                color: color,
-                size: 32,
-              ),
+              Icon(Icons.sync, color: color, size: 32),
               Positioned(
                 top: 0,
                 child: Container(
@@ -756,11 +726,7 @@ class _ContextualLoadingWidgetState extends State<_ContextualLoadingWidget>
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.cloud_download,
-              color: color,
-              size: 32,
-            ),
+            Icon(Icons.cloud_download, color: color, size: 32),
             const SizedBox(height: 8),
             Container(
               width: 40,
@@ -793,11 +759,7 @@ class _DownloadLoadingWidget extends StatelessWidget {
   final double? progress;
   final Color? color;
 
-  const _DownloadLoadingWidget({
-    this.message,
-    this.progress,
-    this.color,
-  });
+  const _DownloadLoadingWidget({this.message, this.progress, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -807,11 +769,7 @@ class _DownloadLoadingWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.cloud_download,
-          color: color,
-          size: 48,
-        ),
+        Icon(Icons.cloud_download, color: color, size: 48),
         SizedBox(height: OmnisonicSpacing.md),
         Container(
           width: 200,
@@ -885,9 +843,10 @@ class _AdaptiveLoadingWidgetState extends State<_AdaptiveLoadingWidget>
       duration: widget.estimatedDuration ?? const Duration(seconds: 3),
       vsync: this,
     );
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
   }
 

@@ -8,8 +8,8 @@ class LyricsRepositoryImpl implements LyricsRepository {
   LyricsRepositoryImpl({
     required LyricsRemoteDataSource remoteDataSource,
     required LyricsCacheDataSource cacheDataSource,
-  })  : _remote = remoteDataSource,
-        _cache = cacheDataSource;
+  }) : _remote = remoteDataSource,
+       _cache = cacheDataSource;
 
   final LyricsRemoteDataSource _remote;
   final LyricsCacheDataSource _cache;
@@ -111,7 +111,9 @@ class LyricsRepositoryImpl implements LyricsRepository {
       );
       return ResultHelper.success(results);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to search lyrics: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to search lyrics: $e'),
+      );
     }
   }
 
@@ -141,17 +143,24 @@ class LyricsRepositoryImpl implements LyricsRepository {
       final override = await _cache.getOverride(trackId);
       return ResultHelper.success(override);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to load override: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to load override: $e'),
+      );
     }
   }
 
   @override
-  Future<Result<void>> setOverride(String trackId, LyricsOverride? override) async {
+  Future<Result<void>> setOverride(
+    String trackId,
+    LyricsOverride? override,
+  ) async {
     try {
       await _cache.setOverride(trackId, override);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to save override: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to save override: $e'),
+      );
     }
   }
 
@@ -181,7 +190,9 @@ class LyricsRepositoryImpl implements LyricsRepository {
       final source = await _cache.getPreferredSource();
       return ResultHelper.success(source);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to load preference: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to load preference: $e'),
+      );
     }
   }
 
@@ -191,7 +202,9 @@ class LyricsRepositoryImpl implements LyricsRepository {
       await _cache.setPreferredSource(source);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to save preference: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to save preference: $e'),
+      );
     }
   }
 }

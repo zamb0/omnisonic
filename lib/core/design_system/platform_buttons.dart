@@ -38,23 +38,23 @@ class _PlatformButtonState extends State<PlatformButton>
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _animationController = AnimationController(
       duration: platformAnimations.durations.short,
       vsync: this,
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: _getPlatformPressScale(),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: _getPlatformPressScale())
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: platformAnimations.curves.standard,
+          ),
+        );
   }
-  
+
   double _getPlatformPressScale() {
     switch (PlatformOptimizations().currentPlatform) {
       case PlatformType.ios:
@@ -70,25 +70,25 @@ class _PlatformButtonState extends State<PlatformButton>
         return 0.97;
     }
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleTapDown(TapDownDetails details) {
     if (widget.onPressed != null) {
       setState(() {
         _isPressed = true;
       });
       _animationController.forward();
-      
+
       // Trigger platform-appropriate haptic feedback
       PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.light);
     }
   }
-  
+
   void _handleTapUp(TapUpDetails details) {
     if (_isPressed) {
       setState(() {
@@ -97,7 +97,7 @@ class _PlatformButtonState extends State<PlatformButton>
       _animationController.reverse();
     }
   }
-  
+
   void _handleTapCancel() {
     if (_isPressed) {
       setState(() {
@@ -106,24 +106,24 @@ class _PlatformButtonState extends State<PlatformButton>
       _animationController.reverse();
     }
   }
-  
+
   void _handleTap() {
     widget.onPressed?.call();
   }
-  
+
   void _handleLongPress() {
     PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.medium);
     widget.onLongPress?.call();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final platformTheme = context.platformTheme;
     final baseStyle = _getBaseStyle(context, platformTheme);
-    final finalStyle = widget.style != null 
+    final finalStyle = widget.style != null
         ? baseStyle.merge(widget.style)
         : baseStyle;
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -134,10 +134,14 @@ class _PlatformButtonState extends State<PlatformButton>
       },
     );
   }
-  
-  Widget _buildButton(BuildContext context, ButtonStyle style, PlatformThemeExtension platformTheme) {
+
+  Widget _buildButton(
+    BuildContext context,
+    ButtonStyle style,
+    PlatformThemeExtension platformTheme,
+  ) {
     final button = _createButtonByType(context, style);
-    
+
     // Wrap with gesture detector for platform-specific interactions
     return GestureDetector(
       onTapDown: _handleTapDown,
@@ -151,7 +155,7 @@ class _PlatformButtonState extends State<PlatformButton>
       ),
     );
   }
-  
+
   Widget _createButtonByType(BuildContext context, ButtonStyle style) {
     switch (widget.type) {
       case PlatformButtonType.elevated:
@@ -188,8 +192,11 @@ class _PlatformButtonState extends State<PlatformButton>
         );
     }
   }
-  
-  ButtonStyle _getBaseStyle(BuildContext context, PlatformThemeExtension platformTheme) {
+
+  ButtonStyle _getBaseStyle(
+    BuildContext context,
+    PlatformThemeExtension platformTheme,
+  ) {
     return ButtonStyle(
       minimumSize: WidgetStateProperty.all(
         Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
@@ -262,29 +269,28 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _animationController = AnimationController(
       duration: platformAnimations.durations.short,
       vsync: this,
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: platformAnimations.curves.standard,
+      ),
+    );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleTapDown(TapDownDetails details) {
     if (widget.onPressed != null) {
       setState(() {
@@ -294,7 +300,7 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
       PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.light);
     }
   }
-  
+
   void _handleTapUp(TapUpDetails details) {
     if (_isPressed) {
       setState(() {
@@ -303,7 +309,7 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
       _animationController.reverse();
     }
   }
-  
+
   void _handleTapCancel() {
     if (_isPressed) {
       setState(() {
@@ -312,11 +318,11 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
       _animationController.reverse();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     Widget iconButton = IconButton(
       onPressed: null, // We handle press through GestureDetector
       icon: widget.icon,
@@ -333,10 +339,13 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
       autofocus: widget.autofocus,
       tooltip: widget.tooltip,
       style: IconButton.styleFrom(
-        minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
+        minimumSize: Size(
+          platformTheme.touchTargetSize,
+          platformTheme.touchTargetSize,
+        ),
       ),
     );
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -347,9 +356,11 @@ class _PlatformIconButtonState extends State<PlatformIconButton>
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             onTap: widget.onPressed,
-            onLongPress: widget.onLongPress != null 
+            onLongPress: widget.onLongPress != null
                 ? () {
-                    PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.medium);
+                    PlatformOptimizations().triggerHapticFeedback(
+                      HapticFeedbackType.medium,
+                    );
                     widget.onLongPress?.call();
                   }
                 : null,
@@ -408,10 +419,12 @@ class PlatformFloatingActionButton extends StatefulWidget {
   });
 
   @override
-  State<PlatformFloatingActionButton> createState() => _PlatformFloatingActionButtonState();
+  State<PlatformFloatingActionButton> createState() =>
+      _PlatformFloatingActionButtonState();
 }
 
-class _PlatformFloatingActionButtonState extends State<PlatformFloatingActionButton>
+class _PlatformFloatingActionButtonState
+    extends State<PlatformFloatingActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -419,48 +432,47 @@ class _PlatformFloatingActionButtonState extends State<PlatformFloatingActionBut
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _animationController = AnimationController(
       duration: platformAnimations.durations.short,
       vsync: this,
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.emphasized,
-    ));
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: platformAnimations.curves.emphasized,
+      ),
+    );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleTapDown(TapDownDetails details) {
     if (widget.onPressed != null) {
       _animationController.forward();
       PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.medium);
     }
   }
-  
+
   void _handleTapUp(TapUpDetails details) {
     _animationController.reverse();
   }
-  
+
   void _handleTapCancel() {
     _animationController.reverse();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -480,13 +492,20 @@ class _PlatformFloatingActionButtonState extends State<PlatformFloatingActionBut
               splashColor: widget.splashColor,
               heroTag: widget.heroTag,
               elevation: widget.elevation ?? platformTheme.elevation,
-              focusElevation: widget.focusElevation ?? platformTheme.elevation * 1.5,
-              hoverElevation: widget.hoverElevation ?? platformTheme.elevation * 2,
-              highlightElevation: widget.highlightElevation ?? platformTheme.elevation * 0.5,
+              focusElevation:
+                  widget.focusElevation ?? platformTheme.elevation * 1.5,
+              hoverElevation:
+                  widget.hoverElevation ?? platformTheme.elevation * 2,
+              highlightElevation:
+                  widget.highlightElevation ?? platformTheme.elevation * 0.5,
               disabledElevation: widget.disabledElevation ?? 0,
-              shape: widget.shape ?? RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(platformTheme.borderRadius * 2),
-              ),
+              shape:
+                  widget.shape ??
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      platformTheme.borderRadius * 2,
+                    ),
+                  ),
               clipBehavior: widget.clipBehavior,
               autofocus: widget.autofocus,
               materialTapTargetSize: widget.materialTapTargetSize,
@@ -500,9 +519,4 @@ class _PlatformFloatingActionButtonState extends State<PlatformFloatingActionBut
 }
 
 /// Button types for platform optimization
-enum PlatformButtonType {
-  elevated,
-  filled,
-  outlined,
-  text,
-}
+enum PlatformButtonType { elevated, filled, outlined, text }

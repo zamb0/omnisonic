@@ -7,7 +7,7 @@ import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 
 /// ViewModel for managing playlist operations and state
-/// 
+///
 /// Handles:
 /// - Playlist creation, editing, and deletion
 /// - Track management within playlists
@@ -15,10 +15,7 @@ import '../../../../core/usecases/usecases.dart';
 /// - Import/export functionality
 @injectable
 class PlaylistViewModel extends ChangeNotifier {
-  PlaylistViewModel(
-    this._playlistRepository,
-    this._managePlaylistUseCase,
-  ) {
+  PlaylistViewModel(this._playlistRepository, this._managePlaylistUseCase) {
     _initialize();
   }
 
@@ -39,8 +36,10 @@ class PlaylistViewModel extends ChangeNotifier {
 
   // Getters
   List<Playlist> get playlists => _playlists;
-  List<Playlist> get publicPlaylists => _playlists.where((p) => p.isPublic).toList();
-  List<Playlist> get privatePlaylists => _playlists.where((p) => !p.isPublic).toList();
+  List<Playlist> get publicPlaylists =>
+      _playlists.where((p) => p.isPublic).toList();
+  List<Playlist> get privatePlaylists =>
+      _playlists.where((p) => !p.isPublic).toList();
   Playlist? get selectedPlaylist => _selectedPlaylist;
   List<Track> get selectedPlaylistTracks => _selectedPlaylistTracks;
   List<Playlist> get searchResults => _searchResults;
@@ -112,7 +111,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to create playlist: ${failure.message}');
@@ -150,7 +149,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to update playlist: ${failure.message}');
@@ -194,7 +193,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to delete playlist: ${failure.message}');
@@ -240,7 +239,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to add track to playlist: ${failure.message}');
@@ -248,7 +247,9 @@ class PlaylistViewModel extends ChangeNotifier {
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to add track to playlist: ${operationResult.message}');
+            _setError(
+              'Failed to add track to playlist: ${operationResult.message}',
+            );
             return false;
           }
 
@@ -271,7 +272,10 @@ class PlaylistViewModel extends ChangeNotifier {
   }
 
   /// Removes a track from a playlist
-  Future<bool> removeTrackFromPlaylist(String playlistId, String trackId) async {
+  Future<bool> removeTrackFromPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
     if (_isOperating) return false;
 
     _isOperating = true;
@@ -286,7 +290,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to remove track from playlist: ${failure.message}');
@@ -294,7 +298,9 @@ class PlaylistViewModel extends ChangeNotifier {
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to remove track from playlist: ${operationResult.message}');
+            _setError(
+              'Failed to remove track from playlist: ${operationResult.message}',
+            );
             return false;
           }
 
@@ -317,7 +323,10 @@ class PlaylistViewModel extends ChangeNotifier {
   }
 
   /// Reorders tracks in a playlist
-  Future<bool> reorderPlaylistTracks(String playlistId, List<String> trackIds) async {
+  Future<bool> reorderPlaylistTracks(
+    String playlistId,
+    List<String> trackIds,
+  ) async {
     if (_isOperating) return false;
 
     _isOperating = true;
@@ -332,7 +341,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to reorder playlist tracks: ${failure.message}');
@@ -340,7 +349,9 @@ class PlaylistViewModel extends ChangeNotifier {
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to reorder playlist tracks: ${operationResult.message}');
+            _setError(
+              'Failed to reorder playlist tracks: ${operationResult.message}',
+            );
             return false;
           }
 
@@ -363,7 +374,11 @@ class PlaylistViewModel extends ChangeNotifier {
   }
 
   /// Moves a track within a playlist
-  Future<bool> moveTrackInPlaylist(String playlistId, int fromIndex, int toIndex) async {
+  Future<bool> moveTrackInPlaylist(
+    String playlistId,
+    int fromIndex,
+    int toIndex,
+  ) async {
     if (_isOperating) return false;
 
     _isOperating = true;
@@ -379,7 +394,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to move track in playlist: ${failure.message}');
@@ -387,7 +402,9 @@ class PlaylistViewModel extends ChangeNotifier {
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to move track in playlist: ${operationResult.message}');
+            _setError(
+              'Failed to move track in playlist: ${operationResult.message}',
+            );
             return false;
           }
 
@@ -425,7 +442,7 @@ class PlaylistViewModel extends ChangeNotifier {
       );
 
       final result = await _managePlaylistUseCase(params);
-      
+
       return result.fold(
         (failure) {
           _setError('Failed to duplicate playlist: ${failure.message}');
@@ -433,7 +450,9 @@ class PlaylistViewModel extends ChangeNotifier {
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to duplicate playlist: ${operationResult.message}');
+            _setError(
+              'Failed to duplicate playlist: ${operationResult.message}',
+            );
             return false;
           }
 
@@ -477,9 +496,12 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_selectedPlaylist == null) return;
 
     try {
-      final result = await _playlistRepository.getPlaylistTracks(_selectedPlaylist!.id);
+      final result = await _playlistRepository.getPlaylistTracks(
+        _selectedPlaylist!.id,
+      );
       result.fold(
-        (failure) => _setError('Failed to load playlist tracks: ${failure.message}'),
+        (failure) =>
+            _setError('Failed to load playlist tracks: ${failure.message}'),
         (tracks) => _selectedPlaylistTracks = tracks,
       );
     } catch (e) {
@@ -523,13 +545,10 @@ class PlaylistViewModel extends ChangeNotifier {
   /// Gets recently created playlists
   Future<List<Playlist>> getRecentPlaylists({int limit = 10}) async {
     final result = await _playlistRepository.getRecentPlaylists(limit: limit);
-    return result.fold(
-      (failure) {
-        _setError('Failed to load recent playlists: ${failure.message}');
-        return <Playlist>[];
-      },
-      (playlists) => playlists,
-    );
+    return result.fold((failure) {
+      _setError('Failed to load recent playlists: ${failure.message}');
+      return <Playlist>[];
+    }, (playlists) => playlists);
   }
 
   /// Gets a playlist by ID

@@ -4,16 +4,16 @@ import '../../../../core/repositories/offline_repository.dart';
 
 /// Service for filtering content based on offline availability
 class OfflineContentFilter {
-  OfflineContentFilter({
-    required OfflineRepository offlineRepository,
-  }) : _offlineRepository = offlineRepository;
+  OfflineContentFilter({required OfflineRepository offlineRepository})
+    : _offlineRepository = offlineRepository;
 
   final OfflineRepository _offlineRepository;
 
   /// Filters tracks to only include cached ones
   Future<Result<List<Track>>> filterCachedTracks(List<Track> tracks) async {
     try {
-      final cachedEntriesResult = await _offlineRepository.getAllCachedEntries();
+      final cachedEntriesResult = await _offlineRepository
+          .getAllCachedEntries();
       if (cachedEntriesResult.isFailure) {
         return ResultHelper.failure(cachedEntriesResult.failureOrNull!);
       }
@@ -30,7 +30,9 @@ class OfflineContentFilter {
 
       return ResultHelper.success(cachedTracks);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to filter cached tracks: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to filter cached tracks: $e'),
+      );
     }
   }
 
@@ -61,7 +63,9 @@ class OfflineContentFilter {
 
       return ResultHelper.success(filteredAlbums);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to filter albums with cached tracks: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to filter albums with cached tracks: $e'),
+      );
     }
   }
 
@@ -92,7 +96,9 @@ class OfflineContentFilter {
 
       return ResultHelper.success(filteredArtists);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to filter artists with cached tracks: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to filter artists with cached tracks: $e'),
+      );
     }
   }
 
@@ -106,10 +112,11 @@ class OfflineContentFilter {
 
       for (final playlist in playlists) {
         final tracks = playlistTracks[playlist.id] ?? [];
-        
+
         if (tracks.isNotEmpty) {
           final cachedTracksResult = await filterCachedTracks(tracks);
-          if (cachedTracksResult.isSuccess && cachedTracksResult.valueOrNull!.isNotEmpty) {
+          if (cachedTracksResult.isSuccess &&
+              cachedTracksResult.valueOrNull!.isNotEmpty) {
             playlistsWithCachedTracks.add(playlist);
           }
         }
@@ -117,7 +124,9 @@ class OfflineContentFilter {
 
       return ResultHelper.success(playlistsWithCachedTracks);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to filter playlists with cached tracks: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to filter playlists with cached tracks: $e'),
+      );
     }
   }
 
@@ -133,7 +142,9 @@ class OfflineContentFilter {
 
       return await filterCachedTracks(albumTracksForAlbum);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get offline tracks for album: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get offline tracks for album: $e'),
+      );
     }
   }
 
@@ -149,7 +160,9 @@ class OfflineContentFilter {
 
       return await filterCachedTracks(tracksForArtist);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get offline tracks for artist: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get offline tracks for artist: $e'),
+      );
     }
   }
 
@@ -182,12 +195,16 @@ class OfflineContentFilter {
       final cachedTracks = cachedTracksResult.valueOrNull!;
       return ResultHelper.success(cachedTracks.length == tracksForAlbum.length);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to check if album is fully offline: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to check if album is fully offline: $e'),
+      );
     }
   }
 
   /// Checks if a playlist is fully available offline
-  Future<Result<bool>> isPlaylistFullyOffline(List<Track> playlistTracks) async {
+  Future<Result<bool>> isPlaylistFullyOffline(
+    List<Track> playlistTracks,
+  ) async {
     try {
       if (playlistTracks.isEmpty) {
         return ResultHelper.success(true);
@@ -201,7 +218,9 @@ class OfflineContentFilter {
       final cachedTracks = cachedTracksResult.valueOrNull!;
       return ResultHelper.success(cachedTracks.length == playlistTracks.length);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to check if playlist is fully offline: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to check if playlist is fully offline: $e'),
+      );
     }
   }
 
@@ -218,15 +237,21 @@ class OfflineContentFilter {
       }
 
       final cachedTracks = cachedTracksResult.valueOrNull!;
-      
-      final cachedAlbumsResult = await filterAlbumsWithCachedTracks(albums, tracks);
+
+      final cachedAlbumsResult = await filterAlbumsWithCachedTracks(
+        albums,
+        tracks,
+      );
       if (cachedAlbumsResult.isFailure) {
         return ResultHelper.failure(cachedAlbumsResult.failureOrNull!);
       }
 
       final cachedAlbums = cachedAlbumsResult.valueOrNull!;
-      
-      final cachedArtistsResult = await filterArtistsWithCachedTracks(artists, tracks);
+
+      final cachedArtistsResult = await filterArtistsWithCachedTracks(
+        artists,
+        tracks,
+      );
       if (cachedArtistsResult.isFailure) {
         return ResultHelper.failure(cachedArtistsResult.failureOrNull!);
       }
@@ -244,7 +269,9 @@ class OfflineContentFilter {
 
       return ResultHelper.success(stats);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get cache stats for collection: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get cache stats for collection: $e'),
+      );
     }
   }
 }
@@ -288,8 +315,8 @@ class OfflineCacheStats {
   @override
   String toString() {
     return 'OfflineCacheStats('
-           'tracks: $cachedTracks/$totalTracks (${trackCachePercentage.toStringAsFixed(1)}%), '
-           'albums: $cachedAlbums/$totalAlbums (${albumCachePercentage.toStringAsFixed(1)}%), '
-           'artists: $cachedArtists/$totalArtists (${artistCachePercentage.toStringAsFixed(1)}%))';
+        'tracks: $cachedTracks/$totalTracks (${trackCachePercentage.toStringAsFixed(1)}%), '
+        'albums: $cachedAlbums/$totalAlbums (${albumCachePercentage.toStringAsFixed(1)}%), '
+        'artists: $cachedArtists/$totalArtists (${artistCachePercentage.toStringAsFixed(1)}%))';
   }
 }

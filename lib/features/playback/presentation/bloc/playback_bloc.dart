@@ -9,7 +9,7 @@ import '../../../../core/usecases/usecases.dart';
 import '../../../../core/errors/result.dart';
 
 /// BLoC for managing complex playback state and operations
-/// 
+///
 /// Handles:
 /// - Advanced playback state management
 /// - Queue operations and smart shuffling
@@ -17,10 +17,8 @@ import '../../../../core/errors/result.dart';
 /// - Playback analytics and history
 @injectable
 class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
-  PlaybackBloc(
-    this._playbackRepository,
-    this._playTrackUseCase,
-  ) : super(const PlaybackBlocState.initial()) {
+  PlaybackBloc(this._playbackRepository, this._playTrackUseCase)
+    : super(const PlaybackBlocState.initial()) {
     on<PlaybackInitialized>(_onPlaybackInitialized);
     on<PlaybackTrackRequested>(_onPlaybackTrackRequested);
     on<PlaybackStateChanged>(_onPlaybackStateChanged);
@@ -30,7 +28,7 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
     on<PlaybackQueueOperationRequested>(_onPlaybackQueueOperationRequested);
     on<PlaybackSettingsChanged>(_onPlaybackSettingsChanged);
     on<PlaybackAnalyticsUpdated>(_onPlaybackAnalyticsUpdated);
-    
+
     _initialize();
   }
 
@@ -46,14 +44,17 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
     add(const PlaybackInitialized());
   }
 
-  Future<void> _onPlaybackInitialized(PlaybackInitialized event, Emitter<PlaybackBlocState> emit) async {
+  Future<void> _onPlaybackInitialized(
+    PlaybackInitialized event,
+    Emitter<PlaybackBlocState> emit,
+  ) async {
     emit(state.copyWith(status: PlaybackBlocStatus.loading));
 
     try {
       // Subscribe to playback state changes
-      _playbackStateSubscription = _playbackRepository.observePlaybackState().listen(
-        (playbackState) => add(PlaybackStateChanged(playbackState)),
-      );
+      _playbackStateSubscription = _playbackRepository
+          .observePlaybackState()
+          .listen((playbackState) => add(PlaybackStateChanged(playbackState)));
 
       // Subscribe to position changes
       _positionSubscription = _playbackRepository.observePosition().listen(
@@ -69,28 +70,38 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
       final currentStateResult = await _playbackRepository.getCurrentState();
       if (currentStateResult.isSuccess) {
         final currentState = currentStateResult.valueOrNull!;
-        emit(state.copyWith(
-          status: PlaybackBlocStatus.ready,
-          playbackState: currentState,
-        ));
+        emit(
+          state.copyWith(
+            status: PlaybackBlocStatus.ready,
+            playbackState: currentState,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: PlaybackBlocStatus.error,
-          errorMessage: 'Failed to initialize playback: ${currentStateResult.failureOrNull?.message}',
-        ));
+        emit(
+          state.copyWith(
+            status: PlaybackBlocStatus.error,
+            errorMessage:
+                'Failed to initialize playback: ${currentStateResult.failureOrNull?.message}',
+          ),
+        );
       }
 
       // Start analytics timer
       _startAnalyticsTimer();
     } catch (e) {
-      emit(state.copyWith(
-        status: PlaybackBlocStatus.error,
-        errorMessage: 'Unexpected error during initialization: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: PlaybackBlocStatus.error,
+          errorMessage: 'Unexpected error during initialization: $e',
+        ),
+      );
     }
   }
 
-  Future<void> _onPlaybackTrackRequested(PlaybackTrackRequested event, Emitter<PlaybackBlocState> emit) async {
+  Future<void> _onPlaybackTrackRequested(
+    PlaybackTrackRequested event,
+    Emitter<PlaybackBlocState> emit,
+  ) async {
     emit(state.copyWith(status: PlaybackBlocStatus.loading));
 
     try {
@@ -103,26 +114,32 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
       );
 
       final result = await _playTrackUseCase(params);
-      
+
       result.fold(
-        (failure) => emit(state.copyWith(
-          status: PlaybackBlocStatus.error,
-          errorMessage: 'Failed to play track: ${failure.message}',
-        )),
-        (_) => emit(state.copyWith(
-          status: PlaybackBlocStatus.ready,
-          errorMessage: null,
-        )),
+        (failure) => emit(
+          state.copyWith(
+            status: PlaybackBlocStatus.error,
+            errorMessage: 'Failed to play track: ${failure.message}',
+          ),
+        ),
+        (_) => emit(
+          state.copyWith(status: PlaybackBlocStatus.ready, errorMessage: null),
+        ),
       );
     } catch (e) {
-      emit(state.copyWith(
-        status: PlaybackBlocStatus.error,
-        errorMessage: 'Unexpected error playing track: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: PlaybackBlocStatus.error,
+          errorMessage: 'Unexpected error playing track: $e',
+        ),
+      );
     }
   }
 
-  void _onPlaybackStateChanged(PlaybackStateChanged event, Emitter<PlaybackBlocState> emit) {
+  void _onPlaybackStateChanged(
+    PlaybackStateChanged event,
+    Emitter<PlaybackBlocState> emit,
+  ) {
     final newState = state.copyWith(
       playbackState: event.playbackState,
       status: PlaybackBlocStatus.ready,
@@ -130,30 +147,47 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
     );
 
     // Update analytics if track changed
-    if (state.playbackState.currentTrack?.id != event.playbackState.currentTrack?.id) {
-      final analytics = _updateTrackAnalytics(newState.analytics, event.playbackState.currentTrack);
+    if (state.playbackState.currentTrack?.id !=
+        event.playbackState.currentTrack?.id) {
+      final analytics = _updateTrackAnalytics(
+        newState.analytics,
+        event.playbackState.currentTrack,
+      );
       emit(newState.copyWith(analytics: analytics));
     } else {
       emit(newState);
     }
   }
 
-  void _onPlaybackPositionChanged(PlaybackPositionChanged event, Emitter<PlaybackBlocState> emit) {
+  void _onPlaybackPositionChanged(
+    PlaybackPositionChanged event,
+    Emitter<PlaybackBlocState> emit,
+  ) {
     if (state.playbackState.currentTrack != null) {
-      final updatedPlaybackState = state.playbackState.copyWith(position: event.position);
+      final updatedPlaybackState = state.playbackState.copyWith(
+        position: event.position,
+      );
       emit(state.copyWith(playbackState: updatedPlaybackState));
     }
   }
 
-  void _onPlaybackQueueChanged(PlaybackQueueChanged event, Emitter<PlaybackBlocState> emit) {
-    final updatedPlaybackState = state.playbackState.copyWith(queue: event.queue);
+  void _onPlaybackQueueChanged(
+    PlaybackQueueChanged event,
+    Emitter<PlaybackBlocState> emit,
+  ) {
+    final updatedPlaybackState = state.playbackState.copyWith(
+      queue: event.queue,
+    );
     emit(state.copyWith(playbackState: updatedPlaybackState));
   }
 
-  Future<void> _onPlaybackControlRequested(PlaybackControlRequested event, Emitter<PlaybackBlocState> emit) async {
+  Future<void> _onPlaybackControlRequested(
+    PlaybackControlRequested event,
+    Emitter<PlaybackBlocState> emit,
+  ) async {
     try {
       Result<void> result;
-      
+
       switch (event.control) {
         case PlaybackControl.play:
           if (state.playbackState.currentTrack != null) {
@@ -184,23 +218,31 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
       }
 
       if (result.isFailure) {
-        emit(state.copyWith(
-          status: PlaybackBlocStatus.error,
-          errorMessage: 'Playback control failed: ${result.failureOrNull?.message}',
-        ));
+        emit(
+          state.copyWith(
+            status: PlaybackBlocStatus.error,
+            errorMessage:
+                'Playback control failed: ${result.failureOrNull?.message}',
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: PlaybackBlocStatus.error,
-        errorMessage: 'Unexpected error during playback control: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: PlaybackBlocStatus.error,
+          errorMessage: 'Unexpected error during playback control: $e',
+        ),
+      );
     }
   }
 
-  Future<void> _onPlaybackQueueOperationRequested(PlaybackQueueOperationRequested event, Emitter<PlaybackBlocState> emit) async {
+  Future<void> _onPlaybackQueueOperationRequested(
+    PlaybackQueueOperationRequested event,
+    Emitter<PlaybackBlocState> emit,
+  ) async {
     try {
       Result<void> result;
-      
+
       switch (event.operation) {
         case QueueOperation.add:
           if (event.track != null) {
@@ -211,7 +253,10 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
           break;
         case QueueOperation.insert:
           if (event.track != null && event.index != null) {
-            result = await _playbackRepository.insertInQueue(event.track!, event.index!);
+            result = await _playbackRepository.insertInQueue(
+              event.track!,
+              event.index!,
+            );
           } else {
             return;
           }
@@ -231,7 +276,10 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
           break;
         case QueueOperation.setQueue:
           if (event.tracks != null) {
-            result = await _playbackRepository.setQueue(event.tracks!, startIndex: event.index ?? 0);
+            result = await _playbackRepository.setQueue(
+              event.tracks!,
+              startIndex: event.index ?? 0,
+            );
           } else {
             return;
           }
@@ -239,37 +287,55 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
       }
 
       if (result.isFailure) {
-        emit(state.copyWith(
-          status: PlaybackBlocStatus.error,
-          errorMessage: 'Queue operation failed: ${result.failureOrNull?.message}',
-        ));
+        emit(
+          state.copyWith(
+            status: PlaybackBlocStatus.error,
+            errorMessage:
+                'Queue operation failed: ${result.failureOrNull?.message}',
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: PlaybackBlocStatus.error,
-        errorMessage: 'Unexpected error during queue operation: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: PlaybackBlocStatus.error,
+          errorMessage: 'Unexpected error during queue operation: $e',
+        ),
+      );
     }
   }
 
-  Future<void> _onPlaybackSettingsChanged(PlaybackSettingsChanged event, Emitter<PlaybackBlocState> emit) async {
+  Future<void> _onPlaybackSettingsChanged(
+    PlaybackSettingsChanged event,
+    Emitter<PlaybackBlocState> emit,
+  ) async {
     try {
       if (event.repeatMode != null) {
-        final result = await _playbackRepository.setRepeatMode(event.repeatMode!);
+        final result = await _playbackRepository.setRepeatMode(
+          event.repeatMode!,
+        );
         if (result.isFailure) {
-          emit(state.copyWith(
-            errorMessage: 'Failed to set repeat mode: ${result.failureOrNull?.message}',
-          ));
+          emit(
+            state.copyWith(
+              errorMessage:
+                  'Failed to set repeat mode: ${result.failureOrNull?.message}',
+            ),
+          );
           return;
         }
       }
 
       if (event.shuffleEnabled != null) {
-        final result = await _playbackRepository.setShuffleMode(event.shuffleEnabled!);
+        final result = await _playbackRepository.setShuffleMode(
+          event.shuffleEnabled!,
+        );
         if (result.isFailure) {
-          emit(state.copyWith(
-            errorMessage: 'Failed to set shuffle mode: ${result.failureOrNull?.message}',
-          ));
+          emit(
+            state.copyWith(
+              errorMessage:
+                  'Failed to set shuffle mode: ${result.failureOrNull?.message}',
+            ),
+          );
           return;
         }
       }
@@ -277,9 +343,12 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
       if (event.volume != null) {
         final result = await _playbackRepository.setVolume(event.volume!);
         if (result.isFailure) {
-          emit(state.copyWith(
-            errorMessage: 'Failed to set volume: ${result.failureOrNull?.message}',
-          ));
+          emit(
+            state.copyWith(
+              errorMessage:
+                  'Failed to set volume: ${result.failureOrNull?.message}',
+            ),
+          );
           return;
         }
       }
@@ -288,31 +357,38 @@ class PlaybackBloc extends Bloc<PlaybackEvent, PlaybackBlocState> {
         emit(state.copyWith(settings: event.settings));
       }
     } catch (e) {
-      emit(state.copyWith(
-        errorMessage: 'Unexpected error changing settings: $e',
-      ));
+      emit(
+        state.copyWith(errorMessage: 'Unexpected error changing settings: $e'),
+      );
     }
   }
 
-  void _onPlaybackAnalyticsUpdated(PlaybackAnalyticsUpdated event, Emitter<PlaybackBlocState> emit) {
+  void _onPlaybackAnalyticsUpdated(
+    PlaybackAnalyticsUpdated event,
+    Emitter<PlaybackBlocState> emit,
+  ) {
     emit(state.copyWith(analytics: event.analytics));
   }
 
   void _startAnalyticsTimer() {
     _analyticsTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (state.playbackState.isPlaying && state.playbackState.currentTrack != null) {
+      if (state.playbackState.isPlaying &&
+          state.playbackState.currentTrack != null) {
         final updatedAnalytics = _updatePlaytimeAnalytics(state.analytics);
         add(PlaybackAnalyticsUpdated(updatedAnalytics));
       }
     });
   }
 
-  PlaybackAnalytics _updateTrackAnalytics(PlaybackAnalytics current, Track? track) {
+  PlaybackAnalytics _updateTrackAnalytics(
+    PlaybackAnalytics current,
+    Track? track,
+  ) {
     if (track == null) return current;
 
     final updatedHistory = List<Track>.from(current.playHistory);
     updatedHistory.insert(0, track);
-    
+
     // Keep only last 100 tracks
     if (updatedHistory.length > 100) {
       updatedHistory.removeRange(100, updatedHistory.length);
@@ -372,7 +448,13 @@ class PlaybackTrackRequested extends PlaybackEvent {
   final bool allowFallback;
 
   @override
-  List<Object?> get props => [track, queue, startIndex, useBestSource, allowFallback];
+  List<Object?> get props => [
+    track,
+    queue,
+    startIndex,
+    useBestSource,
+    allowFallback,
+  ];
 }
 
 class PlaybackStateChanged extends PlaybackEvent {
@@ -403,10 +485,7 @@ class PlaybackQueueChanged extends PlaybackEvent {
 }
 
 class PlaybackControlRequested extends PlaybackEvent {
-  const PlaybackControlRequested({
-    required this.control,
-    this.seekPosition,
-  });
+  const PlaybackControlRequested({required this.control, this.seekPosition});
 
   final PlaybackControl control;
   final Duration? seekPosition;
@@ -459,30 +538,11 @@ class PlaybackAnalyticsUpdated extends PlaybackEvent {
 }
 
 // Enums
-enum PlaybackBlocStatus {
-  initial,
-  loading,
-  ready,
-  error,
-}
+enum PlaybackBlocStatus { initial, loading, ready, error }
 
-enum PlaybackControl {
-  play,
-  pause,
-  stop,
-  next,
-  previous,
-  seek,
-}
+enum PlaybackControl { play, pause, stop, next, previous, seek }
 
-enum QueueOperation {
-  add,
-  insert,
-  remove,
-  clear,
-  shuffle,
-  setQueue,
-}
+enum QueueOperation { add, insert, remove, clear, shuffle, setQueue }
 
 // State
 class PlaybackBlocState extends Equatable {
@@ -495,21 +555,21 @@ class PlaybackBlocState extends Equatable {
   });
 
   const PlaybackBlocState.initial()
-      : status = PlaybackBlocStatus.initial,
-        playbackState = const PlaybackState(
-          isPlaying: false,
-          currentTrack: null,
-          position: Duration.zero,
-          duration: Duration.zero,
-          queue: [],
-          currentIndex: -1,
-          repeatMode: RepeatMode.none,
-          shuffleEnabled: false,
-          volume: 1.0,
-        ),
-        settings = const PlaybackSettings(),
-        analytics = const PlaybackAnalytics(),
-        errorMessage = null;
+    : status = PlaybackBlocStatus.initial,
+      playbackState = const PlaybackState(
+        isPlaying: false,
+        currentTrack: null,
+        position: Duration.zero,
+        duration: Duration.zero,
+        queue: [],
+        currentIndex: -1,
+        repeatMode: RepeatMode.none,
+        shuffleEnabled: false,
+        volume: 1.0,
+      ),
+      settings = const PlaybackSettings(),
+      analytics = const PlaybackAnalytics(),
+      errorMessage = null;
 
   final PlaybackBlocStatus status;
   final PlaybackState playbackState;
@@ -541,12 +601,12 @@ class PlaybackBlocState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        playbackState,
-        settings,
-        analytics,
-        errorMessage,
-      ];
+    status,
+    playbackState,
+    settings,
+    analytics,
+    errorMessage,
+  ];
 }
 
 // Additional classes
@@ -583,12 +643,12 @@ class PlaybackSettings extends Equatable {
 
   @override
   List<Object?> get props => [
-        crossfadeEnabled,
-        crossfadeDuration,
-        gaplessPlayback,
-        replayGain,
-        audioNormalization,
-      ];
+    crossfadeEnabled,
+    crossfadeDuration,
+    gaplessPlayback,
+    replayGain,
+    audioNormalization,
+  ];
 }
 
 class PlaybackAnalytics extends Equatable {
@@ -624,10 +684,10 @@ class PlaybackAnalytics extends Equatable {
 
   @override
   List<Object?> get props => [
-        playHistory,
-        playCounts,
-        totalPlaytime,
-        totalTracksPlayed,
-        sessionStartTime,
-      ];
+    playHistory,
+    playCounts,
+    totalPlaytime,
+    totalTracksPlayed,
+    sessionStartTime,
+  ];
 }

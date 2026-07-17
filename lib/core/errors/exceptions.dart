@@ -2,11 +2,12 @@
 abstract class AppException implements Exception {
   final String message;
   final String? code;
-  
+
   const AppException(this.message, [this.code]);
-  
+
   @override
-  String toString() => 'AppException: $message${code != null ? ' (Code: $code)' : ''}';
+  String toString() =>
+      'AppException: $message${code != null ? ' (Code: $code)' : ''}';
 }
 
 /// Network-related exceptions
@@ -26,17 +27,20 @@ class CacheException extends AppException {
 
 /// Authentication-related exceptions
 class AuthenticationException extends AppException {
-  const AuthenticationException(String message, [String? code]) : super(message, code);
+  const AuthenticationException(String message, [String? code])
+    : super(message, code);
 }
 
 /// Subsonic API specific exceptions
 class SubsonicApiException extends ServerException {
-  const SubsonicApiException(String message, [String? code]) : super(message, code);
+  const SubsonicApiException(String message, [String? code])
+    : super(message, code);
 }
 
 /// Database-related exceptions
 class DatabaseException extends AppException {
-  const DatabaseException(String message, [String? code]) : super(message, code);
+  const DatabaseException(String message, [String? code])
+    : super(message, code);
 }
 
 /// Audio playback exceptions

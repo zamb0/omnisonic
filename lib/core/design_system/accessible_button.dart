@@ -188,18 +188,18 @@ class _AccessibleButtonState extends State<AccessibleButton>
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    
+
     _animationController = AccessibleAnimationManager.createController(
       vsync: this,
       duration: AnimationManager.tapDuration,
     );
-    
+
     _scaleAnimation = AccessibleAnimationManager.createTween<double>(
       parent: _animationController,
       tween: Tween<double>(begin: 1.0, end: 0.95),
       curve: AnimationManager.tapCurve,
     );
-    
+
     _focusNode.addListener(_onFocusChanged);
   }
 
@@ -222,18 +222,14 @@ class _AccessibleButtonState extends State<AccessibleButton>
 
   void _handleTap() {
     if (widget.enabled && !widget.loading) {
-      AnimationManager().triggerHapticFeedback(
-        type: HapticFeedbackType.light,
-      );
+      AnimationManager().triggerHapticFeedback(type: HapticFeedbackType.light);
       widget.onPressed?.call();
     }
   }
 
   void _handleLongPress() {
     if (widget.enabled && !widget.loading) {
-      AnimationManager().triggerHapticFeedback(
-        type: HapticFeedbackType.medium,
-      );
+      AnimationManager().triggerHapticFeedback(type: HapticFeedbackType.medium);
       widget.onLongPress?.call();
     }
   }
@@ -243,21 +239,18 @@ class _AccessibleButtonState extends State<AccessibleButton>
     final buttonStyle = _getButtonStyle(context);
     final constraints = _getButtonConstraints();
     final semanticLabel = widget.semanticLabel ?? _getDefaultSemanticLabel();
-    
+
     Widget button = _buildButton(context, buttonStyle, constraints);
-    
+
     // Add tooltip if provided
     if (widget.tooltip != null) {
-      button = Tooltip(
-        message: widget.tooltip!,
-        child: button,
-      );
+      button = Tooltip(message: widget.tooltip!, child: button);
     }
-    
+
     // Add semantics
     button = Semantics(
       label: semanticLabel,
-      hint: widget.enabled 
+      hint: widget.enabled
           ? OmnisonicSemantics.interactionHint('activate')
           : 'Button is disabled',
       button: true,
@@ -265,7 +258,7 @@ class _AccessibleButtonState extends State<AccessibleButton>
       focusable: widget.enabled,
       child: button,
     );
-    
+
     // Add focus indicator
     button = Focus(
       focusNode: _focusNode,
@@ -279,11 +272,15 @@ class _AccessibleButtonState extends State<AccessibleButton>
         },
       ),
     );
-    
+
     return button;
   }
 
-  Widget _buildButton(BuildContext context, ButtonStyle style, BoxConstraints constraints) {
+  Widget _buildButton(
+    BuildContext context,
+    ButtonStyle style,
+    BoxConstraints constraints,
+  ) {
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -300,26 +297,32 @@ class _AccessibleButtonState extends State<AccessibleButton>
 
   Widget _buildButtonByType(BuildContext context, ButtonStyle style) {
     final child = _buildButtonChild();
-    
+
     switch (widget.type) {
       case AccessibleButtonType.elevated:
         return ElevatedButton(
           onPressed: widget.enabled && !widget.loading ? _handleTap : null,
-          onLongPress: widget.enabled && !widget.loading ? _handleLongPress : null,
+          onLongPress: widget.enabled && !widget.loading
+              ? _handleLongPress
+              : null,
           style: style,
           child: child,
         );
       case AccessibleButtonType.text:
         return TextButton(
           onPressed: widget.enabled && !widget.loading ? _handleTap : null,
-          onLongPress: widget.enabled && !widget.loading ? _handleLongPress : null,
+          onLongPress: widget.enabled && !widget.loading
+              ? _handleLongPress
+              : null,
           style: style,
           child: child,
         );
       case AccessibleButtonType.outlined:
         return OutlinedButton(
           onPressed: widget.enabled && !widget.loading ? _handleTap : null,
-          onLongPress: widget.enabled && !widget.loading ? _handleLongPress : null,
+          onLongPress: widget.enabled && !widget.loading
+              ? _handleLongPress
+              : null,
           style: style,
           child: child,
         );
@@ -340,7 +343,7 @@ class _AccessibleButtonState extends State<AccessibleButton>
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(
-            widget.enabled 
+            widget.enabled
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).disabledColor,
           ),
@@ -364,7 +367,7 @@ class _AccessibleButtonState extends State<AccessibleButton>
 
   ButtonStyle _getButtonStyle(BuildContext context) {
     final baseStyle = widget.style ?? _getDefaultButtonStyle(context);
-    
+
     return baseStyle.copyWith(
       minimumSize: WidgetStateProperty.all(_getMinimumSize()),
       padding: WidgetStateProperty.all(_getPadding()),
@@ -387,20 +390,26 @@ class _AccessibleButtonState extends State<AccessibleButton>
 
   BoxConstraints _getButtonConstraints() {
     final minSize = _getMinimumSize();
-    return BoxConstraints(
-      minWidth: minSize.width,
-      minHeight: minSize.height,
-    );
+    return BoxConstraints(minWidth: minSize.width, minHeight: minSize.height);
   }
 
   Size _getMinimumSize() {
     switch (widget.size) {
       case AccessibleButtonSize.small:
-        return const Size(OmnisonicTouchTargets.minimum, OmnisonicTouchTargets.minimum);
+        return const Size(
+          OmnisonicTouchTargets.minimum,
+          OmnisonicTouchTargets.minimum,
+        );
       case AccessibleButtonSize.medium:
-        return const Size(OmnisonicTouchTargets.comfortable, OmnisonicTouchTargets.comfortable);
+        return const Size(
+          OmnisonicTouchTargets.comfortable,
+          OmnisonicTouchTargets.comfortable,
+        );
       case AccessibleButtonSize.large:
-        return const Size(OmnisonicTouchTargets.large, OmnisonicTouchTargets.large);
+        return const Size(
+          OmnisonicTouchTargets.large,
+          OmnisonicTouchTargets.large,
+        );
     }
   }
 
@@ -441,33 +450,24 @@ class _AccessibleButtonState extends State<AccessibleButton>
     if (widget.loading) {
       return 'Loading, please wait';
     }
-    
+
     if (widget.child is Text) {
       return (widget.child as Text).data ?? '';
     }
-    
+
     if (widget.icon != null) {
       return 'Button with ${widget.icon.toString()} icon';
     }
-    
+
     return 'Button';
   }
 }
 
 /// Button type enumeration
-enum AccessibleButtonType {
-  elevated,
-  text,
-  outlined,
-  icon,
-}
+enum AccessibleButtonType { elevated, text, outlined, icon }
 
 /// Button size enumeration
-enum AccessibleButtonSize {
-  small,
-  medium,
-  large,
-}
+enum AccessibleButtonSize { small, medium, large }
 
 /// Accessible floating action button
 class AccessibleFloatingActionButton extends StatefulWidget {
@@ -499,10 +499,12 @@ class AccessibleFloatingActionButton extends StatefulWidget {
   });
 
   @override
-  State<AccessibleFloatingActionButton> createState() => _AccessibleFloatingActionButtonState();
+  State<AccessibleFloatingActionButton> createState() =>
+      _AccessibleFloatingActionButtonState();
 }
 
-class _AccessibleFloatingActionButtonState extends State<AccessibleFloatingActionButton>
+class _AccessibleFloatingActionButtonState
+    extends State<AccessibleFloatingActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -513,18 +515,18 @@ class _AccessibleFloatingActionButtonState extends State<AccessibleFloatingActio
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    
+
     _animationController = AccessibleAnimationManager.createController(
       vsync: this,
       duration: AnimationManager.tapDuration,
     );
-    
+
     _scaleAnimation = AccessibleAnimationManager.createTween<double>(
       parent: _animationController,
       tween: Tween<double>(begin: 1.0, end: 0.9),
       curve: AnimationManager.tapCurve,
     );
-    
+
     _focusNode.addListener(_onFocusChanged);
   }
 
@@ -549,18 +551,16 @@ class _AccessibleFloatingActionButtonState extends State<AccessibleFloatingActio
     _animationController.forward().then((_) {
       _animationController.reverse();
     });
-    
-    AnimationManager().triggerHapticFeedback(
-      type: HapticFeedbackType.light,
-    );
-    
+
+    AnimationManager().triggerHapticFeedback(type: HapticFeedbackType.light);
+
     widget.onPressed?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     final semanticLabel = widget.semanticLabel ?? _getDefaultSemanticLabel();
-    
+
     Widget fab = AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -581,10 +581,7 @@ class _AccessibleFloatingActionButtonState extends State<AccessibleFloatingActio
 
     // Add tooltip if provided
     if (widget.tooltip != null) {
-      fab = Tooltip(
-        message: widget.tooltip!,
-        child: fab,
-      );
+      fab = Tooltip(message: widget.tooltip!, child: fab);
     }
 
     // Add semantics

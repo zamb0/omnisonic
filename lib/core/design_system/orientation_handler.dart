@@ -7,22 +7,22 @@ class OrientationHandler {
   static Orientation getCurrentOrientation(BuildContext context) {
     return MediaQuery.of(context).orientation;
   }
-  
+
   /// Check if device is in portrait orientation
   static bool isPortrait(BuildContext context) {
     return getCurrentOrientation(context) == Orientation.portrait;
   }
-  
+
   /// Check if device is in landscape orientation
   static bool isLandscape(BuildContext context) {
     return getCurrentOrientation(context) == Orientation.landscape;
   }
-  
+
   /// Force specific orientation
   static void setOrientation(List<DeviceOrientation> orientations) {
     SystemChrome.setPreferredOrientations(orientations);
   }
-  
+
   /// Allow all orientations
   static void allowAllOrientations() {
     SystemChrome.setPreferredOrientations([
@@ -32,7 +32,7 @@ class OrientationHandler {
       DeviceOrientation.landscapeRight,
     ]);
   }
-  
+
   /// Lock to portrait only
   static void lockPortrait() {
     SystemChrome.setPreferredOrientations([
@@ -40,7 +40,7 @@ class OrientationHandler {
       DeviceOrientation.portraitDown,
     ]);
   }
-  
+
   /// Lock to landscape only
   static void lockLandscape() {
     SystemChrome.setPreferredOrientations([
@@ -48,13 +48,13 @@ class OrientationHandler {
       DeviceOrientation.landscapeRight,
     ]);
   }
-  
+
   /// Get aspect ratio for current orientation
   static double getAspectRatio(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return size.width / size.height;
   }
-  
+
   /// Check if device has a wide aspect ratio (typically landscape)
   static bool isWideAspectRatio(BuildContext context) {
     return getAspectRatio(context) > 1.5;
@@ -64,12 +64,9 @@ class OrientationHandler {
 /// Widget that rebuilds when orientation changes
 class OrientationBuilder extends StatelessWidget {
   final Widget Function(BuildContext context, Orientation orientation) builder;
-  
-  const OrientationBuilder({
-    super.key,
-    required this.builder,
-  });
-  
+
+  const OrientationBuilder({super.key, required this.builder});
+
   @override
   Widget build(BuildContext context) {
     return MediaQuery.of(context).orientation == Orientation.portrait
@@ -82,13 +79,13 @@ class OrientationBuilder extends StatelessWidget {
 class OrientationAdaptiveLayout extends StatelessWidget {
   final Widget portrait;
   final Widget landscape;
-  
+
   const OrientationAdaptiveLayout({
     super.key,
     required this.portrait,
     required this.landscape,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return OrientationBuilder(
@@ -105,28 +102,30 @@ class KeyboardHandler {
   static bool isKeyboardVisible(BuildContext context) {
     return MediaQuery.of(context).viewInsets.bottom > 0;
   }
-  
+
   /// Get keyboard height
   static double getKeyboardHeight(BuildContext context) {
     return MediaQuery.of(context).viewInsets.bottom;
   }
-  
+
   /// Get available screen height excluding keyboard
   static double getAvailableHeight(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    return mediaQuery.size.height - mediaQuery.viewInsets.bottom - mediaQuery.padding.top;
+    return mediaQuery.size.height -
+        mediaQuery.viewInsets.bottom -
+        mediaQuery.padding.top;
   }
-  
+
   /// Hide keyboard
   static void hideKeyboard() {
     SystemChannels.textInput.invokeMethod('TextInput.hide');
   }
-  
+
   /// Show keyboard
   static void showKeyboard() {
     SystemChannels.textInput.invokeMethod('TextInput.show');
   }
-  
+
   /// Dismiss keyboard by unfocusing
   static void dismissKeyboard(BuildContext context) {
     FocusScope.of(context).unfocus();
@@ -139,7 +138,7 @@ class KeyboardAdaptiveLayout extends StatelessWidget {
   final EdgeInsets? keyboardPadding;
   final bool resizeToAvoidBottomInset;
   final bool maintainBottomViewPadding;
-  
+
   const KeyboardAdaptiveLayout({
     super.key,
     required this.child,
@@ -147,28 +146,25 @@ class KeyboardAdaptiveLayout extends StatelessWidget {
     this.resizeToAvoidBottomInset = true,
     this.maintainBottomViewPadding = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final keyboardHeight = mediaQuery.viewInsets.bottom;
     final isKeyboardVisible = keyboardHeight > 0;
-    
+
     Widget content = child;
-    
+
     if (isKeyboardVisible && keyboardPadding != null) {
-      content = Padding(
-        padding: keyboardPadding!,
-        child: content,
-      );
+      content = Padding(padding: keyboardPadding!, child: content);
     }
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       body: MediaQuery(
         data: mediaQuery.copyWith(
-          viewInsets: maintainBottomViewPadding 
-              ? mediaQuery.viewInsets 
+          viewInsets: maintainBottomViewPadding
+              ? mediaQuery.viewInsets
               : mediaQuery.viewInsets.copyWith(bottom: 0),
         ),
         child: content,
@@ -181,26 +177,31 @@ class KeyboardAdaptiveLayout extends StatelessWidget {
 class TouchTargetCompliance {
   /// Minimum touch target size according to WCAG guidelines
   static const double minimumTouchTarget = 44.0;
-  
+
   /// Comfortable touch target size
   static const double comfortableTouchTarget = 48.0;
-  
+
   /// Large touch target size
   static const double largeTouchTarget = 56.0;
-  
+
   /// Check if a size meets minimum touch target requirements
   static bool meetsMinimumSize(Size size) {
-    return size.width >= minimumTouchTarget && size.height >= minimumTouchTarget;
+    return size.width >= minimumTouchTarget &&
+        size.height >= minimumTouchTarget;
   }
-  
+
   /// Get compliant touch target size
   static Size getCompliantSize(Size originalSize) {
     return Size(
-      originalSize.width < minimumTouchTarget ? minimumTouchTarget : originalSize.width,
-      originalSize.height < minimumTouchTarget ? minimumTouchTarget : originalSize.height,
+      originalSize.width < minimumTouchTarget
+          ? minimumTouchTarget
+          : originalSize.width,
+      originalSize.height < minimumTouchTarget
+          ? minimumTouchTarget
+          : originalSize.height,
     );
   }
-  
+
   /// Create a compliant touch target wrapper
   static Widget wrapWithCompliantTouchTarget({
     required Widget child,
@@ -208,8 +209,9 @@ class TouchTargetCompliance {
     Size? minimumSize,
     EdgeInsets? padding,
   }) {
-    final effectiveMinimumSize = minimumSize ?? const Size(minimumTouchTarget, minimumTouchTarget);
-    
+    final effectiveMinimumSize =
+        minimumSize ?? const Size(minimumTouchTarget, minimumTouchTarget);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -231,7 +233,7 @@ class CompliantTouchTarget extends StatelessWidget {
   final Size? minimumSize;
   final EdgeInsets? padding;
   final AlignmentGeometry alignment;
-  
+
   const CompliantTouchTarget({
     super.key,
     required this.child,
@@ -240,12 +242,16 @@ class CompliantTouchTarget extends StatelessWidget {
     this.padding,
     this.alignment = Alignment.center,
   });
-  
+
   @override
   Widget build(BuildContext context) {
-    final effectiveMinimumSize = minimumSize ?? 
-        const Size(TouchTargetCompliance.minimumTouchTarget, TouchTargetCompliance.minimumTouchTarget);
-    
+    final effectiveMinimumSize =
+        minimumSize ??
+        const Size(
+          TouchTargetCompliance.minimumTouchTarget,
+          TouchTargetCompliance.minimumTouchTarget,
+        );
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -274,7 +280,7 @@ class ResponsiveScaffold extends StatelessWidget {
   final bool resizeToAvoidBottomInset;
   final bool extendBody;
   final bool extendBodyBehindAppBar;
-  
+
   const ResponsiveScaffold({
     super.key,
     this.appBar,
@@ -289,7 +295,7 @@ class ResponsiveScaffold extends StatelessWidget {
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return OrientationBuilder(
@@ -310,12 +316,12 @@ class ResponsiveScaffold extends StatelessWidget {
       },
     );
   }
-  
+
   Widget _buildResponsiveBody(BuildContext context, Orientation orientation) {
     final isKeyboardVisible = KeyboardHandler.isKeyboardVisible(context);
-    
+
     Widget content = body;
-    
+
     // Add keyboard handling if needed
     if (isKeyboardVisible) {
       content = KeyboardAdaptiveLayout(
@@ -323,7 +329,7 @@ class ResponsiveScaffold extends StatelessWidget {
         child: content,
       );
     }
-    
+
     return content;
   }
 }
@@ -336,7 +342,7 @@ class LayoutAdaptationManager {
     final orientation = mediaQuery.orientation;
     final screenWidth = mediaQuery.size.width;
     final isKeyboardVisible = KeyboardHandler.isKeyboardVisible(context);
-    
+
     return LayoutAdaptationConfig(
       orientation: orientation,
       screenWidth: screenWidth,
@@ -346,11 +352,11 @@ class LayoutAdaptationManager {
       safeAreaInsets: mediaQuery.padding,
     );
   }
-  
+
   /// Get recommended column count based on orientation and screen size
   static int getRecommendedColumns(BuildContext context) {
     final config = getConfig(context);
-    
+
     if (config.screenWidth < 480) {
       return config.orientation == Orientation.portrait ? 2 : 3;
     } else if (config.screenWidth < 768) {
@@ -361,11 +367,11 @@ class LayoutAdaptationManager {
       return config.orientation == Orientation.portrait ? 6 : 8;
     }
   }
-  
+
   /// Get recommended spacing based on screen size and orientation
   static double getRecommendedSpacing(BuildContext context) {
     final config = getConfig(context);
-    
+
     if (config.screenWidth < 480) {
       return 8.0;
     } else if (config.screenWidth < 768) {
@@ -386,7 +392,7 @@ class LayoutAdaptationConfig {
   final bool isKeyboardVisible;
   final double keyboardHeight;
   final EdgeInsets safeAreaInsets;
-  
+
   const LayoutAdaptationConfig({
     required this.orientation,
     required this.screenWidth,
@@ -395,16 +401,21 @@ class LayoutAdaptationConfig {
     required this.keyboardHeight,
     required this.safeAreaInsets,
   });
-  
+
   /// Check if device is in portrait orientation
   bool get isPortrait => orientation == Orientation.portrait;
-  
+
   /// Check if device is in landscape orientation
   bool get isLandscape => orientation == Orientation.landscape;
-  
+
   /// Get available height excluding keyboard and safe areas
-  double get availableHeight => screenHeight - keyboardHeight - safeAreaInsets.top - safeAreaInsets.bottom;
-  
+  double get availableHeight =>
+      screenHeight -
+      keyboardHeight -
+      safeAreaInsets.top -
+      safeAreaInsets.bottom;
+
   /// Get available width excluding safe areas
-  double get availableWidth => screenWidth - safeAreaInsets.left - safeAreaInsets.right;
+  double get availableWidth =>
+      screenWidth - safeAreaInsets.left - safeAreaInsets.right;
 }

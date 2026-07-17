@@ -36,11 +36,7 @@ class ServerListTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              server.url,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -48,9 +44,9 @@ class ServerListTile extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'User: ${server.username}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -96,7 +92,10 @@ class ServerListTile extends StatelessWidget {
                     value: 'delete',
                     child: ListTile(
                       leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Delete', style: TextStyle(color: Colors.red)),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -116,11 +115,7 @@ class ServerListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         color: _getStatusColor(server.status).withOpacity(0.1),
       ),
-      child: Icon(
-        Icons.dns,
-        color: _getStatusColor(server.status),
-        size: 24,
-      ),
+      child: Icon(Icons.dns, color: _getStatusColor(server.status), size: 24),
     );
   }
 

@@ -16,7 +16,8 @@ class EnhancedComponentsExample extends StatefulWidget {
   const EnhancedComponentsExample({super.key});
 
   @override
-  State<EnhancedComponentsExample> createState() => _EnhancedComponentsExampleState();
+  State<EnhancedComponentsExample> createState() =>
+      _EnhancedComponentsExampleState();
 }
 
 class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
@@ -43,41 +44,56 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
 
   void _generateSampleData() {
     // Generate sample albums
-    _albums = List.generate(20, (index) => Album(
-      id: 'album_$index',
-      title: 'Album ${index + 1}',
-      artist: 'Artist ${(index % 5) + 1}',
-      serverId: 'server_1',
-      lastModified: DateTime.now(),
-      year: 2020 + (index % 4),
-      trackCount: 10 + (index % 5),
-      coverArtUrl: index % 3 == 0 ? 'https://picsum.photos/300/300?random=$index' : null,
-    ));
+    _albums = List.generate(
+      20,
+      (index) => Album(
+        id: 'album_$index',
+        title: 'Album ${index + 1}',
+        artist: 'Artist ${(index % 5) + 1}',
+        serverId: 'server_1',
+        lastModified: DateTime.now(),
+        year: 2020 + (index % 4),
+        trackCount: 10 + (index % 5),
+        coverArtUrl: index % 3 == 0
+            ? 'https://picsum.photos/300/300?random=$index'
+            : null,
+      ),
+    );
 
     // Generate sample artists
-    _artists = List.generate(10, (index) => Artist(
-      id: 'artist_$index',
-      name: 'Artist ${index + 1}',
-      serverId: 'server_1',
-      lastModified: DateTime.now(),
-      albumCount: 2 + (index % 3),
-      imageUrl: index % 2 == 0 ? 'https://picsum.photos/200/200?random=${index + 100}' : null,
-    ));
+    _artists = List.generate(
+      10,
+      (index) => Artist(
+        id: 'artist_$index',
+        name: 'Artist ${index + 1}',
+        serverId: 'server_1',
+        lastModified: DateTime.now(),
+        albumCount: 2 + (index % 3),
+        imageUrl: index % 2 == 0
+            ? 'https://picsum.photos/200/200?random=${index + 100}'
+            : null,
+      ),
+    );
 
     // Generate sample tracks
-    _tracks = List.generate(50, (index) => Track(
-      id: 'track_$index',
-      title: 'Track ${index + 1}',
-      artist: 'Artist ${(index % 5) + 1}',
-      album: 'Album ${(index % 10) + 1}',
-      duration: Duration(minutes: 3, seconds: 30 + (index % 60)),
-      serverId: 'server_1',
-      streamUrl: 'https://example.com/track_$index.mp3',
-      quality: AudioQuality.high,
-      lastModified: DateTime.now(),
-      trackNumber: (index % 12) + 1,
-      coverArtUrl: index % 4 == 0 ? 'https://picsum.photos/100/100?random=${index + 200}' : null,
-    ));
+    _tracks = List.generate(
+      50,
+      (index) => Track(
+        id: 'track_$index',
+        title: 'Track ${index + 1}',
+        artist: 'Artist ${(index % 5) + 1}',
+        album: 'Album ${(index % 10) + 1}',
+        duration: Duration(minutes: 3, seconds: 30 + (index % 60)),
+        serverId: 'server_1',
+        streamUrl: 'https://example.com/track_$index.mp3',
+        quality: AudioQuality.high,
+        lastModified: DateTime.now(),
+        trackNumber: (index % 12) + 1,
+        coverArtUrl: index % 4 == 0
+            ? 'https://picsum.photos/100/100?random=${index + 200}'
+            : null,
+      ),
+    );
   }
 
   @override
@@ -96,11 +112,7 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildAlbumsTab(),
-          _buildArtistsTab(),
-          _buildTracksTab(),
-        ],
+        children: [_buildAlbumsTab(), _buildArtistsTab(), _buildTracksTab()],
       ),
     );
   }
@@ -119,7 +131,10 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
                 segments: const [
                   ButtonSegment(value: CardLayout.grid, label: Text('Grid')),
                   ButtonSegment(value: CardLayout.list, label: Text('List')),
-                  ButtonSegment(value: CardLayout.compact, label: Text('Compact')),
+                  ButtonSegment(
+                    value: CardLayout.compact,
+                    label: Text('Compact'),
+                  ),
                 ],
                 selected: {CardLayout.grid},
                 onSelectionChanged: (Set<CardLayout> selection) {
@@ -138,13 +153,17 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
             crossAxisSpacing: OmnisonicSpacing.md,
             childAspectRatio: 0.8,
             enableStaggeredAnimation: true,
-            children: _albums.map((album) => EnhancedAlbumCard(
-              album: album,
-              layout: CardLayout.grid,
-              isSelected: _selectedItems.contains(album.id),
-              onTap: () => _handleAlbumTap(album),
-              onLongPress: () => _handleAlbumLongPress(album),
-            )).toList(),
+            children: _albums
+                .map(
+                  (album) => EnhancedAlbumCard(
+                    album: album,
+                    layout: CardLayout.grid,
+                    isSelected: _selectedItems.contains(album.id),
+                    onTap: () => _handleAlbumTap(album),
+                    onLongPress: () => _handleAlbumLongPress(album),
+                  ),
+                )
+                .toList(),
           ),
         ),
       ],
@@ -159,13 +178,17 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
       crossAxisSpacing: OmnisonicSpacing.md,
       childAspectRatio: 0.9,
       enableStaggeredAnimation: true,
-      children: _artists.map((artist) => EnhancedArtistCard(
-        artist: artist,
-        layout: CardLayout.grid,
-        isSelected: _selectedItems.contains(artist.id),
-        onTap: () => _handleArtistTap(artist),
-        onLongPress: () => _handleArtistLongPress(artist),
-      )).toList(),
+      children: _artists
+          .map(
+            (artist) => EnhancedArtistCard(
+              artist: artist,
+              layout: CardLayout.grid,
+              isSelected: _selectedItems.contains(artist.id),
+              onTap: () => _handleArtistTap(artist),
+              onLongPress: () => _handleArtistLongPress(artist),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -213,7 +236,7 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
         _selectedItems.add(album.id);
       }
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Tapped: ${album.title}'),
@@ -234,7 +257,7 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
         _selectedItems.add(artist.id);
       }
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Tapped: ${artist.name}'),
@@ -251,10 +274,12 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
     setState(() {
       _playingTrackId = _playingTrackId == track.id ? null : track.id;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_playingTrackId == track.id ? 'Playing: ${track.title}' : 'Stopped'),
+        content: Text(
+          _playingTrackId == track.id ? 'Playing: ${track.title}' : 'Stopped',
+        ),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -269,10 +294,12 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
       final track = _tracks.removeAt(oldIndex);
       _tracks.insert(newIndex, track);
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Moved track from position ${oldIndex + 1} to ${newIndex + 1}'),
+        content: Text(
+          'Moved track from position ${oldIndex + 1} to ${newIndex + 1}',
+        ),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -282,7 +309,7 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
     setState(() {
       _tracks.removeAt(index);
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed: ${track.title}'),
@@ -306,10 +333,7 @@ class _EnhancedComponentsExampleState extends State<EnhancedComponentsExample>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              style: context.textTheme.titleMedium,
-            ),
+            Text(title, style: context.textTheme.titleMedium),
             const SizedBox(height: OmnisonicSpacing.lg),
             ListTile(
               leading: const Icon(Icons.play_arrow),
@@ -358,18 +382,23 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
   }
 
   void _generateQueue() {
-    _queue.addAll(List.generate(10, (index) => Track(
-      id: 'queue_track_$index',
-      title: 'Queue Track ${index + 1}',
-      artist: 'Queue Artist ${(index % 3) + 1}',
-      album: 'Queue Album ${(index % 2) + 1}',
-      duration: Duration(minutes: 3, seconds: 30 + (index % 60)),
-      serverId: 'server_1',
-      streamUrl: 'https://example.com/queue_track_$index.mp3',
-      quality: AudioQuality.high,
-      lastModified: DateTime.now(),
-      trackNumber: index + 1,
-    )));
+    _queue.addAll(
+      List.generate(
+        10,
+        (index) => Track(
+          id: 'queue_track_$index',
+          title: 'Queue Track ${index + 1}',
+          artist: 'Queue Artist ${(index % 3) + 1}',
+          album: 'Queue Album ${(index % 2) + 1}',
+          duration: Duration(minutes: 3, seconds: 30 + (index % 60)),
+          serverId: 'server_1',
+          streamUrl: 'https://example.com/queue_track_$index.mp3',
+          quality: AudioQuality.high,
+          lastModified: DateTime.now(),
+          trackNumber: index + 1,
+        ),
+      ),
+    );
   }
 
   @override
@@ -392,7 +421,7 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
         children: [
           // Now playing section
           if (_queue.isNotEmpty) _buildNowPlayingSection(),
-          
+
           // Queue section
           Expanded(
             child: Column(
@@ -400,10 +429,7 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
               children: [
                 Padding(
                   padding: OmnisonicInsets.allMd,
-                  child: Text(
-                    'Up Next',
-                    style: context.textTheme.titleLarge,
-                  ),
+                  child: Text('Up Next', style: context.textTheme.titleLarge),
                 ),
                 Expanded(
                   child: EnhancedAnimatedList<Track>(
@@ -415,13 +441,15 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
                       setState(() {
                         final track = _queue.removeAt(oldIndex);
                         _queue.insert(newIndex, track);
-                        
+
                         // Update current track index if needed
                         if (oldIndex == _currentTrackIndex) {
                           _currentTrackIndex = newIndex;
-                        } else if (oldIndex < _currentTrackIndex && newIndex >= _currentTrackIndex) {
+                        } else if (oldIndex < _currentTrackIndex &&
+                            newIndex >= _currentTrackIndex) {
                           _currentTrackIndex--;
-                        } else if (oldIndex > _currentTrackIndex && newIndex <= _currentTrackIndex) {
+                        } else if (oldIndex > _currentTrackIndex &&
+                            newIndex <= _currentTrackIndex) {
                           _currentTrackIndex++;
                         }
                       });
@@ -431,8 +459,12 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
                         _queue.removeAt(index);
                         if (index < _currentTrackIndex) {
                           _currentTrackIndex--;
-                        } else if (index == _currentTrackIndex && _queue.isNotEmpty) {
-                          _currentTrackIndex = _currentTrackIndex.clamp(0, _queue.length - 1);
+                        } else if (index == _currentTrackIndex &&
+                            _queue.isNotEmpty) {
+                          _currentTrackIndex = _currentTrackIndex.clamp(
+                            0,
+                            _queue.length - 1,
+                          );
                         }
                       });
                     },
@@ -462,7 +494,7 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
 
   Widget _buildNowPlayingSection() {
     final currentTrack = _queue[_currentTrackIndex];
-    
+
     return Container(
       padding: OmnisonicInsets.allLg,
       decoration: BoxDecoration(
@@ -481,14 +513,10 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
               borderRadius: BorderRadius.circular(OmnisonicRadius.md),
               color: Colors.white.withValues(alpha: 0.2),
             ),
-            child: const Icon(
-              Icons.music_note,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: const Icon(Icons.music_note, color: Colors.white, size: 32),
           ),
           const SizedBox(width: OmnisonicSpacing.md),
-          
+
           // Track info
           Expanded(
             child: Column(
@@ -514,7 +542,7 @@ class _MusicPlayerExampleState extends State<MusicPlayerExample> {
               ],
             ),
           ),
-          
+
           // Play/pause button
           IconButton(
             icon: Icon(

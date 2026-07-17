@@ -18,7 +18,7 @@ class MiniPlayer extends StatelessWidget {
     return Consumer<PlaybackViewModel>(
       builder: (context, viewModel, child) {
         final track = viewModel.currentTrack;
-        
+
         // Animate mini player appearance/disappearance
         return AnimatedContainer(
           duration: AnimationConstants.standardAnimation,
@@ -28,14 +28,20 @@ class MiniPlayer extends StatelessWidget {
             duration: AnimationConstants.standardAnimation,
             curve: AnimationConstants.standardCurve,
             opacity: viewModel.hasCurrentTrack ? 1.0 : 0.0,
-            child: track != null ? _buildMiniPlayerContent(context, track, viewModel) : const SizedBox.shrink(),
+            child: track != null
+                ? _buildMiniPlayerContent(context, track, viewModel)
+                : const SizedBox.shrink(),
           ),
         );
       },
     );
   }
 
-  Widget _buildMiniPlayerContent(BuildContext context, Track track, PlaybackViewModel viewModel) {
+  Widget _buildMiniPlayerContent(
+    BuildContext context,
+    Track track,
+    PlaybackViewModel viewModel,
+  ) {
     return Container(
       height: 60,
       decoration: BoxDecoration(
@@ -69,23 +75,30 @@ class MiniPlayer extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                           child: CachedNetworkImage(
                             imageUrl: track.coverArtUrl!.withCoverArtSize(96),
-                            cacheKey: track.coverArtUrl!.withCoverArtSize(96).subsonicCacheKey,
+                            cacheKey: track.coverArtUrl!
+                                .withCoverArtSize(96)
+                                .subsonicCacheKey,
                             cacheManager: OmnisonicImageCacheManager.instance,
                             fit: BoxFit.cover,
                             memCacheWidth: 96,
                             memCacheHeight: 96,
                             fadeInDuration: const Duration(milliseconds: 120),
                             useOldImageOnUrlChange: true,
-                            placeholder: (context, url) => const Icon(Icons.music_note, color: Colors.grey),
-                            errorWidget: (context, url, error) =>
-                                const Icon(Icons.music_note, color: Colors.grey),
+                            placeholder: (context, url) => const Icon(
+                              Icons.music_note,
+                              color: Colors.grey,
+                            ),
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.music_note,
+                              color: Colors.grey,
+                            ),
                           ),
                         )
                       : const Icon(Icons.music_note, color: Colors.grey),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Track info
                 Expanded(
                   child: Padding(
@@ -123,7 +136,7 @@ class MiniPlayer extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 // Controls
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -131,10 +144,12 @@ class MiniPlayer extends StatelessWidget {
                     // Previous button
                     IconButton(
                       icon: const Icon(Icons.skip_previous),
-                      onPressed: viewModel.hasPrevious ? viewModel.skipToPrevious : null,
+                      onPressed: viewModel.hasPrevious
+                          ? viewModel.skipToPrevious
+                          : null,
                       iconSize: 24,
                     ),
-                    
+
                     // Play/Pause button
                     IconButton(
                       icon: Icon(
@@ -143,11 +158,13 @@ class MiniPlayer extends StatelessWidget {
                       onPressed: viewModel.togglePlayPause,
                       iconSize: 28,
                     ),
-                    
+
                     // Next button
                     IconButton(
                       icon: const Icon(Icons.skip_next),
-                      onPressed: viewModel.hasNext ? viewModel.skipToNext : null,
+                      onPressed: viewModel.hasNext
+                          ? viewModel.skipToNext
+                          : null,
                       iconSize: 24,
                     ),
                   ],

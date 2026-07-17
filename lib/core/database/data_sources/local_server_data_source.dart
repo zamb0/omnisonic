@@ -36,47 +36,77 @@ class LocalServerDataSource {
       final servers = await _database.serverDao.getOnlineServers();
       return ResultHelper.success(servers);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get online servers: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get online servers: $e'),
+      );
     }
   }
 
   /// Insert server into local database
-  Future<Result<void>> insertServer(MusicServer server, String encryptedPassword) async {
+  Future<Result<void>> insertServer(
+    MusicServer server,
+    String encryptedPassword,
+  ) async {
     try {
       await _database.serverDao.insertServer(server, encryptedPassword);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to insert server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to insert server: $e'),
+      );
     }
   }
 
   /// Update server in local database
-  Future<Result<void>> updateServer(MusicServer server, {String? encryptedPassword}) async {
+  Future<Result<void>> updateServer(
+    MusicServer server, {
+    String? encryptedPassword,
+  }) async {
     try {
-      await _database.serverDao.updateServer(server, encryptedPassword: encryptedPassword);
+      await _database.serverDao.updateServer(
+        server,
+        encryptedPassword: encryptedPassword,
+      );
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update server: $e'),
+      );
     }
   }
 
   /// Update server status
-  Future<Result<void>> updateServerStatus(String serverId, ServerStatus status, {String? errorMessage}) async {
+  Future<Result<void>> updateServerStatus(
+    String serverId,
+    ServerStatus status, {
+    String? errorMessage,
+  }) async {
     try {
-      await _database.serverDao.updateServerStatus(serverId, status, errorMessage: errorMessage);
+      await _database.serverDao.updateServerStatus(
+        serverId,
+        status,
+        errorMessage: errorMessage,
+      );
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update server status: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update server status: $e'),
+      );
     }
   }
 
   /// Update server last sync time
-  Future<Result<void>> updateServerLastSync(String serverId, DateTime lastSync) async {
+  Future<Result<void>> updateServerLastSync(
+    String serverId,
+    DateTime lastSync,
+  ) async {
     try {
       await _database.serverDao.updateServerLastSync(serverId, lastSync);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update server last sync: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update server last sync: $e'),
+      );
     }
   }
 
@@ -86,7 +116,9 @@ class LocalServerDataSource {
       await _database.serverDao.deleteServer(id);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to delete server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to delete server: $e'),
+      );
     }
   }
 
@@ -106,7 +138,9 @@ class LocalServerDataSource {
       final server = await _database.serverDao.getServerById(id);
       return ResultHelper.success(server != null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to check server existence: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to check server existence: $e'),
+      );
     }
   }
 
@@ -119,7 +153,9 @@ class LocalServerDataSource {
       }
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to clear servers: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to clear servers: $e'),
+      );
     }
   }
 }

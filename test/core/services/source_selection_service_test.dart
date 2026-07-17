@@ -68,10 +68,12 @@ void main() {
         lastSync: DateTime.now(),
       );
 
-      when(mockServerRepository.getServerById('server1'))
-          .thenAnswer((_) async => ResultHelper.success(server1));
-      when(mockServerRepository.getServerById('server2'))
-          .thenAnswer((_) async => ResultHelper.success(server2));
+      when(
+        mockServerRepository.getServerById('server1'),
+      ).thenAnswer((_) async => ResultHelper.success(server1));
+      when(
+        mockServerRepository.getServerById('server2'),
+      ).thenAnswer((_) async => ResultHelper.success(server2));
 
       final duplicateTracks = [lowQualityTrack, highQualityTrack];
 
@@ -80,7 +82,10 @@ void main() {
 
       // Assert
       expect(result.isSuccess, isTrue);
-      expect(result.valueOrNull?.id, equals('2')); // Should select lossless quality
+      expect(
+        result.valueOrNull?.id,
+        equals('2'),
+      ); // Should select lossless quality
       expect(result.valueOrNull?.quality, equals(AudioQuality.lossless));
     });
 
@@ -133,10 +138,12 @@ void main() {
         lastSync: DateTime.now(),
       );
 
-      when(mockServerRepository.getServerById('server1'))
-          .thenAnswer((_) async => ResultHelper.success(server1));
-      when(mockServerRepository.getServerById('server2'))
-          .thenAnswer((_) async => ResultHelper.success(server2));
+      when(
+        mockServerRepository.getServerById('server1'),
+      ).thenAnswer((_) async => ResultHelper.success(server1));
+      when(
+        mockServerRepository.getServerById('server2'),
+      ).thenAnswer((_) async => ResultHelper.success(server2));
 
       final duplicateTracks = [nonCachedTrack, cachedTrack];
 
@@ -173,8 +180,9 @@ void main() {
         lastSync: DateTime.now(),
       );
 
-      when(mockServerRepository.getServerById('server1'))
-          .thenAnswer((_) async => ResultHelper.success(server));
+      when(
+        mockServerRepository.getServerById('server1'),
+      ).thenAnswer((_) async => ResultHelper.success(server));
 
       final duplicateTracks = [track];
 
@@ -221,8 +229,9 @@ void main() {
         lastSync: DateTime.now(),
       );
 
-      when(mockServerRepository.getServerById('server2'))
-          .thenAnswer((_) async => ResultHelper.success(server2));
+      when(
+        mockServerRepository.getServerById('server2'),
+      ).thenAnswer((_) async => ResultHelper.success(server2));
 
       final duplicateTracks = [primaryTrack, fallbackTrack];
 

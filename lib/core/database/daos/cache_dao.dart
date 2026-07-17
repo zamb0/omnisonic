@@ -42,46 +42,64 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
   }
 
   Future<CacheEntry?> getCacheEntryByTrackId(String trackId) async {
-    final data = await (select(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId))).getSingleOrNull();
+    final data = await (select(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.trackId.equals(trackId))).getSingleOrNull();
     return data != null ? _fromData(data) : null;
   }
 
   Future<List<CacheEntry>> getCompleteCacheEntries() async {
-    final data = await (select(cacheEntriesTable)..where((tbl) => tbl.isComplete.equals(true))).get();
+    final data = await (select(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.isComplete.equals(true))).get();
     return data.map(_fromData).toList();
   }
 
   Future<List<CacheEntry>> getIncompleteCacheEntries() async {
-    final data = await (select(cacheEntriesTable)..where((tbl) => tbl.isComplete.equals(false))).get();
+    final data = await (select(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.isComplete.equals(false))).get();
     return data.map(_fromData).toList();
   }
 
   Future<List<CacheEntry>> getPinnedCacheEntries() async {
-    final data = await (select(cacheEntriesTable)..where((tbl) => tbl.isPinned.equals(true))).get();
+    final data = await (select(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.isPinned.equals(true))).get();
     return data.map(_fromData).toList();
   }
 
   Future<List<CacheEntry>> getUnpinnedCacheEntries() async {
-    final data = await (select(cacheEntriesTable)..where((tbl) => tbl.isPinned.equals(false))).get();
+    final data = await (select(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.isPinned.equals(false))).get();
     return data.map(_fromData).toList();
   }
 
-  Future<List<CacheEntry>> getCacheEntriesOrderedByLastAccessed({bool ascending = false}) async {
+  Future<List<CacheEntry>> getCacheEntriesOrderedByLastAccessed({
+    bool ascending = false,
+  }) async {
     final query = select(cacheEntriesTable)
-      ..orderBy([(tbl) => OrderingTerm(
+      ..orderBy([
+        (tbl) => OrderingTerm(
           expression: tbl.lastAccessed,
           mode: ascending ? OrderingMode.asc : OrderingMode.desc,
-        )]);
+        ),
+      ]);
     final data = await query.get();
     return data.map(_fromData).toList();
   }
 
-  Future<List<CacheEntry>> getCacheEntriesOrderedBySize({bool ascending = true}) async {
+  Future<List<CacheEntry>> getCacheEntriesOrderedBySize({
+    bool ascending = true,
+  }) async {
     final query = select(cacheEntriesTable)
-      ..orderBy([(tbl) => OrderingTerm(
+      ..orderBy([
+        (tbl) => OrderingTerm(
           expression: tbl.fileSize,
           mode: ascending ? OrderingMode.asc : OrderingMode.desc,
-        )]);
+        ),
+      ]);
     final data = await query.get();
     return data.map(_fromData).toList();
   }
@@ -94,40 +112,47 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     await update(cacheEntriesTable).replace(_toCompanion(entry));
   }
 
-  Future<void> updateCacheEntryLastAccessed(String trackId, DateTime lastAccessed) async {
-    await (update(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId)))
-        .write(CacheEntriesTableCompanion(
-          lastAccessed: Value(lastAccessed),
-        ));
+  Future<void> updateCacheEntryLastAccessed(
+    String trackId,
+    DateTime lastAccessed,
+  ) async {
+    await (update(cacheEntriesTable)
+          ..where((tbl) => tbl.trackId.equals(trackId)))
+        .write(CacheEntriesTableCompanion(lastAccessed: Value(lastAccessed)));
   }
 
-  Future<void> updateCacheEntryCompletion(String trackId, bool isComplete) async {
-    await (update(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId)))
-        .write(CacheEntriesTableCompanion(
-          isComplete: Value(isComplete),
-        ));
+  Future<void> updateCacheEntryCompletion(
+    String trackId,
+    bool isComplete,
+  ) async {
+    await (update(cacheEntriesTable)
+          ..where((tbl) => tbl.trackId.equals(trackId)))
+        .write(CacheEntriesTableCompanion(isComplete: Value(isComplete)));
   }
 
   Future<void> updateCacheEntryPinned(String trackId, bool isPinned) async {
-    await (update(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId)))
-        .write(CacheEntriesTableCompanion(
-          isPinned: Value(isPinned),
-        ));
+    await (update(cacheEntriesTable)
+          ..where((tbl) => tbl.trackId.equals(trackId)))
+        .write(CacheEntriesTableCompanion(isPinned: Value(isPinned)));
   }
 
   Future<void> deleteCacheEntry(String trackId) async {
-    await (delete(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId))).go();
+    await (delete(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.trackId.equals(trackId))).go();
   }
 
   Future<void> deleteCacheEntries(List<String> trackIds) async {
-    await (delete(cacheEntriesTable)..where((tbl) => tbl.trackId.isIn(trackIds))).go();
+    await (delete(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.trackId.isIn(trackIds))).go();
   }
 
   // Cache management operations
   Future<int> getTotalCacheSize() async {
     final query = selectOnly(cacheEntriesTable)
       ..addColumns([cacheEntriesTable.fileSize.sum()]);
-    
+
     final result = await query.getSingleOrNull();
     return result?.read(cacheEntriesTable.fileSize.sum()) ?? 0;
   }
@@ -136,15 +161,14 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     final query = selectOnly(cacheEntriesTable)
       ..addColumns([cacheEntriesTable.fileSize.sum()])
       ..where(cacheEntriesTable.isPinned.equals(true));
-    
+
     final result = await query.getSingleOrNull();
     return result?.read(cacheEntriesTable.fileSize.sum()) ?? 0;
   }
 
   Future<int> getCacheEntryCount() async {
-    final query = selectOnly(cacheEntriesTable)
-      ..addColumns([countAll()]);
-    
+    final query = selectOnly(cacheEntriesTable)..addColumns([countAll()]);
+
     final result = await query.getSingle();
     return result.read(countAll())!;
   }
@@ -153,7 +177,7 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     final query = selectOnly(cacheEntriesTable)
       ..addColumns([countAll()])
       ..where(cacheEntriesTable.isPinned.equals(true));
-    
+
     final result = await query.getSingle();
     return result.read(countAll())!;
   }
@@ -162,7 +186,7 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     final query = select(cacheEntriesTable)
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.lastAccessed)])
       ..limit(limit);
-    
+
     final data = await query.get();
     return data.map(_fromData).toList();
   }
@@ -171,27 +195,34 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     final query = select(cacheEntriesTable)
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.cachedAt)])
       ..limit(limit);
-    
+
     final data = await query.get();
     return data.map(_fromData).toList();
   }
 
   Future<List<CacheEntry>> getLargestCacheEntries(int limit) async {
     final query = select(cacheEntriesTable)
-      ..orderBy([(tbl) => OrderingTerm(expression: tbl.fileSize, mode: OrderingMode.desc)])
+      ..orderBy([
+        (tbl) =>
+            OrderingTerm(expression: tbl.fileSize, mode: OrderingMode.desc),
+      ])
       ..limit(limit);
-    
+
     final data = await query.get();
     return data.map(_fromData).toList();
   }
 
   // Cleanup operations
   Future<void> deleteOldCacheEntries(DateTime cutoffDate) async {
-    await (delete(cacheEntriesTable)..where((tbl) => tbl.cachedAt.isSmallerThanValue(cutoffDate))).go();
+    await (delete(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.cachedAt.isSmallerThanValue(cutoffDate))).go();
   }
 
   Future<void> deleteIncompleteCacheEntries() async {
-    await (delete(cacheEntriesTable)..where((tbl) => tbl.isComplete.equals(false))).go();
+    await (delete(
+      cacheEntriesTable,
+    )..where((tbl) => tbl.isComplete.equals(false))).go();
   }
 
   Future<void> clearAllCacheEntries() async {
@@ -200,11 +231,14 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
 
   // Watch for changes
   Stream<List<CacheEntry>> watchAllCacheEntries() {
-    return select(cacheEntriesTable).watch().map((data) => data.map(_fromData).toList());
+    return select(
+      cacheEntriesTable,
+    ).watch().map((data) => data.map(_fromData).toList());
   }
 
   Stream<CacheEntry?> watchCacheEntryByTrackId(String trackId) {
-    return (select(cacheEntriesTable)..where((tbl) => tbl.trackId.equals(trackId)))
+    return (select(cacheEntriesTable)
+          ..where((tbl) => tbl.trackId.equals(trackId)))
         .watchSingleOrNull()
         .map((data) => data != null ? _fromData(data) : null);
   }
@@ -212,7 +246,9 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
   Stream<int> watchTotalCacheSize() {
     final query = selectOnly(cacheEntriesTable)
       ..addColumns([cacheEntriesTable.fileSize.sum()]);
-    
-    return query.watchSingle().map((result) => result.read(cacheEntriesTable.fileSize.sum()) ?? 0);
+
+    return query.watchSingle().map(
+      (result) => result.read(cacheEntriesTable.fileSize.sum()) ?? 0,
+    );
   }
 }

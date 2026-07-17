@@ -7,7 +7,8 @@ enum ServerStatus {
   syncing;
 
   bool get isAvailable => this == ServerStatus.online;
-  bool get isConnecting => this == ServerStatus.connecting || this == ServerStatus.authenticating;
+  bool get isConnecting =>
+      this == ServerStatus.connecting || this == ServerStatus.authenticating;
   bool get hasError => this == ServerStatus.error;
 
   @override

@@ -4,16 +4,16 @@ import 'package:omnisonic/core/design_system/design_system.dart';
 
 void main() {
   group('Design System Integration Tests', () {
-    testWidgets('Design system components work together', (WidgetTester tester) async {
+    testWidgets('Design system components work together', (
+      WidgetTester tester,
+    ) async {
       // Create a test app with the design system
       await tester.pumpWidget(
         MaterialApp(
           theme: OmnisonicTheme.lightTheme,
           darkTheme: OmnisonicTheme.darkTheme,
           home: Scaffold(
-            appBar: AppBar(
-              title: const Text('Integration Test'),
-            ),
+            appBar: AppBar(title: const Text('Integration Test')),
             body: SingleChildScrollView(
               padding: OmnisonicInsets.screen,
               child: Column(
@@ -33,7 +33,7 @@ void main() {
                     ),
                   ),
                   const SizedBox(height: OmnisonicSpacing.md),
-                  
+
                   // Test typography
                   Text(
                     'Typography Test',
@@ -45,7 +45,7 @@ void main() {
                     style: OmnisonicTypography.bodyLarge,
                   ),
                   const SizedBox(height: OmnisonicSpacing.md),
-                  
+
                   // Test buttons
                   Row(
                     children: [
@@ -65,7 +65,7 @@ void main() {
                     ],
                   ),
                   const SizedBox(height: OmnisonicSpacing.md),
-                  
+
                   // Test card
                   Card(
                     child: Padding(
@@ -101,7 +101,10 @@ void main() {
       expect(find.text('Elevated'), findsOneWidget);
       expect(find.text('Outlined'), findsOneWidget);
       expect(find.text('Card Title'), findsOneWidget);
-      expect(find.text('Card content with proper spacing and typography.'), findsOneWidget);
+      expect(
+        find.text('Card content with proper spacing and typography.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Theme switching works correctly', (WidgetTester tester) async {
@@ -128,9 +131,7 @@ void main() {
                     ),
                   ],
                 ),
-                body: const Center(
-                  child: Text('Theme switching test'),
-                ),
+                body: const Center(child: Text('Theme switching test')),
               ),
             );
           },
@@ -150,10 +151,12 @@ void main() {
       expect(find.text('Theme switching test'), findsOneWidget);
     });
 
-    testWidgets('Responsive layout adapts to different sizes', (WidgetTester tester) async {
+    testWidgets('Responsive layout adapts to different sizes', (
+      WidgetTester tester,
+    ) async {
       // Test mobile layout
       await tester.binding.setSurfaceSize(const Size(400, 800));
-      
+
       await tester.pumpWidget(
         MaterialApp(
           theme: OmnisonicTheme.lightTheme,
@@ -185,7 +188,9 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     });
 
-    testWidgets('Animation system works correctly', (WidgetTester tester) async {
+    testWidgets('Animation system works correctly', (
+      WidgetTester tester,
+    ) async {
       late AnimationController controller;
       late Animation<double> animation;
 
@@ -209,7 +214,9 @@ void main() {
                               height: 100,
                               decoration: BoxDecoration(
                                 color: OmnisonicColors.primaryBlue,
-                                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+                                borderRadius: BorderRadius.circular(
+                                  OmnisonicRadius.lg,
+                                ),
                               ),
                               child: const Center(
                                 child: Text(
@@ -243,15 +250,15 @@ void main() {
 
       // Initialize animation after the widget is built
       await tester.pumpAndSettle();
-      
+
       final context = tester.element(find.byType(Scaffold));
       final animationManager = AnimationManager();
-      
+
       controller = animationManager.createController(
         duration: AnimationManager.fastDuration,
         vsync: tester,
       );
-      
+
       animation = animationManager.createTween<double>(
         controller: controller,
         begin: 1.0,

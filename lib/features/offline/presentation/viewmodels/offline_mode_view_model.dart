@@ -12,8 +12,8 @@ class OfflineModeViewModel extends ChangeNotifier {
   OfflineModeViewModel({
     required OfflineModeService offlineModeService,
     required ManageOfflineModeUseCase manageOfflineModeUseCase,
-  })  : _offlineModeService = offlineModeService,
-        _manageOfflineModeUseCase = manageOfflineModeUseCase {
+  }) : _offlineModeService = offlineModeService,
+       _manageOfflineModeUseCase = manageOfflineModeUseCase {
     _initialize();
   }
 
@@ -61,10 +61,10 @@ class OfflineModeViewModel extends ChangeNotifier {
   int get offlineArtistCount => _offlineArtists.length;
   int get offlinePlaylistCount => _offlinePlaylists.length;
 
-  bool get hasOfflineContent => 
-      _offlineTracks.isNotEmpty || 
-      _offlineAlbums.isNotEmpty || 
-      _offlineArtists.isNotEmpty || 
+  bool get hasOfflineContent =>
+      _offlineTracks.isNotEmpty ||
+      _offlineAlbums.isNotEmpty ||
+      _offlineArtists.isNotEmpty ||
       _offlinePlaylists.isNotEmpty;
 
   /// Initializes the view model
@@ -80,7 +80,7 @@ class OfflineModeViewModel extends ChangeNotifier {
       (isOffline) {
         _isOffline = isOffline;
         notifyListeners();
-        
+
         // Reload offline collection when mode changes
         if (isOffline) {
           _loadOfflineCollection();
@@ -114,7 +114,9 @@ class OfflineModeViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final params = const OfflineModeParams(action: OfflineModeAction.getOfflineCollection);
+      final params = const OfflineModeParams(
+        action: OfflineModeAction.getOfflineCollection,
+      );
       final result = await _manageOfflineModeUseCase(params);
 
       result.fold(
@@ -146,7 +148,9 @@ class OfflineModeViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final params = const OfflineModeParams(action: OfflineModeAction.checkConnectivity);
+      final params = const OfflineModeParams(
+        action: OfflineModeAction.checkConnectivity,
+      );
       final result = await _manageOfflineModeUseCase(params);
 
       result.fold(
@@ -169,9 +173,9 @@ class OfflineModeViewModel extends ChangeNotifier {
         action: OfflineModeAction.setOfflineMode,
         forceOffline: forceOffline,
       );
-      
+
       final result = await _manageOfflineModeUseCase(params);
-      
+
       result.fold(
         (failure) => _setError('Failed to set offline mode: $failure'),
         (_) {
@@ -189,16 +193,15 @@ class OfflineModeViewModel extends ChangeNotifier {
     _clearError();
 
     try {
-      final params = const OfflineModeParams(action: OfflineModeAction.getOfflineStats);
+      final params = const OfflineModeParams(
+        action: OfflineModeAction.getOfflineStats,
+      );
       final result = await _manageOfflineModeUseCase(params);
 
-      return result.fold(
-        (failure) {
-          _setError('Failed to get offline stats: $failure');
-          return null;
-        },
-        (value) => value as Map<String, dynamic>,
-      );
+      return result.fold((failure) {
+        _setError('Failed to get offline stats: $failure');
+        return null;
+      }, (value) => value as Map<String, dynamic>);
     } catch (e) {
       _setError('Unexpected error getting offline stats: $e');
       return null;
@@ -210,25 +213,33 @@ class OfflineModeViewModel extends ChangeNotifier {
   /// Filters tracks for offline mode
   List<Track> filterTracksForOffline(List<Track> tracks) {
     if (!_isOffline) return tracks;
-    return tracks.where((track) => _offlineTracks.any((t) => t.id == track.id)).toList();
+    return tracks
+        .where((track) => _offlineTracks.any((t) => t.id == track.id))
+        .toList();
   }
 
   /// Filters albums for offline mode
   List<Album> filterAlbumsForOffline(List<Album> albums) {
     if (!_isOffline) return albums;
-    return albums.where((album) => _offlineAlbums.any((a) => a.id == album.id)).toList();
+    return albums
+        .where((album) => _offlineAlbums.any((a) => a.id == album.id))
+        .toList();
   }
 
   /// Filters artists for offline mode
   List<Artist> filterArtistsForOffline(List<Artist> artists) {
     if (!_isOffline) return artists;
-    return artists.where((artist) => _offlineArtists.any((a) => a.id == artist.id)).toList();
+    return artists
+        .where((artist) => _offlineArtists.any((a) => a.id == artist.id))
+        .toList();
   }
 
   /// Filters playlists for offline mode
   List<Playlist> filterPlaylistsForOffline(List<Playlist> playlists) {
     if (!_isOffline) return playlists;
-    return playlists.where((playlist) => _offlinePlaylists.any((p) => p.id == playlist.id)).toList();
+    return playlists
+        .where((playlist) => _offlinePlaylists.any((p) => p.id == playlist.id))
+        .toList();
   }
 
   /// Checks if a track is available offline
@@ -255,7 +266,8 @@ class OfflineModeViewModel extends ChangeNotifier {
   String get networkQualityDescription => _networkQuality.description;
 
   /// Gets recommended streaming quality for current network
-  AudioQuality get recommendedStreamingQuality => _networkQuality.recommendedStreamingQuality;
+  AudioQuality get recommendedStreamingQuality =>
+      _networkQuality.recommendedStreamingQuality;
 
   /// Sets loading state
   void _setLoading(bool loading) {

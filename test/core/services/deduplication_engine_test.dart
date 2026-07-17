@@ -112,7 +112,10 @@ void main() {
       final representative = engine.selectRepresentativeTrack(duplicates);
 
       // Assert
-      expect(representative.id, equals('2')); // Should select the lossless quality track
+      expect(
+        representative.id,
+        equals('2'),
+      ); // Should select the lossless quality track
       expect(representative.quality, equals(AudioQuality.lossless));
     });
 

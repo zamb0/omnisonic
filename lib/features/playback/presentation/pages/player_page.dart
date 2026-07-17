@@ -22,10 +22,7 @@ class PlayerPage extends StatelessWidget {
             body: const Center(
               child: Text(
                 'No track playing',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             ),
           );

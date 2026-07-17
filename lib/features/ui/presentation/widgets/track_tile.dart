@@ -25,25 +25,24 @@ class TrackTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       visualDensity: VisualDensity.compact,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 0,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       tileColor: Theme.of(context).colorScheme.surface,
-      leading: showAlbumArt ? _buildAlbumArt(context) : _buildTrackNumber(context),
+      leading: showAlbumArt
+          ? _buildAlbumArt(context)
+          : _buildTrackNumber(context),
       title: Text(
         track.title,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
         track.artist,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -53,8 +52,8 @@ class TrackTile extends StatelessWidget {
           Text(
             _formatDuration(track.duration),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           if (onMorePressed != null) ...[
             const SizedBox(width: 8),
@@ -84,7 +83,9 @@ class TrackTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: CachedNetworkImage(
                 imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                cacheKey: track.coverArtUrl!
+                    .withCoverArtSize(128)
+                    .subsonicCacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 128,
@@ -112,9 +113,9 @@ class TrackTile extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         track.trackNumber?.toString() ?? '—',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

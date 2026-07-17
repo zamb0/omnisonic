@@ -7,14 +7,13 @@ import '../errors/errors.dart';
 
 /// Offline mode detection and management service
 class OfflineModeService {
-  OfflineModeService({
-    Connectivity? connectivity,
-  }) : _connectivity = connectivity ?? Connectivity();
+  OfflineModeService({Connectivity? connectivity})
+    : _connectivity = connectivity ?? Connectivity();
 
   final Connectivity _connectivity;
   final _offlineModeController = BehaviorSubject<bool>.seeded(false);
   final _connectivityController = BehaviorSubject<ConnectivityResult>();
-  
+
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _isInitialized = false;
 
@@ -22,10 +21,12 @@ class OfflineModeService {
   bool get isOffline => _offlineModeController.value;
 
   /// Stream of offline mode changes
-  Stream<bool> get offlineModeStream => _offlineModeController.stream.distinct();
+  Stream<bool> get offlineModeStream =>
+      _offlineModeController.stream.distinct();
 
   /// Stream of connectivity changes
-  Stream<ConnectivityResult> get connectivityStream => _connectivityController.stream.distinct();
+  Stream<ConnectivityResult> get connectivityStream =>
+      _connectivityController.stream.distinct();
 
   /// Initializes the offline mode service
   Future<Result<void>> initialize() async {
@@ -37,16 +38,18 @@ class OfflineModeService {
       // Check initial connectivity
       final initialConnectivity = await _connectivity.checkConnectivity();
       final isInitiallyOffline = _isConnectivityOffline(initialConnectivity);
-      
+
       _offlineModeController.add(isInitiallyOffline);
       _connectivityController.add(initialConnectivity.first);
 
       // Listen for connectivity changes
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
         (List<ConnectivityResult> results) {
-          final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
+          final result = results.isNotEmpty
+              ? results.first
+              : ConnectivityResult.none;
           final isOffline = _isConnectivityOffline(results);
-          
+
           _connectivityController.add(result);
           _offlineModeController.add(isOffline);
         },
@@ -60,7 +63,9 @@ class OfflineModeService {
       _isInitialized = true;
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to initialize offline mode service: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to initialize offline mode service: $e'),
+      );
     }
   }
 
@@ -74,13 +79,15 @@ class OfflineModeService {
     try {
       final connectivity = await _connectivity.checkConnectivity();
       final isOffline = _isConnectivityOffline(connectivity);
-      
+
       _offlineModeController.add(isOffline);
       _connectivityController.add(connectivity.first);
-      
+
       return ResultHelper.success(isOffline);
     } catch (e) {
-      return ResultHelper.failure(NetworkFailure('Failed to check connectivity: $e'));
+      return ResultHelper.failure(
+        NetworkFailure('Failed to check connectivity: $e'),
+      );
     }
   }
 
@@ -90,7 +97,9 @@ class OfflineModeService {
       final connectivity = await _connectivity.checkConnectivity();
       return ResultHelper.success(connectivity.first);
     } catch (e) {
-      return ResultHelper.failure(NetworkFailure('Failed to get connectivity: $e'));
+      return ResultHelper.failure(
+        NetworkFailure('Failed to get connectivity: $e'),
+      );
     }
   }
 
@@ -115,7 +124,7 @@ class OfflineModeService {
   /// Determines if connectivity results indicate offline status
   bool _isConnectivityOffline(List<ConnectivityResult> results) {
     if (results.isEmpty) return true;
-    
+
     // Consider offline if all results are 'none'
     return results.every((result) => result == ConnectivityResult.none);
   }
@@ -155,20 +164,23 @@ class OfflineModeService {
       if (e is TimeoutException) {
         return ResultHelper.failure(NetworkFailure('Connection timeout'));
       }
-      return ResultHelper.failure(UnknownFailure('Failed to wait for connection: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to wait for connection: $e'),
+      );
     }
   }
 
   /// Gets network quality indicator (simplified)
   NetworkQuality get networkQuality {
     if (isOffline) return NetworkQuality.none;
-    
+
     final connectivity = _connectivityController.valueOrNull;
     switch (connectivity) {
       case ConnectivityResult.wifi:
         return NetworkQuality.good;
       case ConnectivityResult.mobile:
-        return NetworkQuality.fair; // Could be enhanced with actual speed testing
+        return NetworkQuality
+            .fair; // Could be enhanced with actual speed testing
       case ConnectivityResult.ethernet:
         return NetworkQuality.excellent;
       default:
@@ -185,13 +197,7 @@ class OfflineModeService {
 }
 
 /// Network quality levels
-enum NetworkQuality {
-  none,
-  poor,
-  fair,
-  good,
-  excellent,
-}
+enum NetworkQuality { none, poor, fair, good, excellent }
 
 /// Extension for network quality
 extension NetworkQualityExtension on NetworkQuality {

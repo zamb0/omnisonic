@@ -14,22 +14,22 @@ class CacheEntry extends Equatable {
 
   /// Reference to cached track
   final String trackId;
-  
+
   /// Local file path for cached audio
   final String filePath;
-  
+
   /// File size in bytes
   final int fileSize;
-  
+
   /// When the file was cached
   final DateTime cachedAt;
-  
+
   /// Last time the cached file was accessed
   final DateTime lastAccessed;
-  
+
   /// Whether the download is complete
   final bool isComplete;
-  
+
   /// Whether the entry is pinned (protected from eviction)
   final bool isPinned;
 
@@ -56,16 +56,16 @@ class CacheEntry extends Equatable {
 
   /// Validates cache entry data
   bool get isValid {
-    return trackId.isNotEmpty &&
-        filePath.isNotEmpty &&
-        fileSize > 0;
+    return trackId.isNotEmpty && filePath.isNotEmpty && fileSize > 0;
   }
 
   /// Gets the formatted file size
   String get formattedFileSize {
     if (fileSize < 1024) return '${fileSize}B';
-    if (fileSize < 1024 * 1024) return '${(fileSize / 1024).toStringAsFixed(1)}KB';
-    if (fileSize < 1024 * 1024 * 1024) return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB';
+    if (fileSize < 1024 * 1024)
+      return '${(fileSize / 1024).toStringAsFixed(1)}KB';
+    if (fileSize < 1024 * 1024 * 1024)
+      return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)}MB';
     return '${(fileSize / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
   }
 
@@ -100,19 +100,19 @@ class CacheEntry extends Equatable {
 
   @override
   List<Object?> get props => [
-        trackId,
-        filePath,
-        fileSize,
-        cachedAt,
-        lastAccessed,
-        isComplete,
-        isPinned,
-      ];
+    trackId,
+    filePath,
+    fileSize,
+    cachedAt,
+    lastAccessed,
+    isComplete,
+    isPinned,
+  ];
 
   @override
   String toString() {
     return 'CacheEntry(trackId: $trackId, filePath: $filePath, '
-           'fileSize: $formattedFileSize, isPinned: $isPinned)';
+        'fileSize: $formattedFileSize, isPinned: $isPinned)';
   }
 }
 
@@ -130,31 +130,31 @@ class CacheStats extends Equatable {
 
   /// Total cache size in bytes
   final int totalSize;
-  
+
   /// Size of pinned files in bytes
   final int pinnedSize;
-  
+
   /// Available space in bytes (based on cache limit)
   final int availableSpace;
-  
+
   /// Number of cached files
   final int fileCount;
-  
+
   /// Number of pinned files
   final int pinnedFileCount;
-  
+
   /// Cache hit rate (0.0 to 1.0)
   final double hitRate;
-  
+
   /// Last cleanup timestamp
   final DateTime? lastCleanup;
 
   /// Gets the formatted total size
   String get formattedTotalSize => _formatBytes(totalSize);
-  
+
   /// Gets the formatted pinned size
   String get formattedPinnedSize => _formatBytes(pinnedSize);
-  
+
   /// Gets the formatted available space
   String get formattedAvailableSpace => _formatBytes(availableSpace);
 
@@ -165,7 +165,8 @@ class CacheStats extends Equatable {
   }
 
   /// Gets the formatted usage percentage
-  String get formattedUsagePercentage => '${usagePercentage.toStringAsFixed(1)}%';
+  String get formattedUsagePercentage =>
+      '${usagePercentage.toStringAsFixed(1)}%';
 
   /// Gets the formatted hit rate
   String get formattedHitRate => '${(hitRate * 100).toStringAsFixed(1)}%';
@@ -175,32 +176,33 @@ class CacheStats extends Equatable {
 
   /// Checks if cache needs cleanup
   bool get needsCleanup {
-    return isNearlyFull || 
-           (lastCleanup != null && 
+    return isNearlyFull ||
+        (lastCleanup != null &&
             DateTime.now().difference(lastCleanup!) > const Duration(days: 7));
   }
 
   String _formatBytes(int bytes) {
     if (bytes < 1024) return '${bytes}B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
   }
 
   @override
   List<Object?> get props => [
-        totalSize,
-        pinnedSize,
-        availableSpace,
-        fileCount,
-        pinnedFileCount,
-        hitRate,
-        lastCleanup,
-      ];
+    totalSize,
+    pinnedSize,
+    availableSpace,
+    fileCount,
+    pinnedFileCount,
+    hitRate,
+    lastCleanup,
+  ];
 
   @override
   String toString() {
     return 'CacheStats(totalSize: $formattedTotalSize, '
-           'fileCount: $fileCount, hitRate: $formattedHitRate)';
+        'fileCount: $fileCount, hitRate: $formattedHitRate)';
   }
 }

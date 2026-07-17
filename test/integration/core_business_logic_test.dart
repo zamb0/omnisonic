@@ -7,7 +7,7 @@ import 'package:omnisonic/core/usecases/usecases.dart';
 import 'package:omnisonic/core/repositories/repositories.dart';
 
 /// End-to-end integration test for core business logic
-/// 
+///
 /// This test verifies that all core functionality works together:
 /// - Server management and connection
 /// - Music collection synchronization
@@ -29,7 +29,7 @@ void main() {
     setUpAll(() async {
       getIt = GetIt.instance;
       await configureDependencies();
-      
+
       serverRepository = getIt<ServerRepository>();
       musicRepository = getIt<MusicRepository>();
       playlistRepository = getIt<PlaylistRepository>();
@@ -63,17 +63,21 @@ void main() {
       final serversResult = await serverRepository.getAllServers();
       expect(serversResult.isSuccess, isTrue);
       expect(serversResult.valueOrNull!.length, greaterThan(0));
-      
-      final addedServer = serversResult.valueOrNull!.firstWhere((s) => s.id == testServer.id);
+
+      final addedServer = serversResult.valueOrNull!.firstWhere(
+        (s) => s.id == testServer.id,
+      );
       expect(addedServer.name, equals(testServer.name));
 
       // 3. Sync music collection from servers
       final syncParams = SyncMusicCollectionParams(serverId: testServer.id);
       final syncResult = await syncUseCase(syncParams);
-      
+
       // Note: This may fail in test environment without actual server, but we test the flow
       if (syncResult.isRight()) {
-        final collection = syncResult.getOrElse(() => throw Exception('Should not reach here'));
+        final collection = syncResult.getOrElse(
+          () => throw Exception('Should not reach here'),
+        );
         expect(collection, isNotNull);
         expect(collection.lastUpdated, isNotNull);
       }
@@ -85,10 +89,12 @@ void main() {
         maxResults: 10,
       );
       final searchResult = await searchUseCase(searchParams);
-      
+
       // Search should work even if no results found
       expect(searchResult.isRight(), isTrue);
-      final searchResults = searchResult.getOrElse(() => throw Exception('Should not reach here'));
+      final searchResults = searchResult.getOrElse(
+        () => throw Exception('Should not reach here'),
+      );
       expect(searchResults.query, equals('test'));
 
       // 5. Test playlist management
@@ -100,8 +106,10 @@ void main() {
       );
       final createResult = await playlistUseCase(createPlaylistParams);
       expect(createResult.isRight(), isTrue);
-      
-      final playlistResult = createResult.getOrElse(() => throw Exception('Should not reach here'));
+
+      final playlistResult = createResult.getOrElse(
+        () => throw Exception('Should not reach here'),
+      );
       expect(playlistResult.isSuccess, isTrue);
       expect(playlistResult.playlist, isNotNull);
       expect(playlistResult.playlist!.name, equals('Test Playlist'));
@@ -110,7 +118,7 @@ void main() {
       final tracksResult = await musicRepository.getAllTracks();
       if (tracksResult.isSuccess && tracksResult.valueOrNull!.isNotEmpty) {
         final testTrack = tracksResult.valueOrNull!.first;
-        
+
         final addTrackParams = ManagePlaylistParams(
           operation: PlaylistOperation.addTrack,
           playlistId: playlistResult.playlist!.id,
@@ -126,7 +134,7 @@ void main() {
           allowFallback: true,
         );
         final playResult = await playTrackUseCase(playParams);
-        
+
         // Playback may fail in test environment, but we test the flow
         // The use case should handle errors gracefully
         expect(playResult.isLeft() || playResult.isRight(), isTrue);
@@ -141,7 +149,9 @@ void main() {
       expect(deleteResult.isRight(), isTrue);
 
       // 9. Clean up - remove the test server
-      final removeServerResult = await serverRepository.removeServer(testServer.id);
+      final removeServerResult = await serverRepository.removeServer(
+        testServer.id,
+      );
       expect(removeServerResult.isSuccess, isTrue);
     });
 
@@ -154,11 +164,13 @@ void main() {
         minQuality: AudioQuality.high,
         maxResults: 5,
       );
-      
+
       final searchResult = await searchUseCase(searchParams);
       expect(searchResult.isRight(), isTrue);
-      
-      final results = searchResult.getOrElse(() => throw Exception('Should not reach here'));
+
+      final results = searchResult.getOrElse(
+        () => throw Exception('Should not reach here'),
+      );
       expect(results.query, equals('rock'));
       expect(results.tracks.length, lessThanOrEqualTo(5));
     });
@@ -168,11 +180,13 @@ void main() {
         query: '',
         searchTypes: [SearchType.tracks, SearchType.albums, SearchType.artists],
       );
-      
+
       final searchResult = await searchUseCase(searchParams);
       expect(searchResult.isRight(), isTrue);
-      
-      final results = searchResult.getOrElse(() => throw Exception('Should not reach here'));
+
+      final results = searchResult.getOrElse(
+        () => throw Exception('Should not reach here'),
+      );
       expect(results.isEmpty, isTrue);
       expect(results.totalResults, equals(0));
     });
@@ -183,24 +197,26 @@ void main() {
         operation: PlaylistOperation.create,
         name: '',
       );
-      
+
       final result = await playlistUseCase(invalidParams);
       expect(result.isLeft(), isTrue);
-      
+
       // Test creating playlist with valid name
       final validParams = ManagePlaylistParams(
         operation: PlaylistOperation.create,
         name: 'Valid Playlist Name',
         description: 'Test description',
       );
-      
+
       final validResult = await playlistUseCase(validParams);
       expect(validResult.isRight(), isTrue);
-      
-      final playlistResult = validResult.getOrElse(() => throw Exception('Should not reach here'));
+
+      final playlistResult = validResult.getOrElse(
+        () => throw Exception('Should not reach here'),
+      );
       expect(playlistResult.isSuccess, isTrue);
       expect(playlistResult.playlist!.name, equals('Valid Playlist Name'));
-      
+
       // Clean up
       final deleteParams = ManagePlaylistParams(
         operation: PlaylistOperation.delete,
@@ -213,14 +229,16 @@ void main() {
       // Test sync without servers
       final syncParams = SyncMusicCollectionParams();
       final syncResult = await syncUseCase(syncParams);
-      
+
       // Should handle gracefully even if no servers are available
       expect(syncResult.isLeft() || syncResult.isRight(), isTrue);
-      
+
       if (syncResult.isLeft()) {
         // Expected when no servers are configured
-        expect(syncResult.fold((failure) => failure.message, (_) => ''), 
-               contains('server'));
+        expect(
+          syncResult.fold((failure) => failure.message, (_) => ''),
+          contains('server'),
+        );
       }
     });
 
@@ -243,16 +261,18 @@ void main() {
         useBestSource: true,
         allowFallback: true,
       );
-      
+
       final playResult = await playTrackUseCase(playParams);
-      
+
       // Playback will likely fail in test environment, but should handle gracefully
       expect(playResult.isLeft() || playResult.isRight(), isTrue);
-      
+
       if (playResult.isLeft()) {
         // Expected when server is not available
-        expect(playResult.fold((failure) => failure.message, (_) => ''), 
-               isNotEmpty);
+        expect(
+          playResult.fold((failure) => failure.message, (_) => ''),
+          isNotEmpty,
+        );
       }
     });
   });

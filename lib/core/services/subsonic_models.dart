@@ -21,8 +21,7 @@ class SubsonicResponse<T> {
   factory SubsonicResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
-  ) =>
-      _$SubsonicResponseFromJson(json, fromJsonT);
+  ) => _$SubsonicResponseFromJson(json, fromJsonT);
 
   Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
       _$SubsonicResponseToJson(this, toJsonT);
@@ -45,7 +44,7 @@ class SubsonicResponseData<T> {
   final String? type;
   final String? serverVersion;
   final SubsonicError? error;
-  
+
   @JsonKey(includeFromJson: false, includeToJson: false)
   final T? data;
 
@@ -86,7 +85,7 @@ class SubsonicResponseData<T> {
       version: json['version'] as String,
       type: json['type'] as String?,
       serverVersion: json['serverVersion'] as String?,
-      error: json['error'] != null 
+      error: json['error'] != null
           ? SubsonicError.fromJson(json['error'] as Map<String, dynamic>)
           : null,
       data: data,
@@ -96,16 +95,14 @@ class SubsonicResponseData<T> {
   Map<String, dynamic> toJson(Object? Function(T value) toJsonT) =>
       _$SubsonicResponseDataToJson(this, toJsonT);
 }
+
 /// Subsonic API error
 @JsonSerializable()
 class SubsonicError {
   final int code;
   final String message;
 
-  const SubsonicError({
-    required this.code,
-    required this.message,
-  });
+  const SubsonicError({required this.code, required this.message});
 
   factory SubsonicError.fromJson(Map<String, dynamic> json) =>
       _$SubsonicErrorFromJson(json);
@@ -193,6 +190,7 @@ class AlbumResponse {
 
   Map<String, dynamic> toJson() => _$AlbumResponseToJson(this);
 }
+
 /// Subsonic album model
 @JsonSerializable()
 class SubsonicAlbum {
@@ -234,19 +232,26 @@ class SubsonicAlbum {
   Map<String, dynamic> toJson() => _$SubsonicAlbumToJson(this);
 
   /// Converts to domain Album entity
-  Album toDomainAlbum(String serverId, MusicServer server, String password, SubsonicApiClient apiClient) {
+  Album toDomainAlbum(
+    String serverId,
+    MusicServer server,
+    String password,
+    SubsonicApiClient apiClient,
+  ) {
     String? coverArtUrl;
     if (coverArt != null && coverArt!.isNotEmpty) {
       coverArtUrl = apiClient.getCoverArtUrl(server, password, coverArt!);
     }
-    
+
     return Album(
       id: IdGenerator.generateUniqueId(serverId, id), // Generate unique ID
       title: name,
       artist: artist,
       serverId: serverId,
       lastModified: created ?? DateTime.now(),
-      artistId: artistId != null ? IdGenerator.generateUniqueId(serverId, artistId!) : null, // Generate unique artist ID
+      artistId: artistId != null
+          ? IdGenerator.generateUniqueId(serverId, artistId!)
+          : null, // Generate unique artist ID
       year: year,
       genre: genre,
       trackCount: songCount,
@@ -263,10 +268,7 @@ class SubsonicArtistIndex {
   final String name;
   final List<SubsonicArtist> artist;
 
-  const SubsonicArtistIndex({
-    required this.name,
-    required this.artist,
-  });
+  const SubsonicArtistIndex({required this.name, required this.artist});
 
   factory SubsonicArtistIndex.fromJson(Map<String, dynamic> json) =>
       _$SubsonicArtistIndexFromJson(json);
@@ -298,12 +300,17 @@ class SubsonicArtist {
   Map<String, dynamic> toJson() => _$SubsonicArtistToJson(this);
 
   /// Converts to domain Artist entity
-  Artist toDomainArtist(String serverId, MusicServer server, String password, SubsonicApiClient apiClient) {
+  Artist toDomainArtist(
+    String serverId,
+    MusicServer server,
+    String password,
+    SubsonicApiClient apiClient,
+  ) {
     String? imageUrl;
     if (coverArt != null && coverArt!.isNotEmpty) {
       imageUrl = apiClient.getCoverArtUrl(server, password, coverArt!);
     }
-    
+
     return Artist(
       id: IdGenerator.generateUniqueId(serverId, id), // Generate unique ID
       name: name,
@@ -314,6 +321,7 @@ class SubsonicArtist {
     );
   }
 }
+
 /// Subsonic song/track model
 @JsonSerializable()
 class SubsonicSong {
@@ -389,7 +397,13 @@ class SubsonicSong {
   Map<String, dynamic> toJson() => _$SubsonicSongToJson(this);
 
   /// Converts to domain Track entity
-  Track toDomainTrack(String serverId, String streamUrl, MusicServer server, String password, SubsonicApiClient apiClient) {
+  Track toDomainTrack(
+    String serverId,
+    String streamUrl,
+    MusicServer server,
+    String password,
+    SubsonicApiClient apiClient,
+  ) {
     // Determine audio quality based on bitrate and format
     AudioQuality quality = AudioQuality.medium;
     if (bitRate != null) {
@@ -401,9 +415,9 @@ class SubsonicSong {
         quality = AudioQuality.low;
       }
     }
-    
+
     // Override quality for lossless formats
-    if (suffix?.toLowerCase() == 'flac' || 
+    if (suffix?.toLowerCase() == 'flac' ||
         contentType?.contains('flac') == true) {
       quality = AudioQuality.lossless;
     }
@@ -424,8 +438,12 @@ class SubsonicSong {
       streamUrl: streamUrl,
       quality: quality,
       lastModified: created ?? DateTime.now(),
-      albumId: albumId != null ? IdGenerator.generateUniqueId(serverId, albumId!) : null, // Generate unique album ID
-      artistId: artistId != null ? IdGenerator.generateUniqueId(serverId, artistId!) : null, // Generate unique artist ID
+      albumId: albumId != null
+          ? IdGenerator.generateUniqueId(serverId, albumId!)
+          : null, // Generate unique album ID
+      artistId: artistId != null
+          ? IdGenerator.generateUniqueId(serverId, artistId!)
+          : null, // Generate unique artist ID
       trackNumber: track,
       discNumber: discNumber,
       year: year,
@@ -491,11 +509,7 @@ class StarredResponse {
   final List<SubsonicArtist>? artist;
   final List<SubsonicSong>? song;
 
-  const StarredResponse({
-    this.album,
-    this.artist,
-    this.song,
-  });
+  const StarredResponse({this.album, this.artist, this.song});
 
   factory StarredResponse.fromJson(Map<String, dynamic> json) =>
       _$StarredResponseFromJson(json);
@@ -517,8 +531,7 @@ class Genre {
     required this.albumCount,
   });
 
-  factory Genre.fromJson(Map<String, dynamic> json) =>
-      _$GenreFromJson(json);
+  factory Genre.fromJson(Map<String, dynamic> json) => _$GenreFromJson(json);
 
   Map<String, dynamic> toJson() => _$GenreToJson(this);
 

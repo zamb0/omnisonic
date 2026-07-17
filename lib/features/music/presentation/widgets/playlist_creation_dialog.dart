@@ -38,55 +38,57 @@ class _PlaylistCreationDialogState extends State<PlaylistCreationDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Playlist Name *',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a playlist name';
-                }
-                if (value.trim().length > 100) {
-                  return 'Name must be 100 characters or less';
-                }
-                return null;
-              },
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Playlist Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                  autofocus: true,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a playlist name';
+                    }
+                    if (value.trim().length > 100) {
+                      return 'Name must be 100 characters or less';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value != null && value.trim().length > 500) {
+                      return 'Description must be 500 characters or less';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  title: const Text('Public Playlist'),
+                  subtitle: const Text(
+                    'Allow others to discover and view this playlist',
+                  ),
+                  value: _isPublic,
+                  onChanged: (value) {
+                    setState(() {
+                      _isPublic = value;
+                    });
+                  },
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-              validator: (value) {
-                if (value != null && value.trim().length > 500) {
-                  return 'Description must be 500 characters or less';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Public Playlist'),
-              subtitle: const Text('Allow others to discover and view this playlist'),
-              value: _isPublic,
-              onChanged: (value) {
-                setState(() {
-                  _isPublic = value;
-                });
-              },
-              contentPadding: EdgeInsets.zero,
-            ),
-          ],
           ),
         ),
       ),
-    ),
       actions: [
         TextButton(
           onPressed: _isCreating ? null : () => Navigator.of(context).pop(),
@@ -129,9 +131,7 @@ class _PlaylistCreationDialogState extends State<PlaylistCreationDialog> {
         if (success) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Created "${_nameController.text.trim()}"'),
-            ),
+            SnackBar(content: Text('Created "${_nameController.text.trim()}"')),
           );
         } else {
           // Error message is handled by the view model

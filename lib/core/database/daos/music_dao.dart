@@ -74,7 +74,9 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       year: data.year,
       genre: data.genre,
       trackCount: data.trackCount,
-      duration: data.durationMs != null ? Duration(milliseconds: data.durationMs!) : null,
+      duration: data.durationMs != null
+          ? Duration(milliseconds: data.durationMs!)
+          : null,
       coverArtUrl: data.coverArtUrl,
       description: data.description,
     );
@@ -132,27 +134,37 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<List<Track>> getTracksByServerId(String serverId) async {
-    final data = await (select(tracksTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    final data = await (select(
+      tracksTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).get();
     return data.map(_trackFromData).toList();
   }
 
   Future<List<Track>> getTracksByAlbumId(String albumId) async {
-    final data = await (select(tracksTable)..where((tbl) => tbl.albumId.equals(albumId))).get();
+    final data = await (select(
+      tracksTable,
+    )..where((tbl) => tbl.albumId.equals(albumId))).get();
     return data.map(_trackFromData).toList();
   }
 
   Future<List<Track>> getTracksByArtistId(String artistId) async {
-    final data = await (select(tracksTable)..where((tbl) => tbl.artistId.equals(artistId))).get();
+    final data = await (select(
+      tracksTable,
+    )..where((tbl) => tbl.artistId.equals(artistId))).get();
     return data.map(_trackFromData).toList();
   }
 
   Future<Track?> getTrackById(String id) async {
-    final data = await (select(tracksTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    final data = await (select(
+      tracksTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     return data != null ? _trackFromData(data) : null;
   }
 
   Future<List<Track>> getCachedTracks() async {
-    final data = await (select(tracksTable)..where((tbl) => tbl.isCached.equals(true))).get();
+    final data = await (select(
+      tracksTable,
+    )..where((tbl) => tbl.isCached.equals(true))).get();
     return data.map(_trackFromData).toList();
   }
 
@@ -170,12 +182,17 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     await update(tracksTable).replace(_trackToCompanion(track));
   }
 
-  Future<void> updateTrackCacheStatus(String trackId, bool isCached, String? cachePath) async {
-    await (update(tracksTable)..where((tbl) => tbl.id.equals(trackId)))
-        .write(TracksTableCompanion(
-          isCached: Value(isCached),
-          cachePath: Value.absentIfNull(cachePath),
-        ));
+  Future<void> updateTrackCacheStatus(
+    String trackId,
+    bool isCached,
+    String? cachePath,
+  ) async {
+    await (update(tracksTable)..where((tbl) => tbl.id.equals(trackId))).write(
+      TracksTableCompanion(
+        isCached: Value(isCached),
+        cachePath: Value.absentIfNull(cachePath),
+      ),
+    );
   }
 
   Future<void> deleteTrack(String id) async {
@@ -183,7 +200,9 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<void> deleteTracksByServerId(String serverId) async {
-    await (delete(tracksTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+    await (delete(
+      tracksTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).go();
   }
 
   // Album operations
@@ -193,17 +212,23 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<List<Album>> getAlbumsByServerId(String serverId) async {
-    final data = await (select(albumsTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    final data = await (select(
+      albumsTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).get();
     return data.map(_albumFromData).toList();
   }
 
   Future<List<Album>> getAlbumsByArtistId(String artistId) async {
-    final data = await (select(albumsTable)..where((tbl) => tbl.artistId.equals(artistId))).get();
+    final data = await (select(
+      albumsTable,
+    )..where((tbl) => tbl.artistId.equals(artistId))).get();
     return data.map(_albumFromData).toList();
   }
 
   Future<Album?> getAlbumById(String id) async {
-    final data = await (select(albumsTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    final data = await (select(
+      albumsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     return data != null ? _albumFromData(data) : null;
   }
 
@@ -226,7 +251,9 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<void> deleteAlbumsByServerId(String serverId) async {
-    await (delete(albumsTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+    await (delete(
+      albumsTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).go();
   }
 
   // Artist operations
@@ -236,12 +263,16 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<List<Artist>> getArtistsByServerId(String serverId) async {
-    final data = await (select(artistsTable)..where((tbl) => tbl.serverId.equals(serverId))).get();
+    final data = await (select(
+      artistsTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).get();
     return data.map(_artistFromData).toList();
   }
 
   Future<Artist?> getArtistById(String id) async {
-    final data = await (select(artistsTable)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    final data = await (select(
+      artistsTable,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     return data != null ? _artistFromData(data) : null;
   }
 
@@ -264,44 +295,61 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<void> deleteArtistsByServerId(String serverId) async {
-    await (delete(artistsTable)..where((tbl) => tbl.serverId.equals(serverId))).go();
+    await (delete(
+      artistsTable,
+    )..where((tbl) => tbl.serverId.equals(serverId))).go();
   }
 
   // Search operations
   Future<List<Track>> searchTracks(String query) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
-    final data = await (select(tracksTable)..where((tbl) => 
-      tbl.title.lower().like(normalizedQuery) |
-      tbl.artist.lower().like(normalizedQuery) |
-      tbl.album.lower().like(normalizedQuery))).get();
+    final data =
+        await (select(tracksTable)..where(
+              (tbl) =>
+                  tbl.title.lower().like(normalizedQuery) |
+                  tbl.artist.lower().like(normalizedQuery) |
+                  tbl.album.lower().like(normalizedQuery),
+            ))
+            .get();
     return data.map(_trackFromData).toList();
   }
 
   Future<List<Album>> searchAlbums(String query) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
-    final data = await (select(albumsTable)..where((tbl) => 
-      tbl.title.lower().like(normalizedQuery) |
-      tbl.artist.lower().like(normalizedQuery))).get();
+    final data =
+        await (select(albumsTable)..where(
+              (tbl) =>
+                  tbl.title.lower().like(normalizedQuery) |
+                  tbl.artist.lower().like(normalizedQuery),
+            ))
+            .get();
     return data.map(_albumFromData).toList();
   }
 
   Future<List<Artist>> searchArtists(String query) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
-    final data = await (select(artistsTable)..where((tbl) => 
-      tbl.name.lower().like(normalizedQuery))).get();
+    final data = await (select(
+      artistsTable,
+    )..where((tbl) => tbl.name.lower().like(normalizedQuery))).get();
     return data.map(_artistFromData).toList();
   }
 
   // Watch for changes
   Stream<List<Track>> watchAllTracks() {
-    return select(tracksTable).watch().map((data) => data.map(_trackFromData).toList());
+    return select(
+      tracksTable,
+    ).watch().map((data) => data.map(_trackFromData).toList());
   }
 
   Stream<List<Album>> watchAllAlbums() {
-    return select(albumsTable).watch().map((data) => data.map(_albumFromData).toList());
+    return select(
+      albumsTable,
+    ).watch().map((data) => data.map(_albumFromData).toList());
   }
 
   Stream<List<Artist>> watchAllArtists() {
-    return select(artistsTable).watch().map((data) => data.map(_artistFromData).toList());
+    return select(
+      artistsTable,
+    ).watch().map((data) => data.map(_artistFromData).toList());
   }
 }

@@ -8,7 +8,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/usecases/usecases.dart';
 
 /// BLoC for managing real-time search functionality
-/// 
+///
 /// Handles:
 /// - Real-time search with debouncing
 /// - Search result filtering and sorting
@@ -16,9 +16,7 @@ import '../../../../core/usecases/usecases.dart';
 /// - Advanced search filters
 @injectable
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  SearchBloc(
-    this._searchMusicUseCase,
-  ) : super(const SearchState.initial()) {
+  SearchBloc(this._searchMusicUseCase) : super(const SearchState.initial()) {
     on<SearchQueryChanged>(
       _onSearchQueryChanged,
       transformer: _debounceTransformer(),
@@ -39,24 +37,31 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         .asyncExpand(mapper);
   }
 
-  Future<void> _onSearchQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) async {
+  Future<void> _onSearchQueryChanged(
+    SearchQueryChanged event,
+    Emitter<SearchState> emit,
+  ) async {
     final query = event.query.trim();
-    
+
     if (query.isEmpty) {
-      emit(state.copyWith(
-        status: SearchStatus.initial,
-        query: '',
-        results: null,
-        errorMessage: null,
-      ));
+      emit(
+        state.copyWith(
+          status: SearchStatus.initial,
+          query: '',
+          results: null,
+          errorMessage: null,
+        ),
+      );
       return;
     }
 
-    emit(state.copyWith(
-      status: SearchStatus.loading,
-      query: query,
-      errorMessage: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SearchStatus.loading,
+        query: query,
+        errorMessage: null,
+      ),
+    );
 
     try {
       final params = SearchMusicParams(
@@ -70,29 +75,38 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
 
       final result = await _searchMusicUseCase(params);
-      
+
       result.fold(
-        (failure) => emit(state.copyWith(
-          status: SearchStatus.failure,
-          errorMessage: failure.message,
-        )),
-        (results) => emit(state.copyWith(
-          status: SearchStatus.success,
-          results: results,
-          errorMessage: null,
-        )),
+        (failure) => emit(
+          state.copyWith(
+            status: SearchStatus.failure,
+            errorMessage: failure.message,
+          ),
+        ),
+        (results) => emit(
+          state.copyWith(
+            status: SearchStatus.success,
+            results: results,
+            errorMessage: null,
+          ),
+        ),
       );
     } catch (e) {
-      emit(state.copyWith(
-        status: SearchStatus.failure,
-        errorMessage: 'Unexpected error during search: $e',
-      ));
+      emit(
+        state.copyWith(
+          status: SearchStatus.failure,
+          errorMessage: 'Unexpected error during search: $e',
+        ),
+      );
     }
   }
 
-  void _onSearchFiltersChanged(SearchFiltersChanged event, Emitter<SearchState> emit) {
+  void _onSearchFiltersChanged(
+    SearchFiltersChanged event,
+    Emitter<SearchState> emit,
+  ) {
     emit(state.copyWith(filters: event.filters));
-    
+
     // Re-run search with new filters if there's an active query
     if (state.query.isNotEmpty) {
       add(SearchQueryChanged(state.query));
@@ -100,36 +114,47 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   void _onSearchCleared(SearchCleared event, Emitter<SearchState> emit) {
-    emit(state.copyWith(
-      status: SearchStatus.initial,
-      query: '',
-      results: null,
-      errorMessage: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SearchStatus.initial,
+        query: '',
+        results: null,
+        errorMessage: null,
+      ),
+    );
   }
 
-  void _onSearchHistoryAdded(SearchHistoryAdded event, Emitter<SearchState> emit) {
+  void _onSearchHistoryAdded(
+    SearchHistoryAdded event,
+    Emitter<SearchState> emit,
+  ) {
     final updatedHistory = List<String>.from(state.searchHistory);
-    
+
     // Remove if already exists to avoid duplicates
     updatedHistory.remove(event.query);
-    
+
     // Add to the beginning
     updatedHistory.insert(0, event.query);
-    
+
     // Keep only the last 20 searches
     if (updatedHistory.length > 20) {
       updatedHistory.removeRange(20, updatedHistory.length);
     }
-    
+
     emit(state.copyWith(searchHistory: updatedHistory));
   }
 
-  void _onSearchHistoryCleared(SearchHistoryCleared event, Emitter<SearchState> emit) {
+  void _onSearchHistoryCleared(
+    SearchHistoryCleared event,
+    Emitter<SearchState> emit,
+  ) {
     emit(state.copyWith(searchHistory: const []));
   }
 
-  void _onSearchSuggestionSelected(SearchSuggestionSelected event, Emitter<SearchState> emit) {
+  void _onSearchSuggestionSelected(
+    SearchSuggestionSelected event,
+    Emitter<SearchState> emit,
+  ) {
     add(SearchQueryChanged(event.suggestion));
     add(SearchHistoryAdded(event.suggestion));
   }
@@ -188,16 +213,15 @@ class SearchSuggestionSelected extends SearchEvent {
 }
 
 // State
-enum SearchStatus {
-  initial,
-  loading,
-  success,
-  failure,
-}
+enum SearchStatus { initial, loading, success, failure }
 
 class SearchFilters extends Equatable {
   const SearchFilters({
-    this.searchTypes = const [SearchType.tracks, SearchType.albums, SearchType.artists],
+    this.searchTypes = const [
+      SearchType.tracks,
+      SearchType.albums,
+      SearchType.artists,
+    ],
     this.genre,
     this.year,
     this.serverId,
@@ -232,13 +256,13 @@ class SearchFilters extends Equatable {
 
   @override
   List<Object?> get props => [
-        searchTypes,
-        genre,
-        year,
-        serverId,
-        minQuality,
-        maxResults,
-      ];
+    searchTypes,
+    genre,
+    year,
+    serverId,
+    minQuality,
+    maxResults,
+  ];
 }
 
 class SearchState extends Equatable {
@@ -252,12 +276,12 @@ class SearchState extends Equatable {
   });
 
   const SearchState.initial()
-      : status = SearchStatus.initial,
-        query = '',
-        filters = const SearchFilters(),
-        searchHistory = const [],
-        results = null,
-        errorMessage = null;
+    : status = SearchStatus.initial,
+      query = '',
+      filters = const SearchFilters(),
+      searchHistory = const [],
+      results = null,
+      errorMessage = null;
 
   final SearchStatus status;
   final String query;
@@ -304,11 +328,11 @@ class SearchState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        query,
-        filters,
-        searchHistory,
-        results,
-        errorMessage,
-      ];
+    status,
+    query,
+    filters,
+    searchHistory,
+    results,
+    errorMessage,
+  ];
 }

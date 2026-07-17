@@ -9,7 +9,7 @@ import '../../../../core/usecases/usecases.dart';
 import '../../../../core/errors/result.dart';
 
 /// BLoC for managing background synchronization state and operations
-/// 
+///
 /// Handles:
 /// - Background sync scheduling and execution
 /// - Sync progress tracking and status updates
@@ -17,10 +17,8 @@ import '../../../../core/errors/result.dart';
 /// - Automatic retry logic for failed syncs
 @injectable
 class SyncBloc extends Bloc<SyncEvent, SyncState> {
-  SyncBloc(
-    this._syncMusicCollectionUseCase,
-    this._serverRepository,
-  ) : super(const SyncState.initial()) {
+  SyncBloc(this._syncMusicCollectionUseCase, this._serverRepository)
+    : super(const SyncState.initial()) {
     on<SyncStarted>(_onSyncStarted);
     on<SyncServerRequested>(_onSyncServerRequested);
     on<SyncProgressUpdated>(_onSyncProgressUpdated);
@@ -29,7 +27,7 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     on<SyncCancelled>(_onSyncCancelled);
     on<AutoSyncToggled>(_onAutoSyncToggled);
     on<SyncRetryRequested>(_onSyncRetryRequested);
-    
+
     _initializeAutoSync();
   }
 
@@ -41,25 +39,28 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
 
   void _initializeAutoSync() {
     // Monitor server changes to trigger auto-sync
-    _serverSubscription = _serverRepository.observeServers().listen(
-      (servers) {
-        if (state.autoSyncEnabled && servers.any((s) => s.isAvailable)) {
-          add(const SyncStarted());
-        }
-      },
-    );
+    _serverSubscription = _serverRepository.observeServers().listen((servers) {
+      if (state.autoSyncEnabled && servers.any((s) => s.isAvailable)) {
+        add(const SyncStarted());
+      }
+    });
   }
 
-  Future<void> _onSyncStarted(SyncStarted event, Emitter<SyncState> emit) async {
+  Future<void> _onSyncStarted(
+    SyncStarted event,
+    Emitter<SyncState> emit,
+  ) async {
     if (state.status == SyncStatus.syncing) return;
 
-    emit(state.copyWith(
-      status: SyncStatus.syncing,
-      progress: 0.0,
-      currentServer: null,
-      errorMessage: null,
-      lastSyncTime: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SyncStatus.syncing,
+        progress: 0.0,
+        currentServer: null,
+        errorMessage: null,
+        lastSyncTime: null,
+      ),
+    );
 
     try {
       // Get all online servers
@@ -71,7 +72,9 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
 
       final onlineServers = serversResult.valueOrNull!;
       if (onlineServers.isEmpty) {
-        add(const SyncFailed('No online servers available for synchronization'));
+        add(
+          const SyncFailed('No online servers available for synchronization'),
+        );
         return;
       }
 
@@ -81,11 +84,8 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
 
       for (int i = 0; i < onlineServers.length; i++) {
         final server = onlineServers[i];
-        
-        emit(state.copyWith(
-          currentServer: server,
-          progress: currentProgress,
-        ));
+
+        emit(state.copyWith(currentServer: server, progress: currentProgress));
 
         final params = SyncMusicCollectionParams(
           serverId: server.id,
@@ -94,7 +94,11 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
 
         final result = await _syncMusicCollectionUseCase(params);
         if (result.isFailure) {
-          add(SyncFailed('Failed to sync from ${server.name}: ${result.failureOrNull!.message}'));
+          add(
+            SyncFailed(
+              'Failed to sync from ${server.name}: ${result.failureOrNull!.message}',
+            ),
+          );
           return;
         }
 
@@ -108,19 +112,26 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     }
   }
 
-  Future<void> _onSyncServerRequested(SyncServerRequested event, Emitter<SyncState> emit) async {
+  Future<void> _onSyncServerRequested(
+    SyncServerRequested event,
+    Emitter<SyncState> emit,
+  ) async {
     if (state.status == SyncStatus.syncing) return;
 
-    emit(state.copyWith(
-      status: SyncStatus.syncing,
-      progress: 0.0,
-      currentServer: null,
-      errorMessage: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SyncStatus.syncing,
+        progress: 0.0,
+        currentServer: null,
+        errorMessage: null,
+      ),
+    );
 
     try {
       // Get the specific server
-      final serverResult = await _serverRepository.getServerById(event.serverId);
+      final serverResult = await _serverRepository.getServerById(
+        event.serverId,
+      );
       if (serverResult.isFailure) {
         add(SyncFailed('Server not found: ${event.serverId}'));
         return;
@@ -146,7 +157,11 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
 
       final result = await _syncMusicCollectionUseCase(params);
       if (result.isFailure) {
-        add(SyncFailed('Failed to sync from ${server.name}: ${result.failureOrNull!.message}'));
+        add(
+          SyncFailed(
+            'Failed to sync from ${server.name}: ${result.failureOrNull!.message}',
+          ),
+        );
         return;
       }
 
@@ -156,18 +171,23 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     }
   }
 
-  void _onSyncProgressUpdated(SyncProgressUpdated event, Emitter<SyncState> emit) {
+  void _onSyncProgressUpdated(
+    SyncProgressUpdated event,
+    Emitter<SyncState> emit,
+  ) {
     emit(state.copyWith(progress: event.progress));
   }
 
   void _onSyncCompleted(SyncCompleted event, Emitter<SyncState> emit) {
-    emit(state.copyWith(
-      status: SyncStatus.completed,
-      progress: 1.0,
-      currentServer: null,
-      lastSyncTime: DateTime.now(),
-      errorMessage: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SyncStatus.completed,
+        progress: 1.0,
+        currentServer: null,
+        lastSyncTime: DateTime.now(),
+        errorMessage: null,
+      ),
+    );
 
     // Schedule next auto-sync if enabled
     if (state.autoSyncEnabled) {
@@ -176,11 +196,13 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
   }
 
   void _onSyncFailed(SyncFailed event, Emitter<SyncState> emit) {
-    emit(state.copyWith(
-      status: SyncStatus.failed,
-      errorMessage: event.errorMessage,
-      currentServer: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SyncStatus.failed,
+        errorMessage: event.errorMessage,
+        currentServer: null,
+      ),
+    );
 
     // Schedule retry if auto-sync is enabled
     if (state.autoSyncEnabled) {
@@ -189,12 +211,14 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
   }
 
   void _onSyncCancelled(SyncCancelled event, Emitter<SyncState> emit) {
-    emit(state.copyWith(
-      status: SyncStatus.idle,
-      progress: 0.0,
-      currentServer: null,
-      errorMessage: null,
-    ));
+    emit(
+      state.copyWith(
+        status: SyncStatus.idle,
+        progress: 0.0,
+        currentServer: null,
+        errorMessage: null,
+      ),
+    );
   }
 
   void _onAutoSyncToggled(AutoSyncToggled event, Emitter<SyncState> emit) {
@@ -208,9 +232,12 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     }
   }
 
-  void _onSyncRetryRequested(SyncRetryRequested event, Emitter<SyncState> emit) {
+  void _onSyncRetryRequested(
+    SyncRetryRequested event,
+    Emitter<SyncState> emit,
+  ) {
     if (state.status != SyncStatus.failed) return;
-    
+
     add(SyncStarted(forceRefresh: event.forceRefresh));
   }
 
@@ -315,12 +342,7 @@ class SyncRetryRequested extends SyncEvent {
 }
 
 // State
-enum SyncStatus {
-  idle,
-  syncing,
-  completed,
-  failed,
-}
+enum SyncStatus { idle, syncing, completed, failed }
 
 class SyncState extends Equatable {
   const SyncState({
@@ -333,12 +355,12 @@ class SyncState extends Equatable {
   });
 
   const SyncState.initial()
-      : status = SyncStatus.idle,
-        progress = 0.0,
-        autoSyncEnabled = true,
-        currentServer = null,
-        lastSyncTime = null,
-        errorMessage = null;
+    : status = SyncStatus.idle,
+      progress = 0.0,
+      autoSyncEnabled = true,
+      currentServer = null,
+      lastSyncTime = null,
+      errorMessage = null;
 
   final SyncStatus status;
   final double progress;
@@ -373,11 +395,11 @@ class SyncState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        progress,
-        autoSyncEnabled,
-        currentServer,
-        lastSyncTime,
-        errorMessage,
-      ];
+    status,
+    progress,
+    autoSyncEnabled,
+    currentServer,
+    lastSyncTime,
+    errorMessage,
+  ];
 }

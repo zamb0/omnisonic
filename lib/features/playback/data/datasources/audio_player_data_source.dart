@@ -5,24 +5,25 @@ import 'package:rxdart/rxdart.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/errors/failures.dart';
-import '../../../../core/repositories/playback_repository.dart' show PlaybackState, RepeatMode;
+import '../../../../core/repositories/playback_repository.dart'
+    show PlaybackState, RepeatMode;
 import '../../../../core/utils/app_log.dart';
 import 'adaptive_streaming_service.dart';
 import 'platform_audio_player.dart';
 
 /// Data source for audio playback using platform-specific audio players
 class AudioPlayerDataSource {
-  AudioPlayerDataSource({
-    AdaptiveStreamingService? adaptiveStreamingService,
-  }) : _adaptiveStreamingService = adaptiveStreamingService ?? AdaptiveStreamingService() {
+  AudioPlayerDataSource({AdaptiveStreamingService? adaptiveStreamingService})
+    : _adaptiveStreamingService =
+          adaptiveStreamingService ?? AdaptiveStreamingService() {
     _init();
   }
 
   final PlatformAudioPlayer _audioPlayer = PlatformAudioPlayer();
   final AdaptiveStreamingService _adaptiveStreamingService;
-  final BehaviorSubject<PlaybackState> _playbackStateController = 
+  final BehaviorSubject<PlaybackState> _playbackStateController =
       BehaviorSubject<PlaybackState>.seeded(_getInitialState());
-  final BehaviorSubject<List<Track>> _queueController = 
+  final BehaviorSubject<List<Track>> _queueController =
       BehaviorSubject<List<Track>>.seeded([]);
 
   List<Track> _currentQueue = [];
@@ -49,10 +50,11 @@ class AudioPlayerDataSource {
     // Listen to player state changes
     _audioPlayer.playerStateStream.listen((playerState) {
       _updatePlaybackState();
-      
+
       // Report buffering status to adaptive streaming service
-      final isBuffering = playerState == PlayerState.buffering ||
-                         playerState == PlayerState.loading;
+      final isBuffering =
+          playerState == PlayerState.buffering ||
+          playerState == PlayerState.loading;
       _adaptiveStreamingService.reportBufferingStatus(isBuffering);
     });
 
@@ -79,9 +81,11 @@ class AudioPlayerDataSource {
     });
 
     // Listen to adaptive quality changes
-    _qualitySubscription = _adaptiveStreamingService.observeRecommendedQuality().listen((quality) {
-      _handleQualityChange(quality);
-    });
+    _qualitySubscription = _adaptiveStreamingService
+        .observeRecommendedQuality()
+        .listen((quality) {
+          _handleQualityChange(quality);
+        });
 
     // Set initial volume
     _audioPlayer.setVolume(_volume);
@@ -94,7 +98,7 @@ class AudioPlayerDataSource {
       if (_currentTrack?.id != track.id) {
         await _loadTrack(track);
       }
-      
+
       await _audioPlayer.play();
       _updatePlaybackState();
       return ResultHelper.success(null);
@@ -110,7 +114,9 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to pause playback: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to pause playback: $e'),
+      );
     }
   }
 
@@ -121,7 +127,9 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to resume playback: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to resume playback: $e'),
+      );
     }
   }
 
@@ -133,7 +141,9 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to stop playback: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to stop playback: $e'),
+      );
     }
   }
 
@@ -178,21 +188,26 @@ class AudioPlayerDataSource {
       }
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to skip to previous: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to skip to previous: $e'),
+      );
     }
   }
 
   /// Sets the playback queue
-  Future<Result<void>> setQueue(List<Track> tracks, {int startIndex = 0}) async {
+  Future<Result<void>> setQueue(
+    List<Track> tracks, {
+    int startIndex = 0,
+  }) async {
     try {
       _currentQueue = List.from(tracks);
       _currentIndex = startIndex.clamp(0, tracks.length - 1);
       _queueController.add(_currentQueue);
-      
+
       if (tracks.isNotEmpty && startIndex < tracks.length) {
         await _loadTrack(tracks[startIndex]);
       }
-      
+
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -217,17 +232,19 @@ class AudioPlayerDataSource {
     try {
       final insertIndex = index.clamp(0, _currentQueue.length);
       _currentQueue.insert(insertIndex, track);
-      
+
       // Adjust current index if insertion affects it
       if (insertIndex <= _currentIndex) {
         _currentIndex++;
       }
-      
+
       _queueController.add(_currentQueue);
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to insert in queue: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to insert in queue: $e'),
+      );
     }
   }
 
@@ -235,11 +252,13 @@ class AudioPlayerDataSource {
   Future<Result<void>> removeFromQueue(int index) async {
     try {
       if (index < 0 || index >= _currentQueue.length) {
-        return ResultHelper.failure(ValidationFailure('Invalid queue index: $index'));
+        return ResultHelper.failure(
+          ValidationFailure('Invalid queue index: $index'),
+        );
       }
-      
+
       _currentQueue.removeAt(index);
-      
+
       // Adjust current index if removal affects it
       if (index < _currentIndex) {
         _currentIndex--;
@@ -248,12 +267,14 @@ class AudioPlayerDataSource {
         await stop();
         _currentIndex = _currentIndex.clamp(0, _currentQueue.length - 1);
       }
-      
+
       _queueController.add(_currentQueue);
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to remove from queue: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to remove from queue: $e'),
+      );
     }
   }
 
@@ -275,24 +296,28 @@ class AudioPlayerDataSource {
   Future<Result<void>> shuffleQueue() async {
     try {
       if (_currentQueue.isEmpty) return ResultHelper.success(null);
-      
+
       // Save current track
       final currentTrack = _currentTrack;
-      
+
       // Shuffle the queue
       _currentQueue.shuffle();
-      
+
       // Find the new index of the current track
       if (currentTrack != null) {
-        _currentIndex = _currentQueue.indexWhere((track) => track.id == currentTrack.id);
+        _currentIndex = _currentQueue.indexWhere(
+          (track) => track.id == currentTrack.id,
+        );
         if (_currentIndex == -1) _currentIndex = 0;
       }
-      
+
       _queueController.add(_currentQueue);
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to shuffle queue: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to shuffle queue: $e'),
+      );
     }
   }
 
@@ -303,7 +328,9 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to set repeat mode: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to set repeat mode: $e'),
+      );
     }
   }
 
@@ -314,7 +341,9 @@ class AudioPlayerDataSource {
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to set shuffle mode: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to set shuffle mode: $e'),
+      );
     }
   }
 
@@ -331,7 +360,8 @@ class AudioPlayerDataSource {
   }
 
   /// Observes the current playback state
-  Stream<PlaybackState> observePlaybackState() => _playbackStateController.stream;
+  Stream<PlaybackState> observePlaybackState() =>
+      _playbackStateController.stream;
 
   /// Observes the current playback position
   Stream<Duration> observePosition() => _audioPlayer.positionStream;
@@ -356,17 +386,19 @@ class AudioPlayerDataSource {
     if (previousTrack != null && previousTrack.id != track.id) {
       await _audioPlayer.stop();
     }
-    
+
     // Get optimal quality for current network conditions
-    final qualityResult = await _adaptiveStreamingService.getOptimalQuality(track);
+    final qualityResult = await _adaptiveStreamingService.getOptimalQuality(
+      track,
+    );
     final optimalQuality = qualityResult.fold(
       (_) => track.quality, // Fallback to track's original quality
       (quality) => quality,
     );
-    
+
     AppLog.info('Loading track for playback');
     AppLog.debug('Selected playback quality: $optimalQuality');
-    
+
     // Use cached file if available, otherwise stream from URL with optimal quality
     if (track.isCached && track.cachePath != null) {
       await _audioPlayer.setFilePath(track.cachePath!);
@@ -374,7 +406,10 @@ class AudioPlayerDataSource {
     } else {
       // In a real implementation, you would modify the stream URL to request the optimal quality
       // For now, we use the original URL but could add quality parameters
-      final streamUrl = _buildStreamUrlWithQuality(track.streamUrl, optimalQuality);
+      final streamUrl = _buildStreamUrlWithQuality(
+        track.streamUrl,
+        optimalQuality,
+      );
       AppLog.info('Streaming from URL with quality params');
       await _audioPlayer.setUrl(streamUrl);
     }
@@ -386,10 +421,10 @@ class AudioPlayerDataSource {
     // In a real Subsonic implementation, you would add quality parameters like:
     // - maxBitRate parameter for quality control
     // - format parameter for codec selection
-    
+
     final uri = Uri.parse(baseUrl);
     final queryParams = Map<String, String>.from(uri.queryParameters);
-    
+
     // Add quality-specific parameters
     switch (quality) {
       case AudioQuality.low:
@@ -411,7 +446,7 @@ class AudioPlayerDataSource {
         queryParams.remove('format');
         break;
     }
-    
+
     return uri.replace(queryParameters: queryParams).toString();
   }
 
@@ -420,9 +455,10 @@ class AudioPlayerDataSource {
     if (_currentTrack != null && _audioPlayer.duration != null) {
       final totalDuration = _audioPlayer.duration!;
       final bufferPercentage = totalDuration.inMilliseconds > 0
-          ? (bufferedPosition.inMilliseconds * 100) ~/ totalDuration.inMilliseconds
+          ? (bufferedPosition.inMilliseconds * 100) ~/
+                totalDuration.inMilliseconds
           : 0;
-      
+
       _adaptiveStreamingService.reportBufferLevel(bufferPercentage);
     }
   }
@@ -430,24 +466,28 @@ class AudioPlayerDataSource {
   /// Handles quality changes from adaptive streaming service
   void _handleQualityChange(AudioQuality newQuality) {
     // Only switch quality if we're currently streaming (not using cached content)
-    if (_currentTrack != null && !_currentTrack!.isCached && _audioPlayer.playing) {
+    if (_currentTrack != null &&
+        !_currentTrack!.isCached &&
+        _audioPlayer.playing) {
       // In a real implementation, you might want to:
       // 1. Check if the quality change is significant enough to warrant a switch
       // 2. Seamlessly switch to the new quality stream
       // 3. Maintain playback position during the switch
-      
+
       // For now, we'll just log the quality change
       AppLog.debug('Adaptive streaming quality changed to $newQuality');
     }
   }
 
   /// Gets the adaptive streaming service
-  AdaptiveStreamingService get adaptiveStreamingService => _adaptiveStreamingService;
+  AdaptiveStreamingService get adaptiveStreamingService =>
+      _adaptiveStreamingService;
 
   /// Updates the playback state and notifies listeners
   void _updatePlaybackState() {
     final fallbackDuration = _currentTrack?.duration ?? Duration.zero;
-    final resolvedDuration = (_audioPlayer.duration == null ||
+    final resolvedDuration =
+        (_audioPlayer.duration == null ||
             _audioPlayer.duration == Duration.zero)
         ? fallbackDuration
         : _audioPlayer.duration!;
@@ -463,7 +503,7 @@ class AudioPlayerDataSource {
       shuffleEnabled: _shuffleEnabled,
       volume: _volume,
     );
-    
+
     _playbackStateController.add(state);
   }
 
@@ -503,13 +543,14 @@ class AudioPlayerDataSource {
   /// Gets the index of the next track based on current mode
   int? _getNextTrackIndex() {
     if (_currentQueue.isEmpty) return null;
-    
+
     if (_shuffleEnabled) {
       // In shuffle mode, pick a random track (excluding current)
       if (_currentQueue.length <= 1) return null;
       int nextIndex;
       do {
-        nextIndex = DateTime.now().millisecondsSinceEpoch % _currentQueue.length;
+        nextIndex =
+            DateTime.now().millisecondsSinceEpoch % _currentQueue.length;
       } while (nextIndex == _currentIndex);
       return nextIndex;
     } else {
@@ -527,7 +568,7 @@ class AudioPlayerDataSource {
   /// Gets the index of the previous track
   int? _getPreviousTrackIndex() {
     if (_currentQueue.isEmpty) return null;
-    
+
     if (_shuffleEnabled) {
       // In shuffle mode, this is more complex - for now, just go to previous index
       final previousIndex = _currentIndex - 1;

@@ -9,7 +9,13 @@ import 'micro_interactions.dart';
 /// Implements Requirements: 3.4, 6.5
 class EnhancedAnimatedList<T> extends StatefulWidget {
   final List<T> items;
-  final Widget Function(BuildContext context, T item, int index, Animation<double> animation) itemBuilder;
+  final Widget Function(
+    BuildContext context,
+    T item,
+    int index,
+    Animation<double> animation,
+  )
+  itemBuilder;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final void Function(T item)? onItemTap;
   final void Function(T item)? onItemLongPress;
@@ -44,7 +50,8 @@ class EnhancedAnimatedList<T> extends StatefulWidget {
   });
 
   @override
-  State<EnhancedAnimatedList<T>> createState() => _EnhancedAnimatedListState<T>();
+  State<EnhancedAnimatedList<T>> createState() =>
+      _EnhancedAnimatedListState<T>();
 }
 
 class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
@@ -128,7 +135,10 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
 
   void _insertItem(int index, T item) {
     _items.insert(index, item);
-    _listKey.currentState?.insertItem(index, duration: widget.animationDuration);
+    _listKey.currentState?.insertItem(
+      index,
+      duration: widget.animationDuration,
+    );
 
     final controller = AnimationManager().createController(
       duration: widget.animationDuration,
@@ -153,7 +163,8 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
 
     _listKey.currentState?.removeItem(
       index,
-      (context, animation) => _buildRemovedItem(context, item, index, animation),
+      (context, animation) =>
+          _buildRemovedItem(context, item, index, animation),
       duration: widget.animationDuration,
     );
 
@@ -161,15 +172,20 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
     _items.removeAt(index);
   }
 
-  Widget _buildRemovedItem(BuildContext context, T item, int index, Animation<double> animation) {
+  Widget _buildRemovedItem(
+    BuildContext context,
+    T item,
+    int index,
+    Animation<double> animation,
+  ) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(-1.0, 0.0),
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: AnimationManager.slideOutCurve,
-      )),
+      position: Tween<Offset>(begin: Offset.zero, end: const Offset(-1.0, 0.0))
+          .animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: AnimationManager.slideOutCurve,
+            ),
+          ),
       child: FadeTransition(
         opacity: animation,
         child: widget.itemBuilder(context, item, index, animation),
@@ -220,14 +236,14 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
         if (oldIndex < newIndex) {
           newIndex -= 1;
         }
-        
+
         setState(() {
           final item = _items.removeAt(oldIndex);
           _items.insert(newIndex, item);
-          
+
           final controller = _itemControllers.removeAt(oldIndex);
           _itemControllers.insert(newIndex, controller);
-          
+
           final animation = _itemAnimations.removeAt(oldIndex);
           _itemAnimations.insert(newIndex, animation);
         });
@@ -240,14 +256,20 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
 
         final item = _items[index];
         final animation = _itemAnimations[index];
-        
+
         Widget listItem = widget.itemBuilder(context, item, index, animation);
 
         if (widget.enableDismiss) {
           listItem = _buildDismissibleItem(listItem, item, index);
         }
 
-        return _buildInteractiveItem(listItem, item, index, animation, key: ValueKey(item));
+        return _buildInteractiveItem(
+          listItem,
+          item,
+          index,
+          animation,
+          key: ValueKey(item),
+        );
       },
     );
   }
@@ -263,10 +285,7 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
           color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         ),
-        child: Icon(
-          Icons.delete,
-          color: Theme.of(context).colorScheme.onError,
-        ),
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
       ),
       onDismissed: (direction) {
         widget.onItemDismissed?.call(item, index);
@@ -276,7 +295,13 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
     );
   }
 
-  Widget _buildInteractiveItem(Widget child, T item, int index, Animation<double> animation, {Key? key}) {
+  Widget _buildInteractiveItem(
+    Widget child,
+    T item,
+    int index,
+    Animation<double> animation, {
+    Key? key,
+  }) {
     Widget interactiveItem = MicroInteractions.interactiveListItem(
       onTap: () => widget.onItemTap?.call(item),
       onLongPress: () => widget.onItemLongPress?.call(item),
@@ -287,11 +312,11 @@ class _EnhancedAnimatedListState<T> extends State<EnhancedAnimatedList<T>>
       index: index,
       child: child,
     );
-    
+
     if (key != null) {
       return KeyedSubtree(key: key, child: interactiveItem);
     }
-    
+
     return interactiveItem;
   }
 }
@@ -347,7 +372,7 @@ class _EnhancedListViewState extends State<EnhancedListView> {
   void initState() {
     super.initState();
     _controller = widget.controller ?? ScrollController();
-    
+
     if (widget.enableSmoothScrolling) {
       _controller.addListener(_handleScrolling);
     }
@@ -520,13 +545,16 @@ class _EnhancedGridViewState extends State<EnhancedGridView>
               return FadeTransition(
                 opacity: _animations[index],
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.0, 0.3),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: _controllers[index],
-                    curve: AnimationManager.standardCurve,
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0.0, 0.3),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _controllers[index],
+                          curve: AnimationManager.standardCurve,
+                        ),
+                      ),
                   child: widget.children[index],
                 ),
               );
@@ -611,34 +639,34 @@ class _EnhancedSliverListState extends State<EnhancedSliverList>
   @override
   Widget build(BuildContext context) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index >= widget.children.length) return null;
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index >= widget.children.length) return null;
 
-          if (widget.enableStaggeredAnimation && index < _animations.length) {
-            return AnimatedBuilder(
-              animation: _animations[index],
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _animations[index],
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.3, 0.0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _controllers[index],
-                      curve: widget.animationCurve,
-                    )),
-                    child: widget.children[index],
-                  ),
-                );
-              },
-            );
-          }
-          return widget.children[index];
-        },
-        childCount: widget.children.length,
-      ),
+        if (widget.enableStaggeredAnimation && index < _animations.length) {
+          return AnimatedBuilder(
+            animation: _animations[index],
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _animations[index],
+                child: SlideTransition(
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0.3, 0.0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _controllers[index],
+                          curve: widget.animationCurve,
+                        ),
+                      ),
+                  child: widget.children[index],
+                ),
+              );
+            },
+          );
+        }
+        return widget.children[index];
+      }, childCount: widget.children.length),
     );
   }
 }
@@ -652,11 +680,7 @@ class SmoothScrollAnimations {
     Duration duration = AnimationManager.normalDuration,
     Curve curve = AnimationManager.standardCurve,
   }) async {
-    await controller.animateTo(
-      position,
-      duration: duration,
-      curve: curve,
-    );
+    await controller.animateTo(position, duration: duration, curve: curve);
   }
 
   /// Animate scroll to a specific item index

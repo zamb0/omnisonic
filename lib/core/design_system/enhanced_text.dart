@@ -16,7 +16,7 @@ class EnhancedText extends StatelessWidget {
   final Color? color;
   final double? fontSize;
   final FontWeight? fontWeight;
-  
+
   const EnhancedText(
     this.text, {
     super.key,
@@ -32,12 +32,12 @@ class EnhancedText extends StatelessWidget {
     this.fontSize,
     this.fontWeight,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final effectiveStyle = _buildEffectiveStyle(context);
     final widget = _buildTextWidget(effectiveStyle);
-    
+
     // Show tooltip if text is truncated and showTooltip is true
     if (showTooltip && _shouldShowTooltip()) {
       return Tooltip(
@@ -47,20 +47,20 @@ class EnhancedText extends StatelessWidget {
         child: widget,
       );
     }
-    
+
     return widget;
   }
-  
+
   TextStyle _buildEffectiveStyle(BuildContext context) {
     final baseStyle = style ?? Theme.of(context).textTheme.bodyMedium!;
-    
+
     return baseStyle.copyWith(
       color: color ?? baseStyle.color,
       fontSize: fontSize ?? baseStyle.fontSize,
       fontWeight: fontWeight ?? baseStyle.fontWeight,
     );
   }
-  
+
   Widget _buildTextWidget(TextStyle effectiveStyle) {
     if (selectable) {
       return SelectableText(
@@ -71,7 +71,7 @@ class EnhancedText extends StatelessWidget {
         onTap: onTap,
       );
     }
-    
+
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,
@@ -84,7 +84,7 @@ class EnhancedText extends StatelessWidget {
         ),
       );
     }
-    
+
     return Text(
       text,
       style: effectiveStyle,
@@ -93,7 +93,7 @@ class EnhancedText extends StatelessWidget {
       textAlign: textAlign,
     );
   }
-  
+
   bool _shouldShowTooltip() {
     return maxLines != null || overflow == TextOverflow.ellipsis;
   }
@@ -107,7 +107,7 @@ class TrackTitleText extends StatelessWidget {
   final VoidCallback? onTap;
   final int maxLines;
   final bool showTooltip;
-  
+
   const TrackTitleText(
     this.title, {
     super.key,
@@ -117,19 +117,19 @@ class TrackTitleText extends StatelessWidget {
     this.maxLines = 1,
     this.showTooltip = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     Color textColor = colorScheme.onSurface;
     if (isPlaying) {
       textColor = colorScheme.primary;
     } else if (isSelected) {
       textColor = colorScheme.primary.withValues(alpha: 0.8);
     }
-    
+
     return EnhancedText(
       title,
       style: OmnisonicTypography.trackTitle.copyWith(
@@ -150,7 +150,7 @@ class ArtistNameText extends StatelessWidget {
   final int maxLines;
   final bool showTooltip;
   final bool isSecondary;
-  
+
   const ArtistNameText(
     this.artistName, {
     super.key,
@@ -159,16 +159,16 @@ class ArtistNameText extends StatelessWidget {
     this.showTooltip = true,
     this.isSecondary = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return EnhancedText(
       artistName,
       style: OmnisonicTypography.artistName.copyWith(
-        color: isSecondary 
+        color: isSecondary
             ? colorScheme.onSurface.withValues(alpha: 0.7)
             : colorScheme.onSurface.withValues(alpha: 0.8),
       ),
@@ -186,7 +186,7 @@ class AlbumTitleText extends StatelessWidget {
   final int maxLines;
   final bool showTooltip;
   final bool isSecondary;
-  
+
   const AlbumTitleText(
     this.albumTitle, {
     super.key,
@@ -195,16 +195,16 @@ class AlbumTitleText extends StatelessWidget {
     this.showTooltip = true,
     this.isSecondary = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return EnhancedText(
       albumTitle,
       style: OmnisonicTypography.albumTitle.copyWith(
-        color: isSecondary 
+        color: isSecondary
             ? colorScheme.onSurface.withValues(alpha: 0.6)
             : colorScheme.onSurface.withValues(alpha: 0.8),
       ),
@@ -222,7 +222,7 @@ class PlaylistTitleText extends StatelessWidget {
   final int maxLines;
   final bool showTooltip;
   final bool isLarge;
-  
+
   const PlaylistTitleText(
     this.playlistTitle, {
     super.key,
@@ -231,19 +231,19 @@ class PlaylistTitleText extends StatelessWidget {
     this.showTooltip = true,
     this.isLarge = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return EnhancedText(
       playlistTitle,
-      style: (isLarge 
-          ? OmnisonicTypography.headlineSmall 
-          : OmnisonicTypography.playlistTitle).copyWith(
-        color: colorScheme.onSurface,
-      ),
+      style:
+          (isLarge
+                  ? OmnisonicTypography.headlineSmall
+                  : OmnisonicTypography.playlistTitle)
+              .copyWith(color: colorScheme.onSurface),
       maxLines: maxLines,
       showTooltip: showTooltip,
       onTap: onTap,
@@ -259,7 +259,7 @@ class NowPlayingText extends StatelessWidget {
   final VoidCallback? onArtistTap;
   final bool isLarge;
   final bool showTooltips;
-  
+
   const NowPlayingText({
     super.key,
     required this.title,
@@ -269,24 +269,26 @@ class NowPlayingText extends StatelessWidget {
     this.isLarge = false,
     this.showTooltips = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         EnhancedText(
           title,
-          style: (isLarge 
-              ? OmnisonicTypography.titleLarge 
-              : OmnisonicTypography.nowPlayingTitle).copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
+          style:
+              (isLarge
+                      ? OmnisonicTypography.titleLarge
+                      : OmnisonicTypography.nowPlayingTitle)
+                  .copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
           maxLines: isLarge ? 2 : 1,
           showTooltip: showTooltips,
           onTap: onTitleTap,
@@ -294,11 +296,13 @@ class NowPlayingText extends StatelessWidget {
         const SizedBox(height: 2),
         EnhancedText(
           artist,
-          style: (isLarge 
-              ? OmnisonicTypography.titleMedium 
-              : OmnisonicTypography.nowPlayingArtist).copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.8),
-          ),
+          style:
+              (isLarge
+                      ? OmnisonicTypography.titleMedium
+                      : OmnisonicTypography.nowPlayingArtist)
+                  .copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
           maxLines: 1,
           showTooltip: showTooltips,
           onTap: onArtistTap,
@@ -313,19 +317,19 @@ class DurationText extends StatelessWidget {
   final Duration duration;
   final bool showHours;
   final TextStyle? style;
-  
+
   const DurationText(
     this.duration, {
     super.key,
     this.showHours = false,
     this.style,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return EnhancedText(
       _formatDuration(duration),
       style: (style ?? OmnisonicTypography.duration).copyWith(
@@ -335,19 +339,19 @@ class DurationText extends StatelessWidget {
       showTooltip: false,
     );
   }
-  
+
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
-    
+
     if (showHours && hours > 0) {
       return '${hours.toString().padLeft(1, '0')}:'
-             '${minutes.toString().padLeft(2, '0')}:'
-             '${seconds.toString().padLeft(2, '0')}';
+          '${minutes.toString().padLeft(2, '0')}:'
+          '${seconds.toString().padLeft(2, '0')}';
     } else {
       return '${minutes.toString().padLeft(1, '0')}:'
-             '${seconds.toString().padLeft(2, '0')}';
+          '${seconds.toString().padLeft(2, '0')}';
     }
   }
 }
@@ -358,7 +362,7 @@ class MetadataText extends StatelessWidget {
   final String value;
   final bool isVertical;
   final VoidCallback? onTap;
-  
+
   const MetadataText({
     super.key,
     required this.label,
@@ -366,12 +370,12 @@ class MetadataText extends StatelessWidget {
     this.isVertical = false,
     this.onTap,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     if (isVertical) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +401,7 @@ class MetadataText extends StatelessWidget {
         ],
       );
     }
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -432,7 +436,7 @@ class ExpandableText extends StatefulWidget {
   final String expandText;
   final String collapseText;
   final Color? linkColor;
-  
+
   const ExpandableText(
     this.text, {
     super.key,
@@ -442,7 +446,7 @@ class ExpandableText extends StatefulWidget {
     this.collapseText = 'Show less',
     this.linkColor,
   });
-  
+
   @override
   State<ExpandableText> createState() => _ExpandableTextState();
 }
@@ -452,7 +456,7 @@ class _ExpandableTextState extends State<ExpandableText>
   bool _isExpanded = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -460,52 +464,45 @@ class _ExpandableTextState extends State<ExpandableText>
       duration: AnimationManager.normalDuration,
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: AnimationManager.standardCurve,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AnimationManager.standardCurve,
+      ),
+    );
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final effectiveStyle = widget.style ?? theme.textTheme.bodyMedium!;
     final linkColor = widget.linkColor ?? colorScheme.primary;
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final span = TextSpan(
-          text: widget.text,
-          style: effectiveStyle,
-        );
-        
+        final span = TextSpan(text: widget.text, style: effectiveStyle);
+
         final painter = TextPainter(
           text: span,
           maxLines: widget.maxLines,
           textDirection: TextDirection.ltr,
         );
-        
+
         painter.layout(maxWidth: constraints.maxWidth);
-        
+
         final isTextOverflowing = painter.didExceedMaxLines;
-        
+
         if (!isTextOverflowing) {
-          return Text(
-            widget.text,
-            style: effectiveStyle,
-          );
+          return Text(widget.text, style: effectiveStyle);
         }
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -518,10 +515,7 @@ class _ExpandableTextState extends State<ExpandableText>
               ),
               secondChild: FadeTransition(
                 opacity: _fadeAnimation,
-                child: Text(
-                  widget.text,
-                  style: effectiveStyle,
-                ),
+                child: Text(widget.text, style: effectiveStyle),
               ),
               crossFadeState: _isExpanded
                   ? CrossFadeState.showSecond
@@ -544,12 +538,12 @@ class _ExpandableTextState extends State<ExpandableText>
       },
     );
   }
-  
+
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
     });
-    
+
     if (_isExpanded) {
       _animationController.forward();
     } else {

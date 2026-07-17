@@ -36,10 +36,12 @@ class OmnisonicGestureFeedback {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap != null ? () {
-          hapticFeedback(hapticType);
-          onTap();
-        } : null,
+        onTap: onTap != null
+            ? () {
+                hapticFeedback(hapticType);
+                onTap();
+              }
+            : null,
         splashColor: rippleColor?.withValues(alpha: 0.2),
         highlightColor: rippleColor?.withValues(alpha: 0.1),
         borderRadius: borderRadius,
@@ -115,18 +117,18 @@ class OmnisonicGestureFeedback {
   }) {
     return Draggable<T>(
       data: data,
-      feedback: feedback ?? Transform.scale(
-        scale: 1.1,
-        child: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(8),
-          child: child,
-        ),
-      ),
-      childWhenDragging: childWhenDragging ?? Opacity(
-        opacity: 0.5,
-        child: child,
-      ),
+      feedback:
+          feedback ??
+          Transform.scale(
+            scale: 1.1,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(8),
+              child: child,
+            ),
+          ),
+      childWhenDragging:
+          childWhenDragging ?? Opacity(opacity: 0.5, child: child),
       onDragStarted: () {
         hapticFeedback(hapticType);
         onDragStarted?.call();
@@ -227,14 +229,7 @@ class OmnisonicGestureFeedback {
 // to avoid duplication
 
 /// Enum for component states
-enum ComponentState {
-  normal,
-  selected,
-  disabled,
-  loading,
-  error,
-  success,
-}
+enum ComponentState { normal, selected, disabled, loading, error, success }
 
 /// Internal pressable scale widget
 class _PressableScaleWidget extends StatefulWidget {
@@ -264,17 +259,11 @@ class _PressableScaleWidgetState extends State<_PressableScaleWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
+    _controller = AnimationController(duration: widget.duration, vsync: this);
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: widget.scaleDown,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -350,22 +339,14 @@ class _LongPressableWidgetState extends State<_LongPressableWidget>
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeInOut,
-    ));
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
 
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -429,7 +410,9 @@ class _LongPressableWidgetState extends State<_LongPressableWidget>
                           value: _progressAnimation.value,
                           backgroundColor: Colors.transparent,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -469,7 +452,7 @@ class _SwipeableWidget extends StatelessWidget {
     return GestureDetector(
       onPanEnd: (details) {
         final velocity = details.velocity.pixelsPerSecond;
-        
+
         if (velocity.dx.abs() > velocity.dy.abs()) {
           // Horizontal swipe
           if (velocity.dx > threshold && onSwipeRight != null) {
@@ -513,7 +496,8 @@ class _DropTargetWidget<T extends Object> extends StatefulWidget {
   State<_DropTargetWidget<T>> createState() => _DropTargetWidgetState<T>();
 }
 
-class _DropTargetWidgetState<T extends Object> extends State<_DropTargetWidget<T>>
+class _DropTargetWidgetState<T extends Object>
+    extends State<_DropTargetWidget<T>>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -529,10 +513,7 @@ class _DropTargetWidgetState<T extends Object> extends State<_DropTargetWidget<T
     _animation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -543,8 +524,8 @@ class _DropTargetWidgetState<T extends Object> extends State<_DropTargetWidget<T
 
   @override
   Widget build(BuildContext context) {
-    final highlightColor = widget.highlightColor ?? 
-      Theme.of(context).colorScheme.primary;
+    final highlightColor =
+        widget.highlightColor ?? Theme.of(context).colorScheme.primary;
 
     return DragTarget<T>(
       onWillAccept: (data) {
@@ -570,10 +551,14 @@ class _DropTargetWidgetState<T extends Object> extends State<_DropTargetWidget<T
           builder: (context, child) {
             return Container(
               decoration: BoxDecoration(
-                border: _isHighlighted ? Border.all(
-                  color: highlightColor.withValues(alpha: _animation.value),
-                  width: 2,
-                ) : null,
+                border: _isHighlighted
+                    ? Border.all(
+                        color: highlightColor.withValues(
+                          alpha: _animation.value,
+                        ),
+                        width: 2,
+                      )
+                    : null,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: widget.child,
@@ -612,26 +597,17 @@ class _AnimatedStateWidgetState extends State<_AnimatedStateWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: _getScaleForState(widget.state),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+
     _opacityAnimation = Tween<double>(
       begin: 1.0,
       end: _getOpacityForState(widget.state),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     _updateAnimation();
   }
@@ -648,18 +624,12 @@ class _AnimatedStateWidgetState extends State<_AnimatedStateWidget>
     _scaleAnimation = Tween<double>(
       begin: _scaleAnimation.value,
       end: _getScaleForState(widget.state),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+
     _opacityAnimation = Tween<double>(
       begin: _opacityAnimation.value,
       end: _getOpacityForState(widget.state),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.curve,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     _controller.reset();
     _controller.forward();
@@ -718,32 +688,26 @@ class _AnimatedStateWidgetState extends State<_AnimatedStateWidget>
     );
   }
 
-  BoxDecoration? _getDecorationForState(BuildContext context, ComponentState state) {
+  BoxDecoration? _getDecorationForState(
+    BuildContext context,
+    ComponentState state,
+  ) {
     final theme = Theme.of(context);
-    
+
     switch (state) {
       case ComponentState.selected:
         return BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
+          border: Border.all(color: theme.colorScheme.primary, width: 2),
           borderRadius: BorderRadius.circular(8),
         );
       case ComponentState.error:
         return BoxDecoration(
-          border: Border.all(
-            color: theme.colorScheme.error,
-            width: 1,
-          ),
+          border: Border.all(color: theme.colorScheme.error, width: 1),
           borderRadius: BorderRadius.circular(8),
         );
       case ComponentState.success:
         return BoxDecoration(
-          border: Border.all(
-            color: Colors.green,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.green, width: 1),
           borderRadius: BorderRadius.circular(8),
         );
       default:
@@ -783,13 +747,10 @@ class _SelectableWidgetState extends State<_SelectableWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+
     _updateAnimations();
-    
+
     if (widget.isSelected) {
       _controller.forward();
     }
@@ -811,22 +772,16 @@ class _SelectableWidgetState extends State<_SelectableWidget>
   void _updateAnimations() {
     final theme = Theme.of(context);
     final selectedColor = widget.selectedColor ?? theme.colorScheme.primary;
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
       end: selectedColor.withValues(alpha: 0.1),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -851,10 +806,14 @@ class _SelectableWidgetState extends State<_SelectableWidget>
               decoration: BoxDecoration(
                 color: _colorAnimation.value,
                 borderRadius: BorderRadius.circular(8),
-                border: widget.isSelected ? Border.all(
-                  color: widget.selectedColor ?? Theme.of(context).colorScheme.primary,
-                  width: 2,
-                ) : null,
+                border: widget.isSelected
+                    ? Border.all(
+                        color:
+                            widget.selectedColor ??
+                            Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      )
+                    : null,
               ),
               child: widget.child,
             ),
@@ -891,18 +850,12 @@ class _LoadingStateWidgetState extends State<_LoadingStateWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    
+    _controller = AnimationController(duration: widget.duration, vsync: this);
+
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     if (widget.isLoading) {
       _controller.forward();
@@ -946,8 +899,9 @@ class _LoadingStateWidgetState extends State<_LoadingStateWidget>
                   child: Container(
                     color: Colors.black.withValues(alpha: 0.1),
                     child: Center(
-                      child: widget.loadingWidget ?? 
-                        const CircularProgressIndicator(),
+                      child:
+                          widget.loadingWidget ??
+                          const CircularProgressIndicator(),
                     ),
                   ),
                 );
@@ -978,10 +932,7 @@ class _DisabledStateWidget extends StatelessWidget {
     return AnimatedOpacity(
       opacity: isDisabled ? disabledOpacity : 1.0,
       duration: duration,
-      child: IgnorePointer(
-        ignoring: isDisabled,
-        child: child,
-      ),
+      child: IgnorePointer(ignoring: isDisabled, child: child),
     );
   }
 }

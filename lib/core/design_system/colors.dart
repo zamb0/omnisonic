@@ -6,23 +6,23 @@ class OmnisonicColors {
   static const Color primaryPurple = Color(0xFF7C7CFF);
   static const Color primaryBlue = Color(0xFF5A67D8);
   static const Color primaryTeal = Color(0xFF4DD0E1);
-  
+
   // Secondary Colors
   static const Color secondaryIndigo = Color(0xFF6D6DFF);
   static const Color secondaryViolet = Color(0xFF8B7BFF);
   static const Color secondaryCyan = Color(0xFF3DB6C6);
-  
+
   // Accent Colors
   static const Color accentPink = Color(0xFFEC6BA6);
   static const Color accentOrange = Color(0xFFF59E0B);
   static const Color accentGreen = Color(0xFF10B981);
-  
+
   // Semantic Colors
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
-  
+
   // Neutral Colors - Light Mode
   static const Color neutralWhite = Color(0xFFFFFFFF);
   static const Color neutralGray50 = Color(0xFFF9FAFB);
@@ -36,7 +36,7 @@ class OmnisonicColors {
   static const Color neutralGray800 = Color(0xFF1F2937);
   static const Color neutralGray900 = Color(0xFF111827);
   static const Color neutralBlack = Color(0xFF000000);
-  
+
   // Surface Colors - Light Mode
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color cardLight = Color(0xFFF6F6F6);
@@ -53,7 +53,7 @@ class OmnisonicColors {
   static const Color onTertiaryContainerLight = Color(0xFF003544);
   static const Color errorContainerLight = Color(0xFFFEE2E2);
   static const Color onErrorContainerLight = Color(0xFF7F1D1D);
-  
+
   // Surface Colors - Dark Mode
   static const Color surfaceDark = Color(0xFF1F1F21);
   static const Color cardDark = Color(0xFF181818);
@@ -70,38 +70,38 @@ class OmnisonicColors {
   static const Color onTertiaryContainerDark = Color(0xFFD4F4F8);
   static const Color errorContainerDark = Color(0xFF5F1D1D);
   static const Color onErrorContainerDark = Color(0xFFFEE2E2);
-  
+
   // Gradient Definitions
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primaryPurple, primaryBlue],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const LinearGradient accentGradient = LinearGradient(
     colors: [primaryBlue, primaryTeal],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-  
+
   static const LinearGradient heroGradient = LinearGradient(
     colors: [primaryPurple, secondaryViolet, accentPink],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const LinearGradient subtleGradient = LinearGradient(
     colors: [Color(0xFFF5F5F5), Color(0xFFEAEAEA)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-  
+
   static const LinearGradient darkSubtleGradient = LinearGradient(
     colors: [Color(0xFF141414), Color(0xFF1F1F21)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-  
+
   // Animated gradient definitions for smooth transitions
   static const LinearGradient primaryAnimatedGradient = LinearGradient(
     colors: [primaryPurple, primaryBlue, primaryTeal],
@@ -109,91 +109,74 @@ class OmnisonicColors {
     end: Alignment.bottomRight,
     stops: [0.0, 0.5, 1.0],
   );
-  
+
   static const LinearGradient accentAnimatedGradient = LinearGradient(
     colors: [accentPink, primaryPurple, primaryBlue],
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
     stops: [0.0, 0.6, 1.0],
   );
-  
+
   // Radial gradients for depth effects
   static const RadialGradient cardDepthGradient = RadialGradient(
     colors: [Color(0xFFFFFFFF), Color(0xFFF0F0F0)],
     center: Alignment.topLeft,
     radius: 1.5,
   );
-  
+
   static const RadialGradient darkCardDepthGradient = RadialGradient(
     colors: [Color(0xFF1F1F21), Color(0xFF141414)],
     center: Alignment.topLeft,
     radius: 1.5,
   );
-  
+
   // Shimmer gradients for loading states
   static const LinearGradient shimmerGradient = LinearGradient(
-    colors: [
-      Color(0xFFE2E8F0),
-      Color(0xFFF1F5F9),
-      Color(0xFFE2E8F0),
-    ],
+    colors: [Color(0xFFE2E8F0), Color(0xFFF1F5F9), Color(0xFFE2E8F0)],
     stops: [0.0, 0.5, 1.0],
     begin: Alignment(-1.0, 0.0),
     end: Alignment(1.0, 0.0),
   );
-  
+
   static const LinearGradient darkShimmerGradient = LinearGradient(
-    colors: [
-      Color(0xFF2B2B2B),
-      Color(0xFF3B3B3B),
-      Color(0xFF2B2B2B),
-    ],
+    colors: [Color(0xFF2B2B2B), Color(0xFF3B3B3B), Color(0xFF2B2B2B)],
     stops: [0.0, 0.5, 1.0],
     begin: Alignment(-1.0, 0.0),
     end: Alignment(1.0, 0.0),
   );
-  
+
   // Glass morphism gradients
   static const LinearGradient glassMorphismLight = LinearGradient(
-    colors: [
-      Color(0x40FFFFFF),
-      Color(0x20FFFFFF),
-    ],
+    colors: [Color(0x40FFFFFF), Color(0x20FFFFFF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const LinearGradient glassMorphismDark = LinearGradient(
-    colors: [
-      Color(0x40000000),
-      Color(0x20000000),
-    ],
+    colors: [Color(0x40000000), Color(0x20000000)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   // Music player specific gradients
   static const LinearGradient nowPlayingGradient = LinearGradient(
     colors: [primaryPurple, secondaryIndigo],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
-  
+
   static const LinearGradient albumArtOverlay = LinearGradient(
-    colors: [
-      Color(0x00000000),
-      Color(0x80000000),
-    ],
+    colors: [Color(0x00000000), Color(0x80000000)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-  
+
   static const LinearGradient progressBarGradient = LinearGradient(
     colors: [primaryTeal, primaryBlue, primaryPurple],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
-  
+
   // Light Theme Color Scheme
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
@@ -228,7 +211,7 @@ class OmnisonicColors {
     inversePrimary: Color(0xFF9CA3FF),
     surfaceTint: primaryPurple,
   );
-  
+
   // Dark Theme Color Scheme
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
@@ -263,19 +246,19 @@ class OmnisonicColors {
     inversePrimary: primaryPurple,
     surfaceTint: Color(0xFF9CA3FF),
   );
-  
+
   // Music-specific colors
   static const Color playingIndicator = Color(0xFF1DB954); // Spotify-like green
   static const Color pausedIndicator = Color(0xFFF59E0B);
   static const Color queueIndicator = Color(0xFF8B5CF6);
   static const Color favoriteIndicator = Color(0xFFEC4899);
-  
+
   // Status colors with opacity variants
   static const Color successLight = Color(0xFFD1FAE5);
   static const Color warningLight = Color(0xFFFEF3C7);
   static const Color errorLight = Color(0xFFFEE2E2);
   static const Color infoLight = Color(0xFFDBEAFE);
-  
+
   static const Color successDark = Color(0xFF064E3B);
   static const Color warningDark = Color(0xFF78350F);
   static const Color errorDark = Color(0xFF7F1D1D);
@@ -300,7 +283,7 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
   final LinearGradient? nowPlayingGradient;
   final LinearGradient? albumArtOverlay;
   final LinearGradient? progressBarGradient;
-  
+
   const OmnisonicColorExtension({
     this.playingIndicator,
     this.pausedIndicator,
@@ -319,7 +302,7 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
     this.albumArtOverlay,
     this.progressBarGradient,
   });
-  
+
   static const OmnisonicColorExtension light = OmnisonicColorExtension(
     playingIndicator: OmnisonicColors.playingIndicator,
     pausedIndicator: OmnisonicColors.pausedIndicator,
@@ -338,7 +321,7 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
     albumArtOverlay: OmnisonicColors.albumArtOverlay,
     progressBarGradient: OmnisonicColors.progressBarGradient,
   );
-  
+
   static const OmnisonicColorExtension dark = OmnisonicColorExtension(
     playingIndicator: OmnisonicColors.playingIndicator,
     pausedIndicator: OmnisonicColors.pausedIndicator,
@@ -357,7 +340,7 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
     albumArtOverlay: OmnisonicColors.albumArtOverlay,
     progressBarGradient: OmnisonicColors.progressBarGradient,
   );
-  
+
   @override
   ThemeExtension<OmnisonicColorExtension> copyWith({
     Color? playingIndicator,
@@ -386,17 +369,20 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
       accentGradient: accentGradient ?? this.accentGradient,
       heroGradient: heroGradient ?? this.heroGradient,
       subtleGradient: subtleGradient ?? this.subtleGradient,
-      primaryAnimatedGradient: primaryAnimatedGradient ?? this.primaryAnimatedGradient,
-      accentAnimatedGradient: accentAnimatedGradient ?? this.accentAnimatedGradient,
+      primaryAnimatedGradient:
+          primaryAnimatedGradient ?? this.primaryAnimatedGradient,
+      accentAnimatedGradient:
+          accentAnimatedGradient ?? this.accentAnimatedGradient,
       cardDepthGradient: cardDepthGradient ?? this.cardDepthGradient,
       shimmerGradient: shimmerGradient ?? this.shimmerGradient,
-      glassMorphismGradient: glassMorphismGradient ?? this.glassMorphismGradient,
+      glassMorphismGradient:
+          glassMorphismGradient ?? this.glassMorphismGradient,
       nowPlayingGradient: nowPlayingGradient ?? this.nowPlayingGradient,
       albumArtOverlay: albumArtOverlay ?? this.albumArtOverlay,
       progressBarGradient: progressBarGradient ?? this.progressBarGradient,
     );
   }
-  
+
   @override
   ThemeExtension<OmnisonicColorExtension> lerp(
     ThemeExtension<OmnisonicColorExtension>? other,
@@ -405,24 +391,72 @@ class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
     if (other is! OmnisonicColorExtension) {
       return this;
     }
-    
+
     return OmnisonicColorExtension(
       playingIndicator: Color.lerp(playingIndicator, other.playingIndicator, t),
       pausedIndicator: Color.lerp(pausedIndicator, other.pausedIndicator, t),
       queueIndicator: Color.lerp(queueIndicator, other.queueIndicator, t),
-      favoriteIndicator: Color.lerp(favoriteIndicator, other.favoriteIndicator, t),
-      primaryGradient: LinearGradient.lerp(primaryGradient, other.primaryGradient, t),
-      accentGradient: LinearGradient.lerp(accentGradient, other.accentGradient, t),
+      favoriteIndicator: Color.lerp(
+        favoriteIndicator,
+        other.favoriteIndicator,
+        t,
+      ),
+      primaryGradient: LinearGradient.lerp(
+        primaryGradient,
+        other.primaryGradient,
+        t,
+      ),
+      accentGradient: LinearGradient.lerp(
+        accentGradient,
+        other.accentGradient,
+        t,
+      ),
       heroGradient: LinearGradient.lerp(heroGradient, other.heroGradient, t),
-      subtleGradient: LinearGradient.lerp(subtleGradient, other.subtleGradient, t),
-      primaryAnimatedGradient: LinearGradient.lerp(primaryAnimatedGradient, other.primaryAnimatedGradient, t),
-      accentAnimatedGradient: LinearGradient.lerp(accentAnimatedGradient, other.accentAnimatedGradient, t),
-      cardDepthGradient: RadialGradient.lerp(cardDepthGradient, other.cardDepthGradient, t),
-      shimmerGradient: LinearGradient.lerp(shimmerGradient, other.shimmerGradient, t),
-      glassMorphismGradient: LinearGradient.lerp(glassMorphismGradient, other.glassMorphismGradient, t),
-      nowPlayingGradient: LinearGradient.lerp(nowPlayingGradient, other.nowPlayingGradient, t),
-      albumArtOverlay: LinearGradient.lerp(albumArtOverlay, other.albumArtOverlay, t),
-      progressBarGradient: LinearGradient.lerp(progressBarGradient, other.progressBarGradient, t),
+      subtleGradient: LinearGradient.lerp(
+        subtleGradient,
+        other.subtleGradient,
+        t,
+      ),
+      primaryAnimatedGradient: LinearGradient.lerp(
+        primaryAnimatedGradient,
+        other.primaryAnimatedGradient,
+        t,
+      ),
+      accentAnimatedGradient: LinearGradient.lerp(
+        accentAnimatedGradient,
+        other.accentAnimatedGradient,
+        t,
+      ),
+      cardDepthGradient: RadialGradient.lerp(
+        cardDepthGradient,
+        other.cardDepthGradient,
+        t,
+      ),
+      shimmerGradient: LinearGradient.lerp(
+        shimmerGradient,
+        other.shimmerGradient,
+        t,
+      ),
+      glassMorphismGradient: LinearGradient.lerp(
+        glassMorphismGradient,
+        other.glassMorphismGradient,
+        t,
+      ),
+      nowPlayingGradient: LinearGradient.lerp(
+        nowPlayingGradient,
+        other.nowPlayingGradient,
+        t,
+      ),
+      albumArtOverlay: LinearGradient.lerp(
+        albumArtOverlay,
+        other.albumArtOverlay,
+        t,
+      ),
+      progressBarGradient: LinearGradient.lerp(
+        progressBarGradient,
+        other.progressBarGradient,
+        t,
+      ),
     );
   }
 }

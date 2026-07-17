@@ -4,9 +4,7 @@ import '../../errors/errors.dart';
 
 /// Local data source for offline content management
 class OfflineLocalDataSource {
-  OfflineLocalDataSource({
-    required CacheDao cacheDao,
-  }) : _cacheDao = cacheDao;
+  OfflineLocalDataSource({required CacheDao cacheDao}) : _cacheDao = cacheDao;
 
   final CacheDao _cacheDao;
 
@@ -16,7 +14,9 @@ class OfflineLocalDataSource {
       final entries = await _cacheDao.getAllCacheEntries();
       return ResultHelper.success(entries);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get cached entries: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get cached entries: $e'),
+      );
     }
   }
 
@@ -26,7 +26,9 @@ class OfflineLocalDataSource {
       final entry = await _cacheDao.getCacheEntryByTrackId(trackId);
       return ResultHelper.success(entry);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get cached entry: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get cached entry: $e'),
+      );
     }
   }
 
@@ -36,7 +38,9 @@ class OfflineLocalDataSource {
       await _cacheDao.insertCacheEntry(entry);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to save cache entry: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to save cache entry: $e'),
+      );
     }
   }
 
@@ -46,7 +50,9 @@ class OfflineLocalDataSource {
       await _cacheDao.updateCacheEntry(entry);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update cache entry: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update cache entry: $e'),
+      );
     }
   }
 
@@ -56,7 +62,9 @@ class OfflineLocalDataSource {
       await _cacheDao.deleteCacheEntry(trackId);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to remove cache entry: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to remove cache entry: $e'),
+      );
     }
   }
 
@@ -66,7 +74,9 @@ class OfflineLocalDataSource {
       await _cacheDao.deleteCacheEntries(trackIds);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to remove cache entries: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to remove cache entries: $e'),
+      );
     }
   }
 
@@ -85,7 +95,9 @@ class OfflineLocalDataSource {
         'pinnedFileCount': pinnedFileCount,
       });
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get cache statistics: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get cache statistics: $e'),
+      );
     }
   }
 
@@ -96,7 +108,7 @@ class OfflineLocalDataSource {
   }) async {
     try {
       List<CacheEntry> entries;
-      
+
       if (oldestFirst) {
         entries = await _cacheDao.getLeastRecentlyAccessedEntries(limit);
       } else {
@@ -105,10 +117,12 @@ class OfflineLocalDataSource {
 
       // Filter out pinned entries
       final unpinnedEntries = entries.where((e) => !e.isPinned).toList();
-      
+
       return ResultHelper.success(unpinnedEntries);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get entries for eviction: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get entries for eviction: $e'),
+      );
     }
   }
 
@@ -118,7 +132,9 @@ class OfflineLocalDataSource {
       await _cacheDao.updateCacheEntryLastAccessed(trackId, DateTime.now());
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to update last accessed: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to update last accessed: $e'),
+      );
     }
   }
 
@@ -148,22 +164,28 @@ class OfflineLocalDataSource {
       final entries = await _cacheDao.getPinnedCacheEntries();
       return ResultHelper.success(entries);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get pinned tracks: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get pinned tracks: $e'),
+      );
     }
   }
 
   /// Gets cached tracks by server (requires joining with tracks table)
-  Future<Result<List<CacheEntry>>> getCachedTracksByServer(String serverId) async {
+  Future<Result<List<CacheEntry>>> getCachedTracksByServer(
+    String serverId,
+  ) async {
     try {
       // This would require a join query - for now, get all and filter
       // In a real implementation, you'd want to add a proper join query to the DAO
       final allEntries = await _cacheDao.getAllCacheEntries();
-      
+
       // Note: This is a simplified implementation
       // In practice, you'd want to join with the tracks table to filter by serverId
       return ResultHelper.success(allEntries);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to get cached tracks by server: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get cached tracks by server: $e'),
+      );
     }
   }
 
@@ -173,7 +195,9 @@ class OfflineLocalDataSource {
       await _cacheDao.deleteIncompleteCacheEntries();
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(DatabaseFailure('Failed to clear incomplete downloads: $e'));
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to clear incomplete downloads: $e'),
+      );
     }
   }
 

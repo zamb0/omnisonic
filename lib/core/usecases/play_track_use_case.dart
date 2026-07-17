@@ -8,7 +8,7 @@ import '../repositories/repositories.dart';
 import 'usecase.dart';
 
 /// Use case for playing a track with intelligent server selection
-/// 
+///
 /// This use case handles:
 /// - Selecting the best available server for the track
 /// - Handling server failover if the primary source fails
@@ -33,7 +33,9 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
 
       // If this is a deduplicated track, get the best available source
       if (params.useBestSource) {
-        final bestSourceResult = await _musicRepository.getBestSourceForTrack(params.track.id);
+        final bestSourceResult = await _musicRepository.getBestSourceForTrack(
+          params.track.id,
+        );
         if (bestSourceResult.isSuccess) {
           trackToPlay = bestSourceResult.valueOrNull!;
         }
@@ -41,7 +43,9 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
       }
 
       // Verify the server is online before attempting playback
-      final serverResult = await _serverRepository.getServerById(trackToPlay.serverId);
+      final serverResult = await _serverRepository.getServerById(
+        trackToPlay.serverId,
+      );
       if (serverResult.isFailure) {
         return Left(ServerFailure('Server not found: ${trackToPlay.serverId}'));
       }
@@ -53,11 +57,16 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
 
       if (server.status != ServerStatus.online) {
         // Try to find a fallback source for this track
-        final fallbackResult = await _musicRepository.getFallbackSource(params.track.id, trackToPlay.id);
+        final fallbackResult = await _musicRepository.getFallbackSource(
+          params.track.id,
+          trackToPlay.id,
+        );
         if (fallbackResult.isSuccess) {
           trackToPlay = fallbackResult.valueOrNull!;
         } else {
-          return Left(ServerFailure('Server is offline and no fallback source available'));
+          return Left(
+            ServerFailure('Server is offline and no fallback source available'),
+          );
         }
       }
 
@@ -68,7 +77,11 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
           startIndex: params.startIndex ?? 0,
         );
         if (queueResult.isFailure) {
-          return Left(PlaybackFailure('Failed to set queue: ${queueResult.failureOrNull}'));
+          return Left(
+            PlaybackFailure(
+              'Failed to set queue: ${queueResult.failureOrNull}',
+            ),
+          );
         }
       }
 
@@ -77,18 +90,33 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
       if (playResult.isFailure) {
         // If playback fails, try to find a fallback source
         if (params.allowFallback) {
-          final fallbackResult = await _musicRepository.getFallbackSource(params.track.id, trackToPlay.id);
+          final fallbackResult = await _musicRepository.getFallbackSource(
+            params.track.id,
+            trackToPlay.id,
+          );
           if (fallbackResult.isSuccess) {
             final fallbackTrack = fallbackResult.valueOrNull!;
-            final fallbackPlayResult = await _playbackRepository.play(fallbackTrack);
+            final fallbackPlayResult = await _playbackRepository.play(
+              fallbackTrack,
+            );
             if (fallbackPlayResult.isFailure) {
-              return Left(PlaybackFailure('Playback failed even with fallback: ${fallbackPlayResult.failureOrNull}'));
+              return Left(
+                PlaybackFailure(
+                  'Playback failed even with fallback: ${fallbackPlayResult.failureOrNull}',
+                ),
+              );
             }
           } else {
-            return Left(PlaybackFailure('Playback failed and no fallback available: ${playResult.failureOrNull}'));
+            return Left(
+              PlaybackFailure(
+                'Playback failed and no fallback available: ${playResult.failureOrNull}',
+              ),
+            );
           }
         } else {
-          return Left(PlaybackFailure('Playback failed: ${playResult.failureOrNull}'));
+          return Left(
+            PlaybackFailure('Playback failed: ${playResult.failureOrNull}'),
+          );
         }
       }
 
@@ -111,19 +139,25 @@ class PlayTrackParams extends Params {
 
   /// The track to play
   final Track track;
-  
+
   /// Optional queue to set before playing
   final List<Track>? queue;
-  
+
   /// Starting index in the queue (if queue is provided)
   final int? startIndex;
-  
+
   /// Whether to automatically select the best source for deduplicated tracks
   final bool useBestSource;
-  
+
   /// Whether to allow fallback to alternative sources if primary fails
   final bool allowFallback;
 
   @override
-  List<Object?> get props => [track, queue, startIndex, useBestSource, allowFallback];
+  List<Object?> get props => [
+    track,
+    queue,
+    startIndex,
+    useBestSource,
+    allowFallback,
+  ];
 }

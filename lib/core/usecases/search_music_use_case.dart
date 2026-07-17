@@ -8,7 +8,7 @@ import '../repositories/repositories.dart';
 import 'usecase.dart';
 
 /// Use case for searching music across all connected servers
-/// 
+///
 /// This use case handles:
 /// - Searching simultaneously across all connected servers
 /// - Filtering results by type (tracks, albums, artists)
@@ -16,10 +16,7 @@ import 'usecase.dart';
 /// - Returning comprehensive search results
 @injectable
 class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
-  const SearchMusicUseCase(
-    this._musicRepository,
-    this._serverRepository,
-  );
+  const SearchMusicUseCase(this._musicRepository, this._serverRepository);
 
   final MusicRepository _musicRepository;
   final ServerRepository _serverRepository;
@@ -34,7 +31,11 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
       // Check if we have online servers
       final serversResult = await _serverRepository.getOnlineServers();
       if (serversResult.isFailure) {
-        return Left(ServerFailure('Failed to get online servers: ${serversResult.failureOrNull}'));
+        return Left(
+          ServerFailure(
+            'Failed to get online servers: ${serversResult.failureOrNull}',
+          ),
+        );
       }
 
       final onlineServers = serversResult.valueOrNull!;
@@ -51,7 +52,7 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
         final tracksResult = await _musicRepository.searchTracks(params.query);
         if (tracksResult.isSuccess) {
           tracks = tracksResult.valueOrNull!;
-          
+
           // Apply additional filters to tracks
           tracks = _applyTrackFilters(tracks, params);
         }
@@ -62,23 +63,29 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
         final albumsResult = await _musicRepository.searchAlbums(params.query);
         if (albumsResult.isSuccess) {
           albums = albumsResult.valueOrNull!;
-          
+
           // Apply server filter to albums if specified
           if (params.serverId != null) {
-            albums = albums.where((album) => album.serverId == params.serverId).toList();
+            albums = albums
+                .where((album) => album.serverId == params.serverId)
+                .toList();
           }
         }
       }
 
       // Search artists if requested
       if (params.searchTypes.contains(SearchType.artists)) {
-        final artistsResult = await _musicRepository.searchArtists(params.query);
+        final artistsResult = await _musicRepository.searchArtists(
+          params.query,
+        );
         if (artistsResult.isSuccess) {
           artists = artistsResult.valueOrNull!;
-          
+
           // Apply server filter to artists if specified
           if (params.serverId != null) {
-            artists = artists.where((artist) => artist.serverId == params.serverId).toList();
+            artists = artists
+                .where((artist) => artist.serverId == params.serverId)
+                .toList();
           }
         }
       }
@@ -111,26 +118,36 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
 
     // Filter by genre
     if (params.genre != null) {
-      filteredTracks = filteredTracks.where((track) => 
-        track.genre?.toLowerCase().contains(params.genre!.toLowerCase()) ?? false
-      ).toList();
+      filteredTracks = filteredTracks
+          .where(
+            (track) =>
+                track.genre?.toLowerCase().contains(
+                  params.genre!.toLowerCase(),
+                ) ??
+                false,
+          )
+          .toList();
     }
 
     // Filter by year
     if (params.year != null) {
-      filteredTracks = filteredTracks.where((track) => track.year == params.year).toList();
+      filteredTracks = filteredTracks
+          .where((track) => track.year == params.year)
+          .toList();
     }
 
     // Filter by server
     if (params.serverId != null) {
-      filteredTracks = filteredTracks.where((track) => track.serverId == params.serverId).toList();
+      filteredTracks = filteredTracks
+          .where((track) => track.serverId == params.serverId)
+          .toList();
     }
 
     // Filter by minimum quality
     if (params.minQuality != null) {
-      filteredTracks = filteredTracks.where((track) => 
-        track.quality.index >= params.minQuality!.index
-      ).toList();
+      filteredTracks = filteredTracks
+          .where((track) => track.quality.index >= params.minQuality!.index)
+          .toList();
     }
 
     return filteredTracks;
@@ -141,7 +158,11 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
 class SearchMusicParams extends Params {
   const SearchMusicParams({
     required this.query,
-    this.searchTypes = const [SearchType.tracks, SearchType.albums, SearchType.artists],
+    this.searchTypes = const [
+      SearchType.tracks,
+      SearchType.albums,
+      SearchType.artists,
+    ],
     this.genre,
     this.year,
     this.serverId,
@@ -151,22 +172,22 @@ class SearchMusicParams extends Params {
 
   /// The search query string
   final String query;
-  
+
   /// Types of content to search for
   final List<SearchType> searchTypes;
-  
+
   /// Optional genre filter
   final String? genre;
-  
+
   /// Optional year filter
   final int? year;
-  
+
   /// Optional server ID filter
   final String? serverId;
-  
+
   /// Optional minimum audio quality filter
   final AudioQuality? minQuality;
-  
+
   /// Optional maximum number of results per type
   final int? maxResults;
 
@@ -183,11 +204,7 @@ class SearchMusicParams extends Params {
 }
 
 /// Types of content that can be searched
-enum SearchType {
-  tracks,
-  albums,
-  artists,
-}
+enum SearchType { tracks, albums, artists }
 
 /// Results from a music search operation
 class SearchResults {
@@ -201,12 +218,12 @@ class SearchResults {
   });
 
   const SearchResults.empty()
-      : query = '',
-        tracks = const [],
-        albums = const [],
-        artists = const [],
-        totalResults = 0,
-        searchTime = null;
+    : query = '',
+      tracks = const [],
+      albums = const [],
+      artists = const [],
+      totalResults = 0,
+      searchTime = null;
 
   final String query;
   final List<Track> tracks;
@@ -217,16 +234,16 @@ class SearchResults {
 
   /// Returns true if there are no results
   bool get isEmpty => totalResults == 0;
-  
+
   /// Returns true if there are results
   bool get isNotEmpty => totalResults > 0;
-  
+
   /// Returns true if tracks were found
   bool get hasTracks => tracks.isNotEmpty;
-  
+
   /// Returns true if albums were found
   bool get hasAlbums => albums.isNotEmpty;
-  
+
   /// Returns true if artists were found
   bool get hasArtists => artists.isNotEmpty;
 }

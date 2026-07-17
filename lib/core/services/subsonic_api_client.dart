@@ -26,13 +26,13 @@ class SubsonicApiClient {
   ) async {
     try {
       AppLog.info('Testing connection to server');
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'ping',
       );
-      
+
       AppLog.info('Connection successful');
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
@@ -64,7 +64,7 @@ class SubsonicApiClient {
         endpoint: 'getAlbumList2',
         queryParams: queryParams,
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => AlbumsResponse.fromJson(json as Map<String, dynamic>),
@@ -73,6 +73,7 @@ class SubsonicApiClient {
       throw _handleException(e);
     }
   }
+
   /// Gets all artists from the server
   Future<SubsonicResponse<ArtistsResponse>> getArtists(
     MusicServer server,
@@ -84,7 +85,7 @@ class SubsonicApiClient {
         password: password,
         endpoint: 'getArtists',
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => ArtistsResponse.fromJson(json as Map<String, dynamic>),
@@ -107,7 +108,7 @@ class SubsonicApiClient {
         endpoint: 'getAlbum',
         queryParams: {'id': albumId},
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => AlbumResponse.fromJson(json as Map<String, dynamic>),
@@ -127,7 +128,7 @@ class SubsonicApiClient {
   }) {
     final salt = _generateSalt();
     final token = _generateToken(password, salt);
-    
+
     final queryParams = <String, String>{
       'id': trackId,
       'u': server.username,
@@ -137,14 +138,17 @@ class SubsonicApiClient {
       'c': _clientName,
       'f': 'json',
     };
-    
+
     if (maxBitRate != null) queryParams['maxBitRate'] = maxBitRate.toString();
     if (format != null) queryParams['format'] = format;
-    
+
     final query = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
-    
+
     return '${server.apiUrl}/stream?$query';
   }
 
@@ -157,7 +161,7 @@ class SubsonicApiClient {
   }) {
     final salt = _generateSalt();
     final token = _generateToken(password, salt);
-    
+
     final queryParams = <String, String>{
       'id': coverArtId,
       'u': server.username,
@@ -166,18 +170,21 @@ class SubsonicApiClient {
       'v': _apiVersion,
       'c': _clientName,
     };
-    
+
     if (size != null) queryParams['size'] = size.toString();
-    
+
     final query = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
-    
+
     return '${server.apiUrl}/getCoverArt?$query';
   }
 
   /// Scrobbles a track (registers playback at Last.fm or similar service)
-  /// 
+  ///
   /// Parameters:
   /// - [trackId]: The ID of the track being played
   /// - [time]: The time (in milliseconds since epoch) at which the song was listened to
@@ -194,18 +201,18 @@ class SubsonicApiClient {
         'id': trackId,
         'submission': submission.toString(),
       };
-      
+
       if (time != null) {
         queryParams['time'] = time.millisecondsSinceEpoch.toString();
       }
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'scrobble',
         queryParams: queryParams,
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
@@ -216,7 +223,7 @@ class SubsonicApiClient {
   }
 
   /// Saves the state of the play queue for this user
-  /// 
+  ///
   /// Parameters:
   /// - [trackIds]: ID of all tracks in the play queue
   /// - [current]: ID of the currently playing track
@@ -230,10 +237,10 @@ class SubsonicApiClient {
   }) async {
     try {
       // Build query params without the trackIds first
-      final Map<String,dynamic> baseParams = {};
+      final Map<String, dynamic> baseParams = {};
       if (current != null) baseParams['current'] = current;
       if (position != null) baseParams['position'] = position.toString();
-      
+
       // Make request with custom handling for multiple 'id' params
       final response = await _makeRequestWithMultipleIds(
         server: server,
@@ -242,7 +249,7 @@ class SubsonicApiClient {
         ids: trackIds,
         additionalParams: baseParams,
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
@@ -263,7 +270,7 @@ class SubsonicApiClient {
         password: password,
         endpoint: 'getPlayQueue',
       );
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PlayQueueResponse.fromJson(json as Map<String, dynamic>),
@@ -274,7 +281,7 @@ class SubsonicApiClient {
   }
 
   /// Stars (favorites) an item
-  /// 
+  ///
   /// Parameters:
   /// - [id]: The ID of the track, album, or artist to star
   /// - [albumId]: The ID of the album to star (optional)
@@ -291,18 +298,18 @@ class SubsonicApiClient {
       if (id != null) queryParams['id'] = id;
       if (albumId != null) queryParams['albumId'] = albumId;
       if (artistId != null) queryParams['artistId'] = artistId;
-      
+
       AppLog.info('⭐ Calling star API - server: ${server.name}, id: $id');
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'star',
         queryParams: queryParams,
       );
-      
+
       AppLog.debug('Star API response status: ${response.statusCode}');
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
@@ -314,7 +321,7 @@ class SubsonicApiClient {
   }
 
   /// Unstars (removes from favorites) an item
-  /// 
+  ///
   /// Parameters:
   /// - [id]: The ID of the track, album, or artist to unstar
   /// - [albumId]: The ID of the album to unstar (optional)
@@ -323,7 +330,7 @@ class SubsonicApiClient {
     MusicServer server,
     String password, {
     String? id,
-   String? albumId,
+    String? albumId,
     String? artistId,
   }) async {
     try {
@@ -331,18 +338,18 @@ class SubsonicApiClient {
       if (id != null) queryParams['id'] = id;
       if (albumId != null) queryParams['albumId'] = albumId;
       if (artistId != null) queryParams['artistId'] = artistId;
-      
+
       AppLog.info('⭐ Calling unstar API - server: ${server.name}, id: $id');
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'unstar',
         queryParams: queryParams,
       );
-      
+
       AppLog.debug('Unstar API response status: ${response.statusCode}');
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => PingResponse.fromJson(json as Map<String, dynamic>),
@@ -361,15 +368,15 @@ class SubsonicApiClient {
   ) async {
     try {
       AppLog.info('⭐ Calling getStarred2 API - server: ${server.name}');
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'getStarred2',
       );
-      
+
       AppLog.debug('getStarred2 API response status: ${response.statusCode}');
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => StarredResponse.fromJson(json as Map<String, dynamic>),
@@ -388,15 +395,15 @@ class SubsonicApiClient {
   ) async {
     try {
       AppLog.info('🎵 Calling getGenres API - server: ${server.name}');
-      
+
       final response = await _makeRequest(
         server: server,
         password: password,
         endpoint: 'getGenres',
       );
-      
+
       AppLog.debug('getGenres API response status: ${response.statusCode}');
-      
+
       return SubsonicResponse.fromJson(
         response.data as Map<String, dynamic>,
         (json) => GenresResponse.fromJson(json as Map<String, dynamic>),
@@ -416,7 +423,7 @@ class SubsonicApiClient {
   }) async {
     final salt = _generateSalt();
     final token = _generateToken(password, salt);
-    
+
     final params = <String, dynamic>{
       'u': server.username,
       't': token,
@@ -426,24 +433,24 @@ class SubsonicApiClient {
       'f': 'json',
       ...?queryParams,
     };
-    
+
     AppLog.debug('Making request to endpoint: $endpoint');
-    
+
     try {
       final response = await _dio.get(
         '${server.apiUrl}/$endpoint',
         queryParameters: params,
       );
-      
+
       AppLog.debug('Response status: ${response.statusCode}');
-      
+
       if (response.statusCode != 200) {
         throw SubsonicApiException(
           'HTTP ${response.statusCode}: ${response.statusMessage}',
           response.statusCode.toString(),
         );
       }
-      
+
       // Check if response contains Subsonic error
       final data = response.data;
       if (data is Map<String, dynamic>) {
@@ -461,7 +468,7 @@ class SubsonicApiClient {
           }
         }
       }
-      
+
       return response;
     } catch (e) {
       AppLog.warn('Request failed: $e');
@@ -479,7 +486,7 @@ class SubsonicApiClient {
   }) async {
     final salt = _generateSalt();
     final token = _generateToken(password, salt);
-    
+
     // Build query string manually to support multiple 'id' parameters
     final queryParts = <String>[
       'u=${Uri.encodeComponent(server.username)}',
@@ -489,36 +496,40 @@ class SubsonicApiClient {
       'c=$_clientName',
       'f=json',
     ];
-    
+
     // Add multiple 'id' parameters
     for (final id in ids) {
       queryParts.add('id=${Uri.encodeComponent(id)}');
     }
-    
+
     // Add additional parameters
     if (additionalParams != null) {
       for (final entry in additionalParams.entries) {
-        queryParts.add('${entry.key}=${Uri.encodeComponent(entry.value.toString())}');
+        queryParts.add(
+          '${entry.key}=${Uri.encodeComponent(entry.value.toString())}',
+        );
       }
     }
-    
+
     final queryString = queryParts.join('&');
     final url = '${server.apiUrl}/$endpoint?$queryString';
-    
-    AppLog.debug('Making request to endpoint: $endpoint with ${ids.length} IDs');
-    
+
+    AppLog.debug(
+      'Making request to endpoint: $endpoint with ${ids.length} IDs',
+    );
+
     try {
       final response = await _dio.get(url);
-      
+
       AppLog.debug('Response status: ${response.statusCode}');
-      
+
       if (response.statusCode != 200) {
         throw SubsonicApiException(
           'HTTP ${response.statusCode}: ${response.statusMessage}',
           response.statusCode.toString(),
         );
       }
-      
+
       // Check if response contains Subsonic error
       final data = response.data;
       if (data is Map<String, dynamic>) {
@@ -536,7 +547,7 @@ class SubsonicApiClient {
           }
         }
       }
-      
+
       return response;
     } catch (e) {
       AppLog.warn('Request failed: $e');
@@ -561,15 +572,17 @@ class SubsonicApiClient {
   /// Handles exceptions and converts them to appropriate types
   Exception _handleException(dynamic error) {
     AppLog.debug('Handling exception: $error');
-    
+
     if (error is DioException) {
       AppLog.debug('DioException type: ${error.type}');
       AppLog.debug('Status code: ${error.response?.statusCode}');
       AppLog.debug('Message: ${error.message}');
-      
+
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
-          return NetworkException('Connection timeout - check server URL and network');
+          return NetworkException(
+            'Connection timeout - check server URL and network',
+          );
         case DioExceptionType.sendTimeout:
           return NetworkException('Send timeout - server may be slow');
         case DioExceptionType.receiveTimeout:
@@ -577,15 +590,21 @@ class SubsonicApiClient {
         case DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
           final responseData = error.response?.data;
-          
+
           if (statusCode == 401) {
             return AuthenticationException('Invalid username or password');
           } else if (statusCode == 404) {
-            return NetworkException('Server not found - check URL (should not include /rest)');
+            return NetworkException(
+              'Server not found - check URL (should not include /rest)',
+            );
           } else if (statusCode == 403) {
-            return AuthenticationException('Access forbidden - check user permissions');
+            return AuthenticationException(
+              'Access forbidden - check user permissions',
+            );
           } else if (statusCode != null && statusCode >= 500) {
-            return ServerException('Server error ($statusCode) - server may be down');
+            return ServerException(
+              'Server error ($statusCode) - server may be down',
+            );
           } else {
             String message = 'API error';
             if (responseData is String && responseData.isNotEmpty) {
@@ -610,9 +629,13 @@ class SubsonicApiClient {
           }
           return NetworkException(message);
         case DioExceptionType.badCertificate:
-          return NetworkException('SSL certificate error - server certificate invalid');
+          return NetworkException(
+            'SSL certificate error - server certificate invalid',
+          );
         case DioExceptionType.unknown:
-          return NetworkException('Network error: ${error.message ?? 'Unknown error'}');
+          return NetworkException(
+            'Network error: ${error.message ?? 'Unknown error'}',
+          );
       }
     } else if (error is SubsonicApiException) {
       return error;

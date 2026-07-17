@@ -140,28 +140,29 @@ class Track extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        artist,
-        album,
-        duration,
-        serverId,
-        streamUrl,
-        quality,
-        lastModified,
-        albumId,
-        artistId,
-        trackNumber,
-        discNumber,
-        year,
-        genre,
-        fileSize,
-        coverArtUrl,
-        isCached,
-        cachePath,
-        isStarred,
-      ];
+    id,
+    title,
+    artist,
+    album,
+    duration,
+    serverId,
+    streamUrl,
+    quality,
+    lastModified,
+    albumId,
+    artistId,
+    trackNumber,
+    discNumber,
+    year,
+    genre,
+    fileSize,
+    coverArtUrl,
+    isCached,
+    cachePath,
+    isStarred,
+  ];
 
   @override
-  String toString() => 'Track(id: $id, title: $title, artist: $artist, album: $album)';
+  String toString() =>
+      'Track(id: $id, title: $title, artist: $artist, album: $album)';
 }

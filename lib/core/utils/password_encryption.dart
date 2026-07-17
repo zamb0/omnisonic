@@ -6,7 +6,6 @@ import 'app_log.dart';
 /// Utility class for encrypting and decrypting passwords for database storage
 /// Uses AES-like encryption with a device-specific key
 class PasswordEncryption {
-
   /// Generates a device-specific encryption key
   static String _generateDeviceKey() {
     // Create a consistent key based on a fixed seed for the device
@@ -113,7 +112,7 @@ class PasswordEncryption {
       if (encryptedPassword.isEmpty) {
         return true; // Empty is valid
       }
-      
+
       decryptPassword(encryptedPassword);
       return true;
     } catch (e) {

@@ -7,14 +7,14 @@ import 'spacing.dart';
 /// Example page demonstrating the enhanced typography system
 class TypographyExamplesPage extends StatefulWidget {
   const TypographyExamplesPage({super.key});
-  
+
   @override
   State<TypographyExamplesPage> createState() => _TypographyExamplesPageState();
 }
 
 class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
   bool _showAnimations = false;
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,50 +47,32 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
               _buildTruncationExamples(),
             ),
             const SizedBox(height: OmnisonicSpacing.xl),
-            _buildSection(
-              'Typography Animations',
-              _buildAnimationExamples(),
-            ),
+            _buildSection('Typography Animations', _buildAnimationExamples()),
             const SizedBox(height: OmnisonicSpacing.xl),
-            _buildSection(
-              'Loading States',
-              _buildLoadingExamples(),
-            ),
+            _buildSection('Loading States', _buildLoadingExamples()),
             const SizedBox(height: OmnisonicSpacing.xl),
-            _buildSection(
-              'Emphasis Effects',
-              _buildEmphasisExamples(),
-            ),
+            _buildSection('Emphasis Effects', _buildEmphasisExamples()),
             const SizedBox(height: OmnisonicSpacing.xl),
-            _buildSection(
-              'Expandable Text',
-              _buildExpandableExample(),
-            ),
+            _buildSection('Expandable Text', _buildExpandableExample()),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildSection(String title, Widget content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: OmnisonicTypography.headlineSmall,
-        ),
+        Text(title, style: OmnisonicTypography.headlineSmall),
         const SizedBox(height: OmnisonicSpacing.md),
         Card(
-          child: Padding(
-            padding: OmnisonicInsets.allMd,
-            child: content,
-          ),
+          child: Padding(padding: OmnisonicInsets.allMd, child: content),
         ),
       ],
     );
   }
-  
+
   Widget _buildMusicMetadataExamples() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,63 +83,59 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
         const TrackTitleText('Bohemian Rhapsody', isPlaying: true),
         const SizedBox(height: OmnisonicSpacing.xs),
         const TrackTitleText('Bohemian Rhapsody', isSelected: true),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Artist name examples
         const ArtistNameText('Queen'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const ArtistNameText('Queen', isSecondary: true),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Album title examples
         const AlbumTitleText('A Night at the Opera'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const AlbumTitleText('A Night at the Opera', isSecondary: true),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Playlist title examples
         const PlaylistTitleText('My Favorite Rock Songs'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const PlaylistTitleText('My Favorite Rock Songs', isLarge: true),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Now playing examples
-        const NowPlayingText(
-          title: 'Bohemian Rhapsody',
-          artist: 'Queen',
-        ),
+        const NowPlayingText(title: 'Bohemian Rhapsody', artist: 'Queen'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const NowPlayingText(
           title: 'Bohemian Rhapsody',
           artist: 'Queen',
           isLarge: true,
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Duration examples
         const DurationText(Duration(minutes: 5, seconds: 55)),
         const SizedBox(height: OmnisonicSpacing.xs),
-        const DurationText(Duration(hours: 1, minutes: 23, seconds: 45), showHours: true),
-        
+        const DurationText(
+          Duration(hours: 1, minutes: 23, seconds: 45),
+          showHours: true,
+        ),
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         // Metadata examples
         const MetadataText(label: 'Genre', value: 'Progressive Rock'),
         const SizedBox(height: OmnisonicSpacing.xs),
-        const MetadataText(
-          label: 'Year',
-          value: '1975',
-          isVertical: true,
-        ),
+        const MetadataText(label: 'Year', value: '1975', isVertical: true),
       ],
     );
   }
-  
+
   Widget _buildTruncationExamples() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,9 +149,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
             maxLines: 1,
           ),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Multi-line truncation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const SizedBox(
@@ -183,9 +161,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
             maxLines: 2,
           ),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Track title with truncation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const SizedBox(
@@ -197,12 +175,12 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
       ],
     );
   }
-  
+
   Widget _buildAnimationExamples() {
     if (!_showAnimations) {
       return const Text('Click the play button to see animations');
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,9 +192,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('fade_$_showAnimations'),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Slide Up Animation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
@@ -225,9 +203,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('slide_$_showAnimations'),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Scale In Animation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
@@ -236,9 +214,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('scale_$_showAnimations'),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Bounce Animation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
@@ -247,9 +225,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           style: OmnisonicTypography.titleMedium,
           key: ValueKey('bounce_$_showAnimations'),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Typewriter Animation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         AnimatedText(
@@ -258,9 +236,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           style: OmnisonicTypography.bodyLarge,
           key: ValueKey('typewriter_$_showAnimations'),
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Shimmer Animation:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         Container(
@@ -278,7 +256,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
       ],
     );
   }
-  
+
   Widget _buildLoadingExamples() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,9 +268,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           loadingType: LoadingType.dots,
           style: OmnisonicTypography.bodyLarge,
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Loading with wave effect:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const LoadingText(
@@ -300,9 +278,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           loadingType: LoadingType.wave,
           style: OmnisonicTypography.titleMedium,
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         const Text('Loading with fade effect:'),
         const SizedBox(height: OmnisonicSpacing.xs),
         const LoadingText(
@@ -313,14 +291,14 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
       ],
     );
   }
-  
+
   Widget _buildEmphasisExamples() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Tap these texts to see emphasis effects:'),
         const SizedBox(height: OmnisonicSpacing.md),
-        
+
         EmphasisText(
           'Pulse Effect (Tap me)',
           emphasisType: EmphasisType.pulse,
@@ -329,9 +307,9 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           ),
           onTap: () {},
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.sm),
-        
+
         EmphasisText(
           'Bounce Effect (Tap me)',
           emphasisType: EmphasisType.bounce,
@@ -340,18 +318,18 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
           ),
           onTap: () {},
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.sm),
-        
+
         EmphasisText(
           'Glow Effect (Auto)',
           emphasisType: EmphasisType.glow,
           style: OmnisonicTypography.titleMedium,
           autoStart: true,
         ),
-        
+
         const SizedBox(height: OmnisonicSpacing.sm),
-        
+
         EmphasisText(
           'Shake Effect (Tap me)',
           emphasisType: EmphasisType.shake,
@@ -363,7 +341,7 @@ class _TypographyExamplesPageState extends State<TypographyExamplesPage> {
       ],
     );
   }
-  
+
   Widget _buildExpandableExample() {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,

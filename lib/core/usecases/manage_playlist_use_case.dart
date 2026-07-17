@@ -8,24 +8,24 @@ import '../repositories/repositories.dart';
 import 'usecase.dart';
 
 /// Use case for managing playlist operations
-/// 
+///
 /// This use case handles:
 /// - Creating, updating, and deleting playlists
 /// - Adding and removing tracks from playlists
 /// - Reordering tracks within playlists
 /// - Managing playlist metadata and settings
 @injectable
-class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePlaylistParams> {
-  const ManagePlaylistUseCase(
-    this._playlistRepository,
-    this._musicRepository,
-  );
+class ManagePlaylistUseCase
+    implements UseCase<PlaylistOperationResult, ManagePlaylistParams> {
+  const ManagePlaylistUseCase(this._playlistRepository, this._musicRepository);
 
   final PlaylistRepository _playlistRepository;
   final MusicRepository _musicRepository;
 
   @override
-  Future<Either<Failure, PlaylistOperationResult>> call(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> call(
+    ManagePlaylistParams params,
+  ) async {
     try {
       switch (params.operation) {
         case PlaylistOperation.create:
@@ -50,11 +50,15 @@ class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePl
           return await _importPlaylist(params);
       }
     } catch (e) {
-      return Left(UnknownFailure('Unexpected error during playlist operation: $e'));
+      return Left(
+        UnknownFailure('Unexpected error during playlist operation: $e'),
+      );
     }
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _createPlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _createPlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.name == null || params.name!.trim().isEmpty) {
       return Left(ValidationFailure('Playlist name is required'));
     }
@@ -66,108 +70,183 @@ class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePl
     );
 
     if (result.isFailure) {
-      return Left(DataFailure('Failed to create playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to create playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Playlist "${result.valueOrNull!.name}" created successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Playlist "${result.valueOrNull!.name}" created successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _updatePlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _updatePlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlist == null) {
-      return Left(ValidationFailure('Playlist is required for update operation'));
+      return Left(
+        ValidationFailure('Playlist is required for update operation'),
+      );
     }
 
     final result = await _playlistRepository.updatePlaylist(params.playlist!);
     if (result.isFailure) {
-      return Left(DataFailure('Failed to update playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to update playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Playlist updated successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Playlist updated successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _deletePlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _deletePlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null) {
-      return Left(ValidationFailure('Playlist ID is required for delete operation'));
+      return Left(
+        ValidationFailure('Playlist ID is required for delete operation'),
+      );
     }
 
     final result = await _playlistRepository.deletePlaylist(params.playlistId!);
     if (result.isFailure) {
-      return Left(DataFailure('Failed to delete playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to delete playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      message: 'Playlist deleted successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(message: 'Playlist deleted successfully'),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _addTrack(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _addTrack(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null || params.trackId == null) {
-      return Left(ValidationFailure('Playlist ID and track ID are required for add track operation'));
+      return Left(
+        ValidationFailure(
+          'Playlist ID and track ID are required for add track operation',
+        ),
+      );
     }
 
     // Verify the track exists
     final tracksResult = await _musicRepository.getAllTracks();
     if (tracksResult.isFailure) {
-      return Left(DataFailure('Failed to verify track existence: ${tracksResult.failureOrNull}'));
+      return Left(
+        DataFailure(
+          'Failed to verify track existence: ${tracksResult.failureOrNull}',
+        ),
+      );
     }
 
-    final trackExists = tracksResult.valueOrNull!.any((track) => track.id == params.trackId);
+    final trackExists = tracksResult.valueOrNull!.any(
+      (track) => track.id == params.trackId,
+    );
     if (!trackExists) {
       return Left(ValidationFailure('Track not found: ${params.trackId}'));
     }
 
-    final result = await _playlistRepository.addTrackToPlaylist(params.playlistId!, params.trackId!);
+    final result = await _playlistRepository.addTrackToPlaylist(
+      params.playlistId!,
+      params.trackId!,
+    );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to add track to playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to add track to playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Track added to playlist successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Track added to playlist successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _removeTrack(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _removeTrack(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null || params.trackId == null) {
-      return Left(ValidationFailure('Playlist ID and track ID are required for remove track operation'));
+      return Left(
+        ValidationFailure(
+          'Playlist ID and track ID are required for remove track operation',
+        ),
+      );
     }
 
-    final result = await _playlistRepository.removeTrackFromPlaylist(params.playlistId!, params.trackId!);
+    final result = await _playlistRepository.removeTrackFromPlaylist(
+      params.playlistId!,
+      params.trackId!,
+    );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to remove track from playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure(
+          'Failed to remove track from playlist: ${result.failureOrNull}',
+        ),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Track removed from playlist successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Track removed from playlist successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _reorderTracks(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _reorderTracks(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null || params.trackIds == null) {
-      return Left(ValidationFailure('Playlist ID and track IDs are required for reorder operation'));
+      return Left(
+        ValidationFailure(
+          'Playlist ID and track IDs are required for reorder operation',
+        ),
+      );
     }
 
-    final result = await _playlistRepository.reorderPlaylistTracks(params.playlistId!, params.trackIds!);
+    final result = await _playlistRepository.reorderPlaylistTracks(
+      params.playlistId!,
+      params.trackIds!,
+    );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to reorder playlist tracks: ${result.failureOrNull}'));
+      return Left(
+        DataFailure(
+          'Failed to reorder playlist tracks: ${result.failureOrNull}',
+        ),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Playlist tracks reordered successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Playlist tracks reordered successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _moveTrack(ManagePlaylistParams params) async {
-    if (params.playlistId == null || params.fromIndex == null || params.toIndex == null) {
-      return Left(ValidationFailure('Playlist ID, from index, and to index are required for move operation'));
+  Future<Either<Failure, PlaylistOperationResult>> _moveTrack(
+    ManagePlaylistParams params,
+  ) async {
+    if (params.playlistId == null ||
+        params.fromIndex == null ||
+        params.toIndex == null) {
+      return Left(
+        ValidationFailure(
+          'Playlist ID, from index, and to index are required for move operation',
+        ),
+      );
     }
 
     final result = await _playlistRepository.moveTrackInPlaylist(
@@ -176,34 +255,57 @@ class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePl
       params.toIndex!,
     );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to move track in playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure(
+          'Failed to move track in playlist: ${result.failureOrNull}',
+        ),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Track moved successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Track moved successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _duplicatePlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _duplicatePlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null || params.name == null) {
-      return Left(ValidationFailure('Playlist ID and new name are required for duplicate operation'));
+      return Left(
+        ValidationFailure(
+          'Playlist ID and new name are required for duplicate operation',
+        ),
+      );
     }
 
-    final result = await _playlistRepository.duplicatePlaylist(params.playlistId!, params.name!);
+    final result = await _playlistRepository.duplicatePlaylist(
+      params.playlistId!,
+      params.name!,
+    );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to duplicate playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to duplicate playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Playlist duplicated successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Playlist duplicated successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _exportPlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _exportPlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.playlistId == null) {
-      return Left(ValidationFailure('Playlist ID is required for export operation'));
+      return Left(
+        ValidationFailure('Playlist ID is required for export operation'),
+      );
     }
 
     final result = await _playlistRepository.exportPlaylist(
@@ -211,18 +313,28 @@ class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePl
       format: params.exportFormat ?? 'm3u',
     );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to export playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to export playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      exportData: result.valueOrNull!,
-      message: 'Playlist exported successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        exportData: result.valueOrNull!,
+        message: 'Playlist exported successfully',
+      ),
+    );
   }
 
-  Future<Either<Failure, PlaylistOperationResult>> _importPlaylist(ManagePlaylistParams params) async {
+  Future<Either<Failure, PlaylistOperationResult>> _importPlaylist(
+    ManagePlaylistParams params,
+  ) async {
     if (params.importData == null || params.name == null) {
-      return Left(ValidationFailure('Import data and name are required for import operation'));
+      return Left(
+        ValidationFailure(
+          'Import data and name are required for import operation',
+        ),
+      );
     }
 
     final result = await _playlistRepository.importPlaylist(
@@ -231,13 +343,17 @@ class ManagePlaylistUseCase implements UseCase<PlaylistOperationResult, ManagePl
       params.name!,
     );
     if (result.isFailure) {
-      return Left(DataFailure('Failed to import playlist: ${result.failureOrNull}'));
+      return Left(
+        DataFailure('Failed to import playlist: ${result.failureOrNull}'),
+      );
     }
 
-    return Right(PlaylistOperationResult.success(
-      playlist: result.valueOrNull!,
-      message: 'Playlist imported successfully',
-    ));
+    return Right(
+      PlaylistOperationResult.success(
+        playlist: result.valueOrNull!,
+        message: 'Playlist imported successfully',
+      ),
+    );
   }
 }
 
@@ -320,11 +436,10 @@ class PlaylistOperationResult {
     this.exportData,
   }) : isSuccess = true;
 
-  const PlaylistOperationResult.failure({
-    required this.message,
-  }) : isSuccess = false,
-       playlist = null,
-       exportData = null;
+  const PlaylistOperationResult.failure({required this.message})
+    : isSuccess = false,
+      playlist = null,
+      exportData = null;
 
   final bool isSuccess;
   final Playlist? playlist;

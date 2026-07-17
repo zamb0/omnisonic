@@ -69,10 +69,10 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
       if (widget.follow && index >= 0 && _controller.hasClients) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          
+
           final key = _getKeyForIndex(index);
           final context = key.currentContext;
-          
+
           if (context != null) {
             Scrollable.ensureVisible(
               context,
@@ -117,14 +117,13 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
           child: AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 180),
             style: (textStyle ?? const TextStyle()).copyWith(
-              color: isActive ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: isActive
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               height: 1.4,
             ),
-            child: Text(
-              line.text,
-              textAlign: TextAlign.center,
-            ),
+            child: Text(line.text, textAlign: TextAlign.center),
           ),
         );
       },

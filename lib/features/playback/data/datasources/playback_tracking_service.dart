@@ -10,10 +10,7 @@ import '../../../../core/utils/app_log.dart';
 /// Service for tracking playback and saving play queue state
 @injectable
 class PlaybackTrackingService {
-  PlaybackTrackingService(
-    this._apiClient,
-    this._serverRepository,
-  );
+  PlaybackTrackingService(this._apiClient, this._serverRepository);
 
   final SubsonicApiClient _apiClient;
   final ServerRepository _serverRepository;
@@ -34,11 +31,13 @@ class PlaybackTrackingService {
     // Calculate when to scrobble (50% of duration or 4 minutes)
     final scrobbleDelay = track.duration * 0.5;
     final maxScrobbleDelay = const Duration(minutes: 4);
-    final actualDelay = scrobbleDelay > maxScrobbleDelay 
-        ? maxScrobbleDelay 
+    final actualDelay = scrobbleDelay > maxScrobbleDelay
+        ? maxScrobbleDelay
         : scrobbleDelay;
 
-    AppLog.debug('Will scrobble track ${track.title} in ${actualDelay.inSeconds}s');
+    AppLog.debug(
+      'Will scrobble track ${track.title} in ${actualDelay.inSeconds}s',
+    );
 
     _scrobbleTimer = Timer(actualDelay, () {
       _scrobbleTrack(track);
@@ -65,7 +64,9 @@ class PlaybackTrackingService {
     try {
       final credentials = await _getServerCredentials();
       if (credentials == null) {
-        AppLog.warn('No server credentials available for now playing notification');
+        AppLog.warn(
+          'No server credentials available for now playing notification',
+        );
         return;
       }
 
@@ -115,8 +116,10 @@ class PlaybackTrackingService {
     Duration position,
   ) async {
     try {
-      AppLog.debug('savePlayQueue called: queue=${queue.length}, index=$currentIndex, position=${position.inSeconds}s');
-      
+      AppLog.debug(
+        'savePlayQueue called: queue=${queue.length}, index=$currentIndex, position=${position.inSeconds}s',
+      );
+
       final credentials = await _getServerCredentials();
       if (credentials == null) {
         AppLog.warn('No server credentials available for saving play queue');
@@ -129,15 +132,19 @@ class PlaybackTrackingService {
       }
 
       if (currentIndex < 0 || currentIndex >= queue.length) {
-        AppLog.warn('Invalid current index: $currentIndex (queue size: ${queue.length})');
+        AppLog.warn(
+          'Invalid current index: $currentIndex (queue size: ${queue.length})',
+        );
         return;
       }
 
       final trackIds = queue.map((t) => _extractSubsonicId(t.id)).toList();
       final currentTrackId = _extractSubsonicId(queue[currentIndex].id);
 
-      AppLog.debug('Saving to server: ${trackIds.length} tracks, current=$currentTrackId');
-      
+      AppLog.debug(
+        'Saving to server: ${trackIds.length} tracks, current=$currentTrackId',
+      );
+
       await _apiClient.savePlayQueue(
         credentials.server,
         credentials.password,
@@ -146,7 +153,9 @@ class PlaybackTrackingService {
         position: position.inMilliseconds,
       );
 
-      AppLog.info('✓ Play queue saved successfully: ${queue.length} tracks at ${position.inSeconds}s');
+      AppLog.info(
+        '✓ Play queue saved successfully: ${queue.length} tracks at ${position.inSeconds}s',
+      );
     } catch (e, stackTrace) {
       AppLog.warn('Failed to save play queue: $e\n$stackTrace');
     }
@@ -199,28 +208,26 @@ class PlaybackTrackingService {
       }
 
       // Convert SubsonicSong to Track
-      final tracks = playQueue.entries!
-          .map((song) {
-            final streamUrl = _apiClient.getStreamUrl(
-              credentials.server,
-              credentials.password,
-              song.id,
-            );
-            return song.toDomainTrack(
-              credentials.server.id,
-              streamUrl,
-              credentials.server,
-              credentials.password,
-              _apiClient,
-            );
-          })
-          .toList();
+      final tracks = playQueue.entries!.map((song) {
+        final streamUrl = _apiClient.getStreamUrl(
+          credentials.server,
+          credentials.password,
+          song.id,
+        );
+        return song.toDomainTrack(
+          credentials.server.id,
+          streamUrl,
+          credentials.server,
+          credentials.password,
+          _apiClient,
+        );
+      }).toList();
 
       // Find current track index
       int? currentIndex;
       if (playQueue.current != null) {
-        currentIndex = tracks.indexWhere((t) => 
-          _extractSubsonicId(t.id) == playQueue.current
+        currentIndex = tracks.indexWhere(
+          (t) => _extractSubsonicId(t.id) == playQueue.current,
         );
         if (currentIndex == -1) currentIndex = null;
       }
@@ -229,7 +236,9 @@ class PlaybackTrackingService {
           ? Duration(milliseconds: playQueue.position!)
           : null;
 
-      AppLog.info('Loaded play queue: ${tracks.length} tracks, position: ${position?.inSeconds ?? 0}s');
+      AppLog.info(
+        'Loaded play queue: ${tracks.length} tracks, position: ${position?.inSeconds ?? 0}s',
+      );
 
       return PlayQueueState(
         tracks: tracks,
@@ -261,7 +270,7 @@ class PlaybackTrackingService {
       // Try first online server
       final server = servers.first;
       final passwordResult = await _serverRepository.getCredentials(server.id);
-      
+
       if (passwordResult.isFailure || passwordResult.valueOrNull == null) {
         AppLog.warn('No password stored for server ${server.name}');
         return null;
@@ -308,8 +317,5 @@ class _ServerCredentials {
   final MusicServer server;
   final String password;
 
-  const _ServerCredentials({
-    required this.server,
-    required this.password,
-  });
+  const _ServerCredentials({required this.server, required this.password});
 }

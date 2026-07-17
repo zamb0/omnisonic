@@ -5,67 +5,67 @@ import '../errors/result.dart';
 abstract class PlaybackRepository {
   /// Plays a specific track
   Future<Result<void>> play(Track track);
-  
+
   /// Pauses the current playback
   Future<Result<void>> pause();
-  
+
   /// Resumes the current playback
   Future<Result<void>> resume();
-  
+
   /// Stops the current playback
   Future<Result<void>> stop();
-  
+
   /// Seeks to a specific position in the current track
   Future<Result<void>> seek(Duration position);
-  
+
   /// Skips to the next track in the queue
   Future<Result<void>> skipToNext();
-  
+
   /// Skips to the previous track in the queue
   Future<Result<void>> skipToPrevious();
-  
+
   /// Sets the playback queue
   Future<Result<void>> setQueue(List<Track> tracks, {int startIndex = 0});
-  
+
   /// Adds a track to the end of the queue
   Future<Result<void>> addToQueue(Track track);
-  
+
   /// Inserts a track at a specific position in the queue
   Future<Result<void>> insertInQueue(Track track, int index);
-  
+
   /// Removes a track from the queue
   Future<Result<void>> removeFromQueue(int index);
-  
+
   /// Clears the entire queue
   Future<Result<void>> clearQueue();
-  
+
   /// Shuffles the current queue
   Future<Result<void>> shuffleQueue();
-  
+
   /// Sets the repeat mode
   Future<Result<void>> setRepeatMode(RepeatMode mode);
-  
+
   /// Sets the shuffle mode
   Future<Result<void>> setShuffleMode(bool enabled);
-  
+
   /// Sets the playback volume (0.0 to 1.0)
   Future<Result<void>> setVolume(double volume);
-  
+
   /// Observes the current playback state
   Stream<PlaybackState> observePlaybackState();
-  
+
   /// Observes the current playback position
   Stream<Duration> observePosition();
-  
+
   /// Observes the current queue
   Stream<List<Track>> observeQueue();
-  
+
   /// Gets the current playback state
   Future<Result<PlaybackState>> getCurrentState();
-  
+
   /// Gets the current queue
   Future<Result<List<Track>>> getCurrentQueue();
-  
+
   /// Gets the current track
   Future<Result<Track?>> getCurrentTrack();
 }
@@ -98,19 +98,19 @@ class PlaybackState {
 
   /// Returns true if there is a current track
   bool get hasCurrentTrack => currentTrack != null;
-  
+
   /// Returns true if playback is paused
   bool get isPaused => !isPlaying && hasCurrentTrack;
-  
+
   /// Returns true if playback is stopped
   bool get isStopped => !isPlaying && !hasCurrentTrack;
-  
+
   /// Returns true if there's a next track in the queue
   bool get hasNext => currentIndex < queue.length - 1;
-  
+
   /// Returns true if there's a previous track in the queue
   bool get hasPrevious => currentIndex > 0;
-  
+
   /// Returns the progress as a percentage (0.0 to 1.0)
   double get progress {
     if (duration.inMilliseconds == 0) return 0.0;

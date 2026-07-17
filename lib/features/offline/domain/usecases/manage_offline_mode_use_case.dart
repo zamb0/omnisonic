@@ -9,10 +9,7 @@ import '../services/offline_content_filter.dart';
 
 /// Parameters for offline mode management
 class OfflineModeParams {
-  const OfflineModeParams({
-    required this.action,
-    this.forceOffline,
-  });
+  const OfflineModeParams({required this.action, this.forceOffline});
 
   final OfflineModeAction action;
   final bool? forceOffline;
@@ -51,11 +48,11 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     required PlaylistRepository playlistRepository,
     required OfflineRepository offlineRepository,
     required OfflineContentFilter contentFilter,
-  })  : _offlineModeService = offlineModeService,
-        _musicRepository = musicRepository,
-        _playlistRepository = playlistRepository,
-        _offlineRepository = offlineRepository,
-        _contentFilter = contentFilter;
+  }) : _offlineModeService = offlineModeService,
+       _musicRepository = musicRepository,
+       _playlistRepository = playlistRepository,
+       _offlineRepository = offlineRepository,
+       _contentFilter = contentFilter;
 
   final OfflineModeService _offlineModeService;
   final MusicRepository _musicRepository;
@@ -68,13 +65,13 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     switch (params.action) {
       case OfflineModeAction.getOfflineCollection:
         return await _getOfflineCollection();
-        
+
       case OfflineModeAction.checkConnectivity:
         return await _checkConnectivity();
-        
+
       case OfflineModeAction.setOfflineMode:
         return await _setOfflineMode(params.forceOffline ?? false);
-        
+
       case OfflineModeAction.getOfflineStats:
         return await _getOfflineStats();
     }
@@ -85,16 +82,20 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     try {
       // Get all content from music repository
       final tracksResult = await _musicRepository.getAllTracks();
-      if (tracksResult.isFailure) return ResultHelper.failure(tracksResult.failureOrNull!);
+      if (tracksResult.isFailure)
+        return ResultHelper.failure(tracksResult.failureOrNull!);
 
       final albumsResult = await _musicRepository.getAllAlbums();
-      if (albumsResult.isFailure) return ResultHelper.failure(albumsResult.failureOrNull!);
+      if (albumsResult.isFailure)
+        return ResultHelper.failure(albumsResult.failureOrNull!);
 
       final artistsResult = await _musicRepository.getAllArtists();
-      if (artistsResult.isFailure) return ResultHelper.failure(artistsResult.failureOrNull!);
+      if (artistsResult.isFailure)
+        return ResultHelper.failure(artistsResult.failureOrNull!);
 
       final playlistsResult = await _playlistRepository.getAllPlaylists();
-      if (playlistsResult.isFailure) return ResultHelper.failure(UnknownFailure('Failed to get playlists'));
+      if (playlistsResult.isFailure)
+        return ResultHelper.failure(UnknownFailure('Failed to get playlists'));
 
       final allTracks = tracksResult.valueOrNull!;
       final allAlbums = albumsResult.valueOrNull!;
@@ -102,35 +103,36 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
       final allPlaylists = playlistsResult.valueOrNull!;
 
       // Filter to only cached content
-      final cachedTracksResult = await _contentFilter.filterCachedTracks(allTracks);
-      if (cachedTracksResult.isFailure) return ResultHelper.failure(cachedTracksResult.failureOrNull!);
-
-      final cachedAlbumsResult = await _contentFilter.filterAlbumsWithCachedTracks(
-        allAlbums,
+      final cachedTracksResult = await _contentFilter.filterCachedTracks(
         allTracks,
       );
-      if (cachedAlbumsResult.isFailure) return ResultHelper.failure(cachedAlbumsResult.failureOrNull!);
+      if (cachedTracksResult.isFailure)
+        return ResultHelper.failure(cachedTracksResult.failureOrNull!);
 
-      final cachedArtistsResult = await _contentFilter.filterArtistsWithCachedTracks(
-        allArtists,
-        allTracks,
-      );
-      if (cachedArtistsResult.isFailure) return ResultHelper.failure(cachedArtistsResult.failureOrNull!);
+      final cachedAlbumsResult = await _contentFilter
+          .filterAlbumsWithCachedTracks(allAlbums, allTracks);
+      if (cachedAlbumsResult.isFailure)
+        return ResultHelper.failure(cachedAlbumsResult.failureOrNull!);
+
+      final cachedArtistsResult = await _contentFilter
+          .filterArtistsWithCachedTracks(allArtists, allTracks);
+      if (cachedArtistsResult.isFailure)
+        return ResultHelper.failure(cachedArtistsResult.failureOrNull!);
 
       // For playlists, we need to get playlist tracks first
       final playlistTracksMap = <String, List<Track>>{};
       for (final playlist in allPlaylists) {
-        final playlistTracksResult = await _playlistRepository.getPlaylistTracks(playlist.id);
+        final playlistTracksResult = await _playlistRepository
+            .getPlaylistTracks(playlist.id);
         if (playlistTracksResult.isSuccess) {
           playlistTracksMap[playlist.id] = playlistTracksResult.valueOrNull!;
         }
       }
 
-      final cachedPlaylistsResult = await _contentFilter.filterPlaylistsWithCachedTracks(
-        allPlaylists,
-        playlistTracksMap,
-      );
-      if (cachedPlaylistsResult.isFailure) return ResultHelper.failure(cachedPlaylistsResult.failureOrNull!);
+      final cachedPlaylistsResult = await _contentFilter
+          .filterPlaylistsWithCachedTracks(allPlaylists, playlistTracksMap);
+      if (cachedPlaylistsResult.isFailure)
+        return ResultHelper.failure(cachedPlaylistsResult.failureOrNull!);
 
       // Get cache statistics
       final statsResult = await _contentFilter.getCacheStatsForCollection(
@@ -138,7 +140,8 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
         allAlbums,
         allArtists,
       );
-      if (statsResult.isFailure) return ResultHelper.failure(statsResult.failureOrNull!);
+      if (statsResult.isFailure)
+        return ResultHelper.failure(statsResult.failureOrNull!);
 
       final result = OfflineCollectionResult(
         tracks: cachedTracksResult.valueOrNull!,
@@ -150,7 +153,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
 
       return ResultHelper.success(result);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get offline collection: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get offline collection: $e'),
+      );
     }
   }
 
@@ -158,10 +163,13 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
   Future<Result<Map<String, dynamic>>> _checkConnectivity() async {
     try {
       final connectivityResult = await _offlineModeService.checkConnectivity();
-      if (connectivityResult.isFailure) return ResultHelper.failure(connectivityResult.failureOrNull!);
+      if (connectivityResult.isFailure)
+        return ResultHelper.failure(connectivityResult.failureOrNull!);
 
-      final currentConnectivityResult = await _offlineModeService.getCurrentConnectivity();
-      if (currentConnectivityResult.isFailure) return ResultHelper.failure(currentConnectivityResult.failureOrNull!);
+      final currentConnectivityResult = await _offlineModeService
+          .getCurrentConnectivity();
+      if (currentConnectivityResult.isFailure)
+        return ResultHelper.failure(currentConnectivityResult.failureOrNull!);
 
       final result = {
         'isOffline': connectivityResult.valueOrNull!,
@@ -174,7 +182,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
 
       return ResultHelper.success(result);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to check connectivity: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to check connectivity: $e'),
+      );
     }
   }
 
@@ -184,7 +194,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
       _offlineModeService.setOfflineMode(forceOffline);
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to set offline mode: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to set offline mode: $e'),
+      );
     }
   }
 
@@ -193,11 +205,13 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     try {
       // Get cache stats from offline repository
       final cacheStatsResult = await _offlineRepository.getCacheStats();
-      if (cacheStatsResult.isFailure) return ResultHelper.failure(cacheStatsResult.failureOrNull!);
+      if (cacheStatsResult.isFailure)
+        return ResultHelper.failure(cacheStatsResult.failureOrNull!);
 
       // Get collection stats
       final collectionResult = await _getOfflineCollection();
-      if (collectionResult.isFailure) return ResultHelper.failure(collectionResult.failureOrNull!);
+      if (collectionResult.isFailure)
+        return ResultHelper.failure(collectionResult.failureOrNull!);
 
       final cacheStats = cacheStatsResult.valueOrNull!;
       final collection = collectionResult.valueOrNull!;
@@ -236,7 +250,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
 
       return ResultHelper.success(result);
     } catch (e) {
-      return ResultHelper.failure(UnknownFailure('Failed to get offline stats: $e'));
+      return ResultHelper.failure(
+        UnknownFailure('Failed to get offline stats: $e'),
+      );
     }
   }
 }

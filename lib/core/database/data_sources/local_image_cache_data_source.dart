@@ -51,7 +51,7 @@ class LocalImageCacheDataSource {
 
   static const String _imageCacheDir = 'omnisonic_image_cache';
   static const String _metadataFileName = 'cache_metadata.json';
-  
+
   // In-memory cache for metadata to avoid frequent file I/O
   Map<String, ImageCacheEntry>? _metadataCache;
 
@@ -59,11 +59,11 @@ class LocalImageCacheDataSource {
   Future<Directory> _getImageCacheDirectory() async {
     final appDir = await getApplicationDocumentsDirectory();
     final cacheDir = Directory(path.join(appDir.path, _imageCacheDir));
-    
+
     if (!await cacheDir.exists()) {
       await cacheDir.create(recursive: true);
     }
-    
+
     return cacheDir;
   }
 
@@ -81,7 +81,7 @@ class LocalImageCacheDataSource {
 
     try {
       final metadataFile = await _getMetadataFile();
-      
+
       if (!await metadataFile.exists()) {
         _metadataCache = {};
         return _metadataCache!;
@@ -89,7 +89,7 @@ class LocalImageCacheDataSource {
 
       final jsonString = await metadataFile.readAsString();
       final jsonData = json.decode(jsonString) as Map<String, dynamic>;
-      
+
       _metadataCache = {};
       for (final entry in jsonData.entries) {
         final data = entry.value as Map<String, dynamic>;
@@ -102,7 +102,7 @@ class LocalImageCacheDataSource {
           mimeType: data['mimeType'] as String,
         );
       }
-      
+
       return _metadataCache!;
     } catch (e) {
       _metadataCache = {};
@@ -117,7 +117,7 @@ class LocalImageCacheDataSource {
     try {
       final metadataFile = await _getMetadataFile();
       final jsonData = <String, dynamic>{};
-      
+
       for (final entry in _metadataCache!.entries) {
         jsonData[entry.key] = {
           'url': entry.value.url,
@@ -128,7 +128,7 @@ class LocalImageCacheDataSource {
           'mimeType': entry.value.mimeType,
         };
       }
-      
+
       await metadataFile.writeAsString(json.encode(jsonData));
     } catch (e) {
       // Ignore metadata save errors to avoid blocking image operations
@@ -173,14 +173,14 @@ class LocalImageCacheDataSource {
     try {
       final cacheKey = _generateCacheKey(url);
       final metadata = await _loadMetadata();
-      
+
       if (!metadata.containsKey(cacheKey)) {
         return ResultHelper.success(false);
       }
-      
+
       final entry = metadata[cacheKey]!;
       final file = File(entry.filePath);
-      
+
       if (await file.exists()) {
         return ResultHelper.success(true);
       } else {
@@ -190,7 +190,9 @@ class LocalImageCacheDataSource {
         return ResultHelper.success(false);
       }
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to check if image is cached: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to check if image is cached: $e'),
+      );
     }
   }
 
@@ -199,20 +201,20 @@ class LocalImageCacheDataSource {
     try {
       final cacheKey = _generateCacheKey(url);
       final metadata = await _loadMetadata();
-      
+
       if (!metadata.containsKey(cacheKey)) {
         return ResultHelper.success(null);
       }
-      
+
       final entry = metadata[cacheKey]!;
       final file = File(entry.filePath);
-      
+
       if (await file.exists()) {
         // Update last accessed time
         final updatedEntry = entry.copyWith(lastAccessed: DateTime.now());
         metadata[cacheKey] = updatedEntry;
         await _saveMetadata();
-        
+
         return ResultHelper.success(entry.filePath);
       } else {
         // File doesn't exist, remove from metadata
@@ -221,24 +223,30 @@ class LocalImageCacheDataSource {
         return ResultHelper.success(null);
       }
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to get cached image path: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to get cached image path: $e'),
+      );
     }
   }
 
   /// Cache image data
-  Future<Result<String>> cacheImage(String url, Uint8List imageData, String mimeType) async {
+  Future<Result<String>> cacheImage(
+    String url,
+    Uint8List imageData,
+    String mimeType,
+  ) async {
     try {
       final cacheKey = _generateCacheKey(url);
       final filePath = await _generateFilePath(cacheKey, mimeType);
       final file = File(filePath);
-      
+
       // Write image data to file
       await file.writeAsBytes(imageData);
-      
+
       // Update metadata
       final metadata = await _loadMetadata();
       final now = DateTime.now();
-      
+
       metadata[cacheKey] = ImageCacheEntry(
         url: url,
         filePath: filePath,
@@ -247,7 +255,7 @@ class LocalImageCacheDataSource {
         lastAccessed: now,
         mimeType: mimeType,
       );
-      
+
       await _saveMetadata();
       return ResultHelper.success(filePath);
     } catch (e) {
@@ -260,24 +268,26 @@ class LocalImageCacheDataSource {
     try {
       final cacheKey = _generateCacheKey(url);
       final metadata = await _loadMetadata();
-      
+
       if (metadata.containsKey(cacheKey)) {
         final entry = metadata[cacheKey]!;
         final file = File(entry.filePath);
-        
+
         // Delete physical file
         if (await file.exists()) {
           await file.delete();
         }
-        
+
         // Remove from metadata
         metadata.remove(cacheKey);
         await _saveMetadata();
       }
-      
+
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to remove cached image: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to remove cached image: $e'),
+      );
     }
   }
 
@@ -287,7 +297,9 @@ class LocalImageCacheDataSource {
       final metadata = await _loadMetadata();
       return ResultHelper.success(metadata.values.toList());
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to get all cached images: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to get all cached images: $e'),
+      );
     }
   }
 
@@ -296,25 +308,34 @@ class LocalImageCacheDataSource {
     try {
       final metadata = await _loadMetadata();
       final entries = metadata.values.toList();
-      
-      final totalSize = entries.fold<int>(0, (sum, entry) => sum + entry.fileSize);
+
+      final totalSize = entries.fold<int>(
+        0,
+        (sum, entry) => sum + entry.fileSize,
+      );
       final totalCount = entries.length;
-      
+
       final stats = {
         'totalSize': totalSize,
         'totalCount': totalCount,
         'averageFileSize': totalCount > 0 ? totalSize / totalCount : 0,
-        'oldestEntry': entries.isNotEmpty 
-            ? entries.map((e) => e.cachedAt).reduce((a, b) => a.isBefore(b) ? a : b)
+        'oldestEntry': entries.isNotEmpty
+            ? entries
+                  .map((e) => e.cachedAt)
+                  .reduce((a, b) => a.isBefore(b) ? a : b)
             : null,
-        'newestEntry': entries.isNotEmpty 
-            ? entries.map((e) => e.cachedAt).reduce((a, b) => a.isAfter(b) ? a : b)
+        'newestEntry': entries.isNotEmpty
+            ? entries
+                  .map((e) => e.cachedAt)
+                  .reduce((a, b) => a.isAfter(b) ? a : b)
             : null,
       };
-      
+
       return ResultHelper.success(stats);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to get cache stats: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to get cache stats: $e'),
+      );
     }
   }
 
@@ -323,29 +344,34 @@ class LocalImageCacheDataSource {
     try {
       final metadata = await _loadMetadata();
       final entries = metadata.values.toList();
-      
-      final currentSize = entries.fold<int>(0, (sum, entry) => sum + entry.fileSize);
-      
+
+      final currentSize = entries.fold<int>(
+        0,
+        (sum, entry) => sum + entry.fileSize,
+      );
+
       if (currentSize <= maxSizeBytes) {
         return ResultHelper.success(null); // No cleanup needed
       }
-      
+
       // Sort by last accessed time (oldest first)
       entries.sort((a, b) => a.lastAccessed.compareTo(b.lastAccessed));
-      
+
       int freedSize = 0;
       final sizeToFree = currentSize - maxSizeBytes;
-      
+
       for (final entry in entries) {
         if (freedSize >= sizeToFree) break;
-        
+
         await removeCachedImage(entry.url);
         freedSize += entry.fileSize;
       }
-      
+
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to cleanup cache by size: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to cleanup cache by size: $e'),
+      );
     }
   }
 
@@ -354,18 +380,20 @@ class LocalImageCacheDataSource {
     try {
       final metadata = await _loadMetadata();
       final cutoffDate = DateTime.now().subtract(maxAge);
-      
+
       final entriesToRemove = metadata.values
           .where((entry) => entry.cachedAt.isBefore(cutoffDate))
           .toList();
-      
+
       for (final entry in entriesToRemove) {
         await removeCachedImage(entry.url);
       }
-      
+
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to cleanup cache by age: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to cleanup cache by age: $e'),
+      );
     }
   }
 
@@ -373,7 +401,7 @@ class LocalImageCacheDataSource {
   Future<Result<void>> clearAllCache() async {
     try {
       final cacheDir = await _getImageCacheDirectory();
-      
+
       // Delete all files in cache directory
       if (await cacheDir.exists()) {
         await for (final entity in cacheDir.list()) {
@@ -382,14 +410,16 @@ class LocalImageCacheDataSource {
           }
         }
       }
-      
+
       // Clear metadata
       _metadataCache = {};
       await _saveMetadata();
-      
+
       return ResultHelper.success(null);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to clear all cache: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to clear all cache: $e'),
+      );
     }
   }
 
@@ -397,7 +427,10 @@ class LocalImageCacheDataSource {
   Future<Result<int>> getCacheSize() async {
     try {
       final metadata = await _loadMetadata();
-      final totalSize = metadata.values.fold<int>(0, (sum, entry) => sum + entry.fileSize);
+      final totalSize = metadata.values.fold<int>(
+        0,
+        (sum, entry) => sum + entry.fileSize,
+      );
       return ResultHelper.success(totalSize);
     } catch (e) {
       return ResultHelper.failure(CacheFailure('Failed to get cache size: $e'));
@@ -410,7 +443,9 @@ class LocalImageCacheDataSource {
       final metadata = await _loadMetadata();
       return ResultHelper.success(metadata.length);
     } catch (e) {
-      return ResultHelper.failure(CacheFailure('Failed to get cache entry count: $e'));
+      return ResultHelper.failure(
+        CacheFailure('Failed to get cache entry count: $e'),
+      );
     }
   }
 }

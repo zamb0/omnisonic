@@ -6,10 +6,7 @@ import '../../../../core/entities/entities.dart';
 import '../viewmodels/lyrics_view_model.dart';
 
 class LyricsSearchSheet extends StatefulWidget {
-  const LyricsSearchSheet({
-    super.key,
-    required this.track,
-  });
+  const LyricsSearchSheet({super.key, required this.track});
 
   final Track track;
 
@@ -51,34 +48,27 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: OmnisonicSpacing.md),
-          Text(
-            'Search lyrics (LRCLIB)',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('Search lyrics (LRCLIB)', style: theme.textTheme.titleMedium),
           const SizedBox(height: OmnisonicSpacing.md),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.md,
+            ),
             child: Column(
               children: [
                 TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Title'),
                 ),
                 const SizedBox(height: OmnisonicSpacing.sm),
                 TextField(
                   controller: _artistController,
-                  decoration: const InputDecoration(
-                    labelText: 'Artist',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Artist'),
                 ),
                 const SizedBox(height: OmnisonicSpacing.sm),
                 TextField(
                   controller: _albumController,
-                  decoration: const InputDecoration(
-                    labelText: 'Album',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Album'),
                 ),
                 const SizedBox(height: OmnisonicSpacing.md),
                 Row(
@@ -98,7 +88,9 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.search),
                         label: const Text('Search'),
@@ -128,9 +120,7 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
 }
 
 class _SearchResultsList extends StatelessWidget {
-  const _SearchResultsList({
-    required this.viewModel,
-  });
+  const _SearchResultsList({required this.viewModel});
 
   final LyricsViewModel viewModel;
 

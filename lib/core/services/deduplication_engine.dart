@@ -15,7 +15,7 @@ class DeduplicationEngine {
 
     for (int i = 0; i < tracks.length; i++) {
       final currentTrack = tracks[i];
-      
+
       // Skip if already processed
       if (processedTracks.contains(currentTrack.id)) continue;
 
@@ -25,12 +25,15 @@ class DeduplicationEngine {
       // Find similar tracks
       for (int j = i + 1; j < tracks.length; j++) {
         final candidateTrack = tracks[j];
-        
+
         // Skip if already processed
         if (processedTracks.contains(candidateTrack.id)) continue;
 
-        final similarity = calculateSimilarityScore(currentTrack, candidateTrack);
-        
+        final similarity = calculateSimilarityScore(
+          currentTrack,
+          candidateTrack,
+        );
+
         if (similarity >= _duplicateThreshold) {
           duplicates.add(candidateTrack);
           processedTracks.add(candidateTrack.id);
@@ -102,7 +105,9 @@ class DeduplicationEngine {
     // Sort by quality (highest first), then by server availability
     duplicates.sort((a, b) {
       // First, compare by audio quality
-      final qualityComparison = b.quality.qualityScore.compareTo(a.quality.qualityScore);
+      final qualityComparison = b.quality.qualityScore.compareTo(
+        a.quality.qualityScore,
+      );
       if (qualityComparison != 0) return qualityComparison;
 
       // If quality is the same, prefer cached tracks
@@ -141,13 +146,13 @@ class DeduplicationEngine {
   /// Implements Jaro-Winkler similarity algorithm
   double _jaroWinklerSimilarity(String str1, String str2) {
     final jaroSimilarity = _jaroSimilarity(str1, str2);
-    
+
     if (jaroSimilarity < 0.7) return jaroSimilarity;
 
     // Calculate common prefix length (up to 4 characters)
     int prefixLength = 0;
     final maxPrefix = min(4, min(str1.length, str2.length));
-    
+
     for (int i = 0; i < maxPrefix; i++) {
       if (str1[i] == str2[i]) {
         prefixLength++;
@@ -181,7 +186,7 @@ class DeduplicationEngine {
 
       for (int j = start; j < end; j++) {
         if (str2Matches[j] || str1[i] != str2[j]) continue;
-        
+
         str1Matches[i] = true;
         str2Matches[j] = true;
         matches++;
@@ -195,18 +200,20 @@ class DeduplicationEngine {
     int k = 0;
     for (int i = 0; i < str1.length; i++) {
       if (!str1Matches[i]) continue;
-      
+
       while (!str2Matches[k]) {
         k++;
       }
-      
+
       if (str1[i] != str2[k]) transpositions++;
       k++;
     }
 
-    final jaro = (matches / str1.length + 
-                  matches / str2.length + 
-                  (matches - transpositions / 2) / matches) / 3;
+    final jaro =
+        (matches / str1.length +
+            matches / str2.length +
+            (matches - transpositions / 2) / matches) /
+        3;
 
     return jaro;
   }
@@ -214,10 +221,10 @@ class DeduplicationEngine {
   /// Calculates duration similarity between two tracks
   double _calculateDurationSimilarity(Duration duration1, Duration duration2) {
     final diffSeconds = (duration1.inSeconds - duration2.inSeconds).abs();
-    
+
     if (diffSeconds == 0) return 1.0;
     if (diffSeconds > _maxDurationDifferenceSeconds) return 0.0;
-    
+
     // Linear decay from 1.0 to 0.0 over the max difference
     return 1.0 - (diffSeconds / _maxDurationDifferenceSeconds);
   }
@@ -239,7 +246,7 @@ class DeduplicationEngine {
     final normalizedTitle = _normalizeString(track.title);
     final normalizedArtist = _normalizeString(track.artist);
     final durationMinutes = (track.duration.inSeconds / 60).round();
-    
+
     return '${normalizedTitle}_${normalizedArtist}_${durationMinutes}min';
   }
 }

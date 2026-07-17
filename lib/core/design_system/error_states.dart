@@ -29,21 +29,16 @@ class OmnisonicErrorStates {
   }
 
   /// Creates a network error widget
-  static Widget networkError({
-    String? customMessage,
-    VoidCallback? onRetry,
-  }) {
+  static Widget networkError({String? customMessage, VoidCallback? onRetry}) {
     return errorWidget(
       title: 'Connection Problem',
-      message: customMessage ?? 'Please check your internet connection and try again.',
+      message:
+          customMessage ??
+          'Please check your internet connection and try again.',
       icon: Icons.wifi_off,
-      actions: onRetry != null ? [
-        ErrorAction(
-          label: 'Retry',
-          onPressed: onRetry,
-          isPrimary: true,
-        ),
-      ] : [],
+      actions: onRetry != null
+          ? [ErrorAction(label: 'Retry', onPressed: onRetry, isPrimary: true)]
+          : [],
     );
   }
 
@@ -55,15 +50,13 @@ class OmnisonicErrorStates {
   }) {
     return errorWidget(
       title: 'Server Error',
-      message: customMessage ?? 'Something went wrong on our end. Please try again later.',
+      message:
+          customMessage ??
+          'Something went wrong on our end. Please try again later.',
       icon: Icons.cloud_off,
       actions: [
         if (onRetry != null)
-          ErrorAction(
-            label: 'Try Again',
-            onPressed: onRetry,
-            isPrimary: true,
-          ),
+          ErrorAction(label: 'Try Again', onPressed: onRetry, isPrimary: true),
         if (onContactSupport != null)
           ErrorAction(
             label: 'Contact Support',
@@ -83,21 +76,15 @@ class OmnisonicErrorStates {
   }) {
     return errorWidget(
       title: title ?? 'Not Found',
-      message: message ?? 'The content you\'re looking for doesn\'t exist or has been moved.',
+      message:
+          message ??
+          'The content you\'re looking for doesn\'t exist or has been moved.',
       icon: Icons.search_off,
       actions: [
         if (onGoBack != null)
-          ErrorAction(
-            label: 'Go Back',
-            onPressed: onGoBack,
-            isPrimary: false,
-          ),
+          ErrorAction(label: 'Go Back', onPressed: onGoBack, isPrimary: false),
         if (onGoHome != null)
-          ErrorAction(
-            label: 'Go Home',
-            onPressed: onGoHome,
-            isPrimary: true,
-          ),
+          ErrorAction(label: 'Go Home', onPressed: onGoHome, isPrimary: true),
       ],
     );
   }
@@ -110,7 +97,9 @@ class OmnisonicErrorStates {
   }) {
     return errorWidget(
       title: 'Permission Required',
-      message: customMessage ?? 'This feature requires additional permissions to work properly.',
+      message:
+          customMessage ??
+          'This feature requires additional permissions to work properly.',
       icon: Icons.lock_outline,
       actions: [
         if (onRequestPermission != null)
@@ -137,21 +126,15 @@ class OmnisonicErrorStates {
   }) {
     return errorWidget(
       title: 'Playback Error',
-      message: customMessage ?? 'Unable to play this track. It may be unavailable or corrupted.',
+      message:
+          customMessage ??
+          'Unable to play this track. It may be unavailable or corrupted.',
       icon: Icons.music_off,
       actions: [
         if (onRetry != null)
-          ErrorAction(
-            label: 'Retry',
-            onPressed: onRetry,
-            isPrimary: true,
-          ),
+          ErrorAction(label: 'Retry', onPressed: onRetry, isPrimary: true),
         if (onSkip != null)
-          ErrorAction(
-            label: 'Skip Track',
-            onPressed: onSkip,
-            isPrimary: false,
-          ),
+          ErrorAction(label: 'Skip Track', onPressed: onSkip, isPrimary: false),
       ],
     );
   }
@@ -178,7 +161,8 @@ class OmnisonicErrorStates {
   }) {
     return emptyState(
       title: 'Your Library is Empty',
-      message: 'Start building your music collection by browsing or importing your favorite tracks.',
+      message:
+          'Start building your music collection by browsing or importing your favorite tracks.',
       icon: Icons.library_music_outlined,
       actions: [
         if (onBrowseMusic != null)
@@ -205,7 +189,8 @@ class OmnisonicErrorStates {
   }) {
     return emptyState(
       title: 'No Results Found',
-      message: 'We couldn\'t find anything matching "$query". Try a different search term.',
+      message:
+          'We couldn\'t find anything matching "$query". Try a different search term.',
       icon: Icons.search_off,
       actions: [
         if (onClearSearch != null)
@@ -247,29 +232,22 @@ class OmnisonicErrorStates {
     return SnackBar(
       content: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.white,
-            size: 20,
-          ),
+          Icon(Icons.error_outline, color: Colors.white, size: 20),
           SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white),
-            ),
+            child: Text(message, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
       backgroundColor: OmnisonicColors.error,
       duration: duration,
       action: onAction != null && actionLabel != null
-        ? SnackBarAction(
-            label: actionLabel,
-            textColor: Colors.white,
-            onPressed: onAction,
-          )
-        : null,
+          ? SnackBarAction(
+              label: actionLabel,
+              textColor: Colors.white,
+              onPressed: onAction,
+            )
+          : null,
     );
   }
 }
@@ -311,25 +289,18 @@ class _ErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       padding: OmnisonicInsets.allXl,
       decoration: BoxDecoration(
         color: backgroundColor ?? colorScheme.errorContainer.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.error.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.error.withOpacity(0.2), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 64,
-            color: iconColor ?? colorScheme.error,
-          ),
+          Icon(icon, size: 64, color: iconColor ?? colorScheme.error),
           SizedBox(height: OmnisonicSpacing.lg),
           Text(
             title,
@@ -353,10 +324,9 @@ class _ErrorWidget extends StatelessWidget {
               spacing: OmnisonicSpacing.md,
               runSpacing: OmnisonicSpacing.sm,
               alignment: WrapAlignment.center,
-              children: actions.map((action) => _buildActionButton(
-                context,
-                action,
-              )).toList(),
+              children: actions
+                  .map((action) => _buildActionButton(context, action))
+                  .toList(),
             ),
           ],
         ],
@@ -366,7 +336,7 @@ class _ErrorWidget extends StatelessWidget {
 
   Widget _buildActionButton(BuildContext context, ErrorAction action) {
     final theme = Theme.of(context);
-    
+
     if (action.isPrimary) {
       return OmnisonicGestureFeedback.pressableScale(
         onPressed: action.onPressed,
@@ -419,17 +389,13 @@ class _EmptyStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       padding: OmnisonicInsets.allXl,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 80,
-            color: colorScheme.onSurface.withOpacity(0.4),
-          ),
+          Icon(icon, size: 80, color: colorScheme.onSurface.withOpacity(0.4)),
           SizedBox(height: OmnisonicSpacing.xl),
           Text(
             title,
@@ -453,10 +419,9 @@ class _EmptyStateWidget extends StatelessWidget {
               spacing: OmnisonicSpacing.md,
               runSpacing: OmnisonicSpacing.sm,
               alignment: WrapAlignment.center,
-              children: actions.map((action) => _buildActionButton(
-                context,
-                action,
-              )).toList(),
+              children: actions
+                  .map((action) => _buildActionButton(context, action))
+                  .toList(),
             ),
           ],
         ],
@@ -515,24 +480,18 @@ class _InlineErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final errorColor = color ?? theme.colorScheme.error;
-    
+
     return Padding(
       padding: EdgeInsets.only(top: OmnisonicSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: errorColor,
-          ),
+          Icon(icon, size: 16, color: errorColor),
           SizedBox(width: OmnisonicSpacing.xs),
           Expanded(
             child: Text(
               message,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: errorColor,
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(color: errorColor),
             ),
           ),
         ],

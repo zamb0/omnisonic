@@ -34,7 +34,7 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
   factory PlatformThemeExtension.forCurrentPlatform() {
     final platform = PlatformOptimizations();
     final animations = PlatformAnimations();
-    
+
     return PlatformThemeExtension(
       touchTargetSize: platform.touchTargetSize,
       borderRadius: platform.defaultBorderRadius,
@@ -67,7 +67,8 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
       borderRadius: borderRadius ?? this.borderRadius,
       elevation: elevation ?? this.elevation,
       scrollPhysics: scrollPhysics ?? this.scrollPhysics,
-      pageTransitionsBuilder: pageTransitionsBuilder ?? this.pageTransitionsBuilder,
+      pageTransitionsBuilder:
+          pageTransitionsBuilder ?? this.pageTransitionsBuilder,
       animationDurations: animationDurations ?? this.animationDurations,
       animationCurves: animationCurves ?? this.animationCurves,
       supportsHover: supportsHover ?? this.supportsHover,
@@ -81,14 +82,21 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
     if (other is! PlatformThemeExtension) {
       return this;
     }
-    
+
     return PlatformThemeExtension(
-      touchTargetSize: lerpDouble(touchTargetSize, other.touchTargetSize, t) ?? touchTargetSize,
-      borderRadius: lerpDouble(borderRadius, other.borderRadius, t) ?? borderRadius,
+      touchTargetSize:
+          lerpDouble(touchTargetSize, other.touchTargetSize, t) ??
+          touchTargetSize,
+      borderRadius:
+          lerpDouble(borderRadius, other.borderRadius, t) ?? borderRadius,
       elevation: lerpDouble(elevation, other.elevation, t) ?? elevation,
       scrollPhysics: t < 0.5 ? scrollPhysics : other.scrollPhysics,
-      pageTransitionsBuilder: t < 0.5 ? pageTransitionsBuilder : other.pageTransitionsBuilder,
-      animationDurations: t < 0.5 ? animationDurations : other.animationDurations,
+      pageTransitionsBuilder: t < 0.5
+          ? pageTransitionsBuilder
+          : other.pageTransitionsBuilder,
+      animationDurations: t < 0.5
+          ? animationDurations
+          : other.animationDurations,
       animationCurves: t < 0.5 ? animationCurves : other.animationCurves,
       supportsHover: t < 0.5 ? supportsHover : other.supportsHover,
       supportsHaptics: t < 0.5 ? supportsHaptics : other.supportsHaptics,
@@ -99,7 +107,7 @@ class PlatformThemeExtension extends ThemeExtension<PlatformThemeExtension> {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is PlatformThemeExtension &&
         other.touchTargetSize == touchTargetSize &&
         other.borderRadius == borderRadius &&
@@ -142,9 +150,12 @@ extension PlatformThemeContext on BuildContext {
 class PlatformButtonStyles {
   static ButtonStyle elevatedButtonStyle(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     return ElevatedButton.styleFrom(
-      minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
+      minimumSize: Size(
+        platformTheme.touchTargetSize,
+        platformTheme.touchTargetSize,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
@@ -154,9 +165,12 @@ class PlatformButtonStyles {
 
   static ButtonStyle textButtonStyle(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     return TextButton.styleFrom(
-      minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
+      minimumSize: Size(
+        platformTheme.touchTargetSize,
+        platformTheme.touchTargetSize,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
@@ -165,9 +179,12 @@ class PlatformButtonStyles {
 
   static ButtonStyle outlinedButtonStyle(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     return OutlinedButton.styleFrom(
-      minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
+      minimumSize: Size(
+        platformTheme.touchTargetSize,
+        platformTheme.touchTargetSize,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(platformTheme.borderRadius),
       ),
@@ -176,9 +193,12 @@ class PlatformButtonStyles {
 
   static ButtonStyle iconButtonStyle(BuildContext context) {
     final platformTheme = context.platformTheme;
-    
+
     return IconButton.styleFrom(
-      minimumSize: Size(platformTheme.touchTargetSize, platformTheme.touchTargetSize),
+      minimumSize: Size(
+        platformTheme.touchTargetSize,
+        platformTheme.touchTargetSize,
+      ),
     );
   }
 }
@@ -193,7 +213,7 @@ class PlatformCardStyles {
     double? elevation,
   }) {
     final platformTheme = context.platformTheme;
-    
+
     return Card(
       elevation: elevation ?? platformTheme.elevation,
       shape: RoundedRectangleBorder(
@@ -207,10 +227,7 @@ class PlatformCardStyles {
               mouseCursor: platformTheme.interactiveCursor,
               child: child,
             )
-          : GestureDetector(
-              onTap: onTap,
-              child: child,
-            ),
+          : GestureDetector(onTap: onTap, child: child),
     );
   }
 }
@@ -225,7 +242,7 @@ class PlatformInputDecorations {
     Widget? suffixIcon,
   }) {
     final platformTheme = context.platformTheme;
-    
+
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
@@ -250,7 +267,7 @@ ThemeData addPlatformExtensions(ThemeData theme) {
   final extensions = <ThemeExtension<dynamic>>[
     PlatformThemeExtension.forCurrentPlatform(),
   ];
-  
+
   return theme.copyWith(
     extensions: extensions,
     pageTransitionsTheme: PageTransitionsTheme(

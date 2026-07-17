@@ -24,7 +24,7 @@ class OmnisonicAssetManager {
       ),
     );
   }
-  
+
   /// Get placeholder image for artist
   static Widget artistPlaceholder({
     double? width,
@@ -45,7 +45,7 @@ class OmnisonicAssetManager {
       ),
     );
   }
-  
+
   /// Get placeholder image for playlist
   static Widget playlistPlaceholder({
     double? width,
@@ -66,7 +66,7 @@ class OmnisonicAssetManager {
       ),
     );
   }
-  
+
   /// Get cached network image with placeholder
   static Widget networkImage({
     required String url,
@@ -94,7 +94,7 @@ class OmnisonicAssetManager {
       ),
     );
   }
-  
+
   /// Build loading placeholder with shimmer effect
   static Widget _buildLoadingPlaceholder(double? width, double? height) {
     return Container(
@@ -104,14 +104,10 @@ class OmnisonicAssetManager {
         color: OmnisonicColors.neutralGray200,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-        ),
-      ),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
     );
   }
-  
+
   /// Check if asset exists
   static Future<bool> assetExists(String assetPath) async {
     try {
@@ -124,7 +120,7 @@ class OmnisonicAssetManager {
       return false;
     }
   }
-  
+
   /// Get asset with fallback
   static Widget assetImage({
     required String assetPath,
@@ -147,7 +143,8 @@ class OmnisonicAssetManager {
             height: height,
             fit: fit,
             errorBuilder: (context, error, stackTrace) {
-              return fallbackWidget ?? albumPlaceholder(width: width, height: height);
+              return fallbackWidget ??
+                  albumPlaceholder(width: width, height: height);
             },
           );
         }
@@ -178,13 +175,10 @@ extension OmnisonicAssetExtension on BuildContext {
         ),
       );
     }
-    
-    return OmnisonicAssetManager.albumPlaceholder(
-      width: width,
-      height: height,
-    );
+
+    return OmnisonicAssetManager.albumPlaceholder(width: width, height: height);
   }
-  
+
   /// Get artist image with placeholder fallback
   Widget artistImage({
     String? imageUrl,
@@ -205,13 +199,13 @@ extension OmnisonicAssetExtension on BuildContext {
         borderRadius: BorderRadius.circular((width ?? 120) / 2),
       );
     }
-    
+
     return OmnisonicAssetManager.artistPlaceholder(
       width: width,
       height: height,
     );
   }
-  
+
   /// Get playlist image with placeholder fallback
   Widget playlistImage({
     String? imageUrl,
@@ -231,7 +225,7 @@ extension OmnisonicAssetExtension on BuildContext {
         ),
       );
     }
-    
+
     return OmnisonicAssetManager.playlistPlaceholder(
       width: width,
       height: height,

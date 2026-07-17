@@ -10,9 +10,7 @@ class ResponsiveLayoutExample extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ResponsiveScaffold(
-      appBar: AppBar(
-        title: const Text('Responsive Layout Example'),
-      ),
+      appBar: AppBar(title: const Text('Responsive Layout Example')),
       body: ResponsiveContainer(
         child: Column(
           children: [
@@ -28,15 +26,13 @@ class ResponsiveLayoutExample extends StatelessWidget {
                           SnackBar(content: Text('Tapped card $index')),
                         );
                       },
-                      child: Center(
-                        child: Text('Item $index'),
-                      ),
+                      child: Center(child: Text('Item $index')),
                     ),
                   ),
                 ),
               ),
             ),
-            
+
             // Responsive value example
             Container(
               height: ResponsiveValue<double>(
@@ -52,7 +48,7 @@ class ResponsiveLayoutExample extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Orientation adaptive layout example
             OrientationAdaptiveLayout(
               portrait: _buildPortraitLayout(context),
@@ -72,9 +68,7 @@ class ResponsiveLayoutExample extends StatelessWidget {
         color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(
-        child: Text('Portrait Layout'),
-      ),
+      child: const Center(child: Text('Portrait Layout')),
     );
   }
 
@@ -86,9 +80,7 @@ class ResponsiveLayoutExample extends StatelessWidget {
         color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Center(
-        child: Text('Landscape Layout'),
-      ),
+      child: const Center(child: Text('Landscape Layout')),
     );
   }
 }
@@ -103,7 +95,9 @@ class AdaptiveLayoutExample extends StatelessWidget {
       builder: (context, screenType, isLandscape) {
         return ResponsiveScaffold(
           appBar: AppBar(
-            title: Text('${screenType.name} - ${isLandscape ? 'Landscape' : 'Portrait'}'),
+            title: Text(
+              '${screenType.name} - ${isLandscape ? 'Landscape' : 'Portrait'}',
+            ),
           ),
           body: _buildAdaptiveContent(context, screenType, isLandscape),
         );
@@ -111,7 +105,11 @@ class AdaptiveLayoutExample extends StatelessWidget {
     );
   }
 
-  Widget _buildAdaptiveContent(BuildContext context, ScreenType screenType, bool isLandscape) {
+  Widget _buildAdaptiveContent(
+    BuildContext context,
+    ScreenType screenType,
+    bool isLandscape,
+  ) {
     switch (screenType) {
       case ScreenType.mobile:
         return _buildMobileLayout(context, isLandscape);
@@ -280,7 +278,8 @@ class KeyboardHandlingExample extends StatefulWidget {
   const KeyboardHandlingExample({super.key});
 
   @override
-  State<KeyboardHandlingExample> createState() => _KeyboardHandlingExampleState();
+  State<KeyboardHandlingExample> createState() =>
+      _KeyboardHandlingExampleState();
 }
 
 class _KeyboardHandlingExampleState extends State<KeyboardHandlingExample> {
@@ -322,7 +321,7 @@ class _KeyboardHandlingExampleState extends State<KeyboardHandlingExample> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              
+
               // Available height indicator
               Container(
                 width: double.infinity,
@@ -333,9 +332,9 @@ class _KeyboardHandlingExampleState extends State<KeyboardHandlingExample> {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-              
+
               const SizedBox(height: OmnisonicSpacing.lg),
-              
+
               // Text input field
               Padding(
                 padding: const EdgeInsets.all(OmnisonicSpacing.md),
@@ -348,9 +347,9 @@ class _KeyboardHandlingExampleState extends State<KeyboardHandlingExample> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: OmnisonicSpacing.lg),
-              
+
               // Control buttons
               Wrap(
                 spacing: OmnisonicSpacing.md,
@@ -365,9 +364,9 @@ class _KeyboardHandlingExampleState extends State<KeyboardHandlingExample> {
                   ),
                 ],
               ),
-              
+
               const Spacer(),
-              
+
               // Bottom content that should be visible above keyboard
               Container(
                 width: double.infinity,

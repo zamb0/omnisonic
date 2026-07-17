@@ -36,7 +36,8 @@ class PlatformEnhancedAlbumCard extends StatefulWidget {
   });
 
   @override
-  State<PlatformEnhancedAlbumCard> createState() => _PlatformEnhancedAlbumCardState();
+  State<PlatformEnhancedAlbumCard> createState() =>
+      _PlatformEnhancedAlbumCardState();
 }
 
 class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
@@ -45,47 +46,52 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
   late Animation<Color?> _colorAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _animationController = AnimationController(
       duration: platformAnimations.durations.short,
       vsync: this,
     );
-    
+
     // Platform-specific scale animation
     final scaleEnd = _getPlatformScaleEnd();
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: scaleEnd,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
-    
+    _scaleAnimation = Tween<double>(begin: 1.0, end: scaleEnd).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: platformAnimations.curves.standard,
+      ),
+    );
+
     // Platform-specific elevation animation
     final platformTheme = context.platformTheme;
-    _elevationAnimation = Tween<double>(
-      begin: platformTheme.elevation,
-      end: platformTheme.elevation * 2,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
-    
-    _colorAnimation = ColorTween(
-      begin: null,
-      end: PlatformOptimizations().getFocusHighlightColor(context),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
+    _elevationAnimation =
+        Tween<double>(
+          begin: platformTheme.elevation,
+          end: platformTheme.elevation * 2,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: platformAnimations.curves.standard,
+          ),
+        );
+
+    _colorAnimation =
+        ColorTween(
+          begin: null,
+          end: PlatformOptimizations().getFocusHighlightColor(context),
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: platformAnimations.curves.standard,
+          ),
+        );
   }
-  
+
   double _getPlatformScaleEnd() {
     switch (PlatformOptimizations().currentPlatform) {
       case PlatformType.ios:
@@ -101,36 +107,36 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
         return 1.02;
     }
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     // Only handle hover on platforms that support it
     if (!PlatformOptimizations().supportsHover) return;
-    
+
     if (isHovering) {
       _animationController.forward();
     } else {
       _animationController.reverse();
     }
   }
-  
+
   void _handleTap() {
     // Trigger platform-appropriate haptic feedback
     PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.light);
     widget.onTap?.call();
   }
-  
+
   void _handleLongPress() {
     // Trigger platform-appropriate haptic feedback
     PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.medium);
     widget.onLongPress?.call();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final platformTheme = context.platformTheme;
@@ -141,7 +147,7 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
       trackCount: widget.album.trackCount,
       year: widget.album.year,
     );
-    
+
     return Semantics(
       label: semanticLabel,
       hint: OmnisonicSemantics.interactionHint('play album'),
@@ -169,7 +175,9 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
                 elevation: 0, // We handle elevation with custom shadow
                 color: _colorAnimation.value ?? Theme.of(context).cardColor,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(platformTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(
+                    platformTheme.borderRadius,
+                  ),
                   side: widget.isSelected
                       ? BorderSide(
                           color: Theme.of(context).colorScheme.primary,
@@ -194,8 +202,11 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
       ),
     );
   }
-  
-  Widget _buildCardContent(BuildContext context, PlatformThemeExtension platformTheme) {
+
+  Widget _buildCardContent(
+    BuildContext context,
+    PlatformThemeExtension platformTheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -216,7 +227,7 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
             ),
           ),
         ),
-        
+
         // Album info
         Padding(
           padding: const EdgeInsets.all(OmnisonicSpacing.md),
@@ -225,9 +236,9 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
             children: [
               Text(
                 widget.album.title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -236,7 +247,9 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
                 Text(
                   widget.album.artist,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -247,7 +260,9 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
                 Text(
                   widget.album.year.toString(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -257,12 +272,14 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
       ],
     );
   }
-  
+
   Widget _buildAlbumArtwork(BuildContext context) {
     if (widget.album.coverArtUrl != null) {
       return CachedNetworkImage(
         imageUrl: widget.album.coverArtUrl!.withCoverArtSize(320),
-        cacheKey: widget.album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
+        cacheKey: widget.album.coverArtUrl!
+            .withCoverArtSize(320)
+            .subsonicCacheKey,
         cacheManager: OmnisonicImageCacheManager.instance,
         fit: BoxFit.cover,
         memCacheWidth: 320,
@@ -276,7 +293,7 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
       return _buildPlaceholder(context);
     }
   }
-  
+
   Widget _buildPlaceholder(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceVariant,
@@ -287,7 +304,7 @@ class _PlatformEnhancedAlbumCardState extends State<PlatformEnhancedAlbumCard>
       ),
     );
   }
-  
+
   double _getDefaultWidth() {
     switch (widget.layout) {
       case PlatformCardLayout.grid:
@@ -318,7 +335,8 @@ class PlatformEnhancedArtistCard extends StatefulWidget {
   });
 
   @override
-  State<PlatformEnhancedArtistCard> createState() => _PlatformEnhancedArtistCardState();
+  State<PlatformEnhancedArtistCard> createState() =>
+      _PlatformEnhancedArtistCardState();
 }
 
 class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
@@ -326,36 +344,39 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     final platformAnimations = PlatformAnimations();
-    
+
     _animationController = AnimationController(
       duration: platformAnimations.durations.short,
       vsync: this,
     );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: _getPlatformScaleEnd(),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
-    
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: _getPlatformScaleEnd())
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: platformAnimations.curves.standard,
+          ),
+        );
+
     final platformTheme = context.platformTheme;
-    _elevationAnimation = Tween<double>(
-      begin: platformTheme.elevation,
-      end: platformTheme.elevation * 2,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: platformAnimations.curves.standard,
-    ));
+    _elevationAnimation =
+        Tween<double>(
+          begin: platformTheme.elevation,
+          end: platformTheme.elevation * 2,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: platformAnimations.curves.standard,
+          ),
+        );
   }
-  
+
   double _getPlatformScaleEnd() {
     switch (PlatformOptimizations().currentPlatform) {
       case PlatformType.ios:
@@ -371,33 +392,33 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
         return 1.02;
     }
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleHover(bool isHovering) {
     if (!PlatformOptimizations().supportsHover) return;
-    
+
     if (isHovering) {
       _animationController.forward();
     } else {
       _animationController.reverse();
     }
   }
-  
+
   void _handleTap() {
     PlatformOptimizations().triggerHapticFeedback(HapticFeedbackType.light);
     widget.onTap?.call();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final platformTheme = context.platformTheme;
     final cardWidth = widget.width ?? 160;
-    
+
     return Semantics(
       label: 'Artist ${widget.artist.name}',
       hint: 'Tap to view artist details',
@@ -413,7 +434,9 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
               child: Card(
                 elevation: _elevationAnimation.value,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(platformTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(
+                    platformTheme.borderRadius,
+                  ),
                 ),
                 child: MouseRegion(
                   onEnter: (_) => _handleHover(true),
@@ -430,18 +453,22 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
                           child: CircleAvatar(
                             radius: 40,
                             backgroundImage: widget.artist.imageUrl != null
-                                ? CachedNetworkImageProvider(widget.artist.imageUrl!)
+                                ? CachedNetworkImageProvider(
+                                    widget.artist.imageUrl!,
+                                  )
                                 : null,
                             child: widget.artist.imageUrl == null
                                 ? Icon(
                                     Icons.person,
                                     size: 40,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   )
                                 : null,
                           ),
                         ),
-                        
+
                         // Artist name
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -450,15 +477,14 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
                           ),
                           child: Text(
                             widget.artist.name,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        
+
                         const SizedBox(height: OmnisonicSpacing.sm),
                       ],
                     ),
@@ -474,8 +500,4 @@ class _PlatformEnhancedArtistCardState extends State<PlatformEnhancedArtistCard>
 }
 
 /// Card layout options
-enum PlatformCardLayout {
-  grid,
-  list,
-  compact,
-}
+enum PlatformCardLayout { grid, list, compact }

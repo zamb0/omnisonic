@@ -3,7 +3,6 @@ import '../constants/animation_constants.dart';
 
 /// Utility class for creating consistent animations throughout the app
 class AnimationUtils {
-  
   /// Creates a slide down transition for player dismissal
   static Widget slideDownTransition(
     BuildContext context,
@@ -12,17 +11,20 @@ class AnimationUtils {
     Widget child,
   ) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.0, 0.0),
-        end: const Offset(0.0, 1.0),
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: AnimationConstants.playerCurve,
-      )),
+      position:
+          Tween<Offset>(
+            begin: const Offset(0.0, 0.0),
+            end: const Offset(0.0, 1.0),
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: AnimationConstants.playerCurve,
+            ),
+          ),
       child: child,
     );
   }
-  
+
   /// Creates a slide up transition for bottom sheets
   static Widget slideUpTransition(
     BuildContext context,
@@ -31,17 +33,20 @@ class AnimationUtils {
     Widget child,
   ) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.0, 1.0),
-        end: const Offset(0.0, 0.0),
-      ).animate(CurvedAnimation(
-        parent: animation,
-        curve: AnimationConstants.bottomSheetCurve,
-      )),
+      position:
+          Tween<Offset>(
+            begin: const Offset(0.0, 1.0),
+            end: const Offset(0.0, 0.0),
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: AnimationConstants.bottomSheetCurve,
+            ),
+          ),
       child: child,
     );
   }
-  
+
   /// Creates a fade transition for dialogs
   static Widget fadeTransition(
     BuildContext context,
@@ -57,7 +62,7 @@ class AnimationUtils {
       child: child,
     );
   }
-  
+
   /// Creates a custom modal bottom sheet with consistent animation
   static Future<T?> showCustomBottomSheet<T>({
     required BuildContext context,
@@ -83,7 +88,7 @@ class AnimationUtils {
       ),
     );
   }
-  
+
   /// Creates a custom dialog with consistent animation
   static Future<T?> showCustomDialog<T>({
     required BuildContext context,

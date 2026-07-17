@@ -56,16 +56,16 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               'Home',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
               'Discover your music',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -144,18 +144,14 @@ class _HomePageState extends State<HomePage> {
                     color: scheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: scheme.onPrimaryContainer,
-                  ),
+                  child: Icon(icon, size: 20, color: scheme.onPrimaryContainer),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -210,15 +206,22 @@ class _HomePageState extends State<HomePage> {
                     child: album.coverArtUrl != null
                         ? CachedNetworkImage(
                             imageUrl: album.coverArtUrl!.withCoverArtSize(320),
-                            cacheKey: album.coverArtUrl!.withCoverArtSize(320).subsonicCacheKey,
+                            cacheKey: album.coverArtUrl!
+                                .withCoverArtSize(320)
+                                .subsonicCacheKey,
                             cacheManager: OmnisonicImageCacheManager.instance,
                             fit: BoxFit.cover,
                             memCacheWidth: 320,
                             memCacheHeight: 320,
                             fadeInDuration: const Duration(milliseconds: 150),
-                            placeholder: (context, url) => _buildPlaceholderArt(),
+                            placeholder: (context, url) =>
+                                _buildPlaceholderArt(),
                             errorWidget: (context, url, error) =>
-                                coverArtErrorWidget(_buildPlaceholderArt(), url, error),
+                                coverArtErrorWidget(
+                                  _buildPlaceholderArt(),
+                                  url,
+                                  error,
+                                ),
                           )
                         : _buildPlaceholderArt(),
                   ),
@@ -227,18 +230,18 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 10),
               Text(
                 album.title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
                 album.artist,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -266,12 +269,10 @@ class _HomePageState extends State<HomePage> {
     await viewModel.refreshSmartCollections();
   }
 }
+
 /// Hover card widget with play button overlay
 class _HoverAlbumCard extends StatefulWidget {
-  const _HoverAlbumCard({
-    required this.album,
-    required this.child,
-  });
+  const _HoverAlbumCard({required this.album, required this.child});
 
   final Album album;
   final Widget child;
@@ -395,7 +396,9 @@ class _HoverButtonState extends State<_HoverButton> {
           ),
           child: Icon(
             widget.icon,
-            color: widget.isPrimary ? scheme.onPrimary : scheme.onSurfaceVariant,
+            color: widget.isPrimary
+                ? scheme.onPrimary
+                : scheme.onSurfaceVariant,
             size: widget.isPrimary ? 28 : 20,
           ),
         ),

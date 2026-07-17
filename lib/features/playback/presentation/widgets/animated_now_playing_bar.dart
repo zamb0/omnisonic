@@ -9,16 +9,13 @@ import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
-/// 
+///
 /// Layout:
 /// - Left: album artwork + track info (title, artist, album)
 /// - Center: playback controls + progress slider with timestamps
 /// - Right: utility icons (queue, favorite, volume)
 class AnimatedNowPlayingBar extends StatefulWidget {
-  const AnimatedNowPlayingBar({
-    super.key,
-    this.onTap,
-  });
+  const AnimatedNowPlayingBar({super.key, this.onTap});
 
   final VoidCallback? onTap;
 
@@ -40,13 +37,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       duration: AnimationManager.normalDuration,
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: AnimationManager.standardCurve,
-    ));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _slideController,
+            curve: AnimationManager.standardCurve,
+          ),
+        );
   }
 
   @override
@@ -100,8 +97,24 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         return SlideTransition(
           position: _slideAnimation,
           child: isMobile
-              ? _buildMobileBar(context, vm, track, scheme, position, duration, progress)
-              : _buildDesktopBar(context, vm, track, scheme, position, duration, progress),
+              ? _buildMobileBar(
+                  context,
+                  vm,
+                  track,
+                  scheme,
+                  position,
+                  duration,
+                  progress,
+                )
+              : _buildDesktopBar(
+                  context,
+                  vm,
+                  track,
+                  scheme,
+                  position,
+                  duration,
+                  progress,
+                ),
         );
       },
     );
@@ -156,16 +169,25 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         borderRadius: BorderRadius.circular(4),
                         child: track.coverArtUrl != null
                             ? CachedNetworkImage(
-                                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                                cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
-                                cacheManager: OmnisonicImageCacheManager.instance,
+                                imageUrl: track.coverArtUrl!.withCoverArtSize(
+                                  128,
+                                ),
+                                cacheKey: track.coverArtUrl!
+                                    .withCoverArtSize(128)
+                                    .subsonicCacheKey,
+                                cacheManager:
+                                    OmnisonicImageCacheManager.instance,
                                 fit: BoxFit.cover,
                                 memCacheWidth: 88,
                                 memCacheHeight: 88,
-                                fadeInDuration: const Duration(milliseconds: 120),
+                                fadeInDuration: const Duration(
+                                  milliseconds: 120,
+                                ),
                                 useOldImageOnUrlChange: true,
-                                placeholder: (context, url) => _buildFallbackArtwork(),
-                                errorWidget: (context, url, error) => _buildFallbackArtwork(),
+                                placeholder: (context, url) =>
+                                    _buildFallbackArtwork(),
+                                errorWidget: (context, url, error) =>
+                                    _buildFallbackArtwork(),
                               )
                             : _buildFallbackArtwork(),
                       ),
@@ -179,20 +201,22 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         children: [
                           Text(
                             track.title,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: scheme.onSurface,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurface,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             track.artist,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              fontSize: 11,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  fontSize: 11,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -206,9 +230,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         return _iconBtn(
                           isStarred ? Icons.favorite : Icons.favorite_border,
                           18,
-                          isStarred ? Colors.red : scheme.onSurface.withOpacity(0.7),
+                          isStarred
+                              ? Colors.red
+                              : scheme.onSurface.withOpacity(0.7),
                           () {
-                            debugPrint('💙 Like button clicked (mobile) - track: ${track.title}, isStarred: $isStarred');
+                            debugPrint(
+                              '💙 Like button clicked (mobile) - track: ${track.title}, isStarred: $isStarred',
+                            );
                             vm.toggleFavorite(track);
                           },
                         );
@@ -218,7 +246,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     _iconBtn(
                       Icons.skip_previous,
                       22,
-                      vm.hasPrevious ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+                      vm.hasPrevious
+                          ? scheme.onSurface
+                          : scheme.onSurface.withOpacity(0.3),
                       vm.hasPrevious ? () => vm.skipToPrevious() : null,
                     ),
                     const SizedBox(width: 4),
@@ -243,7 +273,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     _iconBtn(
                       Icons.skip_next,
                       22,
-                      vm.hasNext ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+                      vm.hasNext
+                          ? scheme.onSurface
+                          : scheme.onSurface.withOpacity(0.3),
                       vm.hasNext ? () => vm.skipToNext() : null,
                     ),
                   ],
@@ -283,7 +315,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           _buildLeftSection(track, scheme),
           // === CENTER: Controls + Progress ===
           Expanded(
-            child: _buildCenterSection(vm, scheme, position, duration, progress),
+            child: _buildCenterSection(
+              vm,
+              scheme,
+              position,
+              duration,
+              progress,
+            ),
           ),
           // === RIGHT: Utility Icons ===
           _buildRightSection(scheme),
@@ -314,15 +352,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   child: track.coverArtUrl != null
                       ? CachedNetworkImage(
                           imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                          cacheKey: track.coverArtUrl!.withCoverArtSize(128).subsonicCacheKey,
+                          cacheKey: track.coverArtUrl!
+                              .withCoverArtSize(128)
+                              .subsonicCacheKey,
                           cacheManager: OmnisonicImageCacheManager.instance,
                           fit: BoxFit.cover,
                           memCacheWidth: 112,
                           memCacheHeight: 112,
                           fadeInDuration: const Duration(milliseconds: 120),
                           useOldImageOnUrlChange: true,
-                          placeholder: (context, url) => _buildFallbackArtwork(),
-                          errorWidget: (context, url, error) => _buildFallbackArtwork(),
+                          placeholder: (context, url) =>
+                              _buildFallbackArtwork(),
+                          errorWidget: (context, url, error) =>
+                              _buildFallbackArtwork(),
                         )
                       : _buildFallbackArtwork(),
                 ),
@@ -396,7 +438,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             _iconBtn(
               Icons.skip_previous,
               22,
-              vm.hasPrevious ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+              vm.hasPrevious
+                  ? scheme.onSurface
+                  : scheme.onSurface.withOpacity(0.3),
               vm.hasPrevious ? () => vm.skipToPrevious() : null,
             ),
             const SizedBox(width: 8),
@@ -428,7 +472,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             const SizedBox(width: 8),
             _iconBtn(Icons.repeat, 18, scheme.onSurfaceVariant, () {}),
             const SizedBox(width: 8),
-            _iconBtn(Icons.queue_music, 18, scheme.onSurfaceVariant, widget.onTap),
+            _iconBtn(
+              Icons.queue_music,
+              18,
+              scheme.onSurfaceVariant,
+              widget.onTap,
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -449,8 +498,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 3,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 10,
+                    ),
                     activeTrackColor: scheme.primary,
                     inactiveTrackColor: scheme.surfaceContainerHighest,
                     thumbColor: scheme.primary,
@@ -488,22 +541,23 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             builder: (context, vm, child) {
               final track = vm.currentTrack;
               final isStarred = track?.isStarred ?? false;
-              
+
               return IconButton(
                 icon: Icon(
                   isStarred ? Icons.favorite : Icons.favorite_border,
                   size: 18,
                   color: isStarred ? Colors.red : scheme.onSurfaceVariant,
                 ),
-                onPressed: track != null ? () {
-                  debugPrint('💙 Like button clicked - track: ${track.title}, isStarred: ${track.isStarred}');
-                  vm.toggleFavorite(track);
-                } : null,
+                onPressed: track != null
+                    ? () {
+                        debugPrint(
+                          '💙 Like button clicked - track: ${track.title}, isStarred: ${track.isStarred}',
+                        );
+                        vm.toggleFavorite(track);
+                      }
+                    : null,
                 padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 splashRadius: 16,
               );
             },
@@ -522,10 +576,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 inactiveTrackColor: scheme.surfaceContainerHighest,
                 thumbColor: scheme.onSurfaceVariant,
               ),
-              child: Slider(
-                value: 0.7,
-                onChanged: (value) {},
-              ),
+              child: Slider(value: 0.7, onChanged: (value) {}),
             ),
           ),
         ],
@@ -533,7 +584,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
-  Widget _iconBtn(IconData icon, double size, Color color, VoidCallback? onPressed) {
+  Widget _iconBtn(
+    IconData icon,
+    double size,
+    Color color,
+    VoidCallback? onPressed,
+  ) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onPressed,

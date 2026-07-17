@@ -27,7 +27,7 @@ class AppRouter {
   static const String servers = '/servers';
   static const String playlistManagement = '/playlist-management';
   static const String playlistDetail = '/playlist-detail';
-  
+
   static final GoRouter router = GoRouter(
     initialLocation: home,
     routes: [
@@ -37,42 +37,32 @@ class AppRouter {
           GoRoute(
             path: home,
             name: 'home',
-            pageBuilder: (context, state) => _fadePage(
-              state: state,
-              child: const HomePage(),
-            ),
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const HomePage()),
           ),
           GoRoute(
             path: library,
             name: 'library',
-            pageBuilder: (context, state) => _fadePage(
-              state: state,
-              child: const LibraryPage(),
-            ),
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const LibraryPage()),
           ),
           GoRoute(
             path: search,
             name: 'search',
-            pageBuilder: (context, state) => _fadePage(
-              state: state,
-              child: const SearchPage(),
-            ),
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const SearchPage()),
           ),
           GoRoute(
             path: favorites,
             name: 'favorites',
-            pageBuilder: (context, state) => _fadePage(
-              state: state,
-              child: const FavoritesPage(),
-            ),
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const FavoritesPage()),
           ),
           GoRoute(
             path: servers,
             name: 'servers',
-            pageBuilder: (context, state) => _fadePage(
-              state: state,
-              child: const ServerManagementPage(),
-            ),
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const ServerManagementPage()),
           ),
           GoRoute(
             path: albumDetail,
@@ -110,9 +100,10 @@ class AppRouter {
             const end = Offset.zero;
             const curve = Curves.easeInOutCubic;
 
-            var tween = Tween(begin: begin, end: end).chain(
-              CurveTween(curve: curve),
-            );
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
 
             return SlideTransition(
               position: animation.drive(tween),
@@ -124,10 +115,8 @@ class AppRouter {
       GoRoute(
         path: playlistManagement,
         name: 'playlistManagement',
-        pageBuilder: (context, state) => _fadePage(
-          state: state,
-          child: const PlaylistManagementPage(),
-        ),
+        pageBuilder: (context, state) =>
+            _fadePage(state: state, child: const PlaylistManagementPage()),
       ),
       GoRoute(
         path: playlistDetail,

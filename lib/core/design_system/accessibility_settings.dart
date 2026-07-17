@@ -10,19 +10,22 @@ class AccessibilitySettingsScreen extends StatefulWidget {
   const AccessibilitySettingsScreen({super.key});
 
   @override
-  State<AccessibilitySettingsScreen> createState() => _AccessibilitySettingsScreenState();
+  State<AccessibilitySettingsScreen> createState() =>
+      _AccessibilitySettingsScreenState();
 }
 
-class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScreen> {
-  final OmnisonicAccessibilityPreferences _preferences = 
+class _AccessibilitySettingsScreenState
+    extends State<AccessibilitySettingsScreen> {
+  final OmnisonicAccessibilityPreferences _preferences =
       OmnisonicAccessibilityPreferences();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accessibility Settings')
-            .withSemanticLabel('Accessibility Settings'),
+        title: const Text(
+          'Accessibility Settings',
+        ).withSemanticLabel('Accessibility Settings'),
         leading: AccessibleButton.icon(
           icon: Icons.arrow_back,
           onPressed: () => Navigator.of(context).pop(),
@@ -43,33 +46,33 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
                   'Control how animations and motion effects behave',
                 ),
                 _buildMotionSettings(),
-                
+
                 const SizedBox(height: OmnisonicSpacing.sectionSpacing),
-                
+
                 _buildSectionHeader(
                   'Visual Preferences',
                   'Adjust visual elements for better readability',
                 ),
                 _buildVisualSettings(),
-                
+
                 const SizedBox(height: OmnisonicSpacing.sectionSpacing),
-                
+
                 _buildSectionHeader(
                   'Interaction & Feedback',
                   'Customize how the app responds to your interactions',
                 ),
                 _buildInteractionSettings(),
-                
+
                 const SizedBox(height: OmnisonicSpacing.sectionSpacing),
-                
+
                 _buildSectionHeader(
                   'System Integration',
                   'How the app works with your device accessibility settings',
                 ),
                 _buildSystemIntegrationInfo(),
-                
+
                 const SizedBox(height: OmnisonicSpacing.sectionSpacing),
-                
+
                 _buildResetSection(),
               ],
             ),
@@ -109,7 +112,8 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
           children: [
             AccessibleSwitchListTile(
               title: 'Reduce Motion',
-              subtitle: 'Minimize animations and transitions for a calmer experience',
+              subtitle:
+                  'Minimize animations and transitions for a calmer experience',
               value: _preferences.reducedMotionEnabled,
               onChanged: _preferences.setReducedMotionEnabled,
               semanticLabel: 'Reduce motion animations',
@@ -184,7 +188,8 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
           children: [
             AccessibleSwitchListTile(
               title: 'Haptic Feedback',
-              subtitle: 'Feel vibrations when interacting with buttons and controls',
+              subtitle:
+                  'Feel vibrations when interacting with buttons and controls',
               value: _preferences.hapticFeedbackEnabled,
               onChanged: _preferences.setHapticFeedbackEnabled,
               semanticLabel: 'Enable haptic feedback',
@@ -231,7 +236,10 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
               style: context.textTheme.bodyMedium,
             ),
             const SizedBox(height: OmnisonicSpacing.sm),
-            _buildSystemFeatureItem('Reduce Motion', _preferences.systemReducedMotionEnabled),
+            _buildSystemFeatureItem(
+              'Reduce Motion',
+              _preferences.systemReducedMotionEnabled,
+            ),
             _buildSystemFeatureItem('Voice Control', false), // Placeholder
             _buildSystemFeatureItem('Switch Control', false), // Placeholder
             const SizedBox(height: OmnisonicSpacing.sm),
@@ -254,16 +262,16 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
           Icon(
             isEnabled ? Icons.check_circle : Icons.radio_button_unchecked,
             size: 16,
-            color: isEnabled 
-                ? context.colorScheme.primary 
+            color: isEnabled
+                ? context.colorScheme.primary
                 : context.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           const SizedBox(width: OmnisonicSpacing.sm),
           Text(
             feature,
             style: context.textTheme.bodySmall?.copyWith(
-              color: isEnabled 
-                  ? context.colorScheme.onSurface 
+              color: isEnabled
+                  ? context.colorScheme.onSurface
                   : context.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
@@ -358,7 +366,7 @@ class _AccessibilitySettingsScreenState extends State<AccessibilitySettingsScree
     _preferences.setLargeTextEnabled(false);
     _preferences.setScreenReaderEnabled(false);
     _preferences.setHapticFeedbackEnabled(true);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Accessibility settings have been reset to defaults'),
@@ -406,17 +414,16 @@ class AccessibleSwitchListTile extends StatelessWidget {
 class AccessibilityQuickSettings extends StatefulWidget {
   final Widget child;
 
-  const AccessibilityQuickSettings({
-    super.key,
-    required this.child,
-  });
+  const AccessibilityQuickSettings({super.key, required this.child});
 
   @override
-  State<AccessibilityQuickSettings> createState() => _AccessibilityQuickSettingsState();
+  State<AccessibilityQuickSettings> createState() =>
+      _AccessibilityQuickSettingsState();
 }
 
-class _AccessibilityQuickSettingsState extends State<AccessibilityQuickSettings> {
-  final OmnisonicAccessibilityPreferences _preferences = 
+class _AccessibilityQuickSettingsState
+    extends State<AccessibilityQuickSettings> {
+  final OmnisonicAccessibilityPreferences _preferences =
       OmnisonicAccessibilityPreferences();
   bool _showQuickSettings = false;
 
@@ -441,7 +448,7 @@ class _AccessibilityQuickSettingsState extends State<AccessibilityQuickSettings>
                 _showQuickSettings = !_showQuickSettings;
               });
             },
-            semanticLabel: _showQuickSettings 
+            semanticLabel: _showQuickSettings
                 ? 'Close accessibility quick settings'
                 : 'Open accessibility quick settings',
             tooltip: 'Accessibility Quick Settings',
@@ -472,30 +479,30 @@ class _AccessibilityQuickSettingsState extends State<AccessibilityQuickSettings>
                   ),
                 ).asSemanticHeader(),
                 const SizedBox(height: OmnisonicSpacing.md),
-                
+
                 AccessibleSwitchListTile(
                   title: 'Reduce Motion',
                   value: _preferences.reducedMotionEnabled,
                   onChanged: _preferences.setReducedMotionEnabled,
                   semanticLabel: 'Toggle reduce motion',
                 ),
-                
+
                 AccessibleSwitchListTile(
                   title: 'High Contrast',
                   value: _preferences.highContrastEnabled,
                   onChanged: _preferences.setHighContrastEnabled,
                   semanticLabel: 'Toggle high contrast',
                 ),
-                
+
                 AccessibleSwitchListTile(
                   title: 'Haptic Feedback',
                   value: _preferences.hapticFeedbackEnabled,
                   onChanged: _preferences.setHapticFeedbackEnabled,
                   semanticLabel: 'Toggle haptic feedback',
                 ),
-                
+
                 const SizedBox(height: OmnisonicSpacing.md),
-                
+
                 AccessibleButton.text(
                   onPressed: () {
                     setState(() {
@@ -503,7 +510,8 @@ class _AccessibilityQuickSettingsState extends State<AccessibilityQuickSettings>
                     });
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const AccessibilitySettingsScreen(),
+                        builder: (context) =>
+                            const AccessibilitySettingsScreen(),
                       ),
                     );
                   },

@@ -9,12 +9,11 @@ class ServerStatusMonitor {
   final ServerConnectionService _connectionService;
   final Map<String, StreamController<MusicServer>> _statusControllers = {};
   final Map<String, Timer> _monitoringTimers = {};
-  
+
   static const Duration _monitorInterval = Duration(minutes: 2);
 
-  ServerStatusMonitor({
-    required ServerConnectionService connectionService,
-  }) : _connectionService = connectionService;
+  ServerStatusMonitor({required ServerConnectionService connectionService})
+    : _connectionService = connectionService;
 
   /// Starts monitoring a server's connection status
   Stream<MusicServer> monitorServer(MusicServer server) {
@@ -37,15 +36,17 @@ class ServerStatusMonitor {
   void stopMonitoring(String serverId) {
     _monitoringTimers[serverId]?.cancel();
     _monitoringTimers.remove(serverId);
-    
+
     _statusControllers[serverId]?.close();
     _statusControllers.remove(serverId);
   }
 
   /// Manually tests a server connection and updates status
   Future<MusicServer> testServerStatus(MusicServer server) async {
-    final passwordResult = await _connectionService.getServerPassword(server.id);
-    
+    final passwordResult = await _connectionService.getServerPassword(
+      server.id,
+    );
+
     if (passwordResult.isFailure) {
       return server.copyWith(
         status: ServerStatus.error,
@@ -102,13 +103,13 @@ class ServerStatusMonitor {
   /// Gets current status for all monitored servers
   Map<String, ServerStatus> getCurrentStatuses() {
     final statuses = <String, ServerStatus>{};
-    
+
     for (final serverId in _monitoringTimers.keys) {
       // This would need integration with a repository to get current status
       // For now, return offline status
       statuses[serverId] = ServerStatus.offline;
     }
-    
+
     return statuses;
   }
 

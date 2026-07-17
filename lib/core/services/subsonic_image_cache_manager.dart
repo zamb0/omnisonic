@@ -17,11 +17,7 @@ class OmnisonicImageCacheManager {
   );
 }
 
-Widget coverArtErrorWidget(
-  Widget placeholder,
-  String url,
-  Object error,
-) {
+Widget coverArtErrorWidget(Widget placeholder, String url, Object error) {
   debugPrint('Cover art load failed: $url -> $error');
   return placeholder;
 }
@@ -32,15 +28,15 @@ class SubsonicImageCache {
   static String getCacheKey(String url) {
     try {
       final uri = Uri.parse(url);
-      
+
       // Remove dynamic auth parameters (salt and token)
       final filteredParams = Map<String, String>.from(uri.queryParameters)
         ..remove('t') // token
         ..remove('s'); // salt
-      
+
       // Create stable URL without auth params
       final stableUrl = uri.replace(queryParameters: filteredParams).toString();
-      
+
       return stableUrl;
     } catch (e) {
       // If parsing fails, return original URL

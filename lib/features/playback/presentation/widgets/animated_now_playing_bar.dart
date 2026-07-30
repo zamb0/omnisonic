@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/design_system/animation_manager.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 
@@ -29,6 +30,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   late Animation<Offset> _slideAnimation;
 
   Track? _previousTrack;
+
+  /// Volume to restore when un-muting from the bar's volume icon.
+  double _volumeBeforeMute = 1.0;
+
+  /// Progress being dragged on the desktop scrubber, or null when not dragging.
+  /// While dragging we show the local value and only seek on release, so a drag
+  /// costs one seek instead of one per pointer move.
+  double? _draggingProgress;
 
   @override
   void initState() {
@@ -80,7 +89,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
+    // Same threshold the shell uses to switch between the bottom bar and the
+    // sidebar, so the compact bar and the phone shell always appear together.
+    final isMobile = screenWidth < ResponsiveBreakpoints.tablet;
 
     return Consumer<PlaybackViewModel>(
       builder: (context, vm, child) {
@@ -130,6 +141,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Duration duration,
     double progress,
   ) {
+    // Below this width four 44px targets plus artwork leave the title unreadable.
+    final showFavorite = MediaQuery.of(context).size.width >= 380;
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -195,54 +209,62 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     const SizedBox(width: 10),
                     // Title + Artist
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            track.title,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: scheme.onSurface,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            track.artist,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  fontSize: 11,
-                                ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      child: Semantics(
+                        button: true,
+                        onTap: widget.onTap,
+                        label: _nowPlayingLabel(track),
+                        excludeSemantics: true,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              track.title,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: scheme.onSurface,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              track.artist,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    // Compact controls
-                    Consumer<PlaybackViewModel>(
-                      builder: (context, vm, child) {
-                        final isStarred = track.isStarred;
-                        return _iconBtn(
-                          isStarred ? Icons.favorite : Icons.favorite_border,
-                          18,
-                          isStarred
-                              ? Colors.red
-                              : scheme.onSurface.withOpacity(0.7),
-                          () {
-                            debugPrint(
-                              '💙 Like button clicked (mobile) - track: ${track.title}, isStarred: $isStarred',
-                            );
-                            vm.toggleFavorite(track);
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
+                    // Compact controls. Every target is at least 44x44 with an
+                    // 8px gap, so on the narrowest phones the favourite button
+                    // is dropped rather than squeezing the track title away.
+                    if (showFavorite) ...[
+                      Consumer<PlaybackViewModel>(
+                        builder: (context, vm, child) {
+                          final isStarred = track.isStarred;
+                          return _iconBtn(
+                            isStarred ? Icons.favorite : Icons.favorite_border,
+                            20,
+                            isStarred
+                                ? OmnisonicColors.favoriteIndicator
+                                : scheme.onSurface.withOpacity(0.7),
+                            () => vm.toggleFavorite(track),
+                            label: isStarred
+                                ? 'Remove from favorites'
+                                : 'Add to favorites',
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     _iconBtn(
                       Icons.skip_previous,
                       22,
@@ -250,26 +272,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ? scheme.onSurface
                           : scheme.onSurface.withOpacity(0.3),
                       vm.hasPrevious ? () => vm.skipToPrevious() : null,
+                      label: 'Previous track',
                     ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: scheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          vm.isPlaying ? Icons.pause : Icons.play_arrow,
-                          color: scheme.onPrimary,
-                        ),
-                        iconSize: 20,
-                        padding: EdgeInsets.zero,
-                        onPressed: () => vm.togglePlayPause(),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 8),
+                    _playPauseBtn(vm, scheme),
+                    const SizedBox(width: 8),
                     _iconBtn(
                       Icons.skip_next,
                       22,
@@ -277,6 +284,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ? scheme.onSurface
                           : scheme.onSurface.withOpacity(0.3),
                       vm.hasNext ? () => vm.skipToNext() : null,
+                      label: 'Next track',
                     ),
                   ],
                 ),
@@ -330,87 +338,101 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
+  /// Screen-reader description of the bar's content: without it the artwork
+  /// and the two truncated text lines are announced as disconnected fragments.
+  String _nowPlayingLabel(Track track) {
+    final base = 'Now playing: ${track.title} by ${track.artist}';
+    return widget.onTap == null ? base : '$base. Open player';
+  }
+
   Widget _buildLeftSection(Track track, ColorScheme scheme) {
-    return GestureDetector(
+    return Semantics(
+      button: widget.onTap != null,
       onTap: widget.onTap,
-      child: SizedBox(
-        width: 280,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              // Album artwork
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  color: scheme.surfaceContainerHighest,
+      label: _nowPlayingLabel(track),
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: SizedBox(
+          width: 280,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                // Album artwork
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: scheme.surfaceContainerHighest,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: track.coverArtUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                            cacheKey: track.coverArtUrl!
+                                .withCoverArtSize(128)
+                                .subsonicCacheKey,
+                            cacheManager: OmnisonicImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 112,
+                            memCacheHeight: 112,
+                            fadeInDuration: const Duration(milliseconds: 120),
+                            useOldImageOnUrlChange: true,
+                            placeholder: (context, url) =>
+                                _buildFallbackArtwork(),
+                            errorWidget: (context, url, error) =>
+                                _buildFallbackArtwork(),
+                          )
+                        : _buildFallbackArtwork(),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                          cacheKey: track.coverArtUrl!
-                              .withCoverArtSize(128)
-                              .subsonicCacheKey,
-                          cacheManager: OmnisonicImageCacheManager.instance,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 112,
-                          memCacheHeight: 112,
-                          fadeInDuration: const Duration(milliseconds: 120),
-                          useOldImageOnUrlChange: true,
-                          placeholder: (context, url) =>
-                              _buildFallbackArtwork(),
-                          errorWidget: (context, url, error) =>
-                              _buildFallbackArtwork(),
-                        )
-                      : _buildFallbackArtwork(),
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Track info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      track.title,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      track.artist,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (track.album.isNotEmpty) ...[
-                      const SizedBox(height: 1),
+                const SizedBox(width: 10),
+                // Track info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       Text(
-                        track.album,
+                        track.title,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant.withOpacity(0.7),
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        track.artist,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (track.album.isNotEmpty) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          track.album,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: scheme.onSurfaceVariant.withOpacity(0.7),
+                                fontSize: 11,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -431,9 +453,21 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _iconBtn(Icons.stop, 18, scheme.onSurfaceVariant, () => vm.stop()),
+            _iconBtn(
+              Icons.stop,
+              18,
+              scheme.onSurfaceVariant,
+              () => vm.stop(),
+              label: 'Stop',
+            ),
             const SizedBox(width: 8),
-            _iconBtn(Icons.shuffle, 18, scheme.onSurfaceVariant, () {}),
+            _iconBtn(
+              Icons.shuffle,
+              18,
+              vm.shuffleEnabled ? scheme.primary : scheme.onSurfaceVariant,
+              () => vm.toggleShuffleMode(),
+              label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
+            ),
             const SizedBox(width: 8),
             _iconBtn(
               Icons.skip_previous,
@@ -442,41 +476,36 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ? scheme.onSurface
                   : scheme.onSurface.withOpacity(0.3),
               vm.hasPrevious ? () => vm.skipToPrevious() : null,
+              label: 'Previous track',
             ),
             const SizedBox(width: 8),
             // Play/Pause - prominent circular button
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: scheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  vm.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: scheme.onPrimary,
-                ),
-                iconSize: 20,
-                padding: EdgeInsets.zero,
-                onPressed: () => vm.togglePlayPause(),
-              ),
-            ),
+            _playPauseBtn(vm, scheme),
             const SizedBox(width: 8),
             _iconBtn(
               Icons.skip_next,
               22,
               vm.hasNext ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
               vm.hasNext ? () => vm.skipToNext() : null,
+              label: 'Next track',
             ),
             const SizedBox(width: 8),
-            _iconBtn(Icons.repeat, 18, scheme.onSurfaceVariant, () {}),
+            _iconBtn(
+              _repeatIcon(vm.repeatMode),
+              18,
+              vm.repeatMode != playback.RepeatMode.none
+                  ? scheme.primary
+                  : scheme.onSurfaceVariant,
+              () => vm.toggleRepeatMode(),
+              label: _repeatLabel(vm.repeatMode),
+            ),
             const SizedBox(width: 8),
             _iconBtn(
               Icons.queue_music,
               18,
               scheme.onSurfaceVariant,
               widget.onTap,
+              label: 'Open queue',
             ),
           ],
         ),
@@ -487,7 +516,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           child: Row(
             children: [
               Text(
-                _formatDuration(position),
+                _formatDuration(
+                  _draggingProgress == null
+                      ? position
+                      : duration * _draggingProgress!,
+                ),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontSize: 11,
@@ -509,8 +542,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     thumbColor: scheme.primary,
                   ),
                   child: Slider(
-                    value: progress.clamp(0.0, 1.0),
+                    value: _draggingProgress ?? progress.clamp(0.0, 1.0),
+                    label: _formatDuration(
+                      duration * (_draggingProgress ?? progress),
+                    ),
                     onChanged: (value) {
+                      setState(() => _draggingProgress = value);
+                    },
+                    onChangeEnd: (value) {
+                      setState(() => _draggingProgress = null);
                       vm.seekToProgress(value);
                     },
                   ),
@@ -542,62 +582,139 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               final track = vm.currentTrack;
               final isStarred = track?.isStarred ?? false;
 
-              return IconButton(
-                icon: Icon(
-                  isStarred ? Icons.favorite : Icons.favorite_border,
-                  size: 18,
-                  color: isStarred ? Colors.red : scheme.onSurfaceVariant,
-                ),
-                onPressed: track != null
-                    ? () {
-                        debugPrint(
-                          '💙 Like button clicked - track: ${track.title}, isStarred: ${track.isStarred}',
-                        );
-                        vm.toggleFavorite(track);
-                      }
-                    : null,
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                splashRadius: 16,
+              return _iconBtn(
+                isStarred ? Icons.favorite : Icons.favorite_border,
+                18,
+                isStarred
+                    ? OmnisonicColors.favoriteIndicator
+                    : scheme.onSurfaceVariant,
+                track != null ? () => vm.toggleFavorite(track) : null,
+                label: isStarred ? 'Remove from favorites' : 'Add to favorites',
               );
             },
           ),
-          _iconBtn(Icons.volume_up, 18, scheme.onSurfaceVariant, () {}),
-          const SizedBox(width: 4),
-          // Volume slider
-          SizedBox(
-            width: 80,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 3,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
-                activeTrackColor: scheme.onSurfaceVariant,
-                inactiveTrackColor: scheme.surfaceContainerHighest,
-                thumbColor: scheme.onSurfaceVariant,
-              ),
-              child: Slider(value: 0.7, onChanged: (value) {}),
-            ),
+          const SizedBox(width: 8),
+          Consumer<PlaybackViewModel>(
+            builder: (context, vm, child) {
+              final volume = vm.volume.clamp(0.0, 1.0);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _iconBtn(
+                    _volumeIcon(volume),
+                    18,
+                    scheme.onSurfaceVariant,
+                    () => _toggleMute(vm),
+                    label: volume > 0 ? 'Mute' : 'Unmute',
+                  ),
+                  const SizedBox(width: 8),
+                  // Volume slider
+                  SizedBox(
+                    width: 80,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 4,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 8,
+                        ),
+                        activeTrackColor: scheme.onSurfaceVariant,
+                        inactiveTrackColor: scheme.surfaceContainerHighest,
+                        thumbColor: scheme.onSurfaceVariant,
+                      ),
+                      child: Slider(
+                        value: volume,
+                        label: '${(volume * 100).round()}%',
+                        semanticFormatterCallback: (value) =>
+                            'Volume ${(value * 100).round()}%',
+                        onChanged: (value) => vm.setVolume(value),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  /// Icon control sized to the WCAG minimum touch target.
+  ///
+  /// [label] is required: it is both the tooltip and the screen-reader label,
+  /// so every control in the bar is announced by name.
   Widget _iconBtn(
     IconData icon,
     double size,
     Color color,
-    VoidCallback? onPressed,
-  ) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(icon, size: size, color: color),
+    VoidCallback? onPressed, {
+    required String label,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(icon, size: size, color: color),
+      iconSize: size,
+      tooltip: label,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(
+        minWidth: OmnisonicTouchTargets.minimum,
+        minHeight: OmnisonicTouchTargets.minimum,
       ),
     );
+  }
+
+  /// Circular play/pause button, sized to the comfortable touch target.
+  Widget _playPauseBtn(PlaybackViewModel vm, ColorScheme scheme) {
+    return Container(
+      width: OmnisonicTouchTargets.iconButton,
+      height: OmnisonicTouchTargets.iconButton,
+      decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+      child: IconButton(
+        icon: Icon(
+          vm.isPlaying ? Icons.pause : Icons.play_arrow,
+          color: scheme.onPrimary,
+        ),
+        iconSize: 24,
+        padding: EdgeInsets.zero,
+        tooltip: vm.isPlaying ? 'Pause' : 'Play',
+        onPressed: () => vm.togglePlayPause(),
+      ),
+    );
+  }
+
+  IconData _repeatIcon(playback.RepeatMode mode) {
+    return mode == playback.RepeatMode.one ? Icons.repeat_one : Icons.repeat;
+  }
+
+  String _repeatLabel(playback.RepeatMode mode) {
+    switch (mode) {
+      case playback.RepeatMode.none:
+        return 'Repeat off';
+      case playback.RepeatMode.all:
+        return 'Repeat all';
+      case playback.RepeatMode.one:
+        return 'Repeat one';
+    }
+  }
+
+  IconData _volumeIcon(double volume) {
+    if (volume <= 0) return Icons.volume_off;
+    if (volume < 0.5) return Icons.volume_down;
+    return Icons.volume_up;
+  }
+
+  /// Mutes to zero, remembering the previous level so the icon can restore it.
+  void _toggleMute(PlaybackViewModel vm) {
+    if (vm.volume > 0) {
+      _volumeBeforeMute = vm.volume;
+      vm.setVolume(0);
+    } else {
+      vm.setVolume(_volumeBeforeMute);
+    }
   }
 
   Widget _buildFallbackArtwork() {

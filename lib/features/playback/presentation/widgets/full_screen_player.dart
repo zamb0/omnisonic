@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
 import '../../../../core/design_system/responsive_layout.dart';
 import '../../../../core/entities/entities.dart';
@@ -203,7 +204,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     : null,
                 icon: Icon(
                   isStarred ? Icons.favorite : Icons.favorite_border,
-                  color: isStarred ? Colors.red : scheme.onSurfaceVariant,
+                  color: isStarred
+                      ? OmnisonicColors.favoriteIndicator
+                      : scheme.onSurfaceVariant,
                 ),
                 tooltip: isStarred
                     ? 'Remove from favorites'
@@ -496,7 +499,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   : null,
               icon: Icon(
                 isStarred ? Icons.favorite : Icons.favorite_border,
-                color: isStarred ? Colors.red : scheme.onSurfaceVariant,
+                color: isStarred
+                    ? OmnisonicColors.favoriteIndicator
+                    : scheme.onSurfaceVariant,
               ),
               tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
             );

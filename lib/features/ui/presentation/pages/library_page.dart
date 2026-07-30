@@ -11,6 +11,7 @@ import '../models/library_sort_state.dart';
 import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
+import '../../../../core/design_system/responsive_layout.dart';
 import '../../../../core/utils/animation_utils.dart';
 
 /// Library page displaying albums, artists, and playlists
@@ -34,10 +35,14 @@ class _LibraryPageState extends State<LibraryPage> {
   Widget build(BuildContext context) {
     final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
     final activeTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
+    // The sidebar shell already exposes one entry per tab; the TabBar is the
+    // only way into Artists and Playlists when there is no sidebar.
+    final showTabBar =
+        MediaQuery.of(context).size.width < ResponsiveBreakpoints.tablet;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(activeTab.label),
+        title: Text(showTabBar ? 'Library' : activeTab.label),
         elevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
@@ -53,6 +58,7 @@ class _LibraryPageState extends State<LibraryPage> {
             tooltip: 'Sort Options',
           ),
         ],
+        bottom: showTabBar ? _buildTabBar(activeTab) : null,
       ),
       body: AnimatedSwitcher(
         duration: AnimationConstants.quickAnimation,
@@ -67,6 +73,31 @@ class _LibraryPageState extends State<LibraryPage> {
         ),
       ),
     );
+  }
+
+  /// Tab strip driven by the `?tab=` query parameter, so the sidebar, the tab
+  /// strip and deep links all read and write the same piece of state and the
+  /// back button steps through tab changes.
+  PreferredSizeWidget _buildTabBar(LibraryTab activeTab) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kTextTabBarHeight),
+      // Keyed on the active tab so the controller is rebuilt whenever the query
+      // parameter changes from elsewhere (sidebar, deep link, back button)
+      // instead of drifting out of sync with it.
+      child: DefaultTabController(
+        key: ValueKey(activeTab),
+        length: LibraryTab.count,
+        initialIndex: activeTab.index,
+        child: TabBar(
+          tabs: LibraryTab.values.map((tab) => Tab(text: tab.label)).toList(),
+          onTap: (index) => _onTabSelected(LibraryTab.fromIndex(index)),
+        ),
+      ),
+    );
+  }
+
+  void _onTabSelected(LibraryTab tab) {
+    context.go('/library?tab=${tab.name}');
   }
 
   Widget _buildSectionForTab(LibraryTab tab) {

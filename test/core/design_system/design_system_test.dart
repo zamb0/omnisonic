@@ -86,9 +86,11 @@ void main() {
       expect(lightScheme.brightness, Brightness.light);
       expect(darkScheme.brightness, Brightness.dark);
 
-      expect(lightScheme.primary, OmnisonicColors.primaryPurple);
-      expect(lightScheme.secondary, OmnisonicColors.secondaryIndigo);
-      expect(lightScheme.tertiary, OmnisonicColors.primaryTeal);
+      // The light scheme uses the darkened brand variants so that white
+      // foreground text on them clears WCAG AA; see color_contrast_test.dart.
+      expect(lightScheme.primary, OmnisonicColors.primaryLight);
+      expect(lightScheme.secondary, OmnisonicColors.secondaryLight);
+      expect(lightScheme.tertiary, OmnisonicColors.tertiaryLight);
     });
 
     test('Gradients are properly defined', () {

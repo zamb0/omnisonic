@@ -14,30 +14,45 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveLayout(
-      mobile: _buildMobileShell(context),
-      tablet: _buildDesktopShell(context, extended: false),
-      desktop: _buildDesktopShell(context, extended: true),
+    // The sidebar shell needs room for a 76-264px rail plus content, so it only
+    // takes over from the tablet breakpoint up. Below that the phone shell with
+    // the bottom bar is used, including on landscape phones.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        if (width >= ResponsiveBreakpoints.desktop) {
+          return _buildSidebarShell(context, extended: true);
+        }
+        if (width >= ResponsiveBreakpoints.tablet) {
+          return _buildSidebarShell(context, extended: false);
+        }
+        return _buildMobileShell(context);
+      },
     );
   }
 
   Widget _buildMobileShell(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(child: child),
-          AnimatedNowPlayingBar(
-            onTap: () => context.push(AppRouter.nowPlaying),
-          ),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Expanded(child: child),
+            AnimatedNowPlayingBar(
+              onTap: () => context.push(AppRouter.nowPlaying),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNavigation(context),
     );
   }
 
-  Widget _buildDesktopShell(BuildContext context, {required bool extended}) {
+  Widget _buildSidebarShell(BuildContext context, {required bool extended}) {
     return Scaffold(
-      body: FeishinShell(child: child, extended: extended),
+      body: SafeArea(
+        child: FeishinShell(child: child, extended: extended),
+      ),
     );
   }
 
@@ -65,9 +80,9 @@ class MainShell extends StatelessWidget {
           label: 'Search',
         ),
         NavigationDestination(
-          icon: Icon(Icons.dns_outlined),
-          selectedIcon: Icon(Icons.dns),
-          label: 'Servers',
+          icon: Icon(Icons.star_outline),
+          selectedIcon: Icon(Icons.star),
+          label: 'Starred',
         ),
       ],
     );
@@ -77,16 +92,20 @@ class MainShell extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     switch (location) {
       case AppRouter.home:
+      // Server management is a secondary destination reached from Home, so it
+      // keeps the Home tab lit rather than leaving the bar without a selection.
+      case AppRouter.servers:
         return 0;
       case AppRouter.library:
+      case AppRouter.albumDetail:
+      case AppRouter.artistDetail:
+      case AppRouter.playlistDetail:
+      case AppRouter.playlistManagement:
         return 1;
       case AppRouter.search:
         return 2;
-      case AppRouter.servers:
+      case AppRouter.favorites:
         return 3;
-      case AppRouter.albumDetail:
-      case AppRouter.artistDetail:
-        return 1; // Detail pages belong to Library
       default:
         return 0;
     }
@@ -104,7 +123,7 @@ class MainShell extends StatelessWidget {
         context.go(AppRouter.search);
         break;
       case 3:
-        context.go(AppRouter.servers);
+        context.go(AppRouter.favorites);
         break;
     }
   }

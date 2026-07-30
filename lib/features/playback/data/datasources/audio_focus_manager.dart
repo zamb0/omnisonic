@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import '../../../../core/repositories/playback_repository.dart'
     show PlaybackState;
+import '../../../../core/utils/platform_info.dart';
 import 'audio_player_data_source.dart';
 
 /// Manages audio focus and handles interruptions
@@ -27,7 +27,7 @@ class AudioFocusManager {
         });
 
     // Set up audio session for iOS
-    if (Platform.isIOS) {
+    if (AppPlatform.isIOS) {
       _setupIOSAudioSession();
     }
   }

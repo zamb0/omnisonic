@@ -1417,16 +1417,7 @@ class MusicRepositoryImpl implements MusicRepository {
 
   /// Compares audio quality levels
   int _compareAudioQuality(AudioQuality quality1, AudioQuality quality2) {
-    const qualityOrder = [
-      AudioQuality.low,
-      AudioQuality.medium,
-      AudioQuality.high,
-      AudioQuality.lossless,
-    ];
-
-    return qualityOrder
-        .indexOf(quality1)
-        .compareTo(qualityOrder.indexOf(quality2));
+    return quality1.qualityScore.compareTo(quality2.qualityScore);
   }
 
   /// Generates a stream URL for a track with unique ID

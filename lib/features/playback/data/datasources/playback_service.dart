@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:audio_service/audio_service.dart' hide PlaybackState;
 
@@ -9,6 +8,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/playback_repository.dart'
     show PlaybackState, RepeatMode;
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/platform_info.dart';
 import '../repositories/playback_repository_impl.dart';
 import 'audio_player_data_source.dart';
 import 'audio_service_handler.dart';
@@ -32,22 +32,27 @@ class PlaybackService {
   final AudioFocusManager _audioFocusManager;
   final MprisHandler _mprisHandler;
 
-  late StreamSubscription<PlaybackState> _playbackStateSubscription;
+  StreamSubscription<PlaybackState>? _playbackStateSubscription;
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
   /// Public method to initialize the service (should be called at app startup)
-  Future<void> initialize() async {
-    await _init();
+  Future<void> initialize() => _init();
+
+  /// Initializes the playback service.
+  ///
+  /// Concurrent and repeat calls share the same in-flight future. Callers that
+  /// time out (see `main.dart`) must not trigger a second `AudioService.init()`.
+  Future<void> _init() {
+    if (_isInitialized) return Future.value();
+    return _initFuture ??= _doInit();
   }
 
-  /// Initializes the playback service
-  Future<void> _init() async {
-    if (_isInitialized) return;
-
+  Future<void> _doInit() async {
     try {
       // audio_service only supports Android, iOS, macOS, and Windows
       // Skip initialization on Linux and Web
-      if (!Platform.isLinux) {
+      if (!AppPlatform.isLinux) {
         AppLog.info('Initializing AudioService for media notifications');
         // Initialize audio service for background playback
         await AudioService.init(
@@ -71,30 +76,30 @@ class PlaybackService {
         // Initialize MPRIS on Linux
         await _mprisHandler.initialize();
       }
-
-      // Listen to playback state for gapless playback management
-      _playbackStateSubscription = _audioPlayerDataSource
-          .observePlaybackState()
-          .listen((state) {
-            _handlePlaybackStateForGapless(state);
-          });
-
-      _isInitialized = true;
-      AppLog.info('Audio service initialized successfully');
     } catch (e) {
       // If audio service initialization fails, continue without it
       // The app can still function with basic playback
       AppLog.warn('Audio service initialization failed: $e');
-      _isInitialized = true;
     }
+
+    // The gapless listener must be attached even when the media-notification
+    // layer above failed to start, so it is set up separately.
+    try {
+      _playbackStateSubscription ??= _audioPlayerDataSource
+          .observePlaybackState()
+          .listen((state) {
+            _handlePlaybackStateForGapless(state);
+          });
+    } catch (e) {
+      AppLog.warn('Failed to observe playback state for gapless: $e');
+    }
+
+    _isInitialized = true;
+    _initFuture = null;
   }
 
   /// Ensures the service is initialized before operations
-  Future<void> _ensureInitialized() async {
-    if (!_isInitialized) {
-      await _init();
-    }
-  }
+  Future<void> _ensureInitialized() => _init();
 
   /// Plays a track with gapless preparation
   Future<Result<void>> playTrack(Track track) async {
@@ -229,7 +234,8 @@ class PlaybackService {
 
   /// Disposes of resources
   void dispose() {
-    _playbackStateSubscription.cancel();
+    _playbackStateSubscription?.cancel();
+    _playbackStateSubscription = null;
     _audioFocusManager.dispose();
     _audioServiceHandler.dispose();
     _audioPlayerDataSource.dispose();

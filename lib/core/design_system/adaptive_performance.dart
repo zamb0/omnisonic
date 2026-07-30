@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../utils/platform_info.dart';
 
 /// Adaptive performance system that automatically adjusts animation complexity
 /// based on device capabilities, battery level, and thermal state
@@ -213,7 +214,7 @@ class AdaptivePerformanceManager {
       // Detect device performance level based on available information
       if (kIsWeb) {
         _currentPerformanceLevel = DevicePerformanceLevel.medium;
-      } else if (Platform.isIOS || Platform.isAndroid) {
+      } else if (AppPlatform.isIOS || AppPlatform.isAndroid) {
         // Use a heuristic based on initial frame rate and memory
         await Future.delayed(const Duration(milliseconds: 100));
 

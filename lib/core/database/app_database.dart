@@ -47,9 +47,13 @@ class AppDatabase extends _$AppDatabase {
       onUpgrade: (Migrator m, int from, int to) async {
         // Handle migrations
         if (from < 2) {
-          // Migration for version 2: Remove license_valid column
-          await m.deleteTable('servers');
-          await m.createTable(serversTable);
+          // Migration for version 2: Remove license_valid column.
+          // Recreates servers_table with the current schema and copies the
+          // existing rows over, so configured servers survive the upgrade.
+          // TableMigration is drift's documented path for dropping a column and
+          // is still marked experimental upstream.
+          // ignore: experimental_member_use
+          await m.alterTable(TableMigration(serversTable));
         }
         if (from < 3) {
           // Migration for version 3: Add isStarred column to tracks

@@ -1,7 +1,8 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../utils/platform_info.dart';
 
 /// Platform-specific optimizations for UI components and interactions
 class PlatformOptimizations {
@@ -13,11 +14,11 @@ class PlatformOptimizations {
   /// Get the current platform type
   PlatformType get currentPlatform {
     if (kIsWeb) return PlatformType.web;
-    if (Platform.isIOS) return PlatformType.ios;
-    if (Platform.isAndroid) return PlatformType.android;
-    if (Platform.isMacOS) return PlatformType.macos;
-    if (Platform.isWindows) return PlatformType.windows;
-    if (Platform.isLinux) return PlatformType.linux;
+    if (AppPlatform.isIOS) return PlatformType.ios;
+    if (AppPlatform.isAndroid) return PlatformType.android;
+    if (AppPlatform.isMacOS) return PlatformType.macos;
+    if (AppPlatform.isWindows) return PlatformType.windows;
+    if (AppPlatform.isLinux) return PlatformType.linux;
     return PlatformType.unknown;
   }
 

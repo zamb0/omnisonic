@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../utils/platform_info.dart';
 
 /// Contextual UI adaptation system that detects usage context and adapts
 /// the interface for optimal usability in different scenarios
@@ -141,7 +142,7 @@ class ContextualAdaptationManager {
       DeviceType deviceType;
       if (kIsWeb) {
         deviceType = size.width > 768 ? DeviceType.desktop : DeviceType.mobile;
-      } else if (Platform.isIOS || Platform.isAndroid) {
+      } else if (AppPlatform.isIOS || AppPlatform.isAndroid) {
         deviceType = size.shortestSide > 600
             ? DeviceType.tablet
             : DeviceType.mobile;
@@ -167,8 +168,8 @@ class ContextualAdaptationManager {
         hasPhysicalKeyboard: deviceType == DeviceType.desktop,
         supportsTouchInput: deviceType != DeviceType.desktop,
         supportsHover: deviceType == DeviceType.desktop,
-        hasAmbientLightSensor: Platform.isIOS || Platform.isAndroid,
-        hasAccelerometer: Platform.isIOS || Platform.isAndroid,
+        hasAmbientLightSensor: AppPlatform.isIOS || AppPlatform.isAndroid,
+        hasAccelerometer: AppPlatform.isIOS || AppPlatform.isAndroid,
       );
 
       developer.log(

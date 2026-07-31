@@ -1,13 +1,10 @@
-# OmniSonic Design Document
+# Design Document
 
 ## Overview
 
-OmniSonic is a cross-platform music client built with Flutter that provides a unified interface for multiple Subsonic/Navidrome servers. The application follows Clean Architecture principles with a focus on offline-first functionality, high-performance audio playback, and premium user experience.
+Omnisonic is a cross-platform music streaming client built with Flutter that provides a unified music collection experience across multiple Subsonic-compatible servers. The application implements a clean architecture pattern with clear separation between presentation, domain, and data layers, ensuring maintainability and testability across all supported platforms (macOS, iOS, Windows, Android, Linux).
 
-The system consists of three main layers:
-- **Presentation Layer**: Flutter UI with BLoC state management
-- **Domain Layer**: Business logic and use cases
-- **Data Layer**: Local database (Drift), network clients, and caching
+The design emphasizes performance, user experience, and reliability through intelligent caching, deduplication algorithms, and robust error handling. The architecture supports offline functionality, real-time synchronization, and seamless multi-server integration while maintaining a modern Spotify-like interface.
 
 ## Architecture
 
@@ -15,259 +12,252 @@ The system consists of three main layers:
 
 ```mermaid
 graph TB
-    UI[Flutter UI Layer]
-    BLoC[BLoC State Management]
-    UC[Use Cases / Interactors]
-    REPO[Repositories]
-    
-    subgraph "Data Sources"
-        LOCAL[Local Database<br/>Drift SQLite]
-        CACHE[Audio Cache<br/>LRU Storage]
-        NET[Network Clients<br/>Subsonic API]
+    subgraph "Presentation Layer"
+        UI[Flutter UI Widgets]
+        VM[ViewModels/BLoC]
     end
     
-    subgraph "Audio Engine"
-        PLAYER[just_audio Player]
-        SERVICE[Audio Service<br/>Background Playback]
-        EQ[Equalizer Engine]
+    subgraph "Domain Layer"
+        UC[Use Cases]
+        ENT[Entities]
+        REPO[Repository Interfaces]
     end
     
-    UI --> BLoC
-    BLoC --> UC
+    subgraph "Data Layer"
+        IMPL[Repository Implementations]
+        DS[Data Sources]
+        CACHE[Local Cache]
+    end
+    
+    subgraph "External"
+        API[Subsonic APIs]
+        DB[Local Database]
+        FS[File System]
+    end
+    
+    UI --> VM
+    VM --> UC
     UC --> REPO
-    REPO --> LOCAL
-    REPO --> CACHE
-    REPO --> NET
-    
-    UC --> PLAYER
-    PLAYER --> SERVICE
-    PLAYER --> EQ
+    REPO --> IMPL
+    IMPL --> DS
+    IMPL --> CACHE
+    DS --> API
+    CACHE --> DB
+    CACHE --> FS
 ```
 
 ### Clean Architecture Layers
 
 **Presentation Layer:**
-- Flutter widgets and screens
-- BLoC pattern for state management
-- Platform-specific UI adaptations (Material 3, Cupertino)
-- Hero animations and shared element transitions
+- Flutter widgets implementing Spotify-like UI components
+- ViewModels using ChangeNotifier for state management
+- BLoC pattern for complex state flows (audio playback, sync)
+- Platform-specific adaptations for different screen sizes
 
 **Domain Layer:**
-- Use cases for core business logic
-- Entity models (Artist, Album, Track, Server)
-- Repository interfaces
-- Audio playback abstractions
+- Business entities (Track, Album, Artist, Server, Playlist)
+- Use cases encapsulating business logic
+- Repository interfaces defining data contracts
+- Domain services for deduplication and aggregation
 
 **Data Layer:**
-- Drift database for metadata storage
-- Subsonic API clients
-- Audio file caching system
-- Secure credential storage
+- Repository implementations handling data orchestration
+- Remote data sources for Subsonic API communication
+- Local data sources for caching and offline storage
+- Database abstraction using SQLite/Drift
 
 ## Components and Interfaces
 
-### Core Components
+### Core Entities
 
-#### 1. Multi-Server Manager
 ```dart
-abstract class ServerRepository {
-  Future<List<Server>> getConfiguredServers();
-  Future<void> addServer(ServerConfig config);
-  Future<void> removeServer(String serverId);
-  Future<bool> validateServerConnection(ServerConfig config);
+// Domain Entities
+class Track {
+  final String id;
+  final String title;
+  final String artist;
+  final String album;
+  final Duration duration;
+  final String serverId;
+  final String streamUrl;
+  final AudioQuality quality;
+  final DateTime lastModified;
 }
 
-class ServerConfig {
+class MusicServer {
   final String id;
   final String name;
   final String url;
   final String username;
-  final String password; // Stored securely
-  final AuthType authType;
+  final ServerStatus status;
+  final DateTime lastSync;
+}
+
+class UnifiedCollection {
+  final List<Track> tracks;
+  final List<Album> albums;
+  final List<Artist> artists;
+  final Map<String, List<String>> duplicateGroups;
 }
 ```
 
-#### 2. Unified Content Repository
+### Repository Interfaces
+
 ```dart
 abstract class MusicRepository {
-  Future<List<Artist>> getArtists({String? query});
-  Future<List<Album>> getAlbumsByArtist(String artistId);
-  Future<List<Track>> getTracksByAlbum(String albumId);
-  Future<void> syncMetadata(List<String> serverIds);
-  Stream<SyncProgress> watchSyncProgress();
+  Future<Result<List<Track>>> getAllTracks();
+  Future<Result<List<Album>>> getAllAlbums();
+  Future<Result<List<Artist>>> getAllArtists();
+  Stream<UnifiedCollection> observeCollection();
+  Future<Result<void>> syncFromServers();
 }
 
-class UnifiedArtist {
-  final String id;
-  final String name;
-  final String? musicBrainzId;
-  final List<ServerSource> sources;
-  final String? imageUrl;
-}
-```
-
-#### 3. Audio Engine
-```dart
-abstract class AudioPlayer {
-  Future<void> setPlaylist(List<Track> tracks, {int initialIndex = 0});
-  Future<void> play();
-  Future<void> pause();
-  Future<void> seekToNext();
-  Future<void> seekToPrevious();
-  Stream<PlaybackState> get playbackStateStream;
-  Stream<Duration> get positionStream;
+abstract class ServerRepository {
+  Future<Result<void>> addServer(MusicServer server);
+  Future<Result<void>> removeServer(String serverId);
+  Future<Result<List<MusicServer>>> getAllServers();
+  Stream<List<MusicServer>> observeServers();
+  Future<Result<void>> testConnection(MusicServer server);
 }
 
-class AudioService {
-  final JustAudioPlayer _player;
-  final AudioServiceBackground _background;
-  final EqualizerEngine _equalizer;
+abstract class PlaybackRepository {
+  Future<Result<void>> play(Track track);
+  Future<Result<void>> pause();
+  Future<Result<void>> stop();
+  Stream<PlaybackState> observePlaybackState();
+  Future<Result<void>> setQueue(List<Track> tracks);
 }
 ```
 
-#### 4. Cache Manager
+### Key Use Cases
+
 ```dart
-abstract class CacheRepository {
-  Future<String?> getCachedTrackPath(String trackId);
-  Future<void> cacheTrack(String trackId, Stream<List<int>> audioStream);
-  Future<void> pinTrack(String trackId);
-  Future<void> unpinTrack(String trackId);
-  Future<void> clearCache({bool keepPinned = true});
-  Future<CacheStats> getCacheStats();
+class SyncMusicCollectionUseCase {
+  Future<Result<void>> execute() async {
+    // 1. Fetch metadata from all connected servers
+    // 2. Run deduplication algorithm
+    // 3. Update unified collection
+    // 4. Notify observers of changes
+  }
 }
 
-class CacheStats {
-  final int totalSize;
-  final int pinnedSize;
-  final int availableSpace;
-  final List<CachedTrack> recentlyUsed;
+class PlayTrackUseCase {
+  Future<Result<void>> execute(Track track) async {
+    // 1. Select best available server for track
+    // 2. Handle server failover if needed
+    // 3. Start audio streaming
+    // 4. Update playback state
+  }
+}
+
+class DeduplicateTracksUseCase {
+  Future<Result<Map<String, List<Track>>>> execute(List<Track> tracks) async {
+    // 1. Group tracks by similarity score
+    // 2. Apply user preferences for duplicates
+    // 3. Return duplicate groups for UI display
+  }
 }
 ```
 
 ## Data Models
 
-### Database Schema (Drift)
+### Database Schema
 
-```dart
-// Server configuration table
-class Servers extends Table {
-  TextColumn get id => text()();
-  TextColumn get name => text()();
-  TextColumn get url => text()();
-  TextColumn get username => text()();
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  DateTimeColumn get lastSync => dateTime().nullable()();
-  
-  @override
-  Set<Column> get primaryKey => {id};
-}
+```sql
+-- Servers table
+CREATE TABLE servers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  username TEXT NOT NULL,
+  encrypted_password TEXT NOT NULL,
+  status TEXT NOT NULL,
+  last_sync INTEGER,
+  created_at INTEGER NOT NULL
+);
 
-// Artists table with server source tracking
-class Artists extends Table {
-  TextColumn get id => text()();
-  TextColumn get name => text()();
-  TextColumn get musicBrainzId => text().nullable()();
-  TextColumn get imageUrl => text().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  
-  @override
-  Set<Column> get primaryKey => {id};
-}
+-- Tracks table
+CREATE TABLE tracks (
+  id TEXT PRIMARY KEY,
+  server_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  album TEXT NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  stream_url TEXT NOT NULL,
+  quality TEXT NOT NULL,
+  file_size INTEGER,
+  last_modified INTEGER,
+  is_cached BOOLEAN DEFAULT FALSE,
+  cache_path TEXT,
+  FOREIGN KEY (server_id) REFERENCES servers (id)
+);
 
-// Artist-Server mapping for unified view
-class ArtistSources extends Table {
-  TextColumn get artistId => text().references(Artists, #id)();
-  TextColumn get serverId => text().references(Servers, #id)();
-  TextColumn get serverArtistId => text()();
-  
-  @override
-  Set<Column> get primaryKey => {artistId, serverId};
-}
+-- Duplicate groups table
+CREATE TABLE duplicate_groups (
+  id TEXT PRIMARY KEY,
+  representative_track_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (representative_track_id) REFERENCES tracks (id)
+);
 
-// Albums table
-class Albums extends Table {
-  TextColumn get id => text()();
-  TextColumn get title => text()();
-  TextColumn get artistId => text().references(Artists, #id)();
-  TextColumn get serverId => text().references(Servers, #id)();
-  TextColumn get serverAlbumId => text()();
-  IntColumn get year => integer().nullable()();
-  TextColumn get genre => text().nullable()();
-  TextColumn get coverArtUrl => text().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  
-  @override
-  Set<Column> get primaryKey => {id};
-}
+-- Duplicate group members table
+CREATE TABLE duplicate_group_members (
+  group_id TEXT NOT NULL,
+  track_id TEXT NOT NULL,
+  similarity_score REAL NOT NULL,
+  PRIMARY KEY (group_id, track_id),
+  FOREIGN KEY (group_id) REFERENCES duplicate_groups (id),
+  FOREIGN KEY (track_id) REFERENCES tracks (id)
+);
 
-// Tracks table
-class Tracks extends Table {
-  TextColumn get id => text()();
-  TextColumn get title => text()();
-  TextColumn get albumId => text().references(Albums, #id)();
-  TextColumn get serverId => text().references(Servers, #id)();
-  TextColumn get serverTrackId => text()();
-  IntColumn get trackNumber => integer().nullable()();
-  IntColumn get duration => integer().nullable()(); // seconds
-  TextColumn get format => text()(); // mp3, flac, etc.
-  IntColumn get bitrate => integer().nullable()();
-  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
-  TextColumn get cachedPath => text().nullable()();
-  DateTimeColumn get lastPlayed => dateTime().nullable()();
-  
-  @override
-  Set<Column> get primaryKey => {id};
-}
+-- Playlists table
+CREATE TABLE playlists (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
 
-// Cache metadata table
-class CacheEntries extends Table {
-  TextColumn get trackId => text().references(Tracks, #id)();
-  TextColumn get filePath => text()();
-  IntColumn get fileSize => integer()();
-  BoolColumn get isPinned => boolean()();
-  DateTimeColumn get lastAccessed => dateTime()();
-  DateTimeColumn get createdAt => dateTime()();
-  
-  @override
-  Set<Column> get primaryKey => {trackId};
-}
+-- Playlist tracks table
+CREATE TABLE playlist_tracks (
+  playlist_id TEXT NOT NULL,
+  track_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  PRIMARY KEY (playlist_id, track_id),
+  FOREIGN KEY (playlist_id) REFERENCES playlists (id),
+  FOREIGN KEY (track_id) REFERENCES tracks (id)
+);
 ```
 
-### Entity Models
+### Subsonic API Integration
 
 ```dart
-class Track {
-  final String id;
-  final String title;
-  final String albumId;
-  final String serverId;
-  final int? trackNumber;
-  final Duration? duration;
-  final AudioFormat format;
-  final int? bitrate;
-  final bool isPinned;
-  final String? cachedPath;
-  final DateTime? lastPlayed;
-}
-
-class Album {
-  final String id;
-  final String title;
-  final String artistId;
-  final String serverId;
-  final int? year;
-  final String? genre;
-  final String? coverArtUrl;
-  final List<Track> tracks;
-}
-
-class Artist {
-  final String id;
-  final String name;
-  final String? musicBrainzId;
-  final String? imageUrl;
-  final List<ServerSource> sources;
-  final List<Album> albums;
+class SubsonicApiClient {
+  Future<Result<List<Track>>> getAlbumTracks(String albumId) async {
+    final response = await _httpClient.get(
+      '$baseUrl/rest/getAlbum',
+      queryParameters: {
+        'id': albumId,
+        'u': username,
+        't': _generateToken(),
+        's': _generateSalt(),
+        'v': '1.16.1',
+        'c': 'Omnisonic',
+        'f': 'json',
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      return Result.ok(_parseTracksFromResponse(response.data));
+    } else {
+      return Result.error(SubsonicApiException(response.statusCode));
+    }
+  }
+  
+  String getStreamUrl(String trackId) {
+    return '$baseUrl/rest/stream?id=$trackId&u=$username&t=${_generateToken()}&s=${_generateSalt()}&v=1.16.1&c=Omnisonic';
+  }
 }
 ```
 
@@ -275,184 +265,272 @@ class Artist {
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property Reflection
+### Property 1: Server Connection Validation
+*For any* server URL and credential combination, when attempting to connect, the system should validate the URL format, test authentication using Subsonic API, and store encrypted credentials locally if successful.
+**Validates: Requirements 1.1, 1.2**
 
-After reviewing all properties identified in the prework, several can be consolidated to eliminate redundancy:
+### Property 2: Server Fault Tolerance
+*For any* server failure scenario, the system should mark unavailable servers as offline and continue operating with remaining available servers without data loss.
+**Validates: Requirements 1.3**
 
-**Consolidations:**
-- Properties 1.1, 1.2, 1.3 can be combined into a comprehensive server management property
-- Properties 2.2, 2.3, 2.4, 2.5 can be combined into a unified content aggregation property  
-- Properties 4.1, 4.2, 4.4 can be combined into a comprehensive caching behavior property
-- Properties 7.1, 7.2, 7.3, 7.4 can be combined into a privacy and security property
-- Properties 8.1, 8.2, 8.3, 8.4, 8.5 can be combined into a background sync management property
+### Property 3: Multi-Server Capacity
+*For any* collection of up to 10 server connections, the system should maintain simultaneous connections and provide unified access to all server content.
+**Validates: Requirements 1.4**
 
-This reduces redundancy while maintaining comprehensive coverage of all functional requirements.
-
-### Core Correctness Properties
-
-**Property 1: Server Configuration Management**
-*For any* valid server configuration, adding it to the system should result in successful authentication, secure storage, and the ability to retrieve metadata, while invalid configurations should produce appropriate error messages and allow correction.
-**Validates: Requirements 1.1, 1.2, 1.3, 1.4**
-
-**Property 2: Server Cleanup Consistency**  
-*For any* server that is removed from configuration, all associated cached content and metadata should be completely removed from the local system.
+### Property 4: Server Configuration Updates
+*For any* server setting modification, the system should update the connection parameters and automatically re-sync metadata from the affected server.
 **Validates: Requirements 1.5**
 
-**Property 3: Unified Content Aggregation**
-*For any* set of servers containing duplicate artists (by name or MusicBrainz ID), the unified view should display them as single entries while preserving all albums from all sources and maintaining source attribution.
-**Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
+### Property 5: Unified Collection Synchronization
+*For any* set of connected servers, the system should fetch all metadata, create a unified collection, and automatically update when new content is detected on any server within 5 minutes.
+**Validates: Requirements 2.1, 2.2, 2.5**
 
-**Property 4: Audio Format and Playback Support**
-*For any* supported audio format (MP3, FLAC, AAC, OGG, Opus), the system should be able to play the file with appropriate transcoding requests based on network conditions and apply ReplayGain normalization when metadata is available.
-**Validates: Requirements 3.1, 3.3, 3.4**
+### Property 6: Source Information Preservation
+*For any* track in the unified collection, the system should maintain accurate server source information while presenting a unified view to the user.
+**Validates: Requirements 2.3**
 
-**Property 5: Gapless Playback Continuity**
-*For any* playlist or album, transitioning between consecutive tracks should maintain seamless audio continuity without gaps or interruptions.
-**Validates: Requirements 3.2**
+### Property 7: Cross-Server Search
+*For any* search query, the system should search simultaneously across all connected servers and return comprehensive results from all sources.
+**Validates: Requirements 2.4**
 
-**Property 6: Real-time Audio Processing**
-*For any* equalizer adjustment made during playback, the audio output should reflect the changes immediately without interrupting playback.
+### Property 8: Duplicate Detection Algorithm
+*For any* set of tracks with identical title, artist, album, and duration, the deduplication engine should identify them as duplicates and display only one entry in the unified collection.
+**Validates: Requirements 3.1, 3.2, 3.3**
+
+### Property 9: Optimal Source Selection
+*For any* deduplicated track, when playing, the system should select the best available source based on audio quality and server availability.
+**Validates: Requirements 3.4**
+
+### Property 10: User Duplicate Preferences
+*For any* manual duplicate marking by the user, the system should respect these preferences and override automatic detection results.
 **Validates: Requirements 3.5**
 
-**Property 7: Intelligent Cache Management**
-*For any* audio streaming session, files should be automatically cached using LRU eviction within configured size limits, while explicitly pinned content should be preserved during cache cleanup operations.
-**Validates: Requirements 4.1, 4.2, 4.4**
+### Property 11: Audio Streaming Initiation
+*For any* valid track selection, the system should initiate streaming using the Subsonic API stream endpoint and support all common audio formats (MP3, FLAC, OGG, AAC).
+**Validates: Requirements 4.1, 4.2**
 
-**Property 8: Offline Mode Filtering**
-*For any* content library, enabling offline mode should display only locally cached content while hiding unavailable items.
+### Property 12: Adaptive Streaming Quality
+*For any* network condition change, the system should automatically adapt streaming quality to maintain optimal playback experience.
 **Validates: Requirements 4.3**
 
-**Property 9: Playback Continuity During Network Loss**
-*For any* active playback session, losing network connectivity should not interrupt playback if the current and upcoming tracks are cached locally.
+### Property 13: Gapless Playback Continuity
+*For any* sequence of tracks in playlists or albums, the system should provide gapless playback transitions between tracks.
+**Validates: Requirements 4.4**
+
+### Property 14: Playback Server Failover
+*For any* server failure during playback, if the same track exists on alternative servers, the system should attempt to continue playback from an available source.
 **Validates: Requirements 4.5**
 
-**Property 10: UI Animation Consistency**
-*For any* navigation between screens involving album artwork, hero animations should be used to create smooth visual transitions.
-**Validates: Requirements 5.2**
+### Property 15: Content Display Completeness
+*For any* music content (albums, artists, playlists), the system should display all required elements including artwork, metadata, track listings, and durations.
+**Validates: Requirements 5.2, 6.3, 6.5**
 
-**Property 11: Adaptive Image Resolution**
-*For any* album artwork display, list views should show thumbnail resolution while detail views should show high-resolution images.
-**Validates: Requirements 5.3**
-
-**Property 12: Dynamic Theme Updates**
-*For any* track change during playback, the application theme should update to reflect colors derived from the new album artwork.
+### Property 16: UI Response Performance
+*For any* user interface interaction, the system should respond within 100ms to maintain optimal user experience.
 **Validates: Requirements 5.4**
 
-**Property 13: Immediate Theme Application**
-*For any* theme change (light, dark, OLED), the new theme should be applied immediately throughout the application without requiring a restart.
+### Property 17: Responsive Layout Adaptation
+*For any* screen size and orientation on supported platforms, the system should adapt the interface layout appropriately.
 **Validates: Requirements 5.5**
 
-**Property 14: Voice Command Response**
-*For any* basic playback voice command (play, pause, next, previous), the system should execute the appropriate action when connected to automotive systems.
-**Validates: Requirements 6.3**
+### Property 18: Real-Time Search Results
+*For any* search query, the system should provide real-time results across tracks, albums, artists, and playlists.
+**Validates: Requirements 6.1**
 
-**Property 15: Automotive Playback Continuity**
-*For any* active playback session, disconnecting from automotive systems should allow playback to continue seamlessly on the device.
-**Validates: Requirements 6.5**
+### Property 19: Multi-Dimensional Filtering
+*For any* filter criteria (genre, year, server source, audio quality), the system should correctly filter content across all specified dimensions.
+**Validates: Requirements 6.2**
 
-**Property 16: Privacy and Security Compliance**
-*For any* application operation, server credentials should be stored using platform secure storage, no telemetry should be transmitted to third parties, network communication should only occur with user-configured servers, and cached files should be stored in application-private directories.
-**Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+### Property 20: Smart Collection Generation
+*For any* user activity, the system should generate and maintain accurate recently played, most played, and recently added smart collections.
+**Validates: Requirements 6.4**
 
-**Property 17: Background Sync Management**
-*For any* background sync operation, the system should periodically update metadata from configured servers, handle errors with exponential backoff, respect battery optimization settings, and honor user preferences for background sync enablement.
-**Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+### Property 21: Comprehensive Playlist Operations
+*For any* playlist operation (creation, editing, deletion, reordering, adding tracks from any server), the system should execute the operation successfully and persist changes locally.
+**Validates: Requirements 7.1, 7.2, 7.3**
+
+### Property 22: Queue Management Operations
+*For any* play queue modification (adding, removing, reordering tracks), the system should update the queue state correctly and maintain playback continuity.
+**Validates: Requirements 7.3**
+
+### Property 23: Playlist Persistence and Sync
+*For any* playlist, the system should persist it locally and sync across devices when connectivity allows.
+**Validates: Requirements 7.4**
+
+### Property 24: Unavailable Track Handling
+*For any* playlist containing unavailable tracks, the system should skip unavailable tracks and continue playback with available tracks.
+**Validates: Requirements 7.5**
+
+### Property 25: Offline Content Caching
+*For any* content marked for offline access, the system should download and cache audio files locally with appropriate cache management and size limits.
+**Validates: Requirements 8.1, 8.2**
+
+### Property 26: Offline Functionality Access
+*For any* cached content, when offline, the system should provide full playback functionality without network connectivity.
+**Validates: Requirements 8.3**
+
+### Property 27: Cache Priority Management
+*For any* cache management scenario, the system should prioritize recently accessed and user-favorited content when storage limits are reached.
+**Validates: Requirements 8.5**
+
+### Property 28: Cross-Device Synchronization
+*For any* playback state change, user preference, or playlist modification, the system should sync the changes across all user devices and handle conflicts by prioritizing recent changes.
+**Validates: Requirements 9.1, 9.2, 9.4**
+
+### Property 29: Playback Continuity Across Devices
+*For any* device switch, the system should allow users to continue playback from where they left off on the previous device.
+**Validates: Requirements 9.3**
+
+### Property 30: Automatic Sync on Connectivity Restoration
+*For any* network connectivity restoration, the system should automatically sync all pending changes across devices and offline content preferences.
+**Validates: Requirements 9.5, 8.4**
+
+### Property 31: Performance Requirements
+*For any* platform, the system should start within 3 seconds, use no more than 100MB RAM during streaming, and minimize CPU usage and battery consumption in background mode.
+**Validates: Requirements 10.1, 10.2, 10.4**
+
+### Property 32: Image Caching Efficiency
+*For any* album artwork request, the system should implement efficient caching to minimize redundant network requests.
+**Validates: Requirements 10.3**
+
+### Property 33: Large Collection Performance
+*For any* music collection up to 100,000+ tracks, the system should maintain performance without degradation in response times or functionality.
+**Validates: Requirements 10.5**
+
+<function_calls>
+<invoke name="prework">
+<parameter name="featureName">omnisonic-music-client
 
 ## Error Handling
 
 ### Network Error Handling
-- **Connection Failures**: Graceful degradation to cached content
-- **Authentication Errors**: Clear error messages with retry mechanisms
-- **Timeout Handling**: Configurable timeouts with exponential backoff
-- **Rate Limiting**: Respect server rate limits with appropriate delays
+
+```dart
+class NetworkErrorHandler {
+  static Future<Result<T>> handleNetworkCall<T>(
+    Future<T> Function() networkCall,
+  ) async {
+    try {
+      final result = await networkCall();
+      return Result.ok(result);
+    } on SocketException {
+      return Result.error(NetworkException('No internet connection'));
+    } on TimeoutException {
+      return Result.error(NetworkException('Request timeout'));
+    } on HttpException catch (e) {
+      return Result.error(NetworkException('HTTP error: ${e.message}'));
+    } catch (e) {
+      return Result.error(UnknownException('Unexpected error: $e'));
+    }
+  }
+}
+```
+
+### Server Connection Error Handling
+
+- **Connection Timeout**: Retry with exponential backoff (1s, 2s, 4s, 8s)
+- **Authentication Failure**: Prompt user to re-enter credentials
+- **Server Unavailable**: Mark server as offline, continue with available servers
+- **API Version Mismatch**: Log warning, attempt compatibility mode
+- **Rate Limiting**: Implement request queuing with appropriate delays
 
 ### Audio Playback Error Handling
-- **Format Errors**: Fallback to transcoded versions
-- **Streaming Interruptions**: Seamless switching to cached versions
-- **Hardware Issues**: Graceful error reporting and recovery
-- **Buffer Underruns**: Intelligent buffering strategies
 
-### Data Consistency Error Handling
-- **Database Corruption**: Automatic repair and re-sync mechanisms
-- **Cache Corruption**: Automatic cache invalidation and re-download
-- **Metadata Conflicts**: Conflict resolution using timestamps and source priority
+- **Stream Interruption**: Attempt to resume from last position
+- **Format Not Supported**: Skip track and notify user
+- **Server Failover**: Automatically switch to alternative server for same track
+- **Cache Corruption**: Re-download corrupted files
+- **Audio Device Issues**: Gracefully handle device disconnection/reconnection
+
+### Data Synchronization Error Handling
+
+- **Sync Conflicts**: Use last-write-wins with user notification for important conflicts
+- **Partial Sync Failure**: Continue with successful operations, retry failed items
+- **Storage Full**: Implement intelligent cache eviction based on usage patterns
+- **Database Corruption**: Automatic backup restoration with user notification
 
 ## Testing Strategy
 
 ### Dual Testing Approach
 
-The testing strategy employs both unit testing and property-based testing to ensure comprehensive coverage:
+The application will use both unit testing and property-based testing to ensure comprehensive coverage:
 
-**Unit Testing:**
-- Specific examples demonstrating correct behavior
-- Integration points between components  
-- Edge cases and error conditions
-- Platform-specific functionality
+**Unit Tests:**
+- Test specific examples and edge cases for individual components
+- Verify integration points between layers
+- Test error conditions and boundary values
+- Focus on concrete scenarios and known failure modes
+
+**Property-Based Tests:**
+- Verify universal properties across all inputs using randomized testing
+- Test correctness properties defined in the design document
+- Use minimum 100 iterations per property test for thorough coverage
+- Each property test references its corresponding design property
+
+### Property-Based Testing Configuration
+
+**Framework**: Use `test` package with custom property testing utilities for Flutter
+**Test Configuration**:
+- Minimum 100 iterations per property test
+- Custom generators for domain objects (Track, Album, Server, etc.)
+- Shrinking support to find minimal failing examples
+- Tag format: **Feature: omnisonic-music-client, Property {number}: {property_text}**
+
+### Testing Libraries and Tools
+
+**Core Testing:**
+- `flutter_test` for widget and unit testing
+- `mockito` for mocking dependencies
+- `integration_test` for end-to-end testing across platforms
 
 **Property-Based Testing:**
-- Universal properties that should hold across all inputs
-- Configured to run minimum 100 iterations per test
-- Each property test tagged with format: **Feature: omnisonic-music-client, Property {number}: {property_text}**
-- Uses the `fast_check` library for Dart/Flutter property-based testing
+- Custom property testing framework built on `test` package
+- Generators for music domain objects
+- Property test runners with configurable iteration counts
 
-**Testing Framework Configuration:**
-- Primary testing framework: `flutter_test` for unit tests
-- Property-based testing: `fast_check` package for Dart
-- Integration testing: `integration_test` package for end-to-end scenarios
-- Mock framework: `mockito` for dependency isolation
+**Performance Testing:**
+- `flutter_driver` for performance profiling
+- Memory usage monitoring during streaming
+- Startup time measurement across platforms
+- Battery usage testing on mobile platforms
 
-**Test Organization:**
-- Unit tests co-located with source files using `.test.dart` suffix
-- Property tests in dedicated `test/properties/` directory
-- Integration tests in `integration_test/` directory
-- Test utilities and fixtures in `test/helpers/` directory
+### Test Categories
 
-**Coverage Requirements:**
-- Minimum 80% code coverage for core business logic
-- 100% coverage for critical paths (authentication, audio playback, data sync)
-- Property tests must validate all 17 correctness properties
-- Integration tests must cover complete user workflows
+**Unit Tests:**
+- Repository implementations
+- Use case business logic
+- Data model serialization/deserialization
+- API client functionality
+- Deduplication algorithms
 
-### Performance Testing
-- Audio latency measurements
-- UI frame rate monitoring during large list scrolling
-- Memory usage profiling during extended playback sessions
-- Battery consumption analysis for background operations
+**Widget Tests:**
+- UI component rendering
+- User interaction handling
+- State management integration
+- Platform-specific adaptations
 
-### Platform Testing
-- iOS and Android device testing
-- CarPlay and Android Auto integration testing
-- Desktop platform testing (Windows, macOS, Linux)
-- Web platform compatibility testing
+**Integration Tests:**
+- End-to-end user workflows
+- Multi-server synchronization
+- Offline/online mode transitions
+- Cross-platform functionality
 
-## Implementation Notes
+**Property Tests:**
+- All 33 correctness properties from design document
+- Randomized input validation
+- Invariant preservation across operations
+- Round-trip properties for serialization
 
-### Audio Engine Integration
-- Use `just_audio` with `audio_service` for background playback
-- Configure gapless playback through playlist management
-- Implement custom equalizer using platform-specific audio processing
-- Handle platform-specific audio session management
+### Continuous Integration
 
-### Database Optimization
-- Create indexes on frequently queried columns (artist name, album title)
-- Use database transactions for batch operations
-- Implement database migration strategies for schema updates
-- Optimize queries for large music libraries (50,000+ tracks)
+**Automated Testing Pipeline:**
+- Run all unit and widget tests on every commit
+- Execute property tests with extended iteration counts nightly
+- Performance regression testing on release candidates
+- Cross-platform testing matrix for all supported platforms
 
-### Caching Strategy
-- Implement LRU cache with configurable size limits (2GB-10GB)
-- Use content-based hashing for cache key generation
-- Implement cache warming for frequently accessed content
-- Handle cache corruption through automatic re-download
-
-### UI Performance Optimization
-- Use `ListView.builder` with item extent for large lists
-- Implement image caching with multiple resolution tiers
-- Use `RepaintBoundary` widgets to isolate expensive repaints
-- Optimize hero animations with custom flight shuttle builders
-
-### Security Implementation
-- Use `flutter_secure_storage` for credential management
-- Implement certificate pinning for server connections
-- Use HTTPS for all network communications
-- Implement proper session management and token refresh
+**Quality Gates:**
+- Minimum 90% code coverage for core business logic
+- All property tests must pass with 100 iterations
+- Performance benchmarks must not regress by more than 10%
+- No critical or high-severity static analysis issues

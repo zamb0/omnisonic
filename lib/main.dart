@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'core/di/injection_container.dart';
+import 'core/constants/app_constants.dart';
+import 'core/routing/app_router.dart';
+import 'core/design_system/theme.dart';
+import 'features/playback/data/datasources/playback_service.dart';
+import 'features/playback/data/datasources/playback_tracking_service.dart';
+
+// ViewModels
+import 'features/music/presentation/viewmodels/music_library_view_model.dart';
+import 'features/playback/presentation/viewmodels/playback_view_model.dart';
+import 'features/servers/presentation/viewmodels/server_management_view_model.dart';
+import 'features/music/presentation/viewmodels/playlist_view_model.dart';
+import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
+
+// BLoCs
+import 'features/sync/presentation/bloc/sync_bloc.dart';
+import 'features/music/presentation/bloc/search_bloc.dart';
+import 'features/playback/presentation/bloc/playback_bloc.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final imageCache = PaintingBinding.instance.imageCache;
+  imageCache.maximumSizeBytes = AppConstants.maxImageCacheSize;
+  imageCache.maximumSize = 1000;
+
+  try {
+    // Initialize dependency injection
+    await configureDependencies();
+
+    // Initialize audio service for background playback
+    // Use a timeout to prevent hanging on iOS if AudioService.init() blocks
+    try {
+      final playbackService = getIt<PlaybackService>();
+      await playbackService.initialize().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('PlaybackService initialization timed out after 5s');
+        },
+      );
+    } catch (e) {
+      debugPrint('PlaybackService initialization failed: $e');
+    }
+  } catch (e) {
+    debugPrint('App initialization failed: $e');
+  }
+
+  runApp(const OmnisonicApp());
+}
+
+class OmnisonicApp extends StatefulWidget {
+  const OmnisonicApp({super.key});
+
+  @override
+  State<OmnisonicApp> createState() => _OmnisonicAppState();
+}
+
+class _OmnisonicAppState extends State<OmnisonicApp>
+    with WidgetsBindingObserver {
+  PlaybackViewModel? _playbackViewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    debugPrint('App lifecycle changed to: $state');
+
+    // Save queue when app goes to background or is about to close
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      debugPrint('Saving queue due to lifecycle state: $state');
+      _saveCurrentQueue();
+    }
+  }
+
+  void _saveCurrentQueue() async {
+    try {
+      if (_playbackViewModel == null) {
+        _playbackViewModel = getIt<PlaybackViewModel>();
+      }
+
+      if (_playbackViewModel!.hasQueue &&
+          _playbackViewModel!.currentIndex >= 0) {
+        final trackingService = getIt<PlaybackTrackingService>();
+        await trackingService.savePlayQueue(
+          _playbackViewModel!.queue,
+          _playbackViewModel!.currentIndex,
+          _playbackViewModel!.position,
+        );
+        debugPrint('✓ Queue saved successfully on lifecycle change');
+      } else {
+        debugPrint(
+          'No queue to save (hasQueue: ${_playbackViewModel!.hasQueue}, index: ${_playbackViewModel!.currentIndex})',
+        );
+      }
+    } catch (e) {
+      debugPrint('✗ Failed to save queue: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        // ViewModels
+        ChangeNotifierProvider<MusicLibraryViewModel>(
+          create: (_) => getIt<MusicLibraryViewModel>(),
+        ),
+        ChangeNotifierProvider<PlaybackViewModel>(
+          create: (_) => getIt<PlaybackViewModel>(),
+        ),
+        ChangeNotifierProvider<ServerManagementViewModel>(
+          create: (_) => getIt<ServerManagementViewModel>(),
+        ),
+        ChangeNotifierProvider<PlaylistViewModel>(
+          create: (_) => getIt<PlaylistViewModel>(),
+        ),
+        ChangeNotifierProvider<LyricsViewModel>(
+          create: (_) => getIt<LyricsViewModel>(),
+        ),
+
+        // BLoCs
+        BlocProvider<SyncBloc>(create: (_) => getIt<SyncBloc>()),
+        BlocProvider<SearchBloc>(create: (_) => getIt<SearchBloc>()),
+        BlocProvider<PlaybackBloc>(create: (_) => getIt<PlaybackBloc>()),
+      ],
+      child: MaterialApp.router(
+        title: 'Omnisonic',
+        theme: OmnisonicTheme.lightTheme,
+        darkTheme: OmnisonicTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        routerConfig: AppRouter.router,
+      ),
+    );
+  }
+}

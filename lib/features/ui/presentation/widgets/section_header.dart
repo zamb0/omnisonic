@@ -5,6 +5,10 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onSeeAllPressed;
+
+  /// Label for the trailing action, so a section that toggles can read
+  /// "Show less" once it is expanded.
+  final String seeAllLabel;
   final EdgeInsets? padding;
 
   const SectionHeader({
@@ -12,6 +16,7 @@ class SectionHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onSeeAllPressed,
+    this.seeAllLabel = 'See All',
     this.padding,
   });
 
@@ -45,10 +50,7 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
           if (onSeeAllPressed != null)
-            TextButton(
-              onPressed: onSeeAllPressed,
-              child: const Text('See All'),
-            ),
+            TextButton(onPressed: onSeeAllPressed, child: Text(seeAllLabel)),
         ],
       ),
     );

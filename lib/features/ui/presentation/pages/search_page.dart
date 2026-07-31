@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/bloc/search_bloc.dart';
+import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/widgets.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/usecases/search_music_use_case.dart';
 import '../../../../core/utils/animation_utils.dart';
 
 /// Search page for finding music across all connected servers
@@ -20,6 +20,24 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  /// Sections the user expanded via "See All". Results are otherwise capped at
+  /// a preview length per section.
+  final Set<_ResultSection> _expandedSections = <_ResultSection>{};
+
+  static const int _trackPreviewCount = 5;
+  static const int _carouselPreviewCount = 10;
+
+  bool _isExpanded(_ResultSection section) =>
+      _expandedSections.contains(section);
+
+  void _toggleSection(_ResultSection section) {
+    setState(() {
+      if (!_expandedSections.remove(section)) {
+        _expandedSections.add(section);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -36,6 +54,10 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onSearchChanged() {
+    // A new query means new sections; keep them collapsed to their preview.
+    if (_expandedSections.isNotEmpty) {
+      setState(_expandedSections.clear);
+    }
     final query = _searchController.text.trim();
     if (query.isNotEmpty) {
       context.read<SearchBloc>().add(SearchQueryChanged(query));
@@ -78,15 +100,25 @@ class _SearchPageState extends State<SearchPage> {
         decoration: InputDecoration(
           hintText: 'Search tracks, albums, artists...',
           prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    _searchFocusNode.unfocus();
-                  },
-                )
-              : null,
+          // Driven by the controller rather than by the page's build cycle:
+          // typing does not call setState, so a plain read of `.text` here
+          // would leave the clear button stale.
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (context, value, child) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return IconButton(
+                icon: const Icon(Icons.clear),
+                tooltip: 'Clear search',
+                onPressed: () {
+                  _searchController.clear();
+                  _searchFocusNode.unfocus();
+                },
+              );
+            },
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: scheme.outlineVariant),
@@ -262,21 +294,27 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildTracksSection(List<Track> tracks) {
+    final expanded = _isExpanded(_ResultSection.tracks);
+    final visibleCount = expanded
+        ? tracks.length
+        : tracks.length.clamp(0, _trackPreviewCount);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           title: 'Tracks',
           subtitle: '${tracks.length} result${tracks.length != 1 ? 's' : ''}',
-          onSeeAllPressed: tracks.length > 5
-              ? () => _showAllTracks(tracks)
+          seeAllLabel: expanded ? 'Show Less' : 'See All',
+          onSeeAllPressed: tracks.length > _trackPreviewCount
+              ? () => _toggleSection(_ResultSection.tracks)
               : null,
         ),
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: tracks.length.clamp(0, 5),
+          itemCount: visibleCount,
           itemBuilder: (context, index) {
             final track = tracks[index];
             return TrackTile(
@@ -297,8 +335,11 @@ class _SearchPageState extends State<SearchPage> {
         SectionHeader(
           title: 'Albums',
           subtitle: '${albums.length} result${albums.length != 1 ? 's' : ''}',
-          onSeeAllPressed: albums.length > 5
-              ? () => _showAllAlbums(albums)
+          seeAllLabel: _isExpanded(_ResultSection.albums)
+              ? 'Show Less'
+              : 'See All',
+          onSeeAllPressed: albums.length > _carouselPreviewCount
+              ? () => _toggleSection(_ResultSection.albums)
               : null,
         ),
         SizedBox(
@@ -306,7 +347,9 @@ class _SearchPageState extends State<SearchPage> {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: albums.length.clamp(0, 10),
+            itemCount: _isExpanded(_ResultSection.albums)
+                ? albums.length
+                : albums.length.clamp(0, _carouselPreviewCount),
             itemBuilder: (context, index) {
               final album = albums[index];
               return Padding(
@@ -331,8 +374,11 @@ class _SearchPageState extends State<SearchPage> {
         SectionHeader(
           title: 'Artists',
           subtitle: '${artists.length} result${artists.length != 1 ? 's' : ''}',
-          onSeeAllPressed: artists.length > 5
-              ? () => _showAllArtists(artists)
+          seeAllLabel: _isExpanded(_ResultSection.artists)
+              ? 'Show Less'
+              : 'See All',
+          onSeeAllPressed: artists.length > _carouselPreviewCount
+              ? () => _toggleSection(_ResultSection.artists)
               : null,
         ),
         SizedBox(
@@ -340,7 +386,9 @@ class _SearchPageState extends State<SearchPage> {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: artists.length.clamp(0, 10),
+            itemCount: _isExpanded(_ResultSection.artists)
+                ? artists.length
+                : artists.length.clamp(0, _carouselPreviewCount),
             itemBuilder: (context, index) {
               final artist = artists[index];
               return Padding(
@@ -421,46 +469,76 @@ class _SearchPageState extends State<SearchPage> {
                 ).showSnackBar(const SnackBar(content: Text('Added to queue')));
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.playlist_add),
-              title: const Text('Add to Playlist'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement add to playlist
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Add to playlist - Coming soon'),
-                  ),
-                );
-              },
-            ),
+            if (context.read<PlaylistViewModel>().playlists.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.playlist_add),
+                title: const Text('Add to Playlist'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddToPlaylist(track);
+                },
+              ),
           ],
         ),
       ),
     );
   }
 
-  void _showAllTracks(List<Track> tracks) {
-    // Navigate to full tracks list
-    // TODO: Implement navigation to full results
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Showing all ${tracks.length} tracks')),
-    );
-  }
+  /// Playlist picker for "Add to Playlist". Shown only when at least one
+  /// playlist exists, so the entry point is never a dead end.
+  Future<void> _showAddToPlaylist(Track track) async {
+    final playlistViewModel = context.read<PlaylistViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+    final playlists = playlistViewModel.playlists;
 
-  void _showAllAlbums(List<Album> albums) {
-    // Navigate to full albums list
-    // TODO: Implement navigation to full results
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Showing all ${albums.length} albums')),
+    final playlistId = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SectionHeader(
+                title: 'Add to Playlist',
+                padding: EdgeInsets.zero,
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: playlists.length,
+                itemBuilder: (context, index) {
+                  final playlist = playlists[index];
+                  return ListTile(
+                    leading: const Icon(Icons.playlist_play),
+                    title: Text(playlist.name),
+                    subtitle: Text('${playlist.trackCount} tracks'),
+                    onTap: () => Navigator.pop(sheetContext, playlist.id),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-  }
 
-  void _showAllArtists(List<Artist> artists) {
-    // Navigate to full artists list
-    // TODO: Implement navigation to full results
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Showing all ${artists.length} artists')),
+    if (playlistId == null) return;
+
+    final added = await playlistViewModel.addTrackToPlaylist(
+      playlistId,
+      track.id,
+    );
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          added ? 'Added to playlist' : 'Could not add track to playlist',
+        ),
+      ),
     );
   }
 }
+
+/// Result sections that can be expanded past their preview length.
+enum _ResultSection { tracks, albums, artists }

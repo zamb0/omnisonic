@@ -86,6 +86,23 @@ class AppRouter {
               );
             },
           ),
+          GoRoute(
+            path: playlistManagement,
+            name: 'playlistManagement',
+            pageBuilder: (context, state) =>
+                _fadePage(state: state, child: const PlaylistManagementPage()),
+          ),
+          GoRoute(
+            path: playlistDetail,
+            name: 'playlistDetail',
+            pageBuilder: (context, state) {
+              final playlistId = state.uri.queryParameters['id'] ?? '';
+              return _fadePage(
+                state: state,
+                child: PlaylistDetailPage(playlistId: playlistId),
+              );
+            },
+          ),
         ],
       ),
       GoRoute(
@@ -111,23 +128,6 @@ class AppRouter {
             );
           },
         ),
-      ),
-      GoRoute(
-        path: playlistManagement,
-        name: 'playlistManagement',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const PlaylistManagementPage()),
-      ),
-      GoRoute(
-        path: playlistDetail,
-        name: 'playlistDetail',
-        pageBuilder: (context, state) {
-          final playlistId = state.uri.queryParameters['id'] ?? '';
-          return _fadePage(
-            state: state,
-            child: PlaylistDetailPage(playlistId: playlistId),
-          );
-        },
       ),
     ],
   );

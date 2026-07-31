@@ -23,6 +23,21 @@ class OmnisonicColors {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
+  // Semantic Colors - accessible on light surfaces.
+  // The vivid variants above stay too light for white foreground text; these
+  // keep the same hue while clearing WCAG AA (4.5:1) against white.
+  static const Color successAccessible = Color(0xFF047857); // 5.48:1 on white
+  static const Color warningAccessible = Color(0xFFB45309); // 5.02:1 on white
+  static const Color errorAccessible = Color(0xFFDC2626); // 4.83:1 on white
+  static const Color infoAccessible = Color(0xFF1D4ED8); // 6.70:1 on white
+
+  // Brand Colors - accessible on light surfaces.
+  // Same hues as the primary/secondary/tertiary brand colors, darkened so that
+  // white foreground text and `primary`-coloured text on white both clear AA.
+  static const Color primaryLight = Color(0xFF4F46E5); // 6.29:1 on white
+  static const Color secondaryLight = Color(0xFF4338CA); // 7.68:1 on white
+  static const Color tertiaryLight = Color(0xFF0E7490); // 5.36:1 on white
+
   // Neutral Colors - Light Mode
   static const Color neutralWhite = Color(0xFFFFFFFF);
   static const Color neutralGray50 = Color(0xFFF9FAFB);
@@ -180,19 +195,19 @@ class OmnisonicColors {
   // Light Theme Color Scheme
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
-    primary: primaryPurple,
+    primary: primaryLight,
     onPrimary: neutralWhite,
     primaryContainer: primaryContainerLight,
     onPrimaryContainer: onPrimaryContainerLight,
-    secondary: secondaryIndigo,
+    secondary: secondaryLight,
     onSecondary: neutralWhite,
     secondaryContainer: secondaryContainerLight,
     onSecondaryContainer: onSecondaryContainerLight,
-    tertiary: primaryTeal,
+    tertiary: tertiaryLight,
     onTertiary: neutralWhite,
     tertiaryContainer: tertiaryContainerLight,
     onTertiaryContainer: onTertiaryContainerLight,
-    error: error,
+    error: errorAccessible,
     onError: neutralWhite,
     errorContainer: errorContainerLight,
     onErrorContainer: onErrorContainerLight,
@@ -209,7 +224,7 @@ class OmnisonicColors {
     inverseSurface: neutralGray800,
     onInverseSurface: neutralGray100,
     inversePrimary: Color(0xFF9CA3FF),
-    surfaceTint: primaryPurple,
+    surfaceTint: primaryLight,
   );
 
   // Dark Theme Color Scheme

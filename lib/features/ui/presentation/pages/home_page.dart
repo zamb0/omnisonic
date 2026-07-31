@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../widgets/empty_state.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -37,6 +40,7 @@ class _HomePageState extends State<HomePage> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             _buildAppBar(),
+            _buildOnboardingSection(),
             _buildRecentlyAddedSection(),
             _buildRecentlyPlayedSection(),
             _buildMostPlayedSection(),
@@ -51,25 +55,66 @@ class _HomePageState extends State<HomePage> {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              'Home',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Discover your music',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Home',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Discover your music',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
+            ),
+            // Server management is secondary navigation: it lives here rather
+            // than taking one of the four bottom-bar slots.
+            IconButton(
+              icon: const Icon(Icons.dns_outlined),
+              tooltip: 'Manage servers',
+              onPressed: () => context.push(AppRouter.servers),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// First-run state: with no server configured every section below collapses,
+  /// so Home would otherwise be a title over a blank screen.
+  Widget _buildOnboardingSection() {
+    return Consumer<ServerManagementViewModel>(
+      builder: (context, serverViewModel, child) {
+        if (serverViewModel.isLoading || serverViewModel.hasServers) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: Icons.dns_outlined,
+            title: 'No music server yet',
+            subtitle:
+                'Add a Subsonic-compatible server to start browsing and '
+                'playing your library.',
+            action: FilledButton.icon(
+              onPressed: () => context.push(AppRouter.servers),
+              icon: const Icon(Icons.add),
+              label: const Text('Add a server'),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -315,11 +360,6 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
                           onPressed: () => _playAlbum(context),
                           isPrimary: true,
                         ),
-                        const SizedBox(width: 8),
-                        _HoverButton(
-                          icon: Icons.more_vert,
-                          onPressed: () => _showOptions(context),
-                        ),
                       ],
                     ),
                   ),
@@ -350,10 +390,6 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
         playback.playTrack(shuffled.first, queue: shuffled, startIndex: 0);
       }
     });
-  }
-
-  void _showOptions(BuildContext context) {
-    // TODO: Show album options
   }
 }
 

@@ -12,6 +12,8 @@ import '../../features/ui/presentation/pages/now_playing_page.dart';
 import '../../features/playback/presentation/pages/queue_page.dart';
 import '../../features/offline/presentation/pages/offline_mode_page.dart';
 import '../../features/ui/presentation/pages/settings_page.dart';
+import '../../features/playback/presentation/widgets/full_screen_player.dart'
+    show NowPlayingPanel;
 import '../../features/ui/presentation/pages/album_detail_page.dart';
 import '../../features/ui/presentation/pages/artist_detail_page.dart';
 import '../../features/servers/presentation/pages/server_management_page.dart';
@@ -162,7 +164,7 @@ class AppRouter {
         name: 'nowPlaying',
         pageBuilder: (context, state) => CustomTransitionPage<void>(
           key: state.pageKey,
-          child: const NowPlayingPage(),
+          child: NowPlayingPage(initialPanel: state.extra as NowPlayingPanel?),
           transitionDuration: AnimationUtils.adjustedDuration(
             context,
             const Duration(milliseconds: 300),

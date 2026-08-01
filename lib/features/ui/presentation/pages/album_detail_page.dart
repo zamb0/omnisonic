@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
@@ -99,40 +100,20 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
+          return _buildDesktopScaffold(context);
+        }
+        return _buildMobileScaffold(context);
+      },
+    );
+  }
+
+  Widget _buildMobileScaffold(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/library');
-              }
-            },
-          ),
-          title: Text(
-            _album.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          actions: [
-            if (_tracks.isNotEmpty)
-              IconButton(
-                tooltip: 'Play',
-                icon: const Icon(Icons.play_arrow),
-                onPressed: _playAlbum,
-              ),
-            if (_tracks.isNotEmpty)
-              IconButton(
-                tooltip: 'Shuffle',
-                icon: const Icon(Icons.shuffle),
-                onPressed: _shuffleAlbum,
-              ),
-          ],
-        ),
+        _buildSliverAppBar(),
         SliverToBoxAdapter(child: _buildAlbumHeader(context)),
 
         // Tracks section header
@@ -161,6 +142,99 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
         // Tracks content
         _buildTracksContent(),
+      ],
+    );
+  }
+
+  /// Desktop shell (≥1024px): two columns — a track table with SOURCE/FORMAT
+  /// columns on the left, a "Resolution" panel (source picker, cross-source
+  /// conflict callouts, other albums by the same artist) on the right.
+  Widget _buildDesktopScaffold(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAlbumHeaderContent(
+                        context,
+                        Theme.of(context).colorScheme,
+                        0,
+                        includeArtwork: true,
+                        includeSourcePanel: false,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildTracksHeaderRow(context),
+                      const SizedBox(height: 8),
+                      _buildTrackTable(context),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 24),
+                SizedBox(width: 340, child: _buildResolutionPanel(context)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  SliverAppBar _buildSliverAppBar() {
+    return SliverAppBar(
+      pinned: true,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/library');
+          }
+        },
+      ),
+      title: Text(_album.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      actions: [
+        if (_tracks.isNotEmpty)
+          IconButton(
+            tooltip: 'Play',
+            icon: const Icon(Icons.play_arrow),
+            onPressed: _playAlbum,
+          ),
+        if (_tracks.isNotEmpty)
+          IconButton(
+            tooltip: 'Shuffle',
+            icon: const Icon(Icons.shuffle),
+            onPressed: _shuffleAlbum,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTracksHeaderRow(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Tracks',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const Spacer(),
+        if (_tracks.isNotEmpty)
+          IconButton(
+            onPressed: _loadTracks,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+          ),
       ],
     );
   }
@@ -244,6 +318,365 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     );
   }
 
+  // ---------------------------------------------------------------------
+  // Desktop track table (SOURCE/FORMAT columns)
+  // ---------------------------------------------------------------------
+
+  Widget _buildTrackTable(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadTracks,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_tracks.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text('No tracks found'),
+        ),
+      );
+    }
+
+    final scheme = Theme.of(context).colorScheme;
+    return GlassSurface(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 32,
+                  child: Text(
+                    '#',
+                    style: OmnisonicTypography.overline.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    'TITLE',
+                    style: OmnisonicTypography.overline.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'SOURCE',
+                    style: OmnisonicTypography.overline.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 96,
+                  child: Text(
+                    'FORMAT',
+                    style: OmnisonicTypography.overline.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 48,
+                  child: Text(
+                    'TIME',
+                    textAlign: TextAlign.right,
+                    style: OmnisonicTypography.overline.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 40),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+          for (var i = 0; i < _tracks.length; i++)
+            _buildTrackTableRow(context, _tracks[i], i),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackTableRow(BuildContext context, Track track, int index) {
+    final scheme = Theme.of(context).colorScheme;
+    final note = _sourceNoteFor(track);
+    final showSource = _albumVariants.length > 1;
+
+    return InkWell(
+      onTap: () => _onTrackTapped(track, index),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 32,
+              child: Text(
+                '${index + 1}',
+                style: OmnisonicTypography.metadata.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    track.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmnisonicTypography.bodyMedium.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    track.artist,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmnisonicTypography.bodySmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  if (showSource) ...[
+                    ServerDot(serverId: track.serverId, size: 8),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: Text(
+                      note ??
+                          (showSource ? _serverNameFor(track.serverId) : '—'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: OmnisonicTypography.metadata.copyWith(
+                        color: note != null
+                            ? scheme.tertiary
+                            : scheme.onSurfaceVariant,
+                        fontStyle: note != null
+                            ? FontStyle.italic
+                            : FontStyle.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 96,
+              child: Text(
+                '${track.quality.format} ${track.quality.bitrate}',
+                style: OmnisonicTypography.metadata.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 48,
+              child: Text(
+                _formatDuration(track.duration),
+                textAlign: TextAlign.right,
+                style: OmnisonicTypography.metadata.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 40,
+              child: IconButton(
+                icon: const Icon(Icons.more_vert, size: 18),
+                onPressed: () => _showTrackOptions(track),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Resolution panel (desktop right column)
+  // ---------------------------------------------------------------------
+
+  Widget _buildResolutionPanel(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_albumVariants.length > 1) ...[
+            _buildSourcePanel(context, Theme.of(context).colorScheme),
+            const SizedBox(height: 20),
+          ],
+          _buildConflictCallouts(context),
+          _buildAlsoByArtistGrid(context),
+        ],
+      ),
+    );
+  }
+
+  /// Flags tracks whose duration disagrees by more than 2s across sources —
+  /// a real signal that two servers likely have different rips/edits of the
+  /// same track, derived from the same [_variantTracksCache] used for the
+  /// per-track notes.
+  List<String> _conflictCallouts() {
+    if (_variantTracksCache.length < 2) return const [];
+
+    final byTrackNumber = <int, List<Track>>{};
+    for (final tracks in _variantTracksCache.values) {
+      for (final track in tracks) {
+        final number = track.trackNumber;
+        if (number == null) continue;
+        byTrackNumber.putIfAbsent(number, () => []).add(track);
+      }
+    }
+
+    final callouts = <String>[];
+    final sortedNumbers = byTrackNumber.keys.toList()..sort();
+    for (final number in sortedNumbers) {
+      final durations = byTrackNumber[number]!
+          .map((t) => t.duration.inSeconds)
+          .toList();
+      final minSeconds = durations.reduce((a, b) => a < b ? a : b);
+      final maxSeconds = durations.reduce((a, b) => a > b ? a : b);
+      if (maxSeconds - minSeconds > 2) {
+        callouts.add('Track $number differs in length between servers');
+      }
+    }
+    return callouts;
+  }
+
+  Widget _buildConflictCallouts(BuildContext context) {
+    final callouts = _conflictCallouts();
+    if (callouts.isEmpty) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 16,
+                  color: OmnisonicColors.warningAccessible,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'CONFLICTS',
+                  style: OmnisonicTypography.overline.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final callout in callouts)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  callout,
+                  style: OmnisonicTypography.bodySmall.copyWith(
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Other albums by the same artist, deduplicated the same way the library
+  /// grid is (best copy per title/artist/year group across servers).
+  Widget _buildAlsoByArtistGrid(BuildContext context) {
+    final libraryViewModel = context.watch<MusicLibraryViewModel>();
+    final rawOthers = libraryViewModel.albums
+        .where(
+          (a) =>
+              a.artist == _album.artist &&
+              _albumGroupKey(a) != _albumGroupKey(_album),
+        )
+        .toList();
+    if (rawOthers.isEmpty) return const SizedBox.shrink();
+
+    final others = dedupeAlbumsByServer(rawOthers).albums.take(4).toList();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'ALSO BY ${_album.artist.toUpperCase()}',
+          style: OmnisonicTypography.overline.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final album in others)
+              SizedBox(
+                width: 96,
+                child: AlbumCard(
+                  album: album,
+                  width: 96,
+                  showMeta: false,
+                  onTap: () {
+                    context.pushReplacement('/album-detail', extra: album);
+                  },
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildAlbumHeader(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
@@ -283,11 +716,17 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   Widget _buildAlbumHeaderContent(
     BuildContext context,
     ColorScheme scheme,
-    double artworkSize,
-  ) {
+    double artworkSize, {
+    bool includeArtwork = false,
+    bool includeSourcePanel = true,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (includeArtwork) ...[
+          _buildAlbumArtwork(context, scheme, 220),
+          const SizedBox(height: 16),
+        ],
         Text(
           _album.title,
           style: Theme.of(
@@ -301,7 +740,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             context,
           ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
-        if (_albumVariants.length > 1) ...[
+        if (includeSourcePanel && _albumVariants.length > 1) ...[
           const SizedBox(height: 12),
           _buildSourcePanel(context, scheme),
         ],
@@ -452,7 +891,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     for (final variant in _albumVariants) {
       final quality = _bestQualityFor(variant.id);
       if (quality == null) continue;
-      if (bestQuality == null || quality.qualityScore > bestQuality.qualityScore) {
+      if (bestQuality == null ||
+          quality.qualityScore > bestQuality.qualityScore) {
         best = variant;
         bestQuality = quality;
       }

@@ -17,7 +17,12 @@ import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
-  const FullScreenPlayer({super.key});
+  const FullScreenPlayer({super.key, this.initialPanel});
+
+  /// Which of Queue/Lyrics/Visualizer to open on, so callers (e.g. the
+  /// desktop transport bar's Lyrics quick action) can deep-link straight to
+  /// a panel instead of always landing on Queue.
+  final NowPlayingPanel? initialPanel;
 
   @override
   State<FullScreenPlayer> createState() => _FullScreenPlayerState();
@@ -26,7 +31,7 @@ class FullScreenPlayer extends StatefulWidget {
 class _FullScreenPlayerState extends State<FullScreenPlayer> {
   bool _isDraggingSeek = false;
   double _seekValue = 0.0;
-  _NowPlayingPanel _panel = _NowPlayingPanel.queue;
+  late NowPlayingPanel _panel;
 
   /// Accumulated downward drag on the header, used to swipe-dismiss the
   /// player the way a full-screen modal is expected to close on iOS/Android.
@@ -37,6 +42,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   /// in which case [OmnisonicColors.nowPlayingGradient] is used instead.
   Color? _tintColor;
   String? _tintedCoverUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _panel = widget.initialPanel ?? NowPlayingPanel.queue;
+  }
 
   void _updateTint(String? coverArtUrl) {
     if (coverArtUrl == _tintedCoverUrl) return;
@@ -763,18 +774,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<_NowPlayingPanel>(
+          SegmentedButton<NowPlayingPanel>(
             segments: const [
+              ButtonSegment(value: NowPlayingPanel.queue, label: Text('Queue')),
               ButtonSegment(
-                value: _NowPlayingPanel.queue,
-                label: Text('Queue'),
-              ),
-              ButtonSegment(
-                value: _NowPlayingPanel.lyrics,
+                value: NowPlayingPanel.lyrics,
                 label: Text('Lyrics'),
               ),
               ButtonSegment(
-                value: _NowPlayingPanel.visualizer,
+                value: NowPlayingPanel.visualizer,
                 label: Text('Visualizer'),
               ),
             ],
@@ -802,14 +810,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Widget _buildPanelContent(
     BuildContext context,
     PlaybackViewModel playbackViewModel, {
-    required _NowPlayingPanel key,
+    required NowPlayingPanel key,
   }) {
     switch (key) {
-      case _NowPlayingPanel.queue:
+      case NowPlayingPanel.queue:
         return _buildQueuePanel(context, playbackViewModel);
-      case _NowPlayingPanel.lyrics:
+      case NowPlayingPanel.lyrics:
         return _buildLyricsPanel(context, playbackViewModel);
-      case _NowPlayingPanel.visualizer:
+      case NowPlayingPanel.visualizer:
         return _buildVisualizerPanel(context, playbackViewModel);
     }
   }
@@ -968,4 +976,4 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   }
 }
 
-enum _NowPlayingPanel { queue, lyrics, visualizer }
+enum NowPlayingPanel { queue, lyrics, visualizer }

@@ -6,7 +6,9 @@ import '../widgets/full_screen_player.dart';
 
 /// Main player page that can be accessed from the now-playing bar
 class PlayerPage extends StatelessWidget {
-  const PlayerPage({super.key});
+  const PlayerPage({super.key, this.initialPanel});
+
+  final NowPlayingPanel? initialPanel;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class PlayerPage extends StatelessWidget {
           );
         }
 
-        return const FullScreenPlayer();
+        return FullScreenPlayer(initialPanel: initialPanel);
       },
     );
   }

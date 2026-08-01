@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Typography system for Omnisonic UI Enhancement
-/// Uses Inter for body text and Poppins for display text
+/// Uses Manrope for UI text, Gabarito for display text, and JetBrains Mono
+/// for technical text (durations, bitrates, IDs, server names).
 ///
 /// Fonts are loaded via `google_fonts` (fetched and cached on first use, no
 /// bundled `.ttf` assets required) rather than declared as bare
@@ -10,8 +11,9 @@ import 'package:google_fonts/google_fonts.dart';
 /// without ever actually loading the intended typeface.
 class OmnisonicTypography {
   // Font families
-  static const String primaryFont = 'Inter';
-  static const String displayFont = 'Poppins';
+  static const String primaryFont = 'Manrope';
+  static const String displayFont = 'Gabarito';
+  static const String monoFont = 'JetBrains Mono';
   static const String fallbackFont = 'Roboto';
 
   // Font weights
@@ -26,21 +28,21 @@ class OmnisonicTypography {
   static const FontWeight black = FontWeight.w900;
 
   // Display styles (using Poppins)
-  static TextStyle get displayLarge => GoogleFonts.poppins(
+  static TextStyle get displayLarge => GoogleFonts.gabarito(
     fontSize: 57,
     fontWeight: bold,
     letterSpacing: -0.25,
     height: 1.12,
   );
 
-  static TextStyle get displayMedium => GoogleFonts.poppins(
+  static TextStyle get displayMedium => GoogleFonts.gabarito(
     fontSize: 45,
     fontWeight: bold,
     letterSpacing: 0,
     height: 1.16,
   );
 
-  static TextStyle get displaySmall => GoogleFonts.poppins(
+  static TextStyle get displaySmall => GoogleFonts.gabarito(
     fontSize: 36,
     fontWeight: semiBold,
     letterSpacing: 0,
@@ -48,21 +50,21 @@ class OmnisonicTypography {
   );
 
   // Headline styles (using Poppins)
-  static TextStyle get headlineLarge => GoogleFonts.poppins(
+  static TextStyle get headlineLarge => GoogleFonts.gabarito(
     fontSize: 32,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.25,
   );
 
-  static TextStyle get headlineMedium => GoogleFonts.poppins(
+  static TextStyle get headlineMedium => GoogleFonts.gabarito(
     fontSize: 28,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.29,
   );
 
-  static TextStyle get headlineSmall => GoogleFonts.poppins(
+  static TextStyle get headlineSmall => GoogleFonts.gabarito(
     fontSize: 24,
     fontWeight: medium,
     letterSpacing: 0,
@@ -70,21 +72,21 @@ class OmnisonicTypography {
   );
 
   // Title styles (using Inter)
-  static TextStyle get titleLarge => GoogleFonts.inter(
+  static TextStyle get titleLarge => GoogleFonts.manrope(
     fontSize: 22,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.27,
   );
 
-  static TextStyle get titleMedium => GoogleFonts.inter(
+  static TextStyle get titleMedium => GoogleFonts.manrope(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.15,
     height: 1.5,
   );
 
-  static TextStyle get titleSmall => GoogleFonts.inter(
+  static TextStyle get titleSmall => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
@@ -92,21 +94,21 @@ class OmnisonicTypography {
   );
 
   // Label styles (using Inter)
-  static TextStyle get labelLarge => GoogleFonts.inter(
+  static TextStyle get labelLarge => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.43,
   );
 
-  static TextStyle get labelMedium => GoogleFonts.inter(
+  static TextStyle get labelMedium => GoogleFonts.manrope(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.33,
   );
 
-  static TextStyle get labelSmall => GoogleFonts.inter(
+  static TextStyle get labelSmall => GoogleFonts.manrope(
     fontSize: 11,
     fontWeight: medium,
     letterSpacing: 0.5,
@@ -114,21 +116,21 @@ class OmnisonicTypography {
   );
 
   // Body styles (using Inter)
-  static TextStyle get bodyLarge => GoogleFonts.inter(
+  static TextStyle get bodyLarge => GoogleFonts.manrope(
     fontSize: 16,
     fontWeight: regular,
     letterSpacing: 0.5,
     height: 1.5,
   );
 
-  static TextStyle get bodyMedium => GoogleFonts.inter(
+  static TextStyle get bodyMedium => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.25,
     height: 1.43,
   );
 
-  static TextStyle get bodySmall => GoogleFonts.inter(
+  static TextStyle get bodySmall => GoogleFonts.manrope(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
@@ -136,56 +138,56 @@ class OmnisonicTypography {
   );
 
   // Music-specific typography styles
-  static TextStyle get trackTitle => GoogleFonts.inter(
+  static TextStyle get trackTitle => GoogleFonts.manrope(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.4,
   );
 
-  static TextStyle get artistName => GoogleFonts.inter(
+  static TextStyle get artistName => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static TextStyle get albumTitle => GoogleFonts.inter(
+  static TextStyle get albumTitle => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static TextStyle get playlistTitle => GoogleFonts.poppins(
+  static TextStyle get playlistTitle => GoogleFonts.gabarito(
     fontSize: 18,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.3,
   );
 
-  static TextStyle get nowPlayingTitle => GoogleFonts.inter(
+  static TextStyle get nowPlayingTitle => GoogleFonts.manrope(
     fontSize: 18,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.3,
   );
 
-  static TextStyle get nowPlayingArtist => GoogleFonts.inter(
+  static TextStyle get nowPlayingArtist => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static TextStyle get duration => GoogleFonts.inter(
+  static TextStyle get duration => GoogleFonts.jetBrainsMono(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
     height: 1.2,
   );
 
-  static TextStyle get metadata => GoogleFonts.inter(
+  static TextStyle get metadata => GoogleFonts.jetBrainsMono(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.3,
@@ -193,21 +195,21 @@ class OmnisonicTypography {
   );
 
   // Button typography
-  static TextStyle get buttonLarge => GoogleFonts.inter(
+  static TextStyle get buttonLarge => GoogleFonts.manrope(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static TextStyle get buttonMedium => GoogleFonts.inter(
+  static TextStyle get buttonMedium => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static TextStyle get buttonSmall => GoogleFonts.inter(
+  static TextStyle get buttonSmall => GoogleFonts.manrope(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
@@ -215,14 +217,14 @@ class OmnisonicTypography {
   );
 
   // Caption and overline
-  static TextStyle get caption => GoogleFonts.inter(
+  static TextStyle get caption => GoogleFonts.manrope(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
     height: 1.33,
   );
 
-  static TextStyle get overline => GoogleFonts.inter(
+  static TextStyle get overline => GoogleFonts.manrope(
     fontSize: 10,
     fontWeight: medium,
     letterSpacing: 1.5,

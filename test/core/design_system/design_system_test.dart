@@ -27,20 +27,26 @@ void main() {
       );
 
       // Test display styles. google_fonts suffixes the family with the
-      // resolved weight (e.g. "Poppins_700"), so match the base name.
-      expect(OmnisonicTypography.displayLarge.fontFamily, startsWith('Poppins'));
+      // resolved weight (e.g. "Gabarito_700"), so match the base name.
+      expect(
+        OmnisonicTypography.displayLarge.fontFamily,
+        startsWith('Gabarito'),
+      );
       expect(OmnisonicTypography.displayLarge.fontSize, 57);
       expect(OmnisonicTypography.displayLarge.fontWeight, FontWeight.w700);
 
       // Test body styles
-      expect(OmnisonicTypography.bodyLarge.fontFamily, startsWith('Inter'));
+      expect(OmnisonicTypography.bodyLarge.fontFamily, startsWith('Manrope'));
       expect(OmnisonicTypography.bodyLarge.fontSize, 16);
       expect(OmnisonicTypography.bodyLarge.fontWeight, FontWeight.w400);
 
       // Test music-specific styles
-      expect(OmnisonicTypography.trackTitle.fontFamily, startsWith('Inter'));
-      expect(OmnisonicTypography.artistName.fontFamily, startsWith('Inter'));
-      expect(OmnisonicTypography.albumTitle.fontFamily, startsWith('Inter'));
+      expect(OmnisonicTypography.trackTitle.fontFamily, startsWith('Manrope'));
+      expect(
+        OmnisonicTypography.artistName.fontFamily,
+        startsWith('Manrope'),
+      );
+      expect(OmnisonicTypography.albumTitle.fontFamily, startsWith('Manrope'));
     });
 
     test('Spacing system follows 8px grid', () {

@@ -52,11 +52,11 @@ class OmnisonicColors {
   static const Color neutralGray900 = Color(0xFF111827);
   static const Color neutralBlack = Color(0xFF000000);
 
-  // Surface Colors - Light Mode
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color cardLight = Color(0xFFF6F6F6);
-  static const Color backgroundLight = Color(0xFFF5F5F5);
-  static const Color onSurfaceLight = Color(0xFF1E1E1E);
+  // Surface Colors - Light Mode (warm greige, liquid-glass redesign)
+  static const Color surfaceLight = Color(0xFFEFEDEA);
+  static const Color cardLight = Color(0xFFEFEDEA);
+  static const Color backgroundLight = Color(0xFFE8E6E2);
+  static const Color onSurfaceLight = Color(0xFF141414);
   static const Color onBackgroundLight = Color(0xFF141414);
 
   // Container Colors - Light Mode
@@ -69,12 +69,12 @@ class OmnisonicColors {
   static const Color errorContainerLight = Color(0xFFFEE2E2);
   static const Color onErrorContainerLight = Color(0xFF7F1D1D);
 
-  // Surface Colors - Dark Mode
-  static const Color surfaceDark = Color(0xFF1F1F21);
-  static const Color cardDark = Color(0xFF181818);
-  static const Color backgroundDark = Color(0xFF141414);
-  static const Color onSurfaceDark = Color(0xFFC9C9C9);
-  static const Color onBackgroundDark = Color(0xFFE6E6E6);
+  // Surface Colors - Dark Mode (near-black, liquid-glass redesign)
+  static const Color surfaceDark = Color(0xFF0D0E10);
+  static const Color cardDark = Color(0xFF0D0E10);
+  static const Color backgroundDark = Color(0xFF0C0D0F);
+  static const Color onSurfaceDark = Color(0xFFF4F2EF);
+  static const Color onBackgroundDark = Color(0xFFF4F2EF);
 
   // Container Colors - Dark Mode
   static const Color primaryContainerDark = Color(0xFF2A2A46);
@@ -274,6 +274,59 @@ class OmnisonicColors {
   static const Color warningDark = Color(0xFF78350F);
   static const Color errorDark = Color(0xFF7F1D1D);
   static const Color infoDark = Color(0xFF1E3A8A);
+
+  // ---------------------------------------------------------------------
+  // Liquid-glass surfaces
+  // ---------------------------------------------------------------------
+
+  /// White-overlay alpha stops for light-mode glass surfaces, from most
+  /// transparent (subtle chrome) to most opaque (modal-like panels).
+  static const List<double> glassAlphasLight = [0.40, 0.55, 0.70, 0.85];
+
+  /// White-overlay alpha stops for dark-mode glass surfaces. Far fainter
+  /// than the light stack since it sits on a near-black base.
+  static const List<double> glassAlphasDark = [0.05, 0.09, 0.13, 0.18];
+
+  static Color glassLight(int stop) =>
+      Colors.white.withValues(alpha: glassAlphasLight[stop]);
+
+  static Color glassDark(int stop) =>
+      Colors.white.withValues(alpha: glassAlphasDark[stop]);
+
+  // ---------------------------------------------------------------------
+  // Per-server accent hues
+  // ---------------------------------------------------------------------
+
+  /// Precomputed sRGB stand-ins for an oklch(.68 .16 H) sweep (H = 0..330 in
+  /// 30° steps), used to give each source server a stable, distinguishable
+  /// accent dot without a runtime oklch->sRGB conversion.
+  static const List<Color> serverHueSwatches = [
+    Color(0xFFD86464), // H 0
+    Color(0xFFD89E64), // H 30
+    Color(0xFFD8D864), // H 60
+    Color(0xFF9ED864), // H 90
+    Color(0xFF64D864), // H 120
+    Color(0xFF64D89E), // H 150
+    Color(0xFF64D8D8), // H 180
+    Color(0xFF649ED8), // H 210
+    Color(0xFF6464D8), // H 240
+    Color(0xFF9E64D8), // H 270
+    Color(0xFFD864D8), // H 300
+    Color(0xFFD8649E), // H 330
+  ];
+
+  /// Deterministic accent color for a server ID, used to tag which source
+  /// server a track/album came from in the aggregated view. Hashes
+  /// `serverId`'s code units directly (rather than `String.hashCode`, which
+  /// is not guaranteed stable across platforms/isolates) so the same server
+  /// always gets the same dot everywhere.
+  static Color serverColorFor(String serverId) {
+    var hash = 0;
+    for (final unit in serverId.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return serverHueSwatches[hash % serverHueSwatches.length];
+  }
 }
 
 /// Extension for custom colors in theme

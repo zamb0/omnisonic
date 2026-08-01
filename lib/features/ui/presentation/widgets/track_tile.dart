@@ -76,7 +76,7 @@ class TrackTile extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
-        color: scheme.surfaceVariant,
+        color: scheme.surfaceContainerHighest,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
@@ -93,11 +93,11 @@ class TrackTile extends StatelessWidget {
                 fadeInDuration: const Duration(milliseconds: 120),
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
-                  color: scheme.surfaceVariant,
+                  color: scheme.surfaceContainerHighest,
                   child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: scheme.surfaceVariant,
+                  color: scheme.surfaceContainerHighest,
                   child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
                 ),
               ),

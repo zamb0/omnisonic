@@ -77,8 +77,9 @@ class CacheManager {
   Future<Result<bool>> needsCleanup(List<CacheEntry> entries) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final stats = statsResult.valueOrNull!;
       final usageRatio = stats.totalSize / maxCacheSize;
@@ -133,8 +134,9 @@ class CacheManager {
   }) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final stats = statsResult.valueOrNull!;
 
@@ -146,8 +148,9 @@ class CacheManager {
         entries,
         targetFreeSpace,
       );
-      if (evictionResult.isFailure)
+      if (evictionResult.isFailure) {
         return ResultHelper.failure(evictionResult.failureOrNull!);
+      }
 
       final toEvict = evictionResult.valueOrNull!;
       int freedSpace = 0;
@@ -217,8 +220,9 @@ class CacheManager {
   ) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final stats = statsResult.valueOrNull!;
 

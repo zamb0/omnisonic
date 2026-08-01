@@ -19,8 +19,8 @@ class OmnisonicTheme {
         bodyColor: OmnisonicColors.lightColorScheme.onSurface,
         displayColor: OmnisonicColors.lightColorScheme.onSurface,
       ),
-      scaffoldBackgroundColor: OmnisonicColors.lightColorScheme.background,
-      canvasColor: OmnisonicColors.lightColorScheme.background,
+      scaffoldBackgroundColor: OmnisonicColors.lightColorScheme.surface,
+      canvasColor: OmnisonicColors.lightColorScheme.surface,
 
       // App Bar Theme
       appBarTheme: AppBarTheme(
@@ -120,7 +120,7 @@ class OmnisonicTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: OmnisonicColors.lightColorScheme.surfaceVariant,
+        fillColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
           borderSide: BorderSide(
@@ -165,9 +165,9 @@ class OmnisonicTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: const DialogThemeData(
+      dialogTheme: DialogThemeData(
         elevation: OmnisonicElevation.modal,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(OmnisonicRadius.modal),
           ),
@@ -247,7 +247,7 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceVariant,
+        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.lightColorScheme.primary,
         unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
@@ -264,7 +264,7 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceVariant,
+        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.lightColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(
@@ -300,8 +300,8 @@ class OmnisonicTheme {
         bodyColor: OmnisonicColors.darkColorScheme.onSurface,
         displayColor: OmnisonicColors.darkColorScheme.onSurface,
       ),
-      scaffoldBackgroundColor: OmnisonicColors.darkColorScheme.background,
-      canvasColor: OmnisonicColors.darkColorScheme.background,
+      scaffoldBackgroundColor: OmnisonicColors.darkColorScheme.surface,
+      canvasColor: OmnisonicColors.darkColorScheme.surface,
 
       // App Bar Theme
       appBarTheme: AppBarTheme(
@@ -401,7 +401,7 @@ class OmnisonicTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: OmnisonicColors.darkColorScheme.surfaceVariant,
+        fillColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.input),
           borderSide: BorderSide(
@@ -446,9 +446,9 @@ class OmnisonicTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: const DialogThemeData(
+      dialogTheme: DialogThemeData(
         elevation: OmnisonicElevation.modal,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(OmnisonicRadius.modal),
           ),
@@ -528,7 +528,7 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceVariant,
+        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.darkColorScheme.primary,
         unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
@@ -545,7 +545,7 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceVariant,
+        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.darkColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(
@@ -634,10 +634,4 @@ extension OmnisonicThemeExtension on BuildContext {
   Curve get standardAnimationCurve => omnisonicAnimations.standardCurve;
   Curve get fastAnimationCurve => omnisonicAnimations.fastCurve;
   Curve get slowAnimationCurve => omnisonicAnimations.slowCurve;
-  bool get enableMicroInteractions =>
-      omnisonicAnimations.enableMicroInteractions;
-  bool get enablePageTransitions => omnisonicAnimations.enablePageTransitions;
-  bool get enableLoadingAnimations =>
-      omnisonicAnimations.enableLoadingAnimations;
-  double get animationScale => omnisonicAnimations.animationScale;
 }

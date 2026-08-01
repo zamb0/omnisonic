@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/design_system/animation_manager.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
+import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 
@@ -58,6 +58,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _slideController.duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : AnimationManager.normalDuration;
     final playbackViewModel = Provider.of<PlaybackViewModel>(context);
     _handleTrackChange(playbackViewModel.currentTrack);
   }
@@ -71,6 +74,22 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       }
       _previousTrack = currentTrack;
     }
+  }
+
+  /// Dominant color extracted from the current track's cover art, used to
+  /// tint the progress indicator. Null (falls back to `scheme.primary`)
+  /// until extraction finishes or if it fails.
+  Color? _tintColor;
+  String? _tintedCoverUrl;
+
+  void _updateTint(String? coverArtUrl) {
+    if (coverArtUrl == _tintedCoverUrl) return;
+    _tintedCoverUrl = coverArtUrl;
+    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
+      if (mounted && _tintedCoverUrl == coverArtUrl) {
+        setState(() => _tintColor = color);
+      }
+    });
   }
 
   @override
@@ -101,6 +120,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           return const SizedBox.shrink();
         }
 
+        _updateTint(track.coverArtUrl);
+        final tint = _tintColor ?? scheme.primary;
+
         final position = vm.position;
         final duration = vm.duration;
         final progress = vm.progress;
@@ -116,6 +138,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   position,
                   duration,
                   progress,
+                  tint,
                 )
               : _buildDesktopBar(
                   context,
@@ -125,6 +148,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   position,
                   duration,
                   progress,
+                  tint,
                 ),
         );
       },
@@ -140,6 +164,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Duration position,
     Duration duration,
     double progress,
+    Color tint,
   ) {
     // Below this width four 44px targets plus artwork leave the title unreadable.
     final showFavorite = MediaQuery.of(context).size.width >= 380;
@@ -152,7 +177,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           color: scheme.surface,
           border: Border(
             top: BorderSide(
-              color: scheme.outlineVariant.withOpacity(0.5),
+              color: scheme.outlineVariant.withValues(alpha: 0.5),
               width: 1,
             ),
           ),
@@ -164,46 +189,50 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               value: progress.clamp(0.0, 1.0),
               minHeight: 2,
               backgroundColor: scheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(tint),
             ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
                   children: [
-                    // Artwork
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        color: scheme.surfaceContainerHighest,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: track.coverArtUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: track.coverArtUrl!.withCoverArtSize(
-                                  128,
-                                ),
-                                cacheKey: track.coverArtUrl!
-                                    .withCoverArtSize(128)
-                                    .subsonicCacheKey,
-                                cacheManager:
-                                    OmnisonicImageCacheManager.instance,
-                                fit: BoxFit.cover,
-                                memCacheWidth: 88,
-                                memCacheHeight: 88,
-                                fadeInDuration: const Duration(
-                                  milliseconds: 120,
-                                ),
-                                useOldImageOnUrlChange: true,
-                                placeholder: (context, url) =>
-                                    _buildFallbackArtwork(),
-                                errorWidget: (context, url, error) =>
-                                    _buildFallbackArtwork(),
-                              )
-                            : _buildFallbackArtwork(),
+                    // Artwork. Tag matches full_screen_player.dart's
+                    // artwork so opening the player animates the cover
+                    // continuously instead of a hard cut.
+                    Hero(
+                      tag: 'now-playing-artwork-${track.id}',
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          color: scheme.surfaceContainerHighest,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: track.coverArtUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: track.coverArtUrl!
+                                      .withCoverArtSize(128),
+                                  cacheKey: track.coverArtUrl!
+                                      .withCoverArtSize(128)
+                                      .subsonicCacheKey,
+                                  cacheManager:
+                                      OmnisonicImageCacheManager.instance,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 88,
+                                  memCacheHeight: 88,
+                                  fadeInDuration: const Duration(
+                                    milliseconds: 120,
+                                  ),
+                                  useOldImageOnUrlChange: true,
+                                  placeholder: (context, url) =>
+                                      _buildFallbackArtwork(),
+                                  errorWidget: (context, url, error) =>
+                                      _buildFallbackArtwork(),
+                                )
+                              : _buildFallbackArtwork(),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -255,7 +284,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             20,
                             isStarred
                                 ? OmnisonicColors.favoriteIndicator
-                                : scheme.onSurface.withOpacity(0.7),
+                                : scheme.onSurface.withValues(alpha: 0.7),
                             () => vm.toggleFavorite(track),
                             label: isStarred
                                 ? 'Remove from favorites'
@@ -270,7 +299,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       22,
                       vm.hasPrevious
                           ? scheme.onSurface
-                          : scheme.onSurface.withOpacity(0.3),
+                          : scheme.onSurface.withValues(alpha: 0.3),
                       vm.hasPrevious ? () => vm.skipToPrevious() : null,
                       label: 'Previous track',
                     ),
@@ -282,7 +311,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       22,
                       vm.hasNext
                           ? scheme.onSurface
-                          : scheme.onSurface.withOpacity(0.3),
+                          : scheme.onSurface.withValues(alpha: 0.3),
                       vm.hasNext ? () => vm.skipToNext() : null,
                       label: 'Next track',
                     ),
@@ -305,6 +334,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Duration position,
     Duration duration,
     double progress,
+    Color tint,
   ) {
     return Container(
       height: 90,
@@ -312,7 +342,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         color: scheme.surface,
         border: Border(
           top: BorderSide(
-            color: scheme.outlineVariant.withOpacity(0.5),
+            color: scheme.outlineVariant.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -329,6 +359,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               position,
               duration,
               progress,
+              tint,
             ),
           ),
           // === RIGHT: Utility Icons ===
@@ -359,34 +390,44 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                // Album artwork
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: scheme.surfaceContainerHighest,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: track.coverArtUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                            cacheKey: track.coverArtUrl!
-                                .withCoverArtSize(128)
-                                .subsonicCacheKey,
-                            cacheManager: OmnisonicImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 112,
-                            memCacheHeight: 112,
-                            fadeInDuration: const Duration(milliseconds: 120),
-                            useOldImageOnUrlChange: true,
-                            placeholder: (context, url) =>
-                                _buildFallbackArtwork(),
-                            errorWidget: (context, url, error) =>
-                                _buildFallbackArtwork(),
-                          )
-                        : _buildFallbackArtwork(),
+                // Album artwork. Tag matches full_screen_player.dart's
+                // artwork so opening the player animates the cover
+                // continuously instead of a hard cut.
+                Hero(
+                  tag: 'now-playing-artwork-${track.id}',
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: scheme.surfaceContainerHighest,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: track.coverArtUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: track.coverArtUrl!.withCoverArtSize(
+                                128,
+                              ),
+                              cacheKey: track.coverArtUrl!
+                                  .withCoverArtSize(128)
+                                  .subsonicCacheKey,
+                              cacheManager:
+                                  OmnisonicImageCacheManager.instance,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 112,
+                              memCacheHeight: 112,
+                              fadeInDuration: const Duration(
+                                milliseconds: 120,
+                              ),
+                              useOldImageOnUrlChange: true,
+                              placeholder: (context, url) =>
+                                  _buildFallbackArtwork(),
+                              errorWidget: (context, url, error) =>
+                                  _buildFallbackArtwork(),
+                            )
+                          : _buildFallbackArtwork(),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -421,7 +462,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           track.album,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: scheme.onSurfaceVariant.withOpacity(0.7),
+                                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                                 fontSize: 11,
                               ),
                           maxLines: 1,
@@ -445,6 +486,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Duration position,
     Duration duration,
     double progress,
+    Color tint,
   ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -474,7 +516,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               22,
               vm.hasPrevious
                   ? scheme.onSurface
-                  : scheme.onSurface.withOpacity(0.3),
+                  : scheme.onSurface.withValues(alpha: 0.3),
               vm.hasPrevious ? () => vm.skipToPrevious() : null,
               label: 'Previous track',
             ),
@@ -485,7 +527,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             _iconBtn(
               Icons.skip_next,
               22,
-              vm.hasNext ? scheme.onSurface : scheme.onSurface.withOpacity(0.3),
+              vm.hasNext ? scheme.onSurface : scheme.onSurface.withValues(alpha: 0.3),
               vm.hasNext ? () => vm.skipToNext() : null,
               label: 'Next track',
             ),
@@ -537,9 +579,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     overlayShape: const RoundSliderOverlayShape(
                       overlayRadius: 10,
                     ),
-                    activeTrackColor: scheme.primary,
+                    activeTrackColor: tint,
                     inactiveTrackColor: scheme.surfaceContainerHighest,
-                    thumbColor: scheme.primary,
+                    thumbColor: tint,
                   ),
                   child: Slider(
                     value: _draggingProgress ?? progress.clamp(0.0, 1.0),

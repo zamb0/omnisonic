@@ -159,7 +159,7 @@ class _PlaylistEditDialogState extends State<PlaylistEditDialog> {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Updated "${name}"')));
+          ).showSnackBar(SnackBar(content: Text('Updated "$name"')));
         } else {
           // Error message is handled by the view model
           setState(() {

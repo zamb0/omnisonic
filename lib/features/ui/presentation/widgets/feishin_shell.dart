@@ -44,7 +44,7 @@ class FeishinShell extends StatelessWidget {
     return Container(
       width: extended ? 264 : 76,
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant,
+        color: scheme.surfaceContainerHighest,
         border: Border(right: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Column(
@@ -182,17 +182,32 @@ class FeishinShell extends StatelessWidget {
     final background = selected ? scheme.primaryContainer : Colors.transparent;
 
     if (!extended) {
-      return Tooltip(
-        message: label,
-        child: InkResponse(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Icon(
-              selected ? activeIcon : icon,
-              color: selected ? scheme.primary : scheme.onSurfaceVariant,
-              size: compact ? 20 : 24,
-            ),
+      // Labels are shown under the icon (NavigationRail labelType: all
+      // style) instead of a Tooltip, which relies on hover and is
+      // unreachable on tablet touchscreens.
+      return InkResponse(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                selected ? activeIcon : icon,
+                color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                size: compact ? 20 : 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       );

@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Typography system for Omnisonic UI Enhancement
 /// Uses Inter for body text and Poppins for display text
+///
+/// Fonts are loaded via `google_fonts` (fetched and cached on first use, no
+/// bundled `.ttf` assets required) rather than declared as bare
+/// `fontFamily` strings, which silently fall back to the system font
+/// without ever actually loading the intended typeface.
 class OmnisonicTypography {
   // Font families
   static const String primaryFont = 'Inter';
@@ -20,24 +26,21 @@ class OmnisonicTypography {
   static const FontWeight black = FontWeight.w900;
 
   // Display styles (using Poppins)
-  static const TextStyle displayLarge = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get displayLarge => GoogleFonts.poppins(
     fontSize: 57,
     fontWeight: bold,
     letterSpacing: -0.25,
     height: 1.12,
   );
 
-  static const TextStyle displayMedium = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get displayMedium => GoogleFonts.poppins(
     fontSize: 45,
     fontWeight: bold,
     letterSpacing: 0,
     height: 1.16,
   );
 
-  static const TextStyle displaySmall = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get displaySmall => GoogleFonts.poppins(
     fontSize: 36,
     fontWeight: semiBold,
     letterSpacing: 0,
@@ -45,24 +48,21 @@ class OmnisonicTypography {
   );
 
   // Headline styles (using Poppins)
-  static const TextStyle headlineLarge = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get headlineLarge => GoogleFonts.poppins(
     fontSize: 32,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.25,
   );
 
-  static const TextStyle headlineMedium = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get headlineMedium => GoogleFonts.poppins(
     fontSize: 28,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.29,
   );
 
-  static const TextStyle headlineSmall = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get headlineSmall => GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: medium,
     letterSpacing: 0,
@@ -70,24 +70,21 @@ class OmnisonicTypography {
   );
 
   // Title styles (using Inter)
-  static const TextStyle titleLarge = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get titleLarge => GoogleFonts.inter(
     fontSize: 22,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.27,
   );
 
-  static const TextStyle titleMedium = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get titleMedium => GoogleFonts.inter(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.15,
     height: 1.5,
   );
 
-  static const TextStyle titleSmall = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get titleSmall => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
@@ -95,24 +92,21 @@ class OmnisonicTypography {
   );
 
   // Label styles (using Inter)
-  static const TextStyle labelLarge = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get labelLarge => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.43,
   );
 
-  static const TextStyle labelMedium = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get labelMedium => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.33,
   );
 
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get labelSmall => GoogleFonts.inter(
     fontSize: 11,
     fontWeight: medium,
     letterSpacing: 0.5,
@@ -120,24 +114,21 @@ class OmnisonicTypography {
   );
 
   // Body styles (using Inter)
-  static const TextStyle bodyLarge = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get bodyLarge => GoogleFonts.inter(
     fontSize: 16,
     fontWeight: regular,
     letterSpacing: 0.5,
     height: 1.5,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get bodyMedium => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.25,
     height: 1.43,
   );
 
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get bodySmall => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
@@ -145,64 +136,56 @@ class OmnisonicTypography {
   );
 
   // Music-specific typography styles
-  static const TextStyle trackTitle = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get trackTitle => GoogleFonts.inter(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.4,
   );
 
-  static const TextStyle artistName = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get artistName => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static const TextStyle albumTitle = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get albumTitle => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static const TextStyle playlistTitle = TextStyle(
-    fontFamily: displayFont,
+  static TextStyle get playlistTitle => GoogleFonts.poppins(
     fontSize: 18,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.3,
   );
 
-  static const TextStyle nowPlayingTitle = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get nowPlayingTitle => GoogleFonts.inter(
     fontSize: 18,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.3,
   );
 
-  static const TextStyle nowPlayingArtist = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get nowPlayingArtist => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.1,
     height: 1.3,
   );
 
-  static const TextStyle duration = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get duration => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
     height: 1.2,
   );
 
-  static const TextStyle metadata = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get metadata => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.3,
@@ -210,24 +193,21 @@ class OmnisonicTypography {
   );
 
   // Button typography
-  static const TextStyle buttonLarge = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get buttonLarge => GoogleFonts.inter(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static const TextStyle buttonMedium = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get buttonMedium => GoogleFonts.inter(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static const TextStyle buttonSmall = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get buttonSmall => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
@@ -235,16 +215,14 @@ class OmnisonicTypography {
   );
 
   // Caption and overline
-  static const TextStyle caption = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get caption => GoogleFonts.inter(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
     height: 1.33,
   );
 
-  static const TextStyle overline = TextStyle(
-    fontFamily: primaryFont,
+  static TextStyle get overline => GoogleFonts.inter(
     fontSize: 10,
     fontWeight: medium,
     letterSpacing: 1.5,
@@ -252,7 +230,7 @@ class OmnisonicTypography {
   );
 
   /// Creates the complete TextTheme for the app
-  static TextTheme get textTheme => const TextTheme(
+  static TextTheme get textTheme => TextTheme(
     displayLarge: displayLarge,
     displayMedium: displayMedium,
     displaySmall: displaySmall,

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// A responsive grid widget that adapts to screen size
+/// A responsive grid widget that adapts to screen size.
+///
+/// Built on [Wrap], which lays out every child eagerly — there is no
+/// virtualization. Only use this for small, bounded collections (a settings
+/// page, a handful of chips); for scrollable collections that can grow large
+/// use [ResponsiveGridView] instead.
 class ResponsiveGrid extends StatelessWidget {
   final List<Widget> children;
   final double minItemWidth;
@@ -43,9 +48,15 @@ class ResponsiveGrid extends StatelessWidget {
   }
 }
 
-/// A responsive grid view for scrollable content
+/// A responsive grid view for scrollable content.
+///
+/// Takes [itemCount] + [itemBuilder] rather than a pre-built [List<Widget>]
+/// so the underlying [GridView.builder] only ever instantiates the cards
+/// that are actually laid out, instead of the caller materializing every
+/// item up front on each rebuild.
 class ResponsiveGridView extends StatelessWidget {
-  final List<Widget> children;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
   final double minItemWidth;
   final double spacing;
   final EdgeInsets? padding;
@@ -54,7 +65,8 @@ class ResponsiveGridView extends StatelessWidget {
 
   const ResponsiveGridView({
     super.key,
-    required this.children,
+    required this.itemCount,
+    required this.itemBuilder,
     this.minItemWidth = 160.0,
     this.spacing = 16.0,
     this.padding,
@@ -82,8 +94,8 @@ class ResponsiveGridView extends StatelessWidget {
             childAspectRatio:
                 childAspectRatio ?? _calculateAspectRatio(minItemWidth),
           ),
-          itemCount: children.length,
-          itemBuilder: (context, index) => children[index],
+          itemCount: itemCount,
+          itemBuilder: itemBuilder,
         );
       },
     );

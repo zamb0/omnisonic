@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Shared cache manager for album/artist artwork

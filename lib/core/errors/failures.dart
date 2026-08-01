@@ -13,57 +13,55 @@ abstract class Failure extends Equatable {
 
 /// Network-related failures
 class NetworkFailure extends Failure {
-  const NetworkFailure(String message, [String? code]) : super(message, code);
+  const NetworkFailure(super.message, [super.code]);
 }
 
 /// Server-related failures
 class ServerFailure extends Failure {
-  const ServerFailure(String message, [String? code]) : super(message, code);
+  const ServerFailure(super.message, [super.code]);
 }
 
 /// Cache-related failures
 class CacheFailure extends Failure {
-  const CacheFailure(String message, [String? code]) : super(message, code);
+  const CacheFailure(super.message, [super.code]);
 }
 
 /// Authentication-related failures
 class AuthenticationFailure extends Failure {
-  const AuthenticationFailure(String message, [String? code])
-    : super(message, code);
+  const AuthenticationFailure(super.message, [super.code]);
 }
 
 /// Database-related failures
 class DatabaseFailure extends Failure {
-  const DatabaseFailure(String message, [String? code]) : super(message, code);
+  const DatabaseFailure(super.message, [super.code]);
 }
 
 /// Audio playback failures
 class AudioFailure extends Failure {
-  const AudioFailure(String message, [String? code]) : super(message, code);
+  const AudioFailure(super.message, [super.code]);
 }
 
 /// Validation failures
 class ValidationFailure extends Failure {
-  const ValidationFailure(String message, [String? code])
-    : super(message, code);
+  const ValidationFailure(super.message, [super.code]);
 }
 
 /// Data-related failures
 class DataFailure extends Failure {
-  const DataFailure(String message, [String? code]) : super(message, code);
+  const DataFailure(super.message, [super.code]);
 }
 
 /// Synchronization failures
 class SyncFailure extends Failure {
-  const SyncFailure(String message, [String? code]) : super(message, code);
+  const SyncFailure(super.message, [super.code]);
 }
 
 /// Playback-related failures
 class PlaybackFailure extends Failure {
-  const PlaybackFailure(String message, [String? code]) : super(message, code);
+  const PlaybackFailure(super.message, [super.code]);
 }
 
 /// Unknown/unexpected failures
 class UnknownFailure extends Failure {
-  const UnknownFailure(String message, [String? code]) : super(message, code);
+  const UnknownFailure(super.message, [super.code]);
 }

@@ -3,6 +3,13 @@ import '../constants/animation_constants.dart';
 
 /// Utility class for creating consistent animations throughout the app
 class AnimationUtils {
+  /// Respects the platform "reduce motion" accessibility setting: returns
+  /// [Duration.zero] when it's on, so callers snap to the end state instead
+  /// of silently ignoring the preference.
+  static Duration adjustedDuration(BuildContext context, Duration duration) {
+    return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
+  }
+
   /// Creates a slide down transition for player dismissal
   static Widget slideDownTransition(
     BuildContext context,

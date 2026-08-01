@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/entities/entities.dart';
 import '../../core/constants/animation_constants.dart';
+import '../../core/utils/animation_utils.dart';
 import '../../features/ui/presentation/pages/home_page.dart';
 import '../../features/ui/presentation/pages/library_page.dart';
 import '../../features/ui/presentation/pages/search_page.dart';
@@ -38,31 +39,35 @@ class AppRouter {
             path: home,
             name: 'home',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const HomePage()),
+                _fadePage(context: context, state: state, child: const HomePage()),
           ),
           GoRoute(
             path: library,
             name: 'library',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const LibraryPage()),
+                _fadePage(context: context, state: state, child: const LibraryPage()),
           ),
           GoRoute(
             path: search,
             name: 'search',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const SearchPage()),
+                _fadePage(context: context, state: state, child: const SearchPage()),
           ),
           GoRoute(
             path: favorites,
             name: 'favorites',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const FavoritesPage()),
+                _fadePage(context: context, state: state, child: const FavoritesPage()),
           ),
           GoRoute(
             path: servers,
             name: 'servers',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const ServerManagementPage()),
+                _fadePage(
+                  context: context,
+                  state: state,
+                  child: const ServerManagementPage(),
+                ),
           ),
           GoRoute(
             path: albumDetail,
@@ -70,6 +75,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               final album = state.extra as Album;
               return _fadePage(
+                context: context,
                 state: state,
                 child: AlbumDetailPage(album: album),
               );
@@ -81,6 +87,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               final artist = state.extra as Artist;
               return _fadePage(
+                context: context,
                 state: state,
                 child: ArtistDetailPage(artist: artist),
               );
@@ -90,7 +97,11 @@ class AppRouter {
             path: playlistManagement,
             name: 'playlistManagement',
             pageBuilder: (context, state) =>
-                _fadePage(state: state, child: const PlaylistManagementPage()),
+                _fadePage(
+                  context: context,
+                  state: state,
+                  child: const PlaylistManagementPage(),
+                ),
           ),
           GoRoute(
             path: playlistDetail,
@@ -98,6 +109,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               final playlistId = state.uri.queryParameters['id'] ?? '';
               return _fadePage(
+                context: context,
                 state: state,
                 child: PlaylistDetailPage(playlistId: playlistId),
               );
@@ -111,6 +123,14 @@ class AppRouter {
         pageBuilder: (context, state) => CustomTransitionPage<void>(
           key: state.pageKey,
           child: const NowPlayingPage(),
+          transitionDuration: AnimationUtils.adjustedDuration(
+            context,
+            const Duration(milliseconds: 300),
+          ),
+          reverseTransitionDuration: AnimationUtils.adjustedDuration(
+            context,
+            const Duration(milliseconds: 300),
+          ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             // Slide up when entering, slide down when exiting
             const begin = Offset(0.0, 1.0);
@@ -133,13 +153,19 @@ class AppRouter {
   );
 
   static CustomTransitionPage<void> _fadePage({
+    required BuildContext context,
     required GoRouterState state,
     required Widget child,
   }) {
+    final duration = AnimationUtils.adjustedDuration(
+      context,
+      AnimationConstants.quickAnimation,
+    );
     return CustomTransitionPage<void>(
       key: state.pageKey,
       child: child,
-      transitionDuration: AnimationConstants.quickAnimation,
+      transitionDuration: duration,
+      reverseTransitionDuration: duration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
           opacity: CurvedAnimation(

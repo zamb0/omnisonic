@@ -352,7 +352,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         height: size,
         decoration: BoxDecoration(
           borderRadius: borderRadius,
-          color: scheme.surfaceVariant,
+          color: scheme.surfaceContainerHighest,
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: ClipRRect(
@@ -370,7 +370,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   fadeInDuration: const Duration(milliseconds: 120),
                   useOldImageOnUrlChange: true,
                   placeholder: (context, url) => Container(
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     child: Icon(
                       Icons.album,
                       size: size * 0.5,
@@ -379,7 +379,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   ),
                   errorWidget: (context, url, error) => coverArtErrorWidget(
                     Container(
-                      color: scheme.surfaceVariant,
+                      color: scheme.surfaceContainerHighest,
                       child: Icon(
                         Icons.album,
                         size: size * 0.5,
@@ -391,7 +391,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   ),
                 )
               : Container(
-                  color: scheme.surfaceVariant,
+                  color: scheme.surfaceContainerHighest,
                   child: Icon(
                     Icons.album,
                     size: size * 0.5,

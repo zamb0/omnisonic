@@ -111,7 +111,7 @@ class ServerConnectionService {
     // Try secure storage first (most secure)
     if (_secureStorage != null && _secureStorageAvailable) {
       try {
-        await _secureStorage!.write(
+        await _secureStorage.write(
           key: '$_passwordPrefix$serverId',
           value: password,
         );
@@ -188,7 +188,7 @@ class ServerConnectionService {
     // Try secure storage if available
     if (_secureStorage != null && _secureStorageAvailable) {
       try {
-        final password = await _secureStorage!.read(
+        final password = await _secureStorage.read(
           key: '$_passwordPrefix$serverId',
         );
 
@@ -246,7 +246,7 @@ class ServerConnectionService {
     try {
       // Remove from secure storage
       if (_secureStorage != null) {
-        await _secureStorage!.delete(key: '$_passwordPrefix$serverId');
+        await _secureStorage.delete(key: '$_passwordPrefix$serverId');
       }
 
       // Remove from memory cache
@@ -373,9 +373,9 @@ class ServerConnectionService {
       const testKey = 'omnisonic_test_key';
       const testValue = 'test_value';
 
-      await _secureStorage!.write(key: testKey, value: testValue);
-      final readValue = await _secureStorage!.read(key: testKey);
-      await _secureStorage!.delete(key: testKey);
+      await _secureStorage.write(key: testKey, value: testValue);
+      final readValue = await _secureStorage.read(key: testKey);
+      await _secureStorage.delete(key: testKey);
 
       if (readValue == testValue) {
         _secureStorageAvailable = true;

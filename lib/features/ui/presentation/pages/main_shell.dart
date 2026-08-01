@@ -51,7 +51,7 @@ class MainShell extends StatelessWidget {
   Widget _buildSidebarShell(BuildContext context, {required bool extended}) {
     return Scaffold(
       body: SafeArea(
-        child: FeishinShell(child: child, extended: extended),
+        child: FeishinShell(extended: extended, child: child),
       ),
     );
   }

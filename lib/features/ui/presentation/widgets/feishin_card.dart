@@ -73,7 +73,7 @@ class _FeishinCardState extends State<FeishinCard> {
                           opacity: _isHovering ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 150),
                           child: Container(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             child: Center(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -161,7 +161,7 @@ class _FeishinCardState extends State<FeishinCard> {
                     Text(
                       widget.meta!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant.withOpacity(0.7),
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                       maxLines: 1,

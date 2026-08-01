@@ -104,7 +104,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.red.withOpacity(0.6),
+                    color: Colors.red.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -140,7 +140,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                   Icon(
                     Icons.cloud_off,
                     size: 64,
-                    color: Colors.grey.withOpacity(0.6),
+                    color: Colors.grey.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -204,7 +204,7 @@ class _OfflineModePageState extends State<OfflineModePage>
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.2),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -219,7 +219,7 @@ class _OfflineModePageState extends State<OfflineModePage>
           Container(
             width: 1,
             height: 40,
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           ),
           Expanded(
             child: _buildStatItem(
@@ -231,7 +231,7 @@ class _OfflineModePageState extends State<OfflineModePage>
           Container(
             width: 1,
             height: 40,
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
           ),
           Expanded(
             child: _buildStatItem(

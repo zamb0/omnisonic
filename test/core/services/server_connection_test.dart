@@ -1,18 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:omnisonic/core/database/app_database.dart';
 import 'package:omnisonic/core/services/server_connection_service.dart';
 import 'package:omnisonic/core/entities/music_server.dart';
 import 'package:omnisonic/core/entities/server_status.dart';
+import 'package:drift/native.dart';
 
 void main() {
   group('Server Connection Service', () {
+    late AppDatabase database;
     late ServerConnectionService connectionService;
 
     setUp(() {
-      connectionService = ServerConnectionService();
+      database = AppDatabase.forTesting(NativeDatabase.memory());
+      connectionService = ServerConnectionService(database: database);
     });
 
-    tearDown(() {
+    tearDown(() async {
       connectionService.dispose();
+      await database.close();
     });
 
     test('should validate server configuration', () {

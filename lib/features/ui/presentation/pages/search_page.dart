@@ -132,7 +132,7 @@ class _SearchPageState extends State<SearchPage> {
             borderSide: BorderSide(color: scheme.primary, width: 1.5),
           ),
           filled: true,
-          fillColor: scheme.surfaceVariant,
+          fillColor: scheme.surfaceContainerHighest,
         ),
         textInputAction: TextInputAction.search,
         onSubmitted: (query) {

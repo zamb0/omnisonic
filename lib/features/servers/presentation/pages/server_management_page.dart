@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/theme_mode_controller.dart';
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/server_management_view_model.dart';
 import '../widgets/server_add_dialog.dart';
@@ -50,6 +51,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             onPressed: () => _refreshServers(context),
             tooltip: 'Refresh',
           ),
+          _buildThemeModeButton(context),
           PopupMenuButton<String>(
             onSelected: (value) {
               switch (value) {
@@ -265,7 +267,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -282,7 +284,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -399,7 +401,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -424,7 +426,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: (color ?? Colors.grey).withOpacity(0.1),
+        color: (color ?? Colors.grey).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -562,11 +564,65 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     );
   }
 
-  void _refreshServers(BuildContext context) {
-    context.read<ServerManagementViewModel>().refreshServers();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Refreshing servers...')));
+  /// Theme selector (system/light/dark), persisted via [ThemeModeController].
+  /// Lives here rather than a dedicated settings page since server
+  /// management is currently the app's only secondary-navigation surface.
+  Widget _buildThemeModeButton(BuildContext context) {
+    final current = context.watch<ThemeModeController>().themeMode;
+    const options = {
+      ThemeMode.system: (Icons.brightness_auto, 'System'),
+      ThemeMode.light: (Icons.light_mode, 'Light'),
+      ThemeMode.dark: (Icons.dark_mode, 'Dark'),
+    };
+
+    return PopupMenuButton<ThemeMode>(
+      icon: Icon(options[current]!.$1),
+      tooltip: 'Theme',
+      onSelected: (mode) => ThemeModeController.instance.setThemeMode(mode),
+      itemBuilder: (context) => options.entries.map((entry) {
+        final mode = entry.key;
+        final (icon, label) = entry.value;
+        return PopupMenuItem(
+          value: mode,
+          child: Row(
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+              Text(label),
+              if (mode == current) ...[
+                const Spacer(),
+                const Icon(Icons.check, size: 18),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _refreshServers(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Refreshing servers...')),
+    );
+
+    final success = await context
+        .read<ServerManagementViewModel>()
+        .refreshServers();
+    if (!context.mounted) return;
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(success ? 'Servers refreshed' : 'Refresh failed'),
+        action: success
+            ? null
+            : SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _refreshServers(context),
+              ),
+      ),
+    );
   }
 
   void _syncAllServers(BuildContext context) {

@@ -59,6 +59,8 @@ dependencies:
   # Image Caching
   cached_network_image: ^3.4.1
   flutter_cache_manager: ^3.4.1
+  google_fonts: ^8.2.0
+  palette_generator: ^0.3.3+7
 
 dev_dependencies:
   flutter_test:
@@ -95,28 +97,8 @@ flutter:
   #   - assets/icons/
   #   - assets/images/
 
-  # Custom fonts for the design system (commented out until font files are added)
-  # fonts:
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #         weight: 400
-  #       - asset: assets/fonts/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Inter-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Inter-Bold.ttf
-  #         weight: 700
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: assets/fonts/Poppins-Regular.ttf
-  #         weight: 400
-  #       - asset: assets/fonts/Poppins-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Poppins-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Poppins-Bold.ttf
-  #         weight: 700
+  # Inter and Poppins (the design system's fonts, see typography.dart) are
+  # loaded at runtime via the google_fonts package, not bundled as assets.
 
 flutter_launcher_icons:
   android: true

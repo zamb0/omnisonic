@@ -82,7 +82,9 @@ class _FavoritesPageState extends State<FavoritesPage>
           minItemWidth: 160,
           spacing: 20,
           childAspectRatio: 0.72,
-          children: starredAlbums.map((album) {
+          itemCount: starredAlbums.length,
+          itemBuilder: (context, index) {
+            final album = starredAlbums[index];
             final isStarred = viewModel.isAlbumStarred(album);
             return AlbumCard(
               album: album,
@@ -92,7 +94,7 @@ class _FavoritesPageState extends State<FavoritesPage>
               showArtist: true,
               showMeta: true,
             );
-          }).toList(),
+          },
         );
       },
     );
@@ -120,12 +122,14 @@ class _FavoritesPageState extends State<FavoritesPage>
           minItemWidth: 150,
           spacing: 20,
           childAspectRatio: 0.72,
-          children: starredArtists.map((artist) {
+          itemCount: starredArtists.length,
+          itemBuilder: (context, index) {
+            final artist = starredArtists[index];
             return ArtistCard(
               artist: artist,
               onTap: () => _onArtistTapped(artist),
             );
-          }).toList(),
+          },
         );
       },
     );

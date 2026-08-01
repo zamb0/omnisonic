@@ -1,30 +1,16 @@
 # Omnisonic Design System
 
-A comprehensive design system for the Omnisonic music streaming client, providing consistent colors, typography, spacing, and components across all platforms.
-
-## Overview
-
-The Omnisonic Design System implements a modern, accessible, and responsive design language that enhances the music listening experience. It follows Material Design 3 principles while adding custom elements specific to music applications.
-
-## Features
-
-- **🎨 Comprehensive Color Palette**: Light and dark themes with music-specific colors
-- **📝 Typography System**: Inter and Poppins fonts with responsive scaling
-- **📏 8px Grid System**: Consistent spacing and layout across all screen sizes
-- **🎵 Music-Specific Components**: Specialized UI elements for music applications
-- **♿ Accessibility Compliant**: WCAG 2.1 AA standards with proper touch targets
-- **📱 Responsive Design**: Adaptive layouts for mobile, tablet, and desktop
-- **🎭 Theme Management**: Seamless switching between light, dark, and system themes
+Colors, typography, spacing, icons and responsive layout helpers for the Omnisonic music streaming client, wired into `OmnisonicTheme` and used by `MaterialApp` in `lib/main.dart`.
 
 ## Quick Start
 
-### Import the Design System
+### Import
 
 ```dart
 import 'package:omnisonic/core/design_system/design_system.dart';
 ```
 
-### Apply Themes
+### Apply the theme
 
 ```dart
 MaterialApp(
@@ -35,261 +21,138 @@ MaterialApp(
 )
 ```
 
-### Use Colors
+### Colors
 
 ```dart
-// Access theme colors
 Container(
-  color: context.colorScheme.primary,
-  child: Text(
-    'Hello World',
-    style: TextStyle(color: context.colorScheme.onPrimary),
-  ),
-)
-
-// Use custom music colors
-Icon(
-  Icons.play_arrow,
-  color: context.playingIndicatorColor,
-)
-
-// Apply gradients
-Container(
-  decoration: BoxDecoration(
-    gradient: context.primaryGradient,
-  ),
+  decoration: BoxDecoration(gradient: OmnisonicColors.primaryGradient),
+  child: Text('Hello', style: TextStyle(color: OmnisonicColors.favoriteIndicator)),
 )
 ```
 
 ### Typography
 
 ```dart
-// Use predefined text styles
-Text('Album Title', style: context.textTheme.trackTitle)
-Text('Artist Name', style: context.textTheme.artistName)
-Text('Duration', style: context.textTheme.duration)
-
-// Use Material Design text styles
-Text('Heading', style: context.textTheme.headlineMedium)
-Text('Body text', style: context.textTheme.bodyLarge)
+Text('Album Title', style: OmnisonicTypography.trackTitle)
+Text('Artist Name', style: OmnisonicTypography.artistName)
 ```
 
-### Spacing and Layout
+### Spacing
 
 ```dart
-// Use consistent spacing
 Padding(
-  padding: OmnisonicInsets.allMd, // 16px all sides
+  padding: const EdgeInsets.all(OmnisonicSpacing.md), // 16px
   child: Column(
     children: [
       Text('Title'),
-      SizedBox(height: OmnisonicSpacing.sm), // 8px
+      const SizedBox(height: OmnisonicSpacing.sm), // 8px
       Text('Subtitle'),
     ],
   ),
 )
-
-// Responsive spacing
-Padding(
-  padding: OmnisonicSpacing.screenPaddingFor(context),
-  child: content,
-)
 ```
 
-### Icons and Assets
+### Icons
 
 ```dart
-// Use consistent icons
-OmnisonicIconWidget.play()
-OmnisonicIconWidget.favorite(filled: true)
-OmnisonicIconWidget(OmnisonicIcons.shuffle)
+Icon(OmnisonicIcons.shuffle, size: OmnisonicIconSizes.md)
+```
 
-// Display album artwork with fallback
-context.albumArtwork(
-  imageUrl: album.artworkUrl,
-  width: 120,
-  height: 120,
+### Responsive layout
+
+```dart
+ResponsiveLayout(
+  mobile: MobileView(),
+  tablet: TabletView(),
+  desktop: DesktopView(),
 )
 ```
 
 ## Color System
 
 ### Primary Colors
-- **Primary Purple**: `#6366F1` - Main brand color
-- **Primary Blue**: `#3B82F6` - Secondary brand color  
-- **Primary Teal**: `#06B6D4` - Accent color
+- **Primary Purple**: `#6366F1` — main brand color
+- **Primary Blue**: `#3B82F6` — secondary brand color
+- **Primary Teal**: `#06B6D4` — accent color
 
 ### Semantic Colors
-- **Success**: `#10B981` - Success states
-- **Warning**: `#F59E0B` - Warning states
-- **Error**: `#EF4444` - Error states
-- **Info**: `#3B82F6` - Information states
+- **Success**: `#10B981`
+- **Warning**: `#F59E0B`
+- **Error**: `#EF4444`
+- **Info**: `#3B82F6`
 
 ### Music-Specific Colors
-- **Playing Indicator**: `#1DB954` - Currently playing tracks
-- **Paused Indicator**: `#F59E0B` - Paused tracks
-- **Queue Indicator**: `#8B5CF6` - Queued tracks
-- **Favorite Indicator**: `#EC4899` - Favorited items
+- **Playing Indicator**: `#1DB954`
+- **Paused Indicator**: `#F59E0B`
+- **Queue Indicator**: `#8B5CF6`
+- **Favorite Indicator**: `#EC4899`
 
-### Gradients
-- **Primary Gradient**: Purple to Blue
-- **Accent Gradient**: Blue to Teal
-- **Hero Gradient**: Purple to Violet to Pink
-- **Subtle Gradient**: Light surface variations
+The light color scheme uses darkened `*Light` variants of the brand colors (`primaryLight`, `secondaryLight`, `tertiaryLight`) so white foreground text on them clears WCAG AA — see `color_contrast_test.dart`.
 
 ## Typography
 
-### Font Families
-- **Inter**: Primary font for body text, labels, and UI elements
-- **Poppins**: Display font for headings and titles
-- **Fallback**: Roboto (Android), San Francisco (iOS), System default (Desktop)
+- **Inter**: primary font — body text, labels, UI elements
+- **Poppins**: display font — headings and titles
 
-### Text Styles
-- **Display Large**: 57px, Bold, Poppins - Hero headings
-- **Headline Medium**: 28px, SemiBold, Poppins - Section headings
-- **Title Large**: 22px, Medium, Inter - Card titles
-- **Body Large**: 16px, Regular, Inter - Main body text
-- **Label Medium**: 12px, Medium, Inter - Labels and captions
+Both are loaded via `google_fonts` (no bundled font assets required).
 
 ### Music-Specific Styles
-- **Track Title**: 16px, Medium, Inter - Song titles
-- **Artist Name**: 14px, Regular, Inter - Artist names
-- **Album Title**: 14px, Medium, Inter - Album names
-- **Duration**: 12px, Regular, Inter - Time displays
+- **Track Title**: 16px, Medium, Inter
+- **Artist Name**: 14px, Regular, Inter
+- **Album Title**: 14px, Medium, Inter
 
 ## Spacing System
 
-Based on an 8px grid system for consistent spacing:
+8px grid, via `OmnisonicSpacing`:
 
-- **XS**: 4px - Minimal spacing
-- **SM**: 8px - Small spacing
-- **MD**: 16px - Medium spacing (most common)
-- **LG**: 24px - Large spacing
-- **XL**: 32px - Extra large spacing
-
-### Component Spacing
-- **Card Padding**: 16px
-- **List Item Padding**: 16px
-- **Button Padding**: 16px horizontal, 16px vertical
-- **Screen Padding**: 16px (responsive)
+- **XS**: 4px, **SM**: 8px, **MD**: 16px (most common), **LG**: 24px, **XL**: 32px
 
 ## Responsive Design
 
-### Breakpoints
-- **Mobile**: < 600px (4 columns)
-- **Tablet**: 600px - 1200px (8 columns)
-- **Desktop**: > 1200px (12 columns)
+Breakpoints live in `ResponsiveBreakpoints` (`responsive_layout.dart`):
 
-### Grid System
-- **Mobile Margin**: 16px
-- **Tablet Margin**: 24px
-- **Desktop Margin**: 32px
+- **Mobile**: < 768px
+- **Tablet**: 768px – 1024px
+- **Desktop**: > 1024px
+
+The app shell (`MainShell`) and the now-playing bar both switch on the same 768px threshold, so the compact mobile UI and the sidebar shell always appear together.
 
 ## Accessibility
 
-### Touch Targets
-- **Minimum**: 44px - WCAG compliance
-- **Comfortable**: 48px - Recommended size
-- **Large**: 56px - Primary actions
+### Touch Targets (`OmnisonicTouchTargets`)
+- **Minimum**: 44px — WCAG compliance
+- **Comfortable**: 48px
+- **Large**: 56px
 
 ### Color Contrast
-- All color combinations meet WCAG 2.1 AA standards
-- Minimum contrast ratio of 4.5:1 for normal text
-- Minimum contrast ratio of 3:1 for large text
+- All color combinations meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text) — enforced by `color_contrast_test.dart`.
 
-## Theme Management
+## Platform Theme Extensions
 
-```dart
-// Create theme manager
-final themeManager = OmnisonicThemeManager();
-
-// Switch themes
-themeManager.setLightTheme();
-themeManager.setDarkTheme();
-themeManager.setSystemTheme();
-themeManager.toggleTheme();
-
-// Check current theme
-bool isDark = themeManager.isDark(context);
-String themeName = themeManager.themeModeName;
-```
-
-## Asset Management
-
-### Placeholder Images
-```dart
-// Album artwork placeholder
-OmnisonicAssetManager.albumPlaceholder(width: 120, height: 120)
-
-// Artist image placeholder
-OmnisonicAssetManager.artistPlaceholder(width: 120, height: 120)
-
-// Playlist image placeholder
-OmnisonicAssetManager.playlistPlaceholder(width: 120, height: 120)
-```
-
-### Network Images with Fallbacks
-```dart
-// Automatic fallback to placeholder
-context.albumArtwork(
-  imageUrl: 'https://example.com/album.jpg',
-  width: 120,
-  height: 120,
-)
-```
-
-## Installation
-
-### 1. Add Font Files (Optional)
-Download and add font files to `assets/fonts/`:
-- Inter: Regular, Medium, SemiBold, Bold
-- Poppins: Regular, Medium, SemiBold, Bold
-
-### 2. Update pubspec.yaml
-Uncomment the font and asset sections in `pubspec.yaml` after adding font files.
-
-### 3. Import and Use
-```dart
-import 'package:omnisonic/core/design_system/design_system.dart';
-```
-
-## Examples
-
-See `example_integration.dart` for a comprehensive example showing all design system components in action.
+`platform_theme_extensions.dart` + `platform_optimizations.dart` + `platform_animations.dart` add per-platform touch target size, border radius, page-transition builder and haptics, applied automatically by `OmnisonicTheme` via `addPlatformExtensions`.
 
 ## Testing
 
-Run the design system tests:
 ```bash
-flutter test test/core/design_system/design_system_test.dart
+flutter test test/core/design_system/
 ```
-
-## Contributing
-
-When adding new components or modifying existing ones:
-
-1. Follow the established naming conventions
-2. Maintain consistency with the 8px grid system
-3. Ensure accessibility compliance
-4. Add appropriate tests
-5. Update documentation
 
 ## File Structure
 
 ```
 lib/core/design_system/
-├── colors.dart           # Color palette and schemes
-├── typography.dart       # Text styles and fonts
-├── spacing.dart          # Spacing, grid, and layout
-├── icons.dart           # Icon system and sizes
-├── theme.dart           # Theme configuration
-├── theme_manager.dart   # Theme switching logic
-├── asset_manager.dart   # Asset and image management
-├── design_system.dart   # Main export file
-├── example_integration.dart # Usage examples
-└── README.md           # This documentation
+├── colors.dart                     # Color palette and schemes
+├── typography.dart                 # Text styles and fonts (google_fonts)
+├── spacing.dart                    # Spacing, grid, touch targets
+├── icons.dart                      # Icon system and sizes
+├── theme.dart                      # ThemeData assembly (light/dark)
+├── animation_manager.dart          # Standard durations/curves + ThemeExtension
+├── responsive_layout.dart          # Breakpoints, ResponsiveLayout, ScreenSizeDetector
+├── platform_theme_extensions.dart  # Per-platform ThemeExtension
+├── platform_optimizations.dart     # Per-platform touch/haptics/scroll physics
+├── platform_animations.dart        # Per-platform page transitions
+├── design_system.dart              # Barrel export
+└── README.md                       # This documentation
 ```
 
-## License
-
-This design system is part of the Omnisonic project and follows the same license terms.
+Every file here has a real consumer — anything without one gets deleted rather than kept "for later" (see issue A5 in the UX/UI audit).

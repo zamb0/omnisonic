@@ -80,9 +80,9 @@ class NetworkQualityIndicator extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -220,7 +220,7 @@ class OfflineModeBanner extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Colors.orange.withOpacity(0.1),
+          color: Colors.orange.withValues(alpha: 0.1),
           child: Row(
             children: [
               const Icon(Icons.cloud_off, size: 20, color: Colors.orange),
@@ -240,7 +240,7 @@ class OfflineModeBanner extends StatelessWidget {
                       'Showing ${viewModel.offlineTrackCount} cached tracks',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.orange.withOpacity(0.8),
+                        color: Colors.orange.withValues(alpha: 0.8),
                       ),
                     ),
                   ],

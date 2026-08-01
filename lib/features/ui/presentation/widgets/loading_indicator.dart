@@ -48,6 +48,7 @@ class _ShimmerCardState extends State<ShimmerCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
+  bool _startedRepeating = false;
 
   @override
   void initState() {
@@ -62,7 +63,20 @@ class _ShimmerCardState extends State<ShimmerCard>
         curve: AnimationConstants.loadingCurve,
       ),
     );
-    _animationController.repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_startedRepeating) return;
+    _startedRepeating = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      // A zero-duration repeat() would spin forever without a visible
+      // change; hold the sweep at a static midpoint instead.
+      _animationController.value = 0.5;
+    } else {
+      _animationController.repeat();
+    }
   }
 
   @override

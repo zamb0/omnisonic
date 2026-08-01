@@ -407,7 +407,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: scheme.surfaceVariant,
+          color: scheme.surfaceContainerHighest,
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: ClipOval(
@@ -419,7 +419,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                   memCacheWidth: 600,
                   memCacheHeight: 600,
                   placeholder: (context, url) => Container(
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     child: Icon(
                       Icons.person,
                       size: size * 0.45,
@@ -427,7 +427,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     child: Icon(
                       Icons.person,
                       size: size * 0.45,
@@ -436,7 +436,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                   ),
                 )
               : Container(
-                  color: scheme.surfaceVariant,
+                  color: scheme.surfaceContainerHighest,
                   child: Icon(
                     Icons.person,
                     size: size * 0.45,

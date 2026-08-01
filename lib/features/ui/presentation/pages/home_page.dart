@@ -237,10 +237,10 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -300,10 +300,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildPlaceholderArt() {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: scheme.surfaceVariant,
+      color: scheme.surfaceContainerHighest,
       child: Icon(
         Icons.album,
-        color: scheme.onSurfaceVariant.withOpacity(0.3),
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
         size: 48,
       ),
     );
@@ -344,7 +344,7 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                   ),
                   child: Center(
                     child: Row(
@@ -427,8 +427,8 @@ class _HoverButtonState extends State<_HoverButton> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: widget.isPrimary
-                ? scheme.primary.withOpacity(_isHovered ? 1.0 : 0.9)
-                : scheme.surfaceVariant.withOpacity(_isHovered ? 0.8 : 0.6),
+                ? scheme.primary.withValues(alpha: _isHovered ? 1.0 : 0.9)
+                : scheme.surfaceContainerHighest.withValues(alpha: _isHovered ? 0.8 : 0.6),
           ),
           child: Icon(
             widget.icon,

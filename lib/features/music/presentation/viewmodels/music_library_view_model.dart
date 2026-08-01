@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
-import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
@@ -45,7 +44,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   List<Genre> _genres = [];
   String? _selectedGenre;
   bool _showStarredOnly = false;
-  Set<String> _starredAlbumIds =
+  final Set<String> _starredAlbumIds =
       {}; // Track starred album IDs for immediate UI updates
   SearchResults? _searchResults;
   bool _isLoading = false;
@@ -53,18 +52,36 @@ class MusicLibraryViewModel extends ChangeNotifier {
   String? _errorMessage;
   String _searchQuery = '';
 
+  // `albums`/`filteredAlbums` are consumed from a Consumer2 build method and
+  // previously rebuilt a fresh list (map + dedupe + sort by the caller) on
+  // every notifyListeners, including ones that don't touch album data (e.g.
+  // sync-progress toggles). Cached here and invalidated only when the inputs
+  // that actually feed them change, so unrelated rebuilds reuse the same
+  // list instance.
+  List<Album>? _albumsCache;
+  List<Album>? _filteredAlbumsCache;
+
+  void _invalidateAlbumsCache() {
+    _albumsCache = null;
+    _filteredAlbumsCache = null;
+  }
+
   // Getters
   UnifiedCollection? get collection => _collection;
   List<Track> get tracks => _collection?.tracks ?? [];
 
   /// Fetches collection stream observable
   List<Album> get albums {
-    if (_collection?.albums == null) return [];
+    if (_albumsCache != null) return _albumsCache!;
+
+    if (_collection?.albums == null) {
+      return _albumsCache = const [];
+    }
 
     // Update isStarred status dynamically based on starred albums list
     final starredIds = _starredAlbums.map((a) => a.id).toSet();
 
-    return _collection!.albums.map((album) {
+    return _albumsCache = _collection!.albums.map((album) {
       // Update isStarred if it's in the starred albums list or in optimistic updates
       if ((_starredAlbumIds.contains(album.id) ||
               starredIds.contains(album.id)) &&
@@ -131,6 +148,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
           'Collection update: ${collection.albums.length} albums, ${collection.artists.length} artists, ${collection.tracks.length} tracks',
         );
         _collection = collection;
+        _invalidateAlbumsCache();
         _clearError();
         notifyListeners();
       },
@@ -141,17 +159,22 @@ class MusicLibraryViewModel extends ChangeNotifier {
     );
   }
 
-  /// Syncs the music collection from all connected servers
-  Future<void> syncCollection({
+  /// Syncs the music collection from all connected servers.
+  ///
+  /// Returns whether the sync succeeded, so callers can show a terminal
+  /// success/error message (with retry) instead of leaving the user with
+  /// just the initial "Syncing..." toast.
+  Future<bool> syncCollection({
     String? serverId,
     bool forceRefresh = false,
   }) async {
-    if (_isSyncing) return;
+    if (_isSyncing) return false;
 
     _isSyncing = true;
     _clearError();
     notifyListeners();
 
+    var success = false;
     try {
       final params = SyncMusicCollectionParams(
         serverId: serverId,
@@ -163,6 +186,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
         collection,
       ) {
         _collection = collection;
+        _invalidateAlbumsCache();
+        success = true;
         _loadSmartCollections(); // Refresh smart collections after sync
       });
     } catch (e) {
@@ -171,6 +196,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
       _isSyncing = false;
       notifyListeners();
     }
+    return success;
   }
 
   /// Searches for music across all connected servers
@@ -272,7 +298,10 @@ class MusicLibraryViewModel extends ChangeNotifier {
       starredAlbumsResult.fold(
         (failure) =>
             AppLog.warn('Failed to load starred albums: ${failure.message}'),
-        (albums) => _starredAlbums = albums,
+        (albums) {
+          _starredAlbums = albums;
+          _invalidateAlbumsCache();
+        },
       );
 
       // Load starred artists
@@ -394,6 +423,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void setGenreFilter(String? genre) {
     if (_selectedGenre != genre) {
       _selectedGenre = genre;
+      _filteredAlbumsCache = null;
       notifyListeners();
     }
   }
@@ -401,6 +431,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   /// Toggles the starred-only filter
   void toggleStarredFilter() {
     _showStarredOnly = !_showStarredOnly;
+    _filteredAlbumsCache = null;
     notifyListeners();
   }
 
@@ -408,6 +439,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void setStarredFilter(bool value) {
     if (_showStarredOnly != value) {
       _showStarredOnly = value;
+      _filteredAlbumsCache = null;
       notifyListeners();
     }
   }
@@ -416,11 +448,14 @@ class MusicLibraryViewModel extends ChangeNotifier {
   void clearFilters() {
     _selectedGenre = null;
     _showStarredOnly = false;
+    _filteredAlbumsCache = null;
     notifyListeners();
   }
 
   /// Gets filtered albums based on current filter settings
   List<Album> get filteredAlbums {
+    if (_filteredAlbumsCache != null) return _filteredAlbumsCache!;
+
     var result = albums;
 
     // Apply starred filter - check both local optimistic updates and server data
@@ -442,7 +477,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
           .toList();
     }
 
-    return result;
+    return _filteredAlbumsCache = result;
   }
 
   /// Gets filtered artists based on current filter settings
@@ -511,6 +546,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     try {
       // Optimistic update: add to starred immediately for instant UI feedback
       _starredAlbumIds.add(album.id);
+      _invalidateAlbumsCache();
       notifyListeners();
 
       final result = await _musicRepository.starAlbum(album.id);
@@ -522,7 +558,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
       } else {
         // Revert optimistic update on failure
         _starredAlbumIds.remove(album.id);
-        final failure = result.fold((f) => f, (v) => null) as Failure?;
+        _invalidateAlbumsCache();
+        final failure = result.fold((f) => f, (v) => null);
         _setError('Failed to star album: ${failure?.message}');
         AppLog.warn('Star album failure: ${failure?.message}');
       }
@@ -530,6 +567,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     } catch (e) {
       // Revert optimistic update on error
       _starredAlbumIds.remove(album.id);
+      _invalidateAlbumsCache();
       _setError('Error starring album: $e');
       AppLog.error('Error starring album: $e');
       notifyListeners();
@@ -541,6 +579,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     try {
       // Optimistic update: remove from starred immediately for instant UI feedback
       _starredAlbumIds.remove(album.id);
+      _invalidateAlbumsCache();
       notifyListeners();
 
       final result = await _musicRepository.unstarAlbum(album.id);
@@ -552,7 +591,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
       } else {
         // Revert optimistic update on failure
         _starredAlbumIds.add(album.id);
-        final failure = result.fold((f) => f, (v) => null) as Failure?;
+        _invalidateAlbumsCache();
+        final failure = result.fold((f) => f, (v) => null);
         _setError('Failed to unstar album: ${failure?.message}');
         AppLog.warn('Unstar album failure: ${failure?.message}');
       }
@@ -560,6 +600,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     } catch (e) {
       // Revert optimistic update on error
       _starredAlbumIds.add(album.id);
+      _invalidateAlbumsCache();
       _setError('Error unstarring album: $e');
       AppLog.error('Error unstarring album: $e');
       notifyListeners();

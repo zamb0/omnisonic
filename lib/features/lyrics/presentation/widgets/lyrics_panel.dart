@@ -123,7 +123,7 @@ class _LyricsControls extends StatelessWidget {
               vertical: OmnisonicSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: scheme.surfaceVariant,
+              color: scheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(

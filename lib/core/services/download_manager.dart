@@ -176,7 +176,7 @@ class DownloadManager {
     final safeArtist = _sanitizeFilename(track.artist);
     final extension = _getFileExtension(track.streamUrl);
 
-    return '${track.id}_${safeArtist}_${safeTitle}$extension';
+    return '${track.id}_${safeArtist}_$safeTitle$extension';
   }
 
   /// Sanitizes a string for use in filenames

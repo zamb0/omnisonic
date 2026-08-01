@@ -110,8 +110,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
     try {
       // Get cache entry first
       final entryResult = await _localDataSource.getCachedEntry(trackId);
-      if (entryResult.isFailure)
+      if (entryResult.isFailure) {
         return ResultHelper.failure(entryResult.failureOrNull!);
+      }
 
       final entry = entryResult.valueOrNull;
       if (entry != null) {
@@ -121,8 +122,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
 
       // Remove from database
       final removeResult = await _localDataSource.removeCacheEntry(trackId);
-      if (removeResult.isFailure)
+      if (removeResult.isFailure) {
         return ResultHelper.failure(removeResult.failureOrNull!);
+      }
 
       await _updateCacheStats();
       return ResultHelper.success(null);
@@ -138,8 +140,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
     try {
       // Get all entries first
       final entriesResult = await _localDataSource.getAllCachedEntries();
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final allEntries = entriesResult.valueOrNull!;
       final entriesToRemove = allEntries.where(
@@ -153,8 +156,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
 
       // Remove from database
       final removeResult = await _localDataSource.removeCacheEntries(trackIds);
-      if (removeResult.isFailure)
+      if (removeResult.isFailure) {
         return ResultHelper.failure(removeResult.failureOrNull!);
+      }
 
       await _updateCacheStats();
       return ResultHelper.success(null);
@@ -169,8 +173,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
   Future<Result<CacheStats>> getCacheStats() async {
     try {
       final entriesResult = await _localDataSource.getAllCachedEntries();
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final entries = entriesResult.valueOrNull!;
       return await _cacheManager.getCacheStats(entries);
@@ -185,8 +190,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
   Future<Result<int>> performCacheCleanup({int? targetFreeSpace}) async {
     try {
       final entriesResult = await _localDataSource.getAllCachedEntries();
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final entries = entriesResult.valueOrNull!;
 
@@ -196,16 +202,18 @@ class OfflineRepositoryImpl implements OfflineRepository {
         targetFreeSpace ?? (2 * 1024 * 1024 * 1024 * 0.3).round(), // 30% of 2GB
       );
 
-      if (evictionResult.isFailure)
+      if (evictionResult.isFailure) {
         return ResultHelper.failure(evictionResult.failureOrNull!);
+      }
 
       final toEvict = evictionResult.valueOrNull!;
       final trackIds = toEvict.map((e) => e.trackId).toList();
 
       // Remove the selected entries
       final removeResult = await removeCachedTracks(trackIds);
-      if (removeResult.isFailure)
+      if (removeResult.isFailure) {
         return ResultHelper.failure(removeResult.failureOrNull!);
+      }
 
       final freedSpace = toEvict.fold<int>(
         0,
@@ -225,8 +233,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
   Future<Result<List<String>>> validateCacheIntegrity() async {
     try {
       final entriesResult = await _localDataSource.getAllCachedEntries();
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final entries = entriesResult.valueOrNull!;
       return await _cacheManager.validateCacheIntegrity(entries);
@@ -240,16 +249,18 @@ class OfflineRepositoryImpl implements OfflineRepository {
   @override
   Future<Result<bool>> isTrackCached(String trackId) async {
     final entryResult = await _localDataSource.getCachedEntry(trackId);
-    if (entryResult.isFailure)
+    if (entryResult.isFailure) {
       return ResultHelper.failure(entryResult.failureOrNull!);
+    }
 
     final entry = entryResult.valueOrNull;
     if (entry == null) return ResultHelper.success(false);
 
     // Verify file exists and is complete
     final verifyResult = await _downloadManager.verifyCachedFile(entry);
-    if (verifyResult.isFailure)
+    if (verifyResult.isFailure) {
       return ResultHelper.failure(verifyResult.failureOrNull!);
+    }
 
     return ResultHelper.success(verifyResult.valueOrNull!);
   }
@@ -291,8 +302,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
   Future<Result<bool>> canAccommodateDownload(int downloadSize) async {
     try {
       final entriesResult = await _localDataSource.getAllCachedEntries();
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final entries = entriesResult.valueOrNull!;
       return await _cacheManager.canAccommodateDownload(entries, downloadSize);
@@ -319,8 +331,9 @@ class OfflineRepositoryImpl implements OfflineRepository {
   Future<Result<void>> removeCachedTracksFromServer(String serverId) async {
     try {
       final entriesResult = await getCachedTracksByServer(serverId);
-      if (entriesResult.isFailure)
+      if (entriesResult.isFailure) {
         return ResultHelper.failure(entriesResult.failureOrNull!);
+      }
 
       final entries = entriesResult.valueOrNull!;
       final trackIds = entries.map((e) => e.trackId).toList();

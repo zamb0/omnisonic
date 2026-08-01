@@ -107,7 +107,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               end: Alignment.bottomCenter,
               colors: [
                 Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.7),
+                Theme.of(context).primaryColor.withValues(alpha: 0.7),
               ],
             ),
           ),
@@ -134,7 +134,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withValues(alpha: 0.7),
                           ],
                         ),
                       ),
@@ -303,7 +303,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     if (_isReorderMode) {
       return SliverReorderableList(
         itemCount: tracks.length,
-        onReorder: (oldIndex, newIndex) =>
+        onReorderItem: (oldIndex, newIndex) =>
             _reorderTracks(oldIndex, newIndex, viewModel),
         itemBuilder: (context, index) {
           final track = tracks[index];
@@ -386,7 +386,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Duplicate Playlist'),
         content: TextField(
           controller: controller,
@@ -398,22 +398,23 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
               final newName = controller.text.trim();
               if (newName.isNotEmpty) {
-                Navigator.of(context).pop();
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.of(dialogContext).pop();
                 final success = await viewModel.duplicatePlaylist(
                   playlist.id,
                   newName,
                 );
                 if (success && mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Created "$newName"')));
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('Created "$newName"')),
+                  );
                 }
               }
             },
@@ -427,23 +428,24 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void _deletePlaylist(Playlist playlist, PlaylistViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Playlist'),
         content: Text(
           'Are you sure you want to delete "${playlist.name}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.of(dialogContext).pop();
               final success = await viewModel.deletePlaylist(playlist.id);
               if (success && mounted) {
                 Navigator.of(context).pop(); // Go back to previous screen
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text('Deleted "${playlist.name}"')),
                 );
               }
@@ -457,10 +459,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   }
 
   void _reorderTracks(int oldIndex, int newIndex, PlaylistViewModel viewModel) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
     viewModel.moveTrackInPlaylist(widget.playlistId, oldIndex, newIndex);
   }
 
@@ -479,23 +477,24 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void _removeTrack(Track track, PlaylistViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Track'),
         content: Text('Remove "${track.title}" from this playlist?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.of(dialogContext).pop();
               final success = await viewModel.removeTrackFromPlaylist(
                 widget.playlistId,
                 track.id,
               );
               if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text('Removed "${track.title}"')),
                 );
               }

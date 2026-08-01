@@ -101,7 +101,7 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.blue, width: 1),
                   ),
@@ -178,7 +178,7 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Updated "${name}"')));
+          ).showSnackBar(SnackBar(content: Text('Updated "$name"')));
         } else {
           // Error message is handled by the view model
           setState(() {

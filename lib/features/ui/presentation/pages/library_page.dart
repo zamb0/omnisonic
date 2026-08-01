@@ -8,6 +8,7 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../widgets/widgets.dart';
 import '../models/library_tab.dart';
 import '../models/library_sort_state.dart';
+import '../models/sort_option.dart';
 import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
@@ -25,10 +26,37 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   late LibrarySortState _sortState;
 
+  // Dedupe + sort are O(n log n) over the whole collection; memoized here so
+  // they only re-run when the view model hands back a different album list
+  // (viewModel.filteredAlbums is itself cached and reference-stable unless
+  // the source data or filters actually changed) or the sort option changes,
+  // instead of on every rebuild the Consumer2 triggers.
+  List<Album>? _albumsSortInputCache;
+  SortOption? _sortOptionCache;
+  List<Album> _sortedAlbumsCache = const [];
+
   @override
   void initState() {
     super.initState();
     _sortState = LibrarySortState();
+  }
+
+  List<Album> _getSortedAlbums(List<Album> albums, SortOption sortOption) {
+    if (identical(albums, _albumsSortInputCache) &&
+        sortOption == _sortOptionCache) {
+      return _sortedAlbumsCache;
+    }
+
+    final dedupedAlbums = _dedupeAlbumsByServer(albums);
+    final sortedAlbums = LibrarySortService.sortAlbums(
+      dedupedAlbums,
+      sortOption,
+    );
+
+    _albumsSortInputCache = albums;
+    _sortOptionCache = sortOption;
+    _sortedAlbumsCache = sortedAlbums;
+    return sortedAlbums;
   }
 
   @override
@@ -61,7 +89,10 @@ class _LibraryPageState extends State<LibraryPage> {
         bottom: showTabBar ? _buildTabBar(activeTab) : null,
       ),
       body: AnimatedSwitcher(
-        duration: AnimationConstants.quickAnimation,
+        duration: AnimationUtils.adjustedDuration(
+          context,
+          AnimationConstants.quickAnimation,
+        ),
         switchInCurve: AnimationConstants.smoothCurve,
         switchOutCurve: AnimationConstants.smoothCurve,
         transitionBuilder: (child, animation) {
@@ -134,12 +165,8 @@ class _LibraryPageState extends State<LibraryPage> {
           );
         }
 
-        final dedupedAlbums = _dedupeAlbumsByServer(albums);
         final sortOption = _sortState.getOption(LibraryTab.albums);
-        final sortedAlbums = LibrarySortService.sortAlbums(
-          dedupedAlbums,
-          sortOption,
-        );
+        final sortedAlbums = _getSortedAlbums(albums, sortOption);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
@@ -165,7 +192,9 @@ class _LibraryPageState extends State<LibraryPage> {
                         minItemWidth: 160,
                         spacing: 20,
                         childAspectRatio: 0.72,
-                        children: sortedAlbums.map((album) {
+                        itemCount: sortedAlbums.length,
+                        itemBuilder: (context, index) {
+                          final album = sortedAlbums[index];
                           final isStarred = viewModel.isAlbumStarred(album);
                           return AlbumCard(
                             album: album,
@@ -180,7 +209,7 @@ class _LibraryPageState extends State<LibraryPage> {
                             showArtist: true,
                             showMeta: true,
                           );
-                        }).toList(),
+                        },
                       ),
               ),
             ],
@@ -224,12 +253,14 @@ class _LibraryPageState extends State<LibraryPage> {
             minItemWidth: 150,
             spacing: 20,
             childAspectRatio: 0.72,
-            children: sortedArtists.map((artist) {
+            itemCount: sortedArtists.length,
+            itemBuilder: (context, index) {
+              final artist = sortedArtists[index];
               return ArtistCard(
                 artist: artist,
                 onTap: () => _onArtistTapped(artist),
               );
-            }).toList(),
+            },
           ),
         );
       },
@@ -301,12 +332,14 @@ class _LibraryPageState extends State<LibraryPage> {
                   minItemWidth: 160,
                   spacing: 20,
                   childAspectRatio: 0.72,
-                  children: sortedPlaylists.map((playlist) {
+                  itemCount: sortedPlaylists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = sortedPlaylists[index];
                     return PlaylistCard(
                       playlist: playlist,
                       onTap: () => _onPlaylistTapped(playlist),
                     );
-                  }).toList(),
+                  },
                 ),
               ),
             ],
@@ -316,19 +349,17 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
+  // Same geometry as the real content grids (minItemWidth/padding/aspect
+  // ratio) so the shimmer collapses into the final layout instead of a
+  // visible jump when the two-column skeleton gives way to up to six.
   Widget _buildLoadingGrid() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
-      ),
+    return ResponsiveGridView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      minItemWidth: 160,
+      spacing: 20,
+      childAspectRatio: 0.72,
       itemCount: 8,
-      itemBuilder: (context, index) {
-        return const ShimmerCard();
-      },
+      itemBuilder: (context, index) => const ShimmerCard(),
     );
   }
 
@@ -339,7 +370,7 @@ class _LibraryPageState extends State<LibraryPage> {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -460,11 +491,22 @@ class _LibraryPageState extends State<LibraryPage> {
     context.go('/playlist-detail?id=${playlist.id}');
   }
 
-  void _syncLibrary() {
-    context.read<MusicLibraryViewModel>().syncCollection();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Syncing library...')));
+  Future<void> _syncLibrary() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text('Syncing library...')));
+
+    final success = await context.read<MusicLibraryViewModel>().syncCollection();
+    if (!mounted) return;
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(success ? 'Library synced' : 'Sync failed'),
+        action: success
+            ? null
+            : SnackBarAction(label: 'Retry', onPressed: _syncLibrary),
+      ),
+    );
   }
 
   void _showSortOptions() {

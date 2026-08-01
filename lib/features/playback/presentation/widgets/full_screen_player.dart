@@ -6,8 +6,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/design_system/colors.dart';
 import '../../../../core/design_system/spacing.dart';
 import '../../../../core/design_system/responsive_layout.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
+import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
@@ -25,6 +27,37 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   bool _isDraggingSeek = false;
   double _seekValue = 0.0;
   _NowPlayingPanel _panel = _NowPlayingPanel.queue;
+
+  /// Accumulated downward drag on the header, used to swipe-dismiss the
+  /// player the way a full-screen modal is expected to close on iOS/Android.
+  double _dismissDragExtent = 0.0;
+
+  /// Dominant color extracted from the current track's cover art, used to
+  /// tint the background. Null until extraction finishes (or if it fails),
+  /// in which case [OmnisonicColors.nowPlayingGradient] is used instead.
+  Color? _tintColor;
+  String? _tintedCoverUrl;
+
+  void _updateTint(String? coverArtUrl) {
+    if (coverArtUrl == _tintedCoverUrl) return;
+    _tintedCoverUrl = coverArtUrl;
+    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
+      if (mounted && _tintedCoverUrl == coverArtUrl) {
+        setState(() => _tintColor = color);
+      }
+    });
+  }
+
+  /// Closes the player. Falls back to Home when there's nothing to pop
+  /// (e.g. the player was opened as the initial route via a deep link),
+  /// so the chevron and swipe-down always do something.
+  void _closePlayer() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRouter.home);
+    }
+  }
 
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes;
@@ -45,32 +78,45 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           return const Scaffold(body: Center(child: Text('No track playing')));
         }
 
+        _updateTint(currentTrack.coverArtUrl);
+        final scheme = Theme.of(context).colorScheme;
+        final tint = _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
+
         return Scaffold(
-          body: SafeArea(
-            child: ResponsiveLayout(
-              mobile: _buildMobileLayout(
-                context,
-                currentTrack,
-                playbackViewModel,
-                position,
-                duration,
-                progress,
+          body: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [tint.withValues(alpha: 0.35), scheme.surface],
               ),
-              tablet: _buildDesktopLayout(
-                context,
-                currentTrack,
-                playbackViewModel,
-                position,
-                duration,
-                progress,
-              ),
-              desktop: _buildDesktopLayout(
-                context,
-                currentTrack,
-                playbackViewModel,
-                position,
-                duration,
-                progress,
+            ),
+            child: SafeArea(
+              child: ResponsiveLayout(
+                mobile: _buildMobileLayout(
+                  context,
+                  currentTrack,
+                  playbackViewModel,
+                  position,
+                  duration,
+                  progress,
+                ),
+                tablet: _buildDesktopLayout(
+                  context,
+                  currentTrack,
+                  playbackViewModel,
+                  position,
+                  duration,
+                  progress,
+                ),
+                desktop: _buildDesktopLayout(
+                  context,
+                  currentTrack,
+                  playbackViewModel,
+                  position,
+                  duration,
+                  progress,
+                ),
               ),
             ),
           ),
@@ -171,48 +217,78 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
   Widget _buildHeader(BuildContext context, {required String title}) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
-      child: Row(
+    // The drag handle + header row (not the scrollable content below) is
+    // the swipe-down target, so it doesn't fight the seek bar, lyrics panel
+    // or queue list for the vertical-drag gesture.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (details) {
+        final delta = details.primaryDelta;
+        if (delta != null && delta > 0) {
+          _dismissDragExtent += delta;
+        }
+      },
+      onVerticalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (_dismissDragExtent > 80 || velocity > 600) {
+          _closePlayer();
+        }
+        _dismissDragExtent = 0;
+      },
+      child: Column(
         children: [
-          IconButton(
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              }
-            },
-            icon: const Icon(Icons.keyboard_arrow_down),
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const Spacer(),
-          Consumer<PlaybackViewModel>(
-            builder: (context, viewModel, child) {
-              final track = viewModel.currentTrack;
-              final isStarred = track?.isStarred ?? false;
-
-              return IconButton(
-                onPressed: track != null
-                    ? () {
-                        viewModel.toggleFavorite(track);
-                      }
-                    : null,
-                icon: Icon(
-                  isStarred ? Icons.favorite : Icons.favorite_border,
-                  color: isStarred
-                      ? OmnisonicColors.favoriteIndicator
-                      : scheme.onSurfaceVariant,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: _closePlayer,
+                  icon: const Icon(Icons.keyboard_arrow_down),
                 ),
-                tooltip: isStarred
-                    ? 'Remove from favorites'
-                    : 'Add to favorites',
-              );
-            },
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Consumer<PlaybackViewModel>(
+                  builder: (context, viewModel, child) {
+                    final track = viewModel.currentTrack;
+                    final isStarred = track?.isStarred ?? false;
+
+                    return IconButton(
+                      onPressed: track != null
+                          ? () {
+                              viewModel.toggleFavorite(track);
+                            }
+                          : null,
+                      icon: Icon(
+                        isStarred ? Icons.favorite : Icons.favorite_border,
+                        color: isStarred
+                            ? OmnisonicColors.favoriteIndicator
+                            : scheme.onSurfaceVariant,
+                      ),
+                      tooltip: isStarred
+                          ? 'Remove from favorites'
+                          : 'Add to favorites',
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -222,40 +298,43 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Widget _buildArtwork(Track track) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: scheme.surfaceVariant,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
+      child: Hero(
+        tag: 'now-playing-artwork-${track.id}',
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: scheme.surfaceContainerHighest,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: track.coverArtUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: track.coverArtUrl!.withCoverArtSize(800),
+                      cacheKey: track.coverArtUrl!
+                          .withCoverArtSize(800)
+                          .subsonicCacheKey,
+                      cacheManager: OmnisonicImageCacheManager.instance,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 800,
+                      memCacheHeight: 800,
+                      fadeInDuration: const Duration(milliseconds: 120),
+                      useOldImageOnUrlChange: true,
+                      placeholder: (context, url) => _buildFallbackArtwork(),
+                      errorWidget: (context, url, error) =>
+                          _buildFallbackArtwork(),
+                    )
+                  : _buildFallbackArtwork(),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: track.coverArtUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: track.coverArtUrl!.withCoverArtSize(800),
-                    cacheKey: track.coverArtUrl!
-                        .withCoverArtSize(800)
-                        .subsonicCacheKey,
-                    cacheManager: OmnisonicImageCacheManager.instance,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 800,
-                    memCacheHeight: 800,
-                    fadeInDuration: const Duration(milliseconds: 120),
-                    useOldImageOnUrlChange: true,
-                    placeholder: (context, url) => _buildFallbackArtwork(),
-                    errorWidget: (context, url, error) =>
-                        _buildFallbackArtwork(),
-                  )
-                : _buildFallbackArtwork(),
           ),
         ),
       ),
@@ -265,10 +344,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Widget _buildFallbackArtwork() {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      color: scheme.surfaceVariant,
+      color: scheme.surfaceContainerHighest,
       child: Icon(
         Icons.music_note,
-        color: scheme.onSurfaceVariant.withOpacity(0.5),
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
         size: 72,
       ),
     );
@@ -352,7 +431,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: scheme.primary,
-            inactiveTrackColor: scheme.surfaceVariant,
+            inactiveTrackColor: scheme.surfaceContainerHighest,
             thumbColor: scheme.primary,
             trackHeight: 4,
           ),
@@ -391,15 +470,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
     return Align(
       alignment: Alignment.centerRight,
-      child: Opacity(
-        opacity: 0.6,
-        child: Text(
-          '${quality.format} ${quality.bitrate} kbps • ${ratio}% of max ${maxQuality.bitrate}',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontSize: 10,
-            letterSpacing: 0.2,
-          ),
+      child: Text(
+        '${quality.format} ${quality.bitrate} kbps • $ratio% of max ${maxQuality.bitrate}',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+          fontSize: 12,
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -522,7 +598,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -600,7 +676,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
     return ListView.separated(
       itemCount: queue.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final track = queue[index];
         final isCurrent = index == currentIndex;

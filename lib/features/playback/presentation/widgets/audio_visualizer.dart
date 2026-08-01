@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/design_system/animation_manager.dart';
-import '../../../../core/design_system/colors.dart';
 
 /// Audio visualizer widget with animated equalizer and waveform displays
 ///
@@ -146,8 +144,8 @@ class _AudioVisualizerState extends State<AudioVisualizer>
                     end: Alignment.topCenter,
                     colors: [
                       widget.color ?? OmnisonicColors.primaryPurple,
-                      (widget.color ?? OmnisonicColors.primaryBlue).withOpacity(
-                        0.6,
+                      (widget.color ?? OmnisonicColors.primaryBlue).withValues(
+                        alpha: 0.6,
                       ),
                     ],
                   ),
@@ -286,7 +284,7 @@ class CircularVisualizerPainter extends CustomPainter {
       final endX = center.dx + math.cos(angle) * (radius + barHeight);
       final endY = center.dy + math.sin(angle) * (radius + barHeight);
 
-      paint.color = color.withOpacity(0.3 + (barAnimations[i].value * 0.7));
+      paint.color = color.withValues(alpha: 0.3 + (barAnimations[i].value * 0.7));
 
       canvas.drawLine(
         Offset(startX, startY),

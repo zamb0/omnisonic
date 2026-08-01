@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 
 /// A list tile widget for displaying server information
@@ -11,6 +12,13 @@ class ServerListTile extends StatelessWidget {
   final VoidCallback? onTest;
   final VoidCallback? onDelete;
 
+  /// Albums synced from this server, or null if not computed yet.
+  final int? albumCount;
+
+  /// Round-trip time from the most recent connection test this session, or
+  /// null if the server hasn't been tested since the app launched.
+  final Duration? latency;
+
   const ServerListTile({
     super.key,
     required this.server,
@@ -19,91 +27,150 @@ class ServerListTile extends StatelessWidget {
     this.onEdit,
     this.onTest,
     this.onDelete,
+    this.albumCount,
+    this.latency,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: _buildLeading(),
-        title: Text(
-          server.name,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [_buildTile(context), _buildStatTrio(context)],
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                _buildStatusChip(server.status),
-                const SizedBox(width: 8),
-                Text(
-                  'User: ${server.username}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+      ),
+    );
+  }
+
+  Widget _buildTile(BuildContext context) {
+    return ListTile(
+      leading: _buildLeading(),
+      title: Text(
+        server.name,
+        style: const TextStyle(fontWeight: FontWeight.w500),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              _buildStatusChip(server.status),
+              const SizedBox(width: 8),
+              Text(
+                'User: ${server.username}',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          if (server.lastSync != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Last sync: ${_formatDateTime(server.lastSync!)}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ],
+      ),
+      trailing: isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : PopupMenuButton<String>(
+              onSelected: (value) => _handleMenuAction(value),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'test',
+                  child: ListTile(
+                    leading: Icon(Icons.wifi_protected_setup),
+                    title: Text('Test Connection'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Edit'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete, color: Colors.red),
+                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ],
             ),
-            if (server.lastSync != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                'Last sync: ${_formatDateTime(server.lastSync!)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ],
-        ),
-        trailing: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuAction(value),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'test',
-                    child: ListTile(
-                      leading: Icon(Icons.wifi_protected_setup),
-                      title: Text('Test Connection'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Edit'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-        onTap: onTap,
-        isThreeLine: true,
+      onTap: onTap,
+      isThreeLine: true,
+    );
+  }
+
+  /// Albums synced / last measured latency / last sync time. Latency is
+  /// only ever the result of an explicit "Test Connection" — it's not
+  /// continuously polled, so it reads "not tested" until the user runs one.
+  Widget _buildStatTrio(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          _buildStat(
+            context,
+            Icons.album_outlined,
+            albumCount != null ? '$albumCount albums' : '— albums',
+          ),
+          const SizedBox(width: 16),
+          _buildStat(
+            context,
+            Icons.speed_outlined,
+            latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
+          ),
+          const SizedBox(width: 16),
+          _buildStat(
+            context,
+            Icons.sync_outlined,
+            server.lastSync != null
+                ? _formatDateTime(server.lastSync!)
+                : 'never synced',
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildStat(BuildContext context, IconData icon, String label) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: OmnisonicTypography.metadata.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 

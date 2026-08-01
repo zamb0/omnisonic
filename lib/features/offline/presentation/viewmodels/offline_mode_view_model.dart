@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/offline_mode_service.dart';
@@ -8,6 +9,7 @@ import '../../domain/usecases/manage_offline_mode_use_case.dart';
 import '../../domain/services/offline_content_filter.dart';
 
 /// View model for offline mode functionality
+@injectable
 class OfflineModeViewModel extends ChangeNotifier {
   OfflineModeViewModel({
     required OfflineModeService offlineModeService,

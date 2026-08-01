@@ -16,6 +16,7 @@ import 'features/playback/presentation/viewmodels/playback_view_model.dart';
 import 'features/servers/presentation/viewmodels/server_management_view_model.dart';
 import 'features/music/presentation/viewmodels/playlist_view_model.dart';
 import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
+import 'features/offline/presentation/viewmodels/offline_mode_view_model.dart';
 
 // BLoCs
 import 'features/sync/presentation/bloc/sync_bloc.dart';
@@ -133,6 +134,9 @@ class _OmnisonicAppState extends State<OmnisonicApp>
         ),
         ChangeNotifierProvider<LyricsViewModel>(
           create: (_) => getIt<LyricsViewModel>(),
+        ),
+        ChangeNotifierProvider<OfflineModeViewModel>(
+          create: (_) => getIt<OfflineModeViewModel>(),
         ),
         ChangeNotifierProvider<ThemeModeController>.value(
           value: ThemeModeController.instance,

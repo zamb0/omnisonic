@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/design_system/theme_mode_controller.dart';
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../viewmodels/server_management_view_model.dart';
 import '../widgets/server_add_dialog.dart';
 import '../widgets/server_edit_dialog.dart';
@@ -22,6 +23,11 @@ class ServerManagementPage extends StatefulWidget {
 class _ServerManagementPageState extends State<ServerManagementPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  /// Round-trip time from the most recent "Test Connection" this session,
+  /// keyed by server ID. Not persisted or polled — only ever set by an
+  /// explicit user-triggered test.
+  final Map<String, Duration> _latencyByServerId = {};
 
   @override
   void initState() {
@@ -51,7 +57,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             onPressed: () => _refreshServers(context),
             tooltip: 'Refresh',
           ),
-          _buildThemeModeButton(context),
           PopupMenuButton<String>(
             onSelected: (value) {
               switch (value) {
@@ -139,31 +144,105 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: viewModel.refreshServers,
-      child: Column(
-        children: [
-          _buildServerSummary(viewModel),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: servers.length,
-              itemBuilder: (context, index) {
-                final server = servers[index];
-                return ServerListTile(
-                  server: server,
-                  isLoading: viewModel.isServerLoading(server.id),
-                  onTap: () => _showServerDetails(context, server),
-                  onEdit: () => _showEditServerDialog(context, server),
-                  onTest: () =>
-                      _testServerConnection(context, server, viewModel),
-                  onDelete: () =>
-                      _showDeleteConfirmation(context, server, viewModel),
-                );
-              },
-            ),
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, libraryViewModel, child) {
+        final albumCounts = <String, int>{};
+        for (final album in libraryViewModel.albums) {
+          albumCounts[album.serverId] = (albumCounts[album.serverId] ?? 0) + 1;
+        }
+
+        return RefreshIndicator(
+          onRefresh: viewModel.refreshServers,
+          child: Column(
+            children: [
+              _buildServerSummary(viewModel),
+              _buildDuplicateStrategyPicker(context),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: servers.length,
+                  itemBuilder: (context, index) {
+                    final server = servers[index];
+                    return ServerListTile(
+                      server: server,
+                      isLoading: viewModel.isServerLoading(server.id),
+                      albumCount: albumCounts[server.id],
+                      latency: _latencyByServerId[server.id],
+                      onTap: () => _showServerDetails(context, server),
+                      onEdit: () => _showEditServerDialog(context, server),
+                      onTest: () =>
+                          _testServerConnection(context, server, viewModel),
+                      onDelete: () =>
+                          _showDeleteConfirmation(context, server, viewModel),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  /// Visual-only: there's no per-user duplicate-handling strategy anywhere
+  /// in the app today — `DeduplicationEngine` always merges to the single
+  /// best-quality copy automatically, with no way to switch strategies.
+  /// Shown disabled rather than wired to fake behavior.
+  Widget _buildDuplicateStrategyPicker(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.all(OmnisonicSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                'Duplicate handling',
+                style: OmnisonicTypography.overline.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Tooltip(
+                  message:
+                      'Not implemented yet — duplicates always merge to '
+                      'the best-quality copy automatically',
+                  child: ChoiceChip(
+                    label: const Text('Merge, best quality'),
+                    selected: true,
+                    onSelected: null,
+                  ),
+                ),
+                Tooltip(
+                  message: 'Not implemented yet',
+                  child: ChoiceChip(
+                    label: const Text('Merge, by priority'),
+                    selected: false,
+                    onSelected: null,
+                  ),
+                ),
+                Tooltip(
+                  message: 'Not implemented yet',
+                  child: ChoiceChip(
+                    label: const Text('Keep separate'),
+                    selected: false,
+                    onSelected: null,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -508,6 +587,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   ) async {
     final result = await viewModel.testConnection(server);
 
+    if (result != null && result.responseTime != null) {
+      setState(() => _latencyByServerId[server.id] = result.responseTime!);
+    }
+
     if (context.mounted) {
       if (result != null && result.isSuccessful) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -561,42 +644,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           ),
         ],
       ),
-    );
-  }
-
-  /// Theme selector (system/light/dark), persisted via [ThemeModeController].
-  /// Lives here rather than a dedicated settings page since server
-  /// management is currently the app's only secondary-navigation surface.
-  Widget _buildThemeModeButton(BuildContext context) {
-    final current = context.watch<ThemeModeController>().themeMode;
-    const options = {
-      ThemeMode.system: (Icons.brightness_auto, 'System'),
-      ThemeMode.light: (Icons.light_mode, 'Light'),
-      ThemeMode.dark: (Icons.dark_mode, 'Dark'),
-    };
-
-    return PopupMenuButton<ThemeMode>(
-      icon: Icon(options[current]!.$1),
-      tooltip: 'Theme',
-      onSelected: (mode) => ThemeModeController.instance.setThemeMode(mode),
-      itemBuilder: (context) => options.entries.map((entry) {
-        final mode = entry.key;
-        final (icon, label) = entry.value;
-        return PopupMenuItem(
-          value: mode,
-          child: Row(
-            children: [
-              Icon(icon, size: 20),
-              const SizedBox(width: 8),
-              Text(label),
-              if (mode == current) ...[
-                const Spacer(),
-                const Icon(Icons.check, size: 18),
-              ],
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 

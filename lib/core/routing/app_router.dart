@@ -10,6 +10,8 @@ import '../../features/ui/presentation/pages/search_page.dart';
 import '../../features/ui/presentation/pages/favorites_page.dart';
 import '../../features/ui/presentation/pages/now_playing_page.dart';
 import '../../features/playback/presentation/pages/queue_page.dart';
+import '../../features/offline/presentation/pages/offline_mode_page.dart';
+import '../../features/ui/presentation/pages/settings_page.dart';
 import '../../features/ui/presentation/pages/album_detail_page.dart';
 import '../../features/ui/presentation/pages/artist_detail_page.dart';
 import '../../features/servers/presentation/pages/server_management_page.dart';
@@ -28,6 +30,8 @@ class AppRouter {
   static const String artistDetail = '/artist-detail';
   static const String favorites = '/favorites';
   static const String servers = '/servers';
+  static const String downloads = '/downloads';
+  static const String settings = '/settings';
   static const String playlistManagement = '/playlist-management';
   static const String playlistDetail = '/playlist-detail';
 
@@ -80,6 +84,24 @@ class AppRouter {
               context: context,
               state: state,
               child: const ServerManagementPage(),
+            ),
+          ),
+          GoRoute(
+            path: downloads,
+            name: 'downloads',
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const OfflineModePage(),
+            ),
+          ),
+          GoRoute(
+            path: settings,
+            name: 'settings',
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const SettingsPage(),
             ),
           ),
           GoRoute(

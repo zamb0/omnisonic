@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
+import '../../../../core/services/download_preferences_service.dart';
+import '../../domain/services/offline_content_filter.dart';
 import '../viewmodels/offline_mode_view_model.dart';
 import '../widgets/offline_indicator.dart';
 import '../../../ui/presentation/widgets/track_tile.dart';
@@ -171,6 +174,11 @@ class _OfflineModePageState extends State<OfflineModePage>
               // Statistics summary
               _buildStatsSummary(context, viewModel),
 
+              if (viewModel.cacheStats != null)
+                _buildCacheUsageBar(context, viewModel.cacheStats!),
+
+              _buildWifiOnlyToggle(context),
+
               // Content tabs
               Expanded(
                 child: TabBarView(
@@ -197,50 +205,158 @@ class _OfflineModePageState extends State<OfflineModePage>
     final stats = viewModel.cacheStats;
     if (stats == null) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.all(16),
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildStatItem(
+                'Tracks',
+                '${stats.cachedTracks}/${stats.totalTracks}',
+                '${stats.trackCachePercentage.toStringAsFixed(1)}%',
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            ),
+            Expanded(
+              child: _buildStatItem(
+                'Albums',
+                '${stats.cachedAlbums}/${stats.totalAlbums}',
+                '${stats.albumCachePercentage.toStringAsFixed(1)}%',
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            ),
+            Expanded(
+              child: _buildStatItem(
+                'Artists',
+                '${stats.cachedArtists}/${stats.totalArtists}',
+                '${stats.artistCachePercentage.toStringAsFixed(1)}%',
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatItem(
-              'Tracks',
-              '${stats.cachedTracks}/${stats.totalTracks}',
-              '${stats.trackCachePercentage.toStringAsFixed(1)}%',
+    );
+  }
+
+  /// Cache usage bar segmented by content type (tracks/albums/artists),
+  /// proportioned by real cached-item counts from [OfflineCacheStats].
+  Widget _buildCacheUsageBar(BuildContext context, OfflineCacheStats stats) {
+    final scheme = Theme.of(context).colorScheme;
+    final totalCached =
+        stats.cachedTracks + stats.cachedAlbums + stats.cachedArtists;
+    if (totalCached == 0) return const SizedBox.shrink();
+
+    final segments = <(String, int, Color)>[
+      ('Tracks', stats.cachedTracks, OmnisonicColors.primaryTeal),
+      ('Albums', stats.cachedAlbums, OmnisonicColors.primaryPurple),
+      ('Artists', stats.cachedArtists, OmnisonicColors.accentPink),
+    ].where((s) => s.$2 > 0).toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Downloaded content',
+              style: OmnisonicTypography.overline.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-          ),
-          Expanded(
-            child: _buildStatItem(
-              'Albums',
-              '${stats.cachedAlbums}/${stats.totalAlbums}',
-              '${stats.albumCachePercentage.toStringAsFixed(1)}%',
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+              child: SizedBox(
+                height: 8,
+                child: Row(
+                  children: [
+                    for (final segment in segments)
+                      Expanded(
+                        flex: segment.$2,
+                        child: Container(color: segment.$3),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-          ),
-          Expanded(
-            child: _buildStatItem(
-              'Artists',
-              '${stats.cachedArtists}/${stats.totalArtists}',
-              '${stats.artistCachePercentage.toStringAsFixed(1)}%',
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                for (final segment in segments)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: segment.$3,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${segment.$1} (${segment.$2})',
+                        style: OmnisonicTypography.metadata.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWifiOnlyToggle(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: AnimatedBuilder(
+        animation: DownloadPreferencesService.instance,
+        builder: (context, child) {
+          final scheme = Theme.of(context).colorScheme;
+          return GlassSurface(
+            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                'Wi-Fi only',
+                style: OmnisonicTypography.bodyMedium.copyWith(
+                  color: scheme.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                'Only download new content on Wi-Fi',
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              value: DownloadPreferencesService.instance.wifiOnlyEnabled,
+              onChanged: (value) =>
+                  DownloadPreferencesService.instance.setWifiOnlyEnabled(value),
+            ),
+          );
+        },
       ),
     );
   }

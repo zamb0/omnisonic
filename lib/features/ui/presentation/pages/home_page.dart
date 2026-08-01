@@ -14,6 +14,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../../core/utils/animation_utils.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/server_dot.dart';
 
@@ -61,7 +62,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Track> _randomTracksFrom(List<Track> allTracks) {
-    if (_randomTracks == null || _randomTracksSourceLength != allTracks.length) {
+    if (_randomTracks == null ||
+        _randomTracksSourceLength != allTracks.length) {
       final shuffled = List<Track>.from(allTracks)..shuffle(Random());
       _randomTracks = shuffled.take(12).toList();
       _randomTracksSourceLength = allTracks.length;
@@ -153,12 +155,14 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // Server management is secondary navigation: it lives here rather
-            // than taking one of the four bottom-bar slots.
+            // Servers/Downloads/Settings are secondary navigation: the
+            // mockup only exposes them via the desktop sidebar, so mobile
+            // needs a stand-in entry point rather than three bottom-bar
+            // slots it doesn't have room for.
             IconButton(
-              icon: const Icon(Icons.dns_outlined),
-              tooltip: 'Manage servers',
-              onPressed: () => context.push(AppRouter.servers),
+              icon: const Icon(Icons.more_horiz),
+              tooltip: 'More',
+              onPressed: () => _showMoreMenu(context),
             ),
           ],
         ),
@@ -214,6 +218,62 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Glass bottom sheet standing in for the secondary-nav destinations the
+  /// mockup only exposes via the desktop sidebar (Servers, Downloads,
+  /// Settings) — mobile has no room for them in the 4-slot bottom bar.
+  void _showMoreMenu(BuildContext context) {
+    AnimationUtils.showCustomBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: GlassPanel(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildMoreMenuItem(
+                sheetContext,
+                icon: Icons.dns_outlined,
+                label: 'Servers',
+                route: AppRouter.servers,
+              ),
+              _buildMoreMenuItem(
+                sheetContext,
+                icon: Icons.download_outlined,
+                label: 'Downloads',
+                route: AppRouter.downloads,
+              ),
+              _buildMoreMenuItem(
+                sheetContext,
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                route: AppRouter.settings,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String route,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: () {
+        Navigator.of(context).pop();
+        GoRouter.of(context).push(route);
+      },
+    );
+  }
+
   /// "Pick up where you left" card: the single most recently played track,
   /// presented as a glass panel over its own art. Purely a shortcut into
   /// existing playback — there's no persisted resume position to restore.
@@ -235,9 +295,11 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: InkWell(
                 borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
-                onTap: () => context
-                    .read<PlaybackViewModel>()
-                    .playTrack(track, queue: [track], startIndex: 0),
+                onTap: () => context.read<PlaybackViewModel>().playTrack(
+                  track,
+                  queue: [track],
+                  startIndex: 0,
+                ),
                 child: Row(
                   children: [
                     ClipRRect(
@@ -372,9 +434,7 @@ class _HomePageState extends State<HomePage> {
                       height: 44,
                       child: track.coverArtUrl != null
                           ? CachedNetworkImage(
-                              imageUrl: track.coverArtUrl!.withCoverArtSize(
-                                88,
-                              ),
+                              imageUrl: track.coverArtUrl!.withCoverArtSize(88),
                               cacheKey: track.coverArtUrl!
                                   .withCoverArtSize(88)
                                   .subsonicCacheKey,
@@ -783,7 +843,9 @@ class _HoverButtonState extends State<_HoverButton> {
             shape: BoxShape.circle,
             color: widget.isPrimary
                 ? scheme.primary.withValues(alpha: _isHovered ? 1.0 : 0.9)
-                : scheme.surfaceContainerHighest.withValues(alpha: _isHovered ? 0.8 : 0.6),
+                : scheme.surfaceContainerHighest.withValues(
+                    alpha: _isHovered ? 0.8 : 0.6,
+                  ),
           ),
           child: Icon(
             widget.icon,

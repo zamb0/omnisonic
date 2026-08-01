@@ -8,6 +8,7 @@ import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
+import 'audio_visualizer.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
 ///
@@ -171,31 +172,30 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
 
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
-        height: 64,
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: scheme.outlineVariant.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Thin progress bar at top
-            LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              minHeight: 2,
-              backgroundColor: scheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(tint),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
+      child: GlassPanel(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
+        padding: EdgeInsets.zero,
+        child: SizedBox(
+          height: 64,
+          child: Column(
+            children: [
+              // Thin progress bar at top
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(OmnisonicRadius.xxl),
+                ),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(tint),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
                     // Artwork. Tag matches full_screen_player.dart's
                     // artwork so opening the player animates the cover
                     // continuously instead of a hard cut.
@@ -305,6 +305,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     ),
                     const SizedBox(width: 8),
                     _playPauseBtn(vm, scheme),
+                    if (showFavorite) ...[
+                      const SizedBox(width: 6),
+                      SizedBox(
+                        width: 18,
+                        height: 16,
+                        child: AudioVisualizer(
+                          isPlaying: vm.isPlaying,
+                          barCount: 3,
+                          height: 16,
+                          color: tint,
+                        ),
+                      ),
+                    ],
                     const SizedBox(width: 8),
                     _iconBtn(
                       Icons.skip_next,
@@ -316,10 +329,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       label: 'Next track',
                     ),
                   ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

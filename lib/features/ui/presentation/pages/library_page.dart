@@ -12,7 +12,7 @@ import '../models/sort_option.dart';
 import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
-import '../../../../core/design_system/responsive_layout.dart';
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/utils/animation_utils.dart';
 
 /// Library page displaying albums, artists, and playlists
@@ -24,7 +24,14 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
+  // 3 columns fit comfortably down to ~360px-wide phones; wider layouts
+  // (tablet/desktop sidebar shell) scale up from here same as before.
+  static const double _albumGridMinItemWidth = 80;
+  static const double _albumGridSpacing = 12;
+
   late LibrarySortState _sortState;
+  late TextEditingController _searchController;
+  String _searchQuery = '';
 
   // Dedupe + sort are O(n log n) over the whole collection; memoized here so
   // they only re-run when the view model hands back a different album list
@@ -34,11 +41,20 @@ class _LibraryPageState extends State<LibraryPage> {
   List<Album>? _albumsSortInputCache;
   SortOption? _sortOptionCache;
   List<Album> _sortedAlbumsCache = const [];
+  int _originalAlbumCountCache = 0;
+  Map<String, List<String>> _albumSourceServerIdsCache = const {};
 
   @override
   void initState() {
     super.initState();
     _sortState = LibrarySortState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   List<Album> _getSortedAlbums(List<Album> albums, SortOption sortOption) {
@@ -47,16 +63,29 @@ class _LibraryPageState extends State<LibraryPage> {
       return _sortedAlbumsCache;
     }
 
-    final dedupedAlbums = _dedupeAlbumsByServer(albums);
+    final deduped = _dedupeAlbumsByServer(albums);
     final sortedAlbums = LibrarySortService.sortAlbums(
-      dedupedAlbums,
+      deduped.albums,
       sortOption,
     );
 
     _albumsSortInputCache = albums;
     _sortOptionCache = sortOption;
     _sortedAlbumsCache = sortedAlbums;
+    _originalAlbumCountCache = albums.length;
+    _albumSourceServerIdsCache = deduped.sourceServerIds;
     return sortedAlbums;
+  }
+
+  List<Album> _filterBySearch(List<Album> albums) {
+    if (_searchQuery.isEmpty) return albums;
+    return albums
+        .where(
+          (album) =>
+              album.title.toLowerCase().contains(_searchQuery) ||
+              album.artist.toLowerCase().contains(_searchQuery),
+        )
+        .toList();
   }
 
   @override
@@ -146,7 +175,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
       builder: (context, viewModel, serverViewModel, child) {
         if (viewModel.isLoading) {
-          return _buildLoadingGrid();
+          return _buildLoadingGrid(minItemWidth: _albumGridMinItemWidth);
         }
 
         final albums = viewModel.filteredAlbums;
@@ -167,20 +196,32 @@ class _LibraryPageState extends State<LibraryPage> {
 
         final sortOption = _sortState.getOption(LibraryTab.albums);
         final sortedAlbums = _getSortedAlbums(albums, sortOption);
+        final displayedAlbums = _filterBySearch(sortedAlbums);
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
           child: Column(
             children: [
+              _buildSearchPill(),
+              _buildAlbumCountLine(
+                _sortedAlbumsCache.length,
+                _originalAlbumCountCache,
+              ),
               _buildFilterSection(viewModel),
               Expanded(
-                child: sortedAlbums.isEmpty
+                child: displayedAlbums.isEmpty
                     ? EmptyState(
                         icon: Icons.filter_alt_off,
                         title: 'No Results',
-                        subtitle: 'No albums match your current filters',
+                        subtitle: _searchQuery.isNotEmpty
+                            ? 'No albums match "$_searchQuery"'
+                            : 'No albums match your current filters',
                         action: TextButton(
-                          onPressed: () => viewModel.clearFilters(),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                            viewModel.clearFilters();
+                          },
                           child: const Text('Clear Filters'),
                         ),
                       )
@@ -189,25 +230,38 @@ class _LibraryPageState extends State<LibraryPage> {
                           horizontal: 24,
                           vertical: 16,
                         ),
-                        minItemWidth: 160,
-                        spacing: 20,
+                        minItemWidth: _albumGridMinItemWidth,
+                        spacing: _albumGridSpacing,
                         childAspectRatio: 0.72,
-                        itemCount: sortedAlbums.length,
+                        itemCount: displayedAlbums.length,
                         itemBuilder: (context, index) {
-                          final album = sortedAlbums[index];
+                          final album = displayedAlbums[index];
                           final isStarred = viewModel.isAlbumStarred(album);
-                          return AlbumCard(
-                            album: album,
-                            onTap: () => _onAlbumTapped(album),
-                            onStar: !isStarred
-                                ? () => viewModel.starAlbum(album)
-                                : null,
-                            onUnstar: isStarred
-                                ? () => viewModel.unstarAlbum(album)
-                                : null,
-                            isStarred: isStarred,
-                            showArtist: true,
-                            showMeta: true,
+                          final sources =
+                              _albumSourceServerIdsCache[album.id] ??
+                              const [];
+                          return Stack(
+                            children: [
+                              AlbumCard(
+                                album: album,
+                                onTap: () => _onAlbumTapped(album),
+                                onStar: !isStarred
+                                    ? () => viewModel.starAlbum(album)
+                                    : null,
+                                onUnstar: isStarred
+                                    ? () => viewModel.unstarAlbum(album)
+                                    : null,
+                                isStarred: isStarred,
+                                showArtist: true,
+                                showMeta: true,
+                              ),
+                              if (sources.length > 1)
+                                Positioned(
+                                  right: 6,
+                                  top: 6,
+                                  child: ServerDotStack(serverIds: sources),
+                                ),
+                            ],
                           );
                         },
                       ),
@@ -216,6 +270,71 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSearchPill() {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(Icons.search, size: 20, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: OmnisonicTypography.bodyMedium.copyWith(
+                  color: scheme.onSurface,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Search albums',
+                  isDense: true,
+                ),
+                onChanged: (value) =>
+                    setState(() => _searchQuery = value.trim().toLowerCase()),
+              ),
+            ),
+            if (_searchQuery.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                tooltip: 'Clear search',
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlbumCountLine(int dedupedCount, int originalCount) {
+    final scheme = Theme.of(context).colorScheme;
+    final albumWord = dedupedCount == 1 ? 'album' : 'albums';
+    final text = originalCount > dedupedCount
+        ? '$dedupedCount $albumWord · deduplicated from $originalCount'
+        : '$dedupedCount $albumWord';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: OmnisonicTypography.metadata.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
     );
   }
 
@@ -352,10 +471,10 @@ class _LibraryPageState extends State<LibraryPage> {
   // Same geometry as the real content grids (minItemWidth/padding/aspect
   // ratio) so the shimmer collapses into the final layout instead of a
   // visible jump when the two-column skeleton gives way to up to six.
-  Widget _buildLoadingGrid() {
+  Widget _buildLoadingGrid({double minItemWidth = 160}) {
     return ResponsiveGridView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      minItemWidth: 160,
+      minItemWidth: minItemWidth,
       spacing: 20,
       childAspectRatio: 0.72,
       itemCount: 8,
@@ -364,17 +483,12 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Widget _buildFilterSection(MusicLibraryViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -473,6 +587,7 @@ class _LibraryPageState extends State<LibraryPage> {
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -527,7 +642,11 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  List<Album> _dedupeAlbumsByServer(List<Album> albums) {
+  /// Collapses same-album-on-multiple-servers duplicates down to the "best"
+  /// copy, while also recording which servers each surviving album was
+  /// found on (used for the corner source-count badge).
+  ({List<Album> albums, Map<String, List<String>> sourceServerIds})
+  _dedupeAlbumsByServer(List<Album> albums) {
     final grouped = <String, List<Album>>{};
     for (final album in albums) {
       final key = _albumGroupKey(album);
@@ -535,6 +654,7 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
     final deduped = <Album>[];
+    final sourceServerIds = <String, List<String>>{};
     for (final group in grouped.values) {
       group.sort((a, b) {
         final aTracks = a.trackCount ?? 0;
@@ -544,9 +664,11 @@ class _LibraryPageState extends State<LibraryPage> {
         }
         return b.lastModified.compareTo(a.lastModified);
       });
-      deduped.add(group.first);
+      final best = group.first;
+      deduped.add(best);
+      sourceServerIds[best.id] = group.map((a) => a.serverId).toList();
     }
-    return deduped;
+    return (albums: deduped, sourceServerIds: sourceServerIds);
   }
 
   String _albumGroupKey(Album album) {

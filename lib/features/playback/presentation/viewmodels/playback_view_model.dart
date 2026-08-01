@@ -45,6 +45,7 @@ class PlaybackViewModel extends ChangeNotifier {
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<List<Track>>? _queueSubscription;
   StreamSubscription<AudioQuality>? _qualitySubscription;
+  StreamSubscription<Track>? _scrobbleSubscription;
   Timer? _positionTicker;
   DateTime? _lastPositionUpdate;
   Duration _lastObservedPosition = Duration.zero;
@@ -67,6 +68,7 @@ class PlaybackViewModel extends ChangeNotifier {
   bool _isRestoring = false; // Flag to prevent auto-play during restoration
   AudioQuality _streamingQuality = AudioQuality.ultra;
   AudioQuality _maxStreamingQuality = AudioQuality.ultra;
+  bool _hasScrobbledCurrentTrack = false;
 
   // Getters
   PlaybackState get playbackState => _playbackState;
@@ -99,6 +101,10 @@ class PlaybackViewModel extends ChangeNotifier {
     return _streamingQuality.qualityScore / _maxStreamingQuality.qualityScore;
   }
 
+  /// Whether the current track has already been registered as played
+  /// (scrobbled) with its server. Resets on every track change.
+  bool get hasScrobbledCurrentTrack => _hasScrobbledCurrentTrack;
+
   void _initialize() {
     try {
       AppLog.info('Initializing PlaybackViewModel...');
@@ -106,6 +112,7 @@ class PlaybackViewModel extends ChangeNotifier {
       _subscribeToPosition();
       _subscribeToQueue();
       _subscribeToQuality();
+      _subscribeToScrobbles();
       _loadCurrentState();
 
       // Restore queue as early as possible, with a delayed retry to
@@ -171,6 +178,7 @@ class PlaybackViewModel extends ChangeNotifier {
               );
               _trackingService.startTrackingTrack(state.currentTrack!);
               _previousTrack = state.currentTrack;
+              _hasScrobbledCurrentTrack = false;
 
               // Start periodic queue saving
               _trackingService.startPeriodicQueueSave(
@@ -195,6 +203,15 @@ class PlaybackViewModel extends ChangeNotifier {
           _streamingQuality = _clampQuality(quality, _maxStreamingQuality);
           notifyListeners();
         });
+  }
+
+  void _subscribeToScrobbles() {
+    _scrobbleSubscription = _trackingService.onScrobbled.listen((track) {
+      if (currentTrack?.id == track.id) {
+        _hasScrobbledCurrentTrack = true;
+        notifyListeners();
+      }
+    });
   }
 
   AudioQuality _clampQuality(AudioQuality quality, AudioQuality maxQuality) {
@@ -770,6 +787,7 @@ class PlaybackViewModel extends ChangeNotifier {
     _positionSubscription?.cancel();
     _queueSubscription?.cancel();
     _qualitySubscription?.cancel();
+    _scrobbleSubscription?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../../../core/design_system/colors.dart';
-import '../../../../core/design_system/spacing.dart';
-import '../../../../core/design_system/responsive_layout.dart';
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
@@ -79,46 +79,73 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         }
 
         _updateTint(currentTrack.coverArtUrl);
-        final scheme = Theme.of(context).colorScheme;
         final tint = _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
+        final darkScheme = OmnisonicColors.darkColorScheme;
 
-        return Scaffold(
-          body: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [tint.withValues(alpha: 0.35), scheme.surface],
-              ),
+        // Now Playing always renders as a dark, art-driven surface regardless
+        // of the app's light/dark setting — every descendant reading
+        // Theme.of(context).colorScheme (this file, LyricsPanel, the queue
+        // list) picks up dark-appropriate colors automatically.
+        return Theme(
+          data: Theme.of(context).copyWith(
+            brightness: Brightness.dark,
+            colorScheme: darkScheme,
+            textTheme: OmnisonicTypography.textTheme.apply(
+              bodyColor: darkScheme.onSurface,
+              displayColor: darkScheme.onSurface,
             ),
-            child: SafeArea(
-              child: ResponsiveLayout(
-                mobile: _buildMobileLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
+          ),
+          // A fresh context, positioned below the Theme above, so every
+          // Theme.of(context) call made further down (including inside this
+          // class's own helper methods, which aren't separate widgets and
+          // would otherwise see the ambient app theme instead) resolves to
+          // the dark scheme.
+          child: Builder(
+            builder: (context) {
+              return Scaffold(
+                backgroundColor: darkScheme.surface,
+                body: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0, -0.4),
+                      radius: 1.3,
+                      colors: [
+                        tint.withValues(alpha: 0.55),
+                        darkScheme.surface,
+                      ],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: ResponsiveLayout(
+                      mobile: _buildMobileLayout(
+                        context,
+                        currentTrack,
+                        playbackViewModel,
+                        position,
+                        duration,
+                        progress,
+                      ),
+                      tablet: _buildDesktopLayout(
+                        context,
+                        currentTrack,
+                        playbackViewModel,
+                        position,
+                        duration,
+                        progress,
+                      ),
+                      desktop: _buildDesktopLayout(
+                        context,
+                        currentTrack,
+                        playbackViewModel,
+                        position,
+                        duration,
+                        progress,
+                      ),
+                    ),
+                  ),
                 ),
-                tablet: _buildDesktopLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                ),
-                desktop: _buildDesktopLayout(
-                  context,
-                  currentTrack,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                ),
-              ),
-            ),
+              );
+            },
           ),
         );
       },
@@ -141,15 +168,17 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             padding: const EdgeInsets.all(OmnisonicSpacing.lg),
             child: Column(
               children: [
-                _buildArtwork(track),
+                _buildArtwork(context, track),
                 const SizedBox(height: OmnisonicSpacing.lg),
                 _buildTrackInfo(context, track),
                 const SizedBox(height: OmnisonicSpacing.lg),
-                _buildSeekBar(playbackViewModel, position, duration, progress),
+                _buildSeekBar(context, playbackViewModel, position, duration, progress),
                 const SizedBox(height: OmnisonicSpacing.md),
                 _buildPrimaryControls(context, playbackViewModel),
                 const SizedBox(height: OmnisonicSpacing.md),
                 _buildSecondaryControls(context, playbackViewModel),
+                const SizedBox(height: OmnisonicSpacing.md),
+                _buildSourceInfoPanel(context, track, playbackViewModel),
                 const SizedBox(height: OmnisonicSpacing.lg),
                 SizedBox(
                   height: 400,
@@ -185,11 +214,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildArtwork(track),
+                      _buildArtwork(context, track),
                       const SizedBox(height: OmnisonicSpacing.lg),
                       _buildTrackInfo(context, track),
                       const SizedBox(height: OmnisonicSpacing.lg),
                       _buildSeekBar(
+                        context,
                         playbackViewModel,
                         position,
                         duration,
@@ -199,6 +229,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                       _buildPrimaryControls(context, playbackViewModel),
                       const SizedBox(height: OmnisonicSpacing.md),
                       _buildSecondaryControls(context, playbackViewModel),
+                      const SizedBox(height: OmnisonicSpacing.md),
+                      _buildSourceInfoPanel(context, track, playbackViewModel),
                     ],
                   ),
                 ),
@@ -295,7 +327,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildArtwork(Track track) {
+  Widget _buildArtwork(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Hero(
@@ -329,11 +361,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                       memCacheHeight: 800,
                       fadeInDuration: const Duration(milliseconds: 120),
                       useOldImageOnUrlChange: true,
-                      placeholder: (context, url) => _buildFallbackArtwork(),
+                      placeholder: (context, url) => _buildFallbackArtwork(context),
                       errorWidget: (context, url, error) =>
-                          _buildFallbackArtwork(),
+                          _buildFallbackArtwork(context),
                     )
-                  : _buildFallbackArtwork(),
+                  : _buildFallbackArtwork(context),
             ),
           ),
         ),
@@ -341,7 +373,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildFallbackArtwork() {
+  Widget _buildFallbackArtwork(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       color: scheme.surfaceContainerHighest,
@@ -394,6 +426,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   }
 
   Widget _buildSeekBar(
+    BuildContext context,
     PlaybackViewModel playbackViewModel,
     Duration position,
     Duration duration,
@@ -415,15 +448,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           children: [
             Text(
               _formatDuration(elapsed),
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: OmnisonicTypography.duration.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
             Text(
               _formatDuration(duration),
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: OmnisonicTypography.duration.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -431,8 +464,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: scheme.primary,
-            inactiveTrackColor: scheme.surfaceContainerHighest,
+            inactiveTrackColor: OmnisonicColors.glassDark(1),
             thumbColor: scheme.primary,
+            overlayColor: scheme.primary.withValues(alpha: 0.2),
             trackHeight: 4,
           ),
           child: Slider(
@@ -472,10 +506,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       alignment: Alignment.centerRight,
       child: Text(
         '${quality.format} ${quality.bitrate} kbps • $ratio% of max ${maxQuality.bitrate}',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        style: OmnisonicTypography.metadata.copyWith(
           color: scheme.onSurfaceVariant,
-          fontSize: 12,
-          letterSpacing: 0.2,
         ),
       ),
     );
@@ -489,19 +521,19 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
+        _glassCircleButton(
+          context,
+          icon: Icons.skip_previous,
           onPressed: playbackViewModel.hasPrevious
               ? () => playbackViewModel.skipToPrevious()
               : null,
-          icon: const Icon(Icons.skip_previous),
-          iconSize: 36,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         FilledButton(
           onPressed: () => playbackViewModel.togglePlayPause(),
           style: FilledButton.styleFrom(
             shape: const CircleBorder(),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             backgroundColor: scheme.primary,
           ),
           child: Icon(
@@ -509,15 +541,42 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             size: 36,
           ),
         ),
-        const SizedBox(width: 12),
-        IconButton(
+        const SizedBox(width: 16),
+        _glassCircleButton(
+          context,
+          icon: Icons.skip_next,
           onPressed: playbackViewModel.hasNext
               ? () => playbackViewModel.skipToNext()
               : null,
-          icon: const Icon(Icons.skip_next),
-          iconSize: 36,
         ),
       ],
+    );
+  }
+
+  /// Circular glass transport button, used for prev/next around the solid
+  /// primary-colored play/pause button.
+  Widget _glassCircleButton(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback? onPressed,
+    double size = 56,
+    double iconSize = 28,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return GlassSurface(
+      borderRadius: BorderRadius.circular(size / 2),
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(icon, size: iconSize),
+          color: onPressed != null
+              ? scheme.onSurface
+              : scheme.onSurfaceVariant.withValues(alpha: 0.4),
+        ),
+      ),
     );
   }
 
@@ -587,20 +646,110 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
+  /// Sleep timer / output device / EQ row. None of these have a backing
+  /// feature yet, so they're rendered disabled rather than wired up to fake
+  /// behavior — visual placeholders for the mockup's control cluster.
+  Widget _buildUnimplementedControls(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final mutedColor = scheme.onSurfaceVariant.withValues(alpha: 0.4);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: null,
+          icon: Icon(Icons.bedtime_outlined, color: mutedColor),
+          tooltip: 'Sleep timer — not available yet',
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: null,
+          icon: Icon(Icons.speaker_outlined, color: mutedColor),
+          tooltip: 'Output device — not available yet',
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: null,
+          icon: Icon(Icons.equalizer, color: mutedColor),
+          tooltip: 'Equalizer — not available yet',
+        ),
+      ],
+    );
+  }
+
+  /// Bottom glass panel showing where the current track is streaming from:
+  /// source server, quality, whether the server is transcoding it, and
+  /// whether it's been scrobbled yet.
+  Widget _buildSourceInfoPanel(
+    BuildContext context,
+    Track track,
+    PlaybackViewModel playbackViewModel,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final serverViewModel = context.watch<ServerManagementViewModel>();
+    final matches = serverViewModel.servers.where((s) => s.id == track.serverId);
+    final serverName = matches.isEmpty ? track.serverId : matches.first.name;
+
+    final quality = playbackViewModel.currentQuality;
+    final maxQuality = playbackViewModel.maxQuality;
+    final isDirect = quality.qualityScore >= maxQuality.qualityScore;
+    final scrobbled = playbackViewModel.hasScrobbledCurrentTrack;
+
+    return Column(
+      children: [
+        GlassPanel(
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.md,
+            vertical: OmnisonicSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              ServerDot(serverId: track.serverId, size: 8),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$serverName · ${quality.format} ${quality.bitrate}kbps · '
+                  '${isDirect ? 'Direct' : 'Transcoded'}',
+                  style: OmnisonicTypography.metadata.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                scrobbled ? Icons.check_circle : Icons.history,
+                size: 14,
+                color: scrobbled
+                    ? OmnisonicColors.successAccessible
+                    : scheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                scrobbled ? 'Scrobbled' : 'Not scrobbled yet',
+                style: OmnisonicTypography.metadata.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        _buildUnimplementedControls(context),
+      ],
+    );
+  }
+
   Widget _buildPanel(
     BuildContext context,
     PlaybackViewModel playbackViewModel, {
     bool compact = false,
   }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return GlassSurface(
       padding: EdgeInsets.all(
         compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg,
       ),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -692,7 +841,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             height: 40,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: scheme.surface,
+              color: OmnisonicColors.glassDark(1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),

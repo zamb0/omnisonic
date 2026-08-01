@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/design_system/responsive_layout.dart';
+import '../../../../core/design_system/design_system.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 import '../widgets/feishin_shell.dart';
 
@@ -33,18 +33,21 @@ class MainShell extends StatelessWidget {
 
   Widget _buildMobileShell(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
+      body: SafeArea(bottom: false, child: child),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(child: child),
             AnimatedNowPlayingBar(
               onTap: () => context.push(AppRouter.nowPlaying),
             ),
+            const SizedBox(height: OmnisonicSpacing.sm),
+            _buildBottomNavigation(context),
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(context),
     );
   }
 
@@ -56,35 +59,52 @@ class MainShell extends StatelessWidget {
     );
   }
 
+  static const List<_NavTab> _tabs = [
+    _NavTab(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home,
+      label: 'Home',
+      route: AppRouter.home,
+    ),
+    _NavTab(
+      icon: Icons.library_music_outlined,
+      selectedIcon: Icons.library_music,
+      label: 'Library',
+      route: AppRouter.library,
+    ),
+    _NavTab(
+      icon: Icons.search_outlined,
+      selectedIcon: Icons.search,
+      label: 'Search',
+      route: AppRouter.search,
+    ),
+    _NavTab(
+      icon: Icons.queue_music_outlined,
+      selectedIcon: Icons.queue_music,
+      label: 'Lists',
+      route: AppRouter.playlistManagement,
+    ),
+  ];
+
   Widget _buildBottomNavigation(BuildContext context) {
     final currentIndex = _calculateSelectedIndex(context);
 
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      height: 64,
-      onDestinationSelected: (index) => _onItemTapped(index, context),
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.library_music_outlined),
-          selectedIcon: Icon(Icons.library_music),
-          label: 'Library',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: 'Search',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.star_outline),
-          selectedIcon: Icon(Icons.star),
-          label: 'Starred',
-        ),
-      ],
+    return GlassPanel(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.sm,
+        vertical: OmnisonicSpacing.xs,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          for (var i = 0; i < _tabs.length; i++)
+            _NavPillItem(
+              tab: _tabs[i],
+              selected: currentIndex == i,
+              onTap: () => _onItemTapped(i, context),
+            ),
+        ],
+      ),
     );
   }
 
@@ -92,19 +112,20 @@ class MainShell extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     switch (location) {
       case AppRouter.home:
-      // Server management is a secondary destination reached from Home, so it
-      // keeps the Home tab lit rather than leaving the bar without a selection.
+      // Server management and favorites are secondary destinations reached
+      // from Home, so they keep the Home tab lit rather than leaving the bar
+      // without a selection.
       case AppRouter.servers:
+      case AppRouter.favorites:
         return 0;
       case AppRouter.library:
       case AppRouter.albumDetail:
       case AppRouter.artistDetail:
       case AppRouter.playlistDetail:
-      case AppRouter.playlistManagement:
         return 1;
       case AppRouter.search:
         return 2;
-      case AppRouter.favorites:
+      case AppRouter.playlistManagement:
         return 3;
       default:
         return 0;
@@ -112,19 +133,65 @@ class MainShell extends StatelessWidget {
   }
 
   void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go(AppRouter.home);
-        break;
-      case 1:
-        context.go(AppRouter.library);
-        break;
-      case 2:
-        context.go(AppRouter.search);
-        break;
-      case 3:
-        context.go(AppRouter.favorites);
-        break;
-    }
+    context.go(_tabs[index].route);
+  }
+}
+
+class _NavTab {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final String route;
+
+  const _NavTab({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.route,
+  });
+}
+
+class _NavPillItem extends StatelessWidget {
+  final _NavTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavPillItem({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.sm,
+          vertical: OmnisonicSpacing.xs,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(selected ? tab.selectedIcon : tab.icon, color: color, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              tab.label,
+              style: OmnisonicTypography.labelSmall.copyWith(
+                color: color,
+                fontWeight: selected
+                    ? OmnisonicTypography.semiBold
+                    : OmnisonicTypography.medium,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

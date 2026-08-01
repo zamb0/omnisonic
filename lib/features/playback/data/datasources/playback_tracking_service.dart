@@ -20,6 +20,13 @@ class PlaybackTrackingService {
   DateTime? _trackStartTime;
   bool _hasScrobbled = false;
 
+  final _scrobbledController = StreamController<Track>.broadcast();
+
+  /// Fires with a track once it has actually been scrobbled (registered as
+  /// played with the server), so the UI can show real scrobble state instead
+  /// of guessing from elapsed time.
+  Stream<Track> get onScrobbled => _scrobbledController.stream;
+
   /// Starts tracking a track for scrobbling
   /// Scrobbles after 50% of duration or 4 minutes, whichever comes first
   void startTrackingTrack(Track track) {
@@ -103,6 +110,7 @@ class PlaybackTrackingService {
       );
 
       _hasScrobbled = true;
+      _scrobbledController.add(track);
       AppLog.info('Scrobbled track: ${track.title}');
     } catch (e) {
       AppLog.warn('Failed to scrobble track: $e');
@@ -296,6 +304,7 @@ class PlaybackTrackingService {
   void dispose() {
     _stopTracking();
     stopPeriodicQueueSave();
+    _scrobbledController.close();
   }
 }
 

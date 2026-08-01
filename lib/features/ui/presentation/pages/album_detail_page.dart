@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/animation_utils.dart';
@@ -29,12 +30,38 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   bool _isLoading = true;
   String? _errorMessage;
 
+  /// Tracks for every album variant, keyed by album ID, used to compare
+  /// quality/availability across sources for the SOURCE panel and the
+  /// per-track notes. Populated lazily and only when there's more than one
+  /// source to compare.
+  final Map<String, List<Track>> _variantTracksCache = {};
+
   @override
   void initState() {
     super.initState();
     _album = widget.album;
     _albumVariants = _resolveAlbumVariants();
     _loadTracks();
+    if (_albumVariants.length > 1) {
+      _loadVariantTracksForComparison();
+    }
+  }
+
+  /// Fetches (and caches) every variant's track list so the SOURCE panel can
+  /// show a real per-source quality summary instead of just track counts.
+  Future<void> _loadVariantTracksForComparison() async {
+    final musicRepository = context.read<MusicLibraryViewModel>();
+    for (final variant in _albumVariants) {
+      if (_variantTracksCache.containsKey(variant.id)) continue;
+      try {
+        final tracks = await musicRepository.getAlbumTracks(variant.id);
+        if (!mounted) return;
+        setState(() => _variantTracksCache[variant.id] = tracks);
+      } catch (_) {
+        // Best-effort: a source that fails to load just won't get a quality
+        // summary or count toward the cross-source note comparisons.
+      }
+    }
   }
 
   Future<void> _loadTracks() async {
@@ -60,6 +87,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       setState(() {
         _tracks = albumTracks;
         _isLoading = false;
+        _variantTracksCache[_album.id] = albumTracks;
       });
     } catch (e) {
       setState(() {
@@ -206,6 +234,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         return TrackTile(
           track: track,
           showTrackNumber: true,
+          serverId: _albumVariants.length > 1 ? track.serverId : null,
+          qualityLabel: track.quality.format,
+          sourceNote: _sourceNoteFor(track),
           onTap: () => _onTrackTapped(track, index),
           onMorePressed: () => _showTrackOptions(track),
         );
@@ -272,7 +303,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         ),
         if (_albumVariants.length > 1) ...[
           const SizedBox(height: 12),
-          _buildServerPicker(context, scheme),
+          _buildSourcePanel(context, scheme),
         ],
         const SizedBox(height: 12),
         Wrap(
@@ -403,52 +434,178 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     );
   }
 
-  Widget _buildServerPicker(BuildContext context, ColorScheme scheme) {
+  /// Best quality found among a variant's cached tracks, or null if that
+  /// variant's tracks haven't loaded yet.
+  AudioQuality? _bestQualityFor(String albumId) {
+    final tracks = _variantTracksCache[albumId];
+    if (tracks == null || tracks.isEmpty) return null;
+    return tracks
+        .map((t) => t.quality)
+        .reduce((a, b) => a.qualityScore >= b.qualityScore ? a : b);
+  }
+
+  /// The variant with the best overall quality among the sources we've
+  /// fetched tracks for so far; null until at least one has loaded.
+  Album? get _bestVariant {
+    Album? best;
+    AudioQuality? bestQuality;
+    for (final variant in _albumVariants) {
+      final quality = _bestQualityFor(variant.id);
+      if (quality == null) continue;
+      if (bestQuality == null || quality.qualityScore > bestQuality.qualityScore) {
+        best = variant;
+        bestQuality = quality;
+      }
+    }
+    return best;
+  }
+
+  /// One-line comparison note for [track] against the same track number on
+  /// other sources of this album, or null when there's nothing noteworthy
+  /// (single source, still loading, or this copy is already the best one).
+  String? _sourceNoteFor(Track track) {
+    if (_albumVariants.length <= 1 || track.trackNumber == null) return null;
+
+    final matches = <Track>[];
+    for (final tracks in _variantTracksCache.values) {
+      matches.addAll(tracks.where((t) => t.trackNumber == track.trackNumber));
+    }
+    if (matches.length <= 1) {
+      // Every variant's tracks are in yet and none of them have this track
+      // number besides the copy we're looking at.
+      if (_variantTracksCache.length < _albumVariants.length) return null;
+      return 'Only on ${_serverNameFor(track.serverId)}';
+    }
+
+    final best = matches.reduce(
+      (a, b) => a.quality.qualityScore >= b.quality.qualityScore ? a : b,
+    );
+    if (best.serverId == track.serverId ||
+        best.quality.qualityScore <= track.quality.qualityScore) {
+      return null;
+    }
+    if (best.quality.qualityScore >= AudioQuality.lossless.qualityScore &&
+        track.quality.qualityScore < AudioQuality.lossless.qualityScore) {
+      return 'Lossless available on ${_serverNameFor(best.serverId)}';
+    }
+    return 'Higher quality on ${_serverNameFor(best.serverId)}';
+  }
+
+  String _serverNameFor(String serverId) {
+    final serverViewModel = context.read<ServerManagementViewModel>();
+    final matches = serverViewModel.servers.where((s) => s.id == serverId);
+    return matches.isEmpty ? serverId : matches.first.name;
+  }
+
+  Widget _buildSourcePanel(BuildContext context, ColorScheme scheme) {
     final serverViewModel = context.read<ServerManagementViewModel>();
     final serverMap = {
-      for (var server in serverViewModel.servers) server.id: server.name,
+      for (var server in serverViewModel.servers) server.id: server,
     };
-    final selected = _albumVariants.firstWhere(
-      (album) => album.id == _album.id,
-      orElse: () => _albumVariants.first,
-    );
+    final best = _bestVariant;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<Album>(
-          value: selected,
-          isDense: true,
-          dropdownColor: scheme.surface,
-          icon: Icon(
-            Icons.expand_more,
-            color: scheme.onSurfaceVariant,
-            size: 18,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassSurface(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.xs,
+            vertical: OmnisonicSpacing.xs,
           ),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+                child: Text(
+                  'SOURCE',
+                  style: OmnisonicTypography.overline.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              for (final variant in _albumVariants)
+                _buildSourceRow(
+                  variant,
+                  serverMap[variant.serverId],
+                  selected: variant.id == _album.id,
+                ),
+            ],
           ),
-          items: _albumVariants.map((album) {
-            final serverName = serverMap[album.serverId] ?? album.serverId;
-            final trackCount = album.trackCount ?? 0;
-            return DropdownMenuItem<Album>(
-              value: album,
-              child: Text('$serverName · $trackCount tracks'),
-            );
-          }).toList(),
-          onChanged: (album) {
-            if (album == null || album.id == _album.id) return;
-            setState(() {
-              _album = album;
-            });
-            _loadTracks();
-          },
+        ),
+        if (best != null) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              best.id == _album.id
+                  ? 'Playing from ${_serverNameFor(_album.serverId)} — highest quality available'
+                  : 'Playing from ${_serverNameFor(_album.serverId)} — '
+                        '${_serverNameFor(best.serverId)} has higher quality',
+              style: OmnisonicTypography.caption.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSourceRow(
+    Album variant,
+    MusicServer? server, {
+    required bool selected,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final quality = _bestQualityFor(variant.id);
+    final subtitleParts = [
+      quality?.toString() ?? '${variant.trackCount ?? 0} tracks',
+      if (server != null) server.status.toString(),
+    ];
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+      onTap: () {
+        if (variant.id == _album.id) return;
+        setState(() => _album = variant);
+        _loadTracks();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          children: [
+            ServerDot(serverId: variant.serverId, size: 10),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    server?.name ?? variant.serverId,
+                    style: OmnisonicTypography.bodySmall.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: OmnisonicTypography.semiBold,
+                    ),
+                  ),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: OmnisonicTypography.metadata.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              selected ? Icons.check_circle : Icons.circle_outlined,
+              color: selected
+                  ? scheme.primary
+                  : scheme.onSurfaceVariant.withValues(alpha: 0.4),
+              size: 20,
+            ),
+          ],
         ),
       ),
     );

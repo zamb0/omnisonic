@@ -13,6 +13,7 @@ import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/animation_utils.dart';
 
 /// Library page displaying albums, artists, and playlists
@@ -63,7 +64,7 @@ class _LibraryPageState extends State<LibraryPage> {
       return _sortedAlbumsCache;
     }
 
-    final deduped = _dedupeAlbumsByServer(albums);
+    final deduped = dedupeAlbumsByServer(albums);
     final sortedAlbums = LibrarySortService.sortAlbums(
       deduped.albums,
       sortOption,
@@ -238,8 +239,7 @@ class _LibraryPageState extends State<LibraryPage> {
                           final album = displayedAlbums[index];
                           final isStarred = viewModel.isAlbumStarred(album);
                           final sources =
-                              _albumSourceServerIdsCache[album.id] ??
-                              const [];
+                              _albumSourceServerIdsCache[album.id] ?? const [];
                           return Stack(
                             children: [
                               AlbumCard(
@@ -489,104 +489,105 @@ class _LibraryPageState extends State<LibraryPage> {
         borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.filter_list,
-                size: 20,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
-              const SizedBox(width: 8),
-              Text('Filters', style: Theme.of(context).textTheme.titleSmall),
-              const Spacer(),
-              if (viewModel.showStarredOnly || viewModel.selectedGenre != null)
-                TextButton.icon(
-                  onPressed: () => viewModel.clearFilters(),
-                  icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('Clear'),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.filter_list,
+                  size: 20,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+                const SizedBox(width: 8),
+                Text('Filters', style: Theme.of(context).textTheme.titleSmall),
+                const Spacer(),
+                if (viewModel.showStarredOnly ||
+                    viewModel.selectedGenre != null)
+                  TextButton.icon(
+                    onPressed: () => viewModel.clearFilters(),
+                    icon: const Icon(Icons.clear, size: 16),
+                    label: const Text('Clear'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                     ),
                   ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                // Starred filter chip
+                FilterChip(
+                  label: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star, size: 16),
+                      SizedBox(width: 4),
+                      Text('Starred'),
+                    ],
+                  ),
+                  selected: viewModel.showStarredOnly,
+                  onSelected: (_) => viewModel.toggleStarredFilter(),
                 ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              // Starred filter chip
-              FilterChip(
-                label: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.star, size: 16),
-                    SizedBox(width: 4),
-                    Text('Starred'),
-                  ],
-                ),
-                selected: viewModel.showStarredOnly,
-                onSelected: (_) => viewModel.toggleStarredFilter(),
-              ),
-              // Genre filter chips
-              if (viewModel.genres.isNotEmpty)
-                PopupMenuButton<String>(
-                  child: Chip(
-                    avatar: Icon(
-                      Icons.music_note,
-                      size: 16,
-                      color: viewModel.selectedGenre != null
-                          ? Theme.of(context).colorScheme.primary
+                // Genre filter chips
+                if (viewModel.genres.isNotEmpty)
+                  PopupMenuButton<String>(
+                    child: Chip(
+                      avatar: Icon(
+                        Icons.music_note,
+                        size: 16,
+                        color: viewModel.selectedGenre != null
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      label: Text(viewModel.selectedGenre ?? 'All Genres'),
+                      deleteIcon: viewModel.selectedGenre != null
+                          ? const Icon(Icons.close, size: 16)
+                          : null,
+                      onDeleted: viewModel.selectedGenre != null
+                          ? () => viewModel.setGenreFilter(null)
+                          : null,
+                      backgroundColor: viewModel.selectedGenre != null
+                          ? Theme.of(context).colorScheme.primaryContainer
                           : null,
                     ),
-                    label: Text(viewModel.selectedGenre ?? 'All Genres'),
-                    deleteIcon: viewModel.selectedGenre != null
-                        ? const Icon(Icons.close, size: 16)
-                        : null,
-                    onDeleted: viewModel.selectedGenre != null
-                        ? () => viewModel.setGenreFilter(null)
-                        : null,
-                    backgroundColor: viewModel.selectedGenre != null
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : null,
-                  ),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<String>(
-                      value: null,
-                      child: Text('All Genres'),
-                    ),
-                    const PopupMenuDivider(),
-                    ...viewModel.genres.map((genre) {
-                      return PopupMenuItem<String>(
-                        value: genre.name,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                genre.name,
-                                overflow: TextOverflow.ellipsis,
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<String>(
+                        value: null,
+                        child: Text('All Genres'),
+                      ),
+                      const PopupMenuDivider(),
+                      ...viewModel.genres.map((genre) {
+                        return PopupMenuItem<String>(
+                          value: genre.name,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  genre.name,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            Text(
-                              '${genre.albumCount}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                  onSelected: (value) => viewModel.setGenreFilter(value),
-                ),
-            ],
-          ),
-        ],
+                              Text(
+                                '${genre.albumCount}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                    onSelected: (value) => viewModel.setGenreFilter(value),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -610,7 +611,9 @@ class _LibraryPageState extends State<LibraryPage> {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(const SnackBar(content: Text('Syncing library...')));
 
-    final success = await context.read<MusicLibraryViewModel>().syncCollection();
+    final success = await context
+        .read<MusicLibraryViewModel>()
+        .syncCollection();
     if (!mounted) return;
 
     messenger.hideCurrentSnackBar();
@@ -640,45 +643,5 @@ class _LibraryPageState extends State<LibraryPage> {
         },
       ),
     );
-  }
-
-  /// Collapses same-album-on-multiple-servers duplicates down to the "best"
-  /// copy, while also recording which servers each surviving album was
-  /// found on (used for the corner source-count badge).
-  ({List<Album> albums, Map<String, List<String>> sourceServerIds})
-  _dedupeAlbumsByServer(List<Album> albums) {
-    final grouped = <String, List<Album>>{};
-    for (final album in albums) {
-      final key = _albumGroupKey(album);
-      grouped.putIfAbsent(key, () => []).add(album);
-    }
-
-    final deduped = <Album>[];
-    final sourceServerIds = <String, List<String>>{};
-    for (final group in grouped.values) {
-      group.sort((a, b) {
-        final aTracks = a.trackCount ?? 0;
-        final bTracks = b.trackCount ?? 0;
-        if (aTracks != bTracks) {
-          return bTracks.compareTo(aTracks);
-        }
-        return b.lastModified.compareTo(a.lastModified);
-      });
-      final best = group.first;
-      deduped.add(best);
-      sourceServerIds[best.id] = group.map((a) => a.serverId).toList();
-    }
-    return (albums: deduped, sourceServerIds: sourceServerIds);
-  }
-
-  String _albumGroupKey(Album album) {
-    final title = _normalizeAlbumKey(album.title);
-    final artist = album.artist; // Exact match for artist
-    final year = album.year?.toString() ?? '';
-    return '$title|$artist|$year';
-  }
-
-  String _normalizeAlbumKey(String input) {
-    return input.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
   }
 }

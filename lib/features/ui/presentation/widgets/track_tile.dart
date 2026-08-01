@@ -16,8 +16,14 @@ class TrackTile extends StatelessWidget {
 
   /// Source server ID: when set, renders a small [ServerDot] before the
   /// artist name. Leave null on single-source lists (search results, queue,
-  /// playlists) where the source isn't relevant.
+  /// playlists) where the source isn't relevant. Ignored when
+  /// [sourceServerIds] is also set.
   final String? serverId;
+
+  /// Server IDs for a track merged from multiple sources: when set (with
+  /// more than one entry), renders a [ServerDotStack] instead of the single
+  /// [ServerDot] from [serverId].
+  final List<String>? sourceServerIds;
 
   /// Short quality label (e.g. `track.quality.format`), shown next to the
   /// artist name in JetBrains Mono, the design system's typeface for
@@ -37,6 +43,7 @@ class TrackTile extends StatelessWidget {
     this.showAlbumArt = true,
     this.showTrackNumber = false,
     this.serverId,
+    this.sourceServerIds,
     this.qualityLabel,
     this.sourceNote,
   });
@@ -65,7 +72,10 @@ class TrackTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (serverId != null) ...[
+              if (sourceServerIds != null && sourceServerIds!.length > 1) ...[
+                ServerDotStack(serverIds: sourceServerIds!, dotSize: 8),
+                const SizedBox(width: 6),
+              ] else if (serverId != null) ...[
                 ServerDot(serverId: serverId!, size: 8),
                 const SizedBox(width: 6),
               ],

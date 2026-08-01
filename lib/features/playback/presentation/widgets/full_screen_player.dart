@@ -79,7 +79,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         }
 
         _updateTint(currentTrack.coverArtUrl);
-        final tint = _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
+        final tint =
+            _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -172,7 +173,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 const SizedBox(height: OmnisonicSpacing.lg),
                 _buildTrackInfo(context, track),
                 const SizedBox(height: OmnisonicSpacing.lg),
-                _buildSeekBar(context, playbackViewModel, position, duration, progress),
+                _buildSeekBar(
+                  context,
+                  playbackViewModel,
+                  position,
+                  duration,
+                  progress,
+                ),
                 const SizedBox(height: OmnisonicSpacing.md),
                 _buildPrimaryControls(context, playbackViewModel),
                 const SizedBox(height: OmnisonicSpacing.md),
@@ -361,7 +368,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                       memCacheHeight: 800,
                       fadeInDuration: const Duration(milliseconds: 120),
                       useOldImageOnUrlChange: true,
-                      placeholder: (context, url) => _buildFallbackArtwork(context),
+                      placeholder: (context, url) =>
+                          _buildFallbackArtwork(context),
                       errorWidget: (context, url, error) =>
                           _buildFallbackArtwork(context),
                     )
@@ -686,7 +694,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   ) {
     final scheme = Theme.of(context).colorScheme;
     final serverViewModel = context.watch<ServerManagementViewModel>();
-    final matches = serverViewModel.servers.where((s) => s.id == track.serverId);
+    final matches = serverViewModel.servers.where(
+      (s) => s.id == track.serverId,
+    );
     final serverName = matches.isEmpty ? track.serverId : matches.first.name;
 
     final quality = playbackViewModel.currentQuality;
@@ -804,6 +814,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     }
   }
 
+  /// Preview length for the inline queue list; the full, reorderable queue
+  /// lives on its own screen (see [QueuePage]).
+  static const int _queuePreviewCount = 6;
+
   Widget _buildQueuePanel(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
@@ -823,77 +837,108 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       );
     }
 
-    return ListView.separated(
-      itemCount: queue.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final track = queue[index];
-        final isCurrent = index == currentIndex;
+    final previewCount = queue.length.clamp(0, _queuePreviewCount);
 
-        return ListTile(
-          dense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 4,
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.separated(
+            itemCount: previewCount,
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final track = queue[index];
+              final isCurrent = index == currentIndex;
+
+              return ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: OmnisonicColors.glassDark(1),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: track.coverArtUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                            cacheKey: track.coverArtUrl!
+                                .withCoverArtSize(128)
+                                .subsonicCacheKey,
+                            cacheManager: OmnisonicImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 80,
+                            memCacheHeight: 80,
+                            fadeInDuration: const Duration(milliseconds: 120),
+                            useOldImageOnUrlChange: true,
+                          )
+                        : Icon(
+                            Icons.music_note,
+                            color: scheme.onSurfaceVariant,
+                            size: 18,
+                          ),
+                  ),
+                ),
+                title: Text(
+                  track.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text(
+                  track.artist,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                trailing: isCurrent
+                    ? Icon(
+                        playbackViewModel.isPlaying
+                            ? Icons.pause
+                            : Icons.play_arrow,
+                        color: scheme.primary,
+                      )
+                    : null,
+                onTap: () => playbackViewModel.playTrack(
+                  track,
+                  queue: queue,
+                  startIndex: index,
+                ),
+              );
+            },
           ),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: OmnisonicColors.glassDark(1),
+        ),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        InkWell(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+          onTap: () => GoRouter.of(context).push(AppRouter.queue),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Open full queue (${queue.length})',
+                  style: OmnisonicTypography.labelMedium.copyWith(
+                    color: scheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.arrow_forward, size: 16, color: scheme.primary),
+              ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: track.coverArtUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                      cacheKey: track.coverArtUrl!
-                          .withCoverArtSize(128)
-                          .subsonicCacheKey,
-                      cacheManager: OmnisonicImageCacheManager.instance,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 80,
-                      memCacheHeight: 80,
-                      fadeInDuration: const Duration(milliseconds: 120),
-                      useOldImageOnUrlChange: true,
-                    )
-                  : Icon(
-                      Icons.music_note,
-                      color: scheme.onSurfaceVariant,
-                      size: 18,
-                    ),
-            ),
           ),
-          title: Text(
-            track.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-          subtitle: Text(
-            track.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          trailing: isCurrent
-              ? Icon(
-                  playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: scheme.primary,
-                )
-              : null,
-          onTap: () => playbackViewModel.playTrack(
-            track,
-            queue: queue,
-            startIndex: index,
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 

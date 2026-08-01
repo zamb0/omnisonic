@@ -9,6 +9,7 @@ import '../../features/ui/presentation/pages/library_page.dart';
 import '../../features/ui/presentation/pages/search_page.dart';
 import '../../features/ui/presentation/pages/favorites_page.dart';
 import '../../features/ui/presentation/pages/now_playing_page.dart';
+import '../../features/playback/presentation/pages/queue_page.dart';
 import '../../features/ui/presentation/pages/album_detail_page.dart';
 import '../../features/ui/presentation/pages/artist_detail_page.dart';
 import '../../features/servers/presentation/pages/server_management_page.dart';
@@ -22,6 +23,7 @@ class AppRouter {
   static const String library = '/library';
   static const String search = '/search';
   static const String nowPlaying = '/now-playing';
+  static const String queue = '/queue';
   static const String albumDetail = '/album-detail';
   static const String artistDetail = '/artist-detail';
   static const String favorites = '/favorites';
@@ -38,36 +40,47 @@ class AppRouter {
           GoRoute(
             path: home,
             name: 'home',
-            pageBuilder: (context, state) =>
-                _fadePage(context: context, state: state, child: const HomePage()),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const HomePage(),
+            ),
           ),
           GoRoute(
             path: library,
             name: 'library',
-            pageBuilder: (context, state) =>
-                _fadePage(context: context, state: state, child: const LibraryPage()),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const LibraryPage(),
+            ),
           ),
           GoRoute(
             path: search,
             name: 'search',
-            pageBuilder: (context, state) =>
-                _fadePage(context: context, state: state, child: const SearchPage()),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const SearchPage(),
+            ),
           ),
           GoRoute(
             path: favorites,
             name: 'favorites',
-            pageBuilder: (context, state) =>
-                _fadePage(context: context, state: state, child: const FavoritesPage()),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const FavoritesPage(),
+            ),
           ),
           GoRoute(
             path: servers,
             name: 'servers',
-            pageBuilder: (context, state) =>
-                _fadePage(
-                  context: context,
-                  state: state,
-                  child: const ServerManagementPage(),
-                ),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const ServerManagementPage(),
+            ),
           ),
           GoRoute(
             path: albumDetail,
@@ -96,12 +109,11 @@ class AppRouter {
           GoRoute(
             path: playlistManagement,
             name: 'playlistManagement',
-            pageBuilder: (context, state) =>
-                _fadePage(
-                  context: context,
-                  state: state,
-                  child: const PlaylistManagementPage(),
-                ),
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const PlaylistManagementPage(),
+            ),
           ),
           GoRoute(
             path: playlistDetail,
@@ -116,6 +128,12 @@ class AppRouter {
             },
           ),
         ],
+      ),
+      GoRoute(
+        path: queue,
+        name: 'queue',
+        pageBuilder: (context, state) =>
+            _fadePage(context: context, state: state, child: const QueuePage()),
       ),
       GoRoute(
         path: nowPlaying,

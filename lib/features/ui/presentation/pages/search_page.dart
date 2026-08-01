@@ -5,9 +5,20 @@ import 'package:go_router/go_router.dart';
 import '../../../music/presentation/bloc/search_bloc.dart';
 import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
+import '../../../../core/design_system/design_system.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/services/deduplication_engine.dart';
+import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/animation_utils.dart';
+
+typedef _MergedTrack = ({
+  Track representative,
+  List<String> serverIds,
+  int rawCount,
+});
 
 /// Search page for finding music across all connected servers
 class SearchPage extends StatefulWidget {
@@ -27,6 +38,9 @@ class _SearchPageState extends State<SearchPage> {
 
   static const int _trackPreviewCount = 5;
   static const int _carouselPreviewCount = 10;
+
+  /// Server to restrict results to, or null for "All servers".
+  String? _selectedServerId;
 
   bool _isExpanded(_ResultSection section) =>
       _expandedSections.contains(section);
@@ -78,6 +92,7 @@ class _SearchPageState extends State<SearchPage> {
       body: Column(
         children: [
           _buildSearchBar(context),
+          _buildServerFilterChips(context),
           Expanded(
             child: BlocBuilder<SearchBloc, SearchState>(
               builder: (context, state) {
@@ -92,56 +107,163 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildSearchBar(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        decoration: InputDecoration(
-          hintText: 'Search tracks, albums, artists...',
-          prefixIcon: const Icon(Icons.search),
-          // Driven by the controller rather than by the page's build cycle:
-          // typing does not call setState, so a plain read of `.text` here
-          // would leave the clear button stale.
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _searchController,
-            builder: (context, value, child) {
-              if (value.text.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                icon: const Icon(Icons.clear),
-                tooltip: 'Clear search',
-                onPressed: () {
-                  _searchController.clear();
-                  _searchFocusNode.unfocus();
-                },
-              );
-            },
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          style: OmnisonicTypography.bodyMedium.copyWith(
+            color: scheme.onSurface,
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: scheme.outlineVariant),
+          decoration: InputDecoration(
+            hintText: 'Search across all servers…',
+            prefixIcon: const Icon(Icons.search),
+            // Driven by the controller rather than by the page's build cycle:
+            // typing does not call setState, so a plain read of `.text` here
+            // would leave the clear button stale.
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, child) {
+                if (value.text.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: 'Clear search',
+                  onPressed: () {
+                    _searchController.clear();
+                    _searchFocusNode.unfocus();
+                  },
+                );
+              },
+            ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: scheme.outlineVariant),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: scheme.primary, width: 1.5),
-          ),
-          filled: true,
-          fillColor: scheme.surfaceContainerHighest,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (query) {
+            if (query.trim().isNotEmpty) {
+              context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
+            }
+          },
         ),
-        textInputAction: TextInputAction.search,
-        onSubmitted: (query) {
-          if (query.trim().isNotEmpty) {
-            context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
-          }
-        },
       ),
     );
+  }
+
+  /// "All servers" + one chip per connected server, each tinted with
+  /// [OmnisonicColors.serverColorFor] so the filter reads consistently with
+  /// the source dots shown on the result rows below.
+  Widget _buildServerFilterChips(BuildContext context) {
+    final serverViewModel = context.watch<ServerManagementViewModel>();
+    final servers = serverViewModel.servers;
+    if (servers.length < 2) {
+      // A single-server library has nothing to filter by.
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: const Text('All servers'),
+              selected: _selectedServerId == null,
+              onSelected: (_) => setState(() => _selectedServerId = null),
+            ),
+          ),
+          for (final server in servers)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                avatar: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: OmnisonicColors.serverColorFor(server.id),
+                  ),
+                ),
+                label: Text(server.name),
+                selected: _selectedServerId == server.id,
+                onSelected: (_) =>
+                    setState(() => _selectedServerId = server.id),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<Track> _filterByServer(List<Track> tracks) {
+    if (_selectedServerId == null) return tracks;
+    return tracks.where((t) => t.serverId == _selectedServerId).toList();
+  }
+
+  List<Album> _filterAlbumsByServer(List<Album> albums) {
+    if (_selectedServerId == null) return albums;
+    return albums.where((a) => a.serverId == _selectedServerId).toList();
+  }
+
+  /// Merges same-track-on-multiple-servers duplicates in [tracks] into a
+  /// single row per distinct track, using the same [DeduplicationEngine]
+  /// the rest of the app uses for library-wide dedup. Preserves the
+  /// server's original ranking by keeping each group at its first
+  /// occurrence's position.
+  ({List<_MergedTrack> items, int rawTotal}) _mergeTracks(List<Track> tracks) {
+    if (tracks.isEmpty) return (items: const [], rawTotal: 0);
+
+    final engine = getIt<DeduplicationEngine>();
+    final groups = engine.detectDuplicates(tracks).values;
+    final groupByTrackId = <String, List<Track>>{};
+    for (final group in groups) {
+      for (final track in group) {
+        groupByTrackId[track.id] = group;
+      }
+    }
+
+    final items = <_MergedTrack>[];
+    final emitted = <String>{};
+    for (final track in tracks) {
+      if (emitted.contains(track.id)) continue;
+      final group = groupByTrackId[track.id];
+      if (group != null) {
+        final representative = engine.selectRepresentativeTrack(group);
+        items.add((
+          representative: representative,
+          serverIds: group.map((t) => t.serverId).toList(),
+          rawCount: group.length,
+        ));
+        emitted.addAll(group.map((t) => t.id));
+      } else {
+        items.add((
+          representative: track,
+          serverIds: [track.serverId],
+          rawCount: 1,
+        ));
+        emitted.add(track.id);
+      }
+    }
+    return (items: items, rawTotal: tracks.length);
+  }
+
+  /// "N merged from M results" when duplicates were actually collapsed,
+  /// otherwise a plain count — never a hardcoded string.
+  String _resultCountLabel(int mergedCount, int rawTotal, String noun) {
+    final word = mergedCount == 1 ? noun : '${noun}s';
+    if (rawTotal > mergedCount) {
+      return '$mergedCount $word merged from $rawTotal results';
+    }
+    return '$mergedCount $word';
   }
 
   Widget _buildSearchResults(SearchState state) {
@@ -263,13 +385,22 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchResultsList(SearchState state) {
-    final hasResults = state.hasTracks || state.hasAlbums || state.hasArtists;
+    final tracks = _filterByServer(state.tracks);
+    final albums = _filterAlbumsByServer(state.albums);
+    final artists = _selectedServerId == null
+        ? state.artists
+        : state.artists.where((a) => a.serverId == _selectedServerId).toList();
+
+    final hasResults =
+        tracks.isNotEmpty || albums.isNotEmpty || artists.isNotEmpty;
 
     if (!hasResults) {
       return EmptyState(
         icon: Icons.search_off,
         title: 'No Results Found',
-        subtitle: 'Try different keywords or check your spelling',
+        subtitle: _selectedServerId != null
+            ? 'No results on this server. Try "All servers" or different keywords.'
+            : 'Try different keywords or check your spelling',
         action: TextButton(
           onPressed: () {
             _searchController.clear();
@@ -280,33 +411,43 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
+    final mergedTracks = _mergeTracks(tracks);
+    final mergedAlbums = dedupeAlbumsByServer(albums);
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (state.hasTracks) _buildTracksSection(state.tracks),
-          if (state.hasAlbums) _buildAlbumsSection(state.albums),
-          if (state.hasArtists) _buildArtistsSection(state.artists),
+          if (mergedTracks.items.isNotEmpty)
+            _buildTracksSection(mergedTracks.items, mergedTracks.rawTotal),
+          if (mergedAlbums.albums.isNotEmpty)
+            _buildAlbumsSection(
+              mergedAlbums.albums,
+              mergedAlbums.sourceServerIds,
+              albums.length,
+            ),
+          if (artists.isNotEmpty) _buildArtistsSection(artists),
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  Widget _buildTracksSection(List<Track> tracks) {
+  Widget _buildTracksSection(List<_MergedTrack> items, int rawTotal) {
     final expanded = _isExpanded(_ResultSection.tracks);
     final visibleCount = expanded
-        ? tracks.length
-        : tracks.length.clamp(0, _trackPreviewCount);
+        ? items.length
+        : items.length.clamp(0, _trackPreviewCount);
+    final tracks = items.map((i) => i.representative).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           title: 'Tracks',
-          subtitle: '${tracks.length} result${tracks.length != 1 ? 's' : ''}',
+          subtitle: _resultCountLabel(items.length, rawTotal, 'result'),
           seeAllLabel: expanded ? 'Show Less' : 'See All',
-          onSeeAllPressed: tracks.length > _trackPreviewCount
+          onSeeAllPressed: items.length > _trackPreviewCount
               ? () => _toggleSection(_ResultSection.tracks)
               : null,
         ),
@@ -316,9 +457,13 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: visibleCount,
           itemBuilder: (context, index) {
-            final track = tracks[index];
+            final item = items[index];
+            final track = item.representative;
             return TrackTile(
               track: track,
+              serverId: track.serverId,
+              sourceServerIds: item.serverIds,
+              qualityLabel: track.quality.format,
               onTap: () => _onTrackTapped(track, tracks, index),
               onMorePressed: () => _showTrackOptions(track),
             );
@@ -328,13 +473,17 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildAlbumsSection(List<Album> albums) {
+  Widget _buildAlbumsSection(
+    List<Album> albums,
+    Map<String, List<String>> sourceServerIds,
+    int rawTotal,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
           title: 'Albums',
-          subtitle: '${albums.length} result${albums.length != 1 ? 's' : ''}',
+          subtitle: _resultCountLabel(albums.length, rawTotal, 'result'),
           seeAllLabel: _isExpanded(_ResultSection.albums)
               ? 'Show Less'
               : 'See All',
@@ -352,12 +501,23 @@ class _SearchPageState extends State<SearchPage> {
                 : albums.length.clamp(0, _carouselPreviewCount),
             itemBuilder: (context, index) {
               final album = albums[index];
+              final sources = sourceServerIds[album.id] ?? const [];
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: AlbumCard(
-                  album: album,
-                  width: 160,
-                  onTap: () => _onAlbumTapped(album),
+                child: Stack(
+                  children: [
+                    AlbumCard(
+                      album: album,
+                      width: 160,
+                      onTap: () => _onAlbumTapped(album),
+                    ),
+                    if (sources.length > 1)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: ServerDotStack(serverIds: sources),
+                      ),
+                  ],
                 ),
               );
             },

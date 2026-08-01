@@ -540,6 +540,26 @@ class PlaybackViewModel extends ChangeNotifier {
     );
   }
 
+  /// Moves the item at absolute queue index [oldIndex] so it ends up at
+  /// absolute index [newIndex] **after removal** (i.e. `newIndex` is in the
+  /// same post-removal coordinate space `ReorderableListView.onReorderItem`
+  /// already hands back — no further -1 adjustment needed by the caller).
+  ///
+  /// Composed from [removeFromQueue] + [insertInQueue] rather than
+  /// `setQueue`, because `setQueue` reloads the track at its start index —
+  /// fine for replacing the whole queue, but it would restart whatever's
+  /// currently playing if used here. removeFromQueue/insertInQueue only
+  /// touch queue bookkeeping for indices past the current one, so reordering
+  /// the "up next" tail never interrupts playback.
+  Future<void> reorderQueueItem(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex || oldIndex < 0 || oldIndex >= queue.length) {
+      return;
+    }
+    final track = queue[oldIndex];
+    await removeFromQueue(oldIndex);
+    await insertInQueue(track, newIndex.clamp(0, queue.length - 1));
+  }
+
   /// Clears the entire queue
   Future<void> clearQueue() async {
     final result = await _playbackRepository.clearQueue();

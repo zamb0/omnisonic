@@ -229,27 +229,37 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildArtwork(context, track),
-                      const SizedBox(height: OmnisonicSpacing.lg),
-                      _buildTrackInfo(context, track),
-                      const SizedBox(height: OmnisonicSpacing.lg),
-                      _buildSeekBar(
-                        context,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
-                      ),
-                      const SizedBox(height: OmnisonicSpacing.lg),
-                      _buildPrimaryControls(context, playbackViewModel),
-                      const SizedBox(height: OmnisonicSpacing.md),
-                      _buildSecondaryControls(context, playbackViewModel),
-                      const SizedBox(height: OmnisonicSpacing.md),
-                      _buildSourceInfoPanel(context, track, playbackViewModel),
-                    ],
+                  // Scrolls instead of overflowing on short windows — this
+                  // column stacks fixed-size content (360px artwork, seek
+                  // bar, two control rows, the source-info panel) that
+                  // doesn't always fit a short desktop window's height.
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildArtwork(context, track),
+                        const SizedBox(height: OmnisonicSpacing.lg),
+                        _buildTrackInfo(context, track),
+                        const SizedBox(height: OmnisonicSpacing.lg),
+                        _buildSeekBar(
+                          context,
+                          playbackViewModel,
+                          position,
+                          duration,
+                          progress,
+                        ),
+                        const SizedBox(height: OmnisonicSpacing.lg),
+                        _buildPrimaryControls(context, playbackViewModel),
+                        const SizedBox(height: OmnisonicSpacing.md),
+                        _buildSecondaryControls(context, playbackViewModel),
+                        const SizedBox(height: OmnisonicSpacing.md),
+                        _buildSourceInfoPanel(
+                          context,
+                          track,
+                          playbackViewModel,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: OmnisonicSpacing.xl),

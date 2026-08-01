@@ -116,15 +116,20 @@ class _HomePageState extends State<HomePage> {
         return IgnorePointer(
           child: Align(
             alignment: Alignment.topCenter,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                margin: const EdgeInsets.only(top: -120),
-                width: 480,
-                height: 360,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: tint.withValues(alpha: 0.35),
+            child: Transform.translate(
+              // Shifts the blob mostly above the visible area so only its
+              // soft lower edge shows — Container.margin must be
+              // non-negative, so the offset has to happen here instead.
+              offset: const Offset(0, -120),
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+                child: Container(
+                  width: 480,
+                  height: 360,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: tint.withValues(alpha: 0.35),
+                  ),
                 ),
               ),
             ),

@@ -10,7 +10,6 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
-import 'audio_visualizer.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
 
 /// Feishin-style now-playing bar at the bottom of the screen
@@ -325,11 +324,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         SizedBox(
                           width: 18,
                           height: 16,
-                          child: AudioVisualizer(
-                            isPlaying: vm.isPlaying,
-                            barCount: 3,
-                            height: 16,
-                            color: tint,
+                          // AudioVisualizer's equalizer bars assume a ~300px
+                          // wide layout (fixed bar-width formula), so at
+                          // this icon size it overflows badly — a small
+                          // dedicated widget instead.
+                          child: Center(
+                            child: _MiniEqualizer(
+                              isPlaying: vm.isPlaying,
+                              color: tint,
+                            ),
                           ),
                         ),
                       ],
@@ -397,7 +400,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 ),
               ),
             ),
-            IgnorePointer(child: _buildSheenOverlay()),
+            Positioned.fill(child: IgnorePointer(child: _buildSheenOverlay())),
           ],
         ),
       ),
@@ -405,7 +408,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 
   /// Slow diagonal light sweep across the glass bar — purely decorative,
-  /// wrapped in [IgnorePointer] so it never intercepts taps.
+  /// wrapped in [IgnorePointer] (by the caller) so it never intercepts taps.
   Widget _buildSheenOverlay() {
     return AnimatedBuilder(
       animation: _sheenController,
@@ -415,25 +418,23 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             final width = constraints.maxWidth;
             final height = constraints.maxHeight;
             final dx = -width * 0.5 + _sheenController.value * width * 1.6;
-            return Positioned.fill(
-              child: ClipRect(
-                child: Transform.translate(
-                  offset: Offset(dx, 0),
-                  child: Transform.rotate(
-                    angle: -0.3,
-                    child: Container(
-                      width: width * 0.2,
-                      height: height * 2,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            Colors.transparent,
-                            Colors.white.withValues(alpha: 0.10),
-                            Colors.transparent,
-                          ],
-                        ),
+            return ClipRect(
+              child: Transform.translate(
+                offset: Offset(dx, 0),
+                child: Transform.rotate(
+                  angle: -0.3,
+                  child: Container(
+                    width: width * 0.2,
+                    height: height * 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.transparent,
+                          Colors.white.withValues(alpha: 0.10),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
                   ),
@@ -567,67 +568,68 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Playback controls row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _iconBtn(
-              Icons.stop,
-              18,
-              scheme.onSurfaceVariant,
-              () => vm.stop(),
-              label: 'Stop',
+        // Playback controls row. Horizontally scrollable rather than a
+        // plain Row: at narrower "desktop" widths (this section only gets
+        // whatever's left after the fixed-width left/right sections) six
+        // 44px touch targets don't always fit, so this degrades to a
+        // scroll instead of a hard overflow.
+        Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _iconBtn(
+                  Icons.stop,
+                  18,
+                  scheme.onSurfaceVariant,
+                  () => vm.stop(),
+                  label: 'Stop',
+                ),
+                const SizedBox(width: 8),
+                _iconBtn(
+                  Icons.shuffle,
+                  18,
+                  vm.shuffleEnabled ? scheme.primary : scheme.onSurfaceVariant,
+                  () => vm.toggleShuffleMode(),
+                  label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
+                ),
+                const SizedBox(width: 8),
+                _iconBtn(
+                  Icons.skip_previous,
+                  22,
+                  vm.hasPrevious
+                      ? scheme.onSurface
+                      : scheme.onSurface.withValues(alpha: 0.3),
+                  vm.hasPrevious ? () => vm.skipToPrevious() : null,
+                  label: 'Previous track',
+                ),
+                const SizedBox(width: 8),
+                // Play/Pause - prominent circular button
+                _playPauseBtn(vm, scheme),
+                const SizedBox(width: 8),
+                _iconBtn(
+                  Icons.skip_next,
+                  22,
+                  vm.hasNext
+                      ? scheme.onSurface
+                      : scheme.onSurface.withValues(alpha: 0.3),
+                  vm.hasNext ? () => vm.skipToNext() : null,
+                  label: 'Next track',
+                ),
+                const SizedBox(width: 8),
+                _iconBtn(
+                  _repeatIcon(vm.repeatMode),
+                  18,
+                  vm.repeatMode != playback.RepeatMode.none
+                      ? scheme.primary
+                      : scheme.onSurfaceVariant,
+                  () => vm.toggleRepeatMode(),
+                  label: _repeatLabel(vm.repeatMode),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            _iconBtn(
-              Icons.shuffle,
-              18,
-              vm.shuffleEnabled ? scheme.primary : scheme.onSurfaceVariant,
-              () => vm.toggleShuffleMode(),
-              label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
-            ),
-            const SizedBox(width: 8),
-            _iconBtn(
-              Icons.skip_previous,
-              22,
-              vm.hasPrevious
-                  ? scheme.onSurface
-                  : scheme.onSurface.withValues(alpha: 0.3),
-              vm.hasPrevious ? () => vm.skipToPrevious() : null,
-              label: 'Previous track',
-            ),
-            const SizedBox(width: 8),
-            // Play/Pause - prominent circular button
-            _playPauseBtn(vm, scheme),
-            const SizedBox(width: 8),
-            _iconBtn(
-              Icons.skip_next,
-              22,
-              vm.hasNext
-                  ? scheme.onSurface
-                  : scheme.onSurface.withValues(alpha: 0.3),
-              vm.hasNext ? () => vm.skipToNext() : null,
-              label: 'Next track',
-            ),
-            const SizedBox(width: 8),
-            _iconBtn(
-              _repeatIcon(vm.repeatMode),
-              18,
-              vm.repeatMode != playback.RepeatMode.none
-                  ? scheme.primary
-                  : scheme.onSurfaceVariant,
-              () => vm.toggleRepeatMode(),
-              label: _repeatLabel(vm.repeatMode),
-            ),
-            const SizedBox(width: 8),
-            _iconBtn(
-              Icons.queue_music,
-              18,
-              scheme.onSurfaceVariant,
-              widget.onTap,
-              label: 'Open queue',
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 4),
         // Progress bar with timestamps
@@ -635,15 +637,22 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
             children: [
-              Text(
-                _formatDuration(
-                  _draggingProgress == null
-                      ? position
-                      : duration * _draggingProgress!,
-                ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontSize: 11,
+              // Flexible (not a bare Text) so at narrow desktop widths this
+              // shrinks instead of forcing a hard overflow alongside the
+              // Expanded slider.
+              Flexible(
+                child: Text(
+                  _formatDuration(
+                    _draggingProgress == null
+                        ? position
+                        : duration * _draggingProgress!,
+                  ),
+                  overflow: TextOverflow.clip,
+                  softWrap: false,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -677,11 +686,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _formatDuration(duration),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontSize: 11,
+              Flexible(
+                child: Text(
+                  _formatDuration(duration),
+                  overflow: TextOverflow.clip,
+                  softWrap: false,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
@@ -871,6 +884,93 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         size: 24,
       ),
+    );
+  }
+}
+
+/// Tiny 3-bar equalizer indicator, sized for an icon-sized slot next to the
+/// play/pause button (unlike [AudioVisualizer]'s equalizer mode, which
+/// assumes a much wider layout).
+class _MiniEqualizer extends StatefulWidget {
+  const _MiniEqualizer({required this.isPlaying, required this.color});
+
+  final bool isPlaying;
+  final Color color;
+
+  @override
+  State<_MiniEqualizer> createState() => _MiniEqualizerState();
+}
+
+class _MiniEqualizerState extends State<_MiniEqualizer>
+    with TickerProviderStateMixin {
+  static const _barCount = 3;
+  late final List<AnimationController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(
+      _barCount,
+      (i) => AnimationController(
+        duration: Duration(milliseconds: 320 + i * 90),
+        vsync: this,
+      ),
+    );
+    if (widget.isPlaying) _start();
+  }
+
+  void _start() {
+    for (final controller in _controllers) {
+      controller.repeat(reverse: true);
+    }
+  }
+
+  void _stop() {
+    for (final controller in _controllers) {
+      controller.stop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MiniEqualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      widget.isPlaying ? _start() : _stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < _barCount; i++) ...[
+          if (i > 0) const SizedBox(width: 2),
+          AnimatedBuilder(
+            animation: _controllers[i],
+            builder: (context, child) {
+              final height = 4 + _controllers[i].value * 10;
+              return Container(
+                width: 3,
+                height: height,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 }

@@ -376,6 +376,27 @@ class MusicLibraryViewModel extends ChangeNotifier {
     }, (albums) => albums);
   }
 
+  /// Gets tracks for a specific artist.
+  ///
+  /// Falls back to walking the artist's albums for servers that do not tag
+  /// songs with an artist ID.
+  Future<List<Track>> getArtistTracks(String artistId) async {
+    final result = await _musicRepository.getArtistTracks(artistId);
+    final tracks = result.fold((failure) {
+      _setError('Failed to load artist tracks: ${failure.message}');
+      return <Track>[];
+    }, (tracks) => tracks);
+
+    if (tracks.isNotEmpty) return tracks;
+
+    final albums = await getArtistAlbums(artistId);
+    final fromAlbums = <Track>[];
+    for (final album in albums) {
+      fromAlbums.addAll(await getAlbumTracks(album.id));
+    }
+    return fromAlbums;
+  }
+
   /// Gets duplicate groups for deduplication management
   Future<Map<String, List<Track>>> getDuplicateGroups() async {
     final result = await _musicRepository.getDuplicateGroups();

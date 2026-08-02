@@ -158,8 +158,9 @@ void main() {
     });
 
     test('should handle search with filters correctly', () async {
-      // SearchMusicUseCase refuses to run without an online server, and the
-      // previous test removes the one it added — so this test provides its own.
+      // Search reads the local library, but the filters are per-server, so
+      // this test provides a server of its own rather than depending on
+      // whatever the previous test left behind.
       final searchServer = MusicServer(
         id: 'search-test-server',
         name: 'Search Test Server',

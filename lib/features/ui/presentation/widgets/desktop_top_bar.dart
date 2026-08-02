@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
-import '../../../sync/presentation/bloc/sync_bloc.dart';
 
 /// Desktop content-column header: a glass search field, the last-sync
 /// timestamp, a "Sync now" action and an avatar-style shortcut into
@@ -46,10 +45,13 @@ class DesktopTopBar extends StatelessWidget {
               );
             },
           ),
+          // Syncs through the library view model, the same path the library
+          // page uses, so the "syncing…" label to the left of this button and
+          // the in-memory collection both reflect what the button started.
           _GlassButton(
             label: 'Sync now',
-            onTap: () => context.read<SyncBloc>().add(
-              const SyncStarted(forceRefresh: true),
+            onTap: () => context.read<MusicLibraryViewModel>().syncCollection(
+              forceRefresh: true,
             ),
           ),
           const SizedBox(width: 12),

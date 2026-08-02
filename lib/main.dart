@@ -19,9 +19,7 @@ import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
 import 'features/offline/presentation/viewmodels/offline_mode_view_model.dart';
 
 // BLoCs
-import 'features/sync/presentation/bloc/sync_bloc.dart';
 import 'features/music/presentation/bloc/search_bloc.dart';
-import 'features/playback/presentation/bloc/playback_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,9 +141,7 @@ class _OmnisonicAppState extends State<OmnisonicApp>
         ),
 
         // BLoCs
-        BlocProvider<SyncBloc>(create: (_) => getIt<SyncBloc>()),
         BlocProvider<SearchBloc>(create: (_) => getIt<SearchBloc>()),
-        BlocProvider<PlaybackBloc>(create: (_) => getIt<PlaybackBloc>()),
       ],
       child: Consumer<ThemeModeController>(
         builder: (context, themeModeController, child) {

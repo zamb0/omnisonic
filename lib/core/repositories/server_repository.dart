@@ -37,6 +37,10 @@ abstract class ServerRepository {
   /// Updates server last sync time
   Future<Result<void>> updateLastSync(String serverId, DateTime lastSync);
 
+  /// Starts periodically re-testing every configured server so their status
+  /// reflects live reachability.
+  Future<Result<void>> startMonitoringAllServers();
+
   /// Gets all online servers
   Future<Result<List<MusicServer>>> getOnlineServers();
 

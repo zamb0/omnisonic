@@ -93,7 +93,8 @@ class PlaybackViewModel extends ChangeNotifier {
   int get queueLength => queue.length;
   bool get isRestoring => _isRestoring;
 
-  // TODO: Connect to AdaptiveStreamingService for real quality monitoring
+  /// The quality currently being streamed, as reported by
+  /// [AdaptiveStreamingService] and capped by the current track's own quality.
   AudioQuality get currentQuality => _streamingQuality;
   AudioQuality get maxQuality => _maxStreamingQuality;
   double get streamingQualityRatio {
@@ -197,6 +198,13 @@ class PlaybackViewModel extends ChangeNotifier {
   }
 
   void _subscribeToQuality() {
+    // Seed from the service so Settings shows the real quality before the
+    // first network condition change comes through.
+    _streamingQuality = _clampQuality(
+      _adaptiveStreamingService.currentRecommendedQuality,
+      _maxStreamingQuality,
+    );
+
     _qualitySubscription = _adaptiveStreamingService
         .observeRecommendedQuality()
         .listen((quality) {

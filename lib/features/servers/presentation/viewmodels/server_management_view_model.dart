@@ -59,6 +59,9 @@ class ServerManagementViewModel extends ChangeNotifier {
   void _initialize() {
     _subscribeToServers();
     _loadServers();
+    // Kicks off the periodic reachability checks; without them every server
+    // keeps whatever status it had when it was added.
+    _serverRepository.startMonitoringAllServers();
   }
 
   void _subscribeToServers() {

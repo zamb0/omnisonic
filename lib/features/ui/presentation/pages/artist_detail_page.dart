@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/entities/entities.dart';
-import '../../../../core/utils/id_generator.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -39,21 +38,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     });
 
     try {
-      final musicRepository = context.read<MusicLibraryViewModel>();
-      // Extract the original Subsonic ID for API calls
-      final originalArtistId = IdGenerator.extractSubsonicId(widget.artist.id);
-
-      // For now, we'll filter albums from the main collection
-      // TODO: Implement proper getArtistAlbums method in view model
-      final allAlbums = musicRepository.albums;
-      final artistAlbums = allAlbums.where((album) {
-        final albumArtistId = album.artistId != null
-            ? IdGenerator.extractSubsonicId(album.artistId!)
-            : null;
-        // Match by artist ID or artist name
-        return albumArtistId == originalArtistId ||
-            album.artist.toLowerCase() == widget.artist.name.toLowerCase();
-      }).toList();
+      final library = context.read<MusicLibraryViewModel>();
+      final artistAlbums = await library.getArtistAlbums(widget.artist.id);
 
       // Sort albums by year (newest first), then by title
       artistAlbums.sort((a, b) {
@@ -68,11 +54,13 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         return a.title.compareTo(b.title);
       });
 
+      if (!mounted) return;
       setState(() {
         _albums = artistAlbums;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load albums: $e';
         _isLoading = false;
@@ -488,110 +476,50 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     }
   }
 
-  void _playArtist() {
+  Future<void> _playArtist() => _playArtistTracks(shuffle: false);
+
+  Future<void> _shuffleArtist() => _playArtistTracks(shuffle: true);
+
+  /// Loads the artist's tracks from the repository and starts playback.
+  ///
+  /// The tracks used to be reconstructed by scanning the whole in-memory
+  /// collection and matching album titles; the repository resolves them by
+  /// artist ID instead, falling back to the artist's albums when a server
+  /// does not tag songs with one.
+  Future<void> _playArtistTracks({required bool shuffle}) async {
     if (_albums.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No albums to play')));
-      return;
-    }
-
-    // Get all tracks from all albums
-    final musicRepository = context.read<MusicLibraryViewModel>();
-    final allTracks = musicRepository.tracks;
-    final artistTracks = <Track>[];
-
-    for (final album in _albums) {
-      final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
-      final albumTracks = allTracks.where((track) {
-        // Match by albumId if available
-        if (track.albumId != null && track.albumId!.isNotEmpty) {
-          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
-          if (trackAlbumId == originalAlbumId) {
-            return true;
-          }
-        }
-
-        // Fallback: match by album name and server ID
-        return track.album.toLowerCase() == album.title.toLowerCase() &&
-            track.serverId == album.serverId;
-      }).toList();
-      artistTracks.addAll(albumTracks);
-    }
-
-    if (artistTracks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tracks found for this artist')),
-      );
-      return;
-    }
-
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(
-      artistTracks.first,
-      queue: artistTracks,
-      startIndex: 0,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Playing ${widget.artist.name} (${artistTracks.length} tracks)',
+        SnackBar(
+          content: Text(shuffle ? 'No albums to shuffle' : 'No albums to play'),
         ),
-      ),
-    );
-  }
-
-  void _shuffleArtist() {
-    if (_albums.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No albums to shuffle')));
+      );
       return;
     }
 
-    // Get all tracks from all albums
-    final musicRepository = context.read<MusicLibraryViewModel>();
-    final allTracks = musicRepository.tracks;
-    final artistTracks = <Track>[];
+    final library = context.read<MusicLibraryViewModel>();
+    final playbackViewModel = context.read<PlaybackViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    for (final album in _albums) {
-      final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
-      final albumTracks = allTracks.where((track) {
-        // Match by albumId if available
-        if (track.albumId != null && track.albumId!.isNotEmpty) {
-          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
-          if (trackAlbumId == originalAlbumId) {
-            return true;
-          }
-        }
-
-        // Fallback: match by album name and server ID
-        return track.album.toLowerCase() == album.title.toLowerCase() &&
-            track.serverId == album.serverId;
-      }).toList();
-      artistTracks.addAll(albumTracks);
-    }
+    final artistTracks = await library.getArtistTracks(widget.artist.id);
+    if (!mounted) return;
 
     if (artistTracks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('No tracks found for this artist')),
       );
       return;
     }
 
-    final shuffledTracks = List<Track>.from(artistTracks)..shuffle();
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(
-      shuffledTracks.first,
-      queue: shuffledTracks,
-      startIndex: 0,
-    );
+    final queue = shuffle
+        ? (List<Track>.from(artistTracks)..shuffle())
+        : artistTracks;
+    playbackViewModel.playTrack(queue.first, queue: queue, startIndex: 0);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Shuffling ${widget.artist.name} (${artistTracks.length} tracks)',
+          '${shuffle ? 'Shuffling' : 'Playing'} ${widget.artist.name} '
+          '(${queue.length} tracks)',
         ),
       ),
     );

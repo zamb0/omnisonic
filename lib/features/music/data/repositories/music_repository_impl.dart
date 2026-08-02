@@ -165,6 +165,11 @@ class MusicRepositoryImpl implements MusicRepository {
   }
 
   @override
+  Future<Result<List<Track>>> getArtistTracks(String artistId) async {
+    return await _localDataSource.getTracksByArtistId(artistId);
+  }
+
+  @override
   Future<Result<List<Track>>> searchTracks(String query) async {
     return await _localDataSource.searchTracks(query);
   }

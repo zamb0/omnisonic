@@ -83,14 +83,10 @@ import 'package:omnisonic/features/playback/data/datasources/playback_service.da
     as _i48;
 import 'package:omnisonic/features/playback/data/datasources/playback_tracking_service.dart'
     as _i989;
-import 'package:omnisonic/features/playback/presentation/bloc/playback_bloc.dart'
-    as _i725;
 import 'package:omnisonic/features/playback/presentation/viewmodels/playback_view_model.dart'
     as _i984;
 import 'package:omnisonic/features/servers/presentation/viewmodels/server_management_view_model.dart'
     as _i502;
-import 'package:omnisonic/features/sync/presentation/bloc/sync_bloc.dart'
-    as _i409;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -211,7 +207,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i618.LocalServerDataSource>(),
         gh<_i632.ServerConnectionService>(),
         gh<_i253.ServerStatusMonitor>(),
-        gh<_i569.ServerValidator>(),
       ),
     );
     gh.factory<_i989.PlaybackTrackingService>(
@@ -240,11 +235,8 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
       ),
     );
-    gh.factory<_i725.PlaybackBloc>(
-      () => _i725.PlaybackBloc(
-        gh<_i331.PlaybackRepository>(),
-        gh<_i503.PlayTrackUseCase>(),
-      ),
+    gh.factory<_i1063.SearchMusicUseCase>(
+      () => _i1063.SearchMusicUseCase(gh<_i331.MusicRepository>()),
     );
     gh.lazySingleton<_i840.ManageOfflineModeUseCase>(
       () => appModule.manageOfflineModeUseCase(
@@ -268,12 +260,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.MusicRepository>(),
       ),
     );
-    gh.factory<_i1063.SearchMusicUseCase>(
-      () => _i1063.SearchMusicUseCase(
-        gh<_i331.MusicRepository>(),
-        gh<_i331.ServerRepository>(),
-      ),
-    );
     gh.factory<_i882.SyncMusicCollectionUseCase>(
       () => _i882.SyncMusicCollectionUseCase(
         gh<_i331.MusicRepository>(),
@@ -289,12 +275,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
         gh<_i1002.AdaptiveStreamingService>(),
         gh<_i350.AppDatabase>(),
-      ),
-    );
-    gh.factory<_i409.SyncBloc>(
-      () => _i409.SyncBloc(
-        gh<_i503.SyncMusicCollectionUseCase>(),
-        gh<_i331.ServerRepository>(),
       ),
     );
     gh.factory<_i693.PlaylistViewModel>(

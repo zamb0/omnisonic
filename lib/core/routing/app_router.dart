@@ -151,13 +151,19 @@ class AppRouter {
               );
             },
           ),
+          // Inside the shell so the queue's glass surfaces sit on the art
+          // tint like every other page; the full-screen player stays outside
+          // because it paints its own background.
+          GoRoute(
+            path: queue,
+            name: 'queue',
+            pageBuilder: (context, state) => _fadePage(
+              context: context,
+              state: state,
+              child: const QueuePage(),
+            ),
+          ),
         ],
-      ),
-      GoRoute(
-        path: queue,
-        name: 'queue',
-        pageBuilder: (context, state) =>
-            _fadePage(context: context, state: state, child: const QueuePage()),
       ),
       GoRoute(
         path: nowPlaying,

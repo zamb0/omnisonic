@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import 'add_to_playlist_sheet.dart';
 
 /// A draggable track tile for playlist reordering
 class DraggableTrackTile extends StatelessWidget {
@@ -136,7 +139,7 @@ class DraggableTrackTile extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value),
+          onSelected: (value) => _handleMenuAction(context, value),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'play',
@@ -181,16 +184,19 @@ class DraggableTrackTile extends StatelessWidget {
     );
   }
 
-  void _handleMenuAction(String action) {
+  void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'play':
         onTap?.call();
         break;
       case 'add_to_queue':
-        // TODO: Implement add to queue functionality
+        context.read<PlaybackViewModel>().addToQueue(track);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Added to queue')));
         break;
       case 'add_to_playlist':
-        // TODO: Implement add to playlist functionality
+        showAddToPlaylistSheet(context, track);
         break;
       case 'remove':
         onRemove?.call();

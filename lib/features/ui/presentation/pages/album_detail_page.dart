@@ -10,6 +10,8 @@ import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
+import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
@@ -214,6 +216,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             tooltip: 'Shuffle',
             icon: const Icon(Icons.shuffle),
             onPressed: _shuffleAlbum,
+          ),
+        if (_tracks.isNotEmpty)
+          IconButton(
+            tooltip: 'Download album',
+            icon: const Icon(Icons.download_outlined),
+            onPressed: _downloadAlbum,
           ),
       ],
     );
@@ -819,6 +827,18 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: _downloadAlbum,
+                icon: const Icon(Icons.download_outlined),
+                label: const Text('Download'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -1215,6 +1235,31 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     );
   }
 
+  /// Downloads every track of the album that is not already available
+  /// offline. This is the only entry point into DownloadManager from the UI.
+  Future<void> _downloadAlbum() async {
+    if (_tracks.isEmpty) return;
+
+    final offline = context.read<OfflineModeViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('Downloading ${_album.title}…')),
+    );
+
+    final failures = await offline.downloadTracks(_tracks);
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          failures == 0
+              ? '${_album.title} is available offline'
+              : '$failures of ${_tracks.length} tracks could not be downloaded',
+        ),
+      ),
+    );
+  }
+
   void _onTrackTapped(Track track, int index) {
     debugPrint('Track tapped: ${track.title} (${track.id})');
     final playbackViewModel = context.read<PlaybackViewModel>();
@@ -1246,6 +1291,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(const SnackBar(content: Text('Added to queue')));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: const Text('Add to Playlist'),
+              onTap: () {
+                context.pop();
+                showAddToPlaylistSheet(context, track);
               },
             ),
             ListTile(

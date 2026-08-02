@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/widgets.dart';
 import '../../../../core/entities/entities.dart';
 
@@ -176,6 +177,11 @@ class _FavoritesPageState extends State<FavoritesPage>
   }
 
   void _onTrackTapped(Track track, List<Track> queue) {
-    // TODO: Implement track playback with queue
+    final startIndex = queue.indexOf(track);
+    context.read<PlaybackViewModel>().playTrack(
+      track,
+      queue: queue,
+      startIndex: startIndex < 0 ? 0 : startIndex,
+    );
   }
 }

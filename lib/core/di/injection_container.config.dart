@@ -255,6 +255,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i902.OfflineContentFilter>(),
       ),
     );
+    gh.factory<_i942.OfflineModeViewModel>(
+      () => _i942.OfflineModeViewModel(
+        offlineModeService: gh<_i120.OfflineModeService>(),
+        manageOfflineModeUseCase: gh<_i840.ManageOfflineModeUseCase>(),
+        offlineRepository: gh<_i763.OfflineRepository>(),
+      ),
+    );
     gh.factory<_i631.ManagePlaylistUseCase>(
       () => _i631.ManagePlaylistUseCase(
         gh<_i331.PlaylistRepository>(),
@@ -305,12 +312,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i106.SearchBloc>(
       () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
-    );
-    gh.factory<_i942.OfflineModeViewModel>(
-      () => _i942.OfflineModeViewModel(
-        offlineModeService: gh<_i120.OfflineModeService>(),
-        manageOfflineModeUseCase: gh<_i840.ManageOfflineModeUseCase>(),
-      ),
     );
     gh.factory<_i502.ServerManagementViewModel>(
       () => _i502.ServerManagementViewModel(

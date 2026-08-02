@@ -125,11 +125,13 @@ class MainShell extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     switch (location) {
       case AppRouter.home:
-      // Server management and favorites are secondary destinations reached
-      // from Home, so they keep the Home tab lit rather than leaving the bar
-      // without a selection.
+      // Starred, servers, downloads and settings are secondary destinations
+      // reached from Home's More sheet, so they keep the Home tab lit rather
+      // than leaving the bar without a selection.
       case AppRouter.servers:
       case AppRouter.favorites:
+      case AppRouter.downloads:
+      case AppRouter.settings:
         return 0;
       case AppRouter.library:
       case AppRouter.albumDetail:

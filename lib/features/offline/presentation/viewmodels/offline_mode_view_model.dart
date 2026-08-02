@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/errors.dart';
+import '../../../../core/repositories/offline_repository.dart';
 import '../../../../core/services/offline_mode_service.dart';
 import '../../domain/usecases/manage_offline_mode_use_case.dart';
 import '../../domain/services/offline_content_filter.dart';
@@ -14,13 +16,16 @@ class OfflineModeViewModel extends ChangeNotifier {
   OfflineModeViewModel({
     required OfflineModeService offlineModeService,
     required ManageOfflineModeUseCase manageOfflineModeUseCase,
+    required OfflineRepository offlineRepository,
   }) : _offlineModeService = offlineModeService,
-       _manageOfflineModeUseCase = manageOfflineModeUseCase {
+       _manageOfflineModeUseCase = manageOfflineModeUseCase,
+       _offlineRepository = offlineRepository {
     _initialize();
   }
 
   final OfflineModeService _offlineModeService;
   final ManageOfflineModeUseCase _manageOfflineModeUseCase;
+  final OfflineRepository _offlineRepository;
 
   StreamSubscription<bool>? _offlineModeSubscription;
   StreamSubscription<ConnectivityResult>? _connectivitySubscription;
@@ -247,6 +252,46 @@ class OfflineModeViewModel extends ChangeNotifier {
   /// Checks if a track is available offline
   bool isTrackAvailableOffline(String trackId) {
     return _offlineTracks.any((track) => track.id == trackId);
+  }
+
+  /// Whether a download for [trackId] is currently running.
+  bool isTrackDownloading(String trackId) =>
+      _offlineRepository.isTrackDownloading(trackId);
+
+  /// Downloads [track] for offline playback.
+  ///
+  /// Returns the failure message, or null when the download succeeded.
+  Future<String?> downloadTrack(Track track) async {
+    final result = await _offlineRepository.downloadTrack(track);
+    if (result.isFailure) {
+      return result.failureOrNull?.message ?? 'Download failed';
+    }
+    await refreshOfflineCollection();
+    return null;
+  }
+
+  /// Downloads every track in [tracks], skipping the ones already available.
+  ///
+  /// Returns the number of tracks that failed.
+  Future<int> downloadTracks(List<Track> tracks) async {
+    var failures = 0;
+    for (final track in tracks) {
+      if (isTrackAvailableOffline(track.id)) continue;
+      final result = await _offlineRepository.downloadTrack(track);
+      if (result.isFailure) failures++;
+    }
+    await refreshOfflineCollection();
+    return failures;
+  }
+
+  /// Removes a downloaded track from the local cache.
+  Future<String?> removeDownload(String trackId) async {
+    final result = await _offlineRepository.removeCachedTrack(trackId);
+    if (result.isFailure) {
+      return result.failureOrNull?.message ?? 'Could not remove download';
+    }
+    await refreshOfflineCollection();
+    return null;
   }
 
   /// Checks if an album is available offline

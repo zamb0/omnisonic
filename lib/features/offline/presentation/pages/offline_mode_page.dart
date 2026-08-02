@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
@@ -10,6 +11,7 @@ import '../../../ui/presentation/widgets/track_tile.dart';
 import '../../../ui/presentation/widgets/album_card.dart';
 import '../../../ui/presentation/widgets/artist_card.dart';
 import '../../../ui/presentation/widgets/playlist_card.dart';
+import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 
 /// Page for managing offline mode and viewing offline content
 class OfflineModePage extends StatefulWidget {
@@ -392,9 +394,11 @@ class _OfflineModePageState extends State<OfflineModePage>
         final track = tracks[index];
         return TrackTile(
           track: track,
-          onTap: () {
-            // Handle track tap - play offline track
-          },
+          onTap: () => context.read<PlaybackViewModel>().playTrack(
+            track,
+            queue: tracks,
+            startIndex: index,
+          ),
         );
       },
     );
@@ -422,9 +426,7 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             AlbumCard(
               album: album,
-              onTap: () {
-                // Handle album tap - navigate to offline album view
-              },
+              onTap: () => context.push('/album-detail', extra: album),
             ),
             const Positioned(
               top: 8,
@@ -459,9 +461,7 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             ArtistCard(
               artist: artist,
-              onTap: () {
-                // Handle artist tap - navigate to offline artist view
-              },
+              onTap: () => context.push('/artist-detail', extra: artist),
             ),
             const Positioned(
               top: 8,
@@ -496,9 +496,8 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             PlaylistCard(
               playlist: playlist,
-              onTap: () {
-                // Handle playlist tap - navigate to offline playlist view
-              },
+              onTap: () =>
+                  context.push('/playlist-detail?id=${playlist.id}'),
             ),
             const Positioned(
               top: 8,

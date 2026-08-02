@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../music/presentation/bloc/search_bloc.dart';
-import '../../../music/presentation/viewmodels/playlist_view_model.dart';
+import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
+import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
@@ -465,7 +466,7 @@ class _SearchPageState extends State<SearchPage> {
               sourceServerIds: item.serverIds,
               qualityLabel: track.quality.format,
               onTap: () => _onTrackTapped(track, tracks, index),
-              onMorePressed: () => _showTrackOptions(track),
+              onMorePressed: () => _showTrackOptions(tracks, index),
             );
           },
         ),
@@ -602,7 +603,8 @@ class _SearchPageState extends State<SearchPage> {
     context.push('/artist-detail', extra: artist);
   }
 
-  void _showTrackOptions(Track track) {
+  void _showTrackOptions(List<Track> tracks, int index) {
+    final track = tracks[index];
     AnimationUtils.showCustomBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -615,7 +617,7 @@ class _SearchPageState extends State<SearchPage> {
               title: const Text('Play Now'),
               onTap: () {
                 Navigator.pop(context);
-                _onTrackTapped(track, [track], 0);
+                _onTrackTapped(track, tracks, index);
               },
             ),
             ListTile(
@@ -629,73 +631,67 @@ class _SearchPageState extends State<SearchPage> {
                 ).showSnackBar(const SnackBar(content: Text('Added to queue')));
               },
             ),
-            if (context.read<PlaylistViewModel>().playlists.isNotEmpty)
-              ListTile(
-                leading: const Icon(Icons.playlist_add),
-                title: const Text('Add to Playlist'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddToPlaylist(track);
-                },
-              ),
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: const Text('Add to Playlist'),
+              onTap: () {
+                Navigator.pop(context);
+                showAddToPlaylistSheet(context, track);
+              },
+            ),
+            _DownloadTrackTile(track: track),
           ],
         ),
       ),
     );
   }
 
-  /// Playlist picker for "Add to Playlist". Shown only when at least one
-  /// playlist exists, so the entry point is never a dead end.
-  Future<void> _showAddToPlaylist(Track track) async {
-    final playlistViewModel = context.read<PlaylistViewModel>();
-    final messenger = ScaffoldMessenger.of(context);
-    final playlists = playlistViewModel.playlists;
+}
 
-    final playlistId = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SectionHeader(
-                title: 'Add to Playlist',
-                padding: EdgeInsets.zero,
-              ),
-            ),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: playlists.length,
-                itemBuilder: (context, index) {
-                  final playlist = playlists[index];
-                  return ListTile(
-                    leading: const Icon(Icons.playlist_play),
-                    title: Text(playlist.name),
-                    subtitle: Text('${playlist.trackCount} tracks'),
-                    onTap: () => Navigator.pop(sheetContext, playlist.id),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+/// "Download" row for the track options sheet: downloads the track for
+/// offline playback, or removes it again when it is already downloaded.
+class _DownloadTrackTile extends StatelessWidget {
+  const _DownloadTrackTile({required this.track});
+
+  final Track track;
+
+  @override
+  Widget build(BuildContext context) {
+    final offline = context.watch<OfflineModeViewModel>();
+    final isDownloaded = offline.isTrackAvailableOffline(track.id);
+    final isDownloading = offline.isTrackDownloading(track.id);
+
+    return ListTile(
+      leading: Icon(
+        isDownloaded
+            ? Icons.download_done
+            : isDownloading
+            ? Icons.downloading
+            : Icons.download_outlined,
       ),
-    );
-
-    if (playlistId == null) return;
-
-    final added = await playlistViewModel.addTrackToPlaylist(
-      playlistId,
-      track.id,
-    );
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          added ? 'Added to playlist' : 'Could not add track to playlist',
-        ),
+      title: Text(
+        isDownloaded
+            ? 'Remove Download'
+            : isDownloading
+            ? 'Downloading…'
+            : 'Download',
       ),
+      enabled: !isDownloading,
+      onTap: () async {
+        Navigator.pop(context);
+        final messenger = ScaffoldMessenger.of(context);
+        final error = isDownloaded
+            ? await offline.removeDownload(track.id)
+            : await offline.downloadTrack(track);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              error ??
+                  (isDownloaded ? 'Download removed' : 'Downloaded for offline'),
+            ),
+          ),
+        );
+      },
     );
   }
 }

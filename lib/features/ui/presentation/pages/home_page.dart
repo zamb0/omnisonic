@@ -180,7 +180,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Glass bottom sheet standing in for the secondary-nav destinations the
-  /// mockup only exposes via the desktop sidebar (Servers, Downloads,
+  /// mockup only exposes via the desktop sidebar (Starred, Servers, Downloads,
   /// Settings) — mobile has no room for them in the 4-slot bottom bar.
   void _showMoreMenu(BuildContext context) {
     AnimationUtils.showCustomBottomSheet(
@@ -194,6 +194,12 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _buildMoreMenuItem(
+                sheetContext,
+                icon: Icons.star_outline,
+                label: 'Starred',
+                route: AppRouter.favorites,
+              ),
               _buildMoreMenuItem(
                 sheetContext,
                 icon: Icons.dns_outlined,
@@ -258,7 +264,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(24),
                 onTap: () => context.read<PlaybackViewModel>().playTrack(
                   track,
-                  queue: [track],
+                  queue: recent,
                   startIndex: 0,
                 ),
                 child: Row(
@@ -385,7 +391,7 @@ class _HomePageState extends State<HomePage> {
                   itemCount: randomTracks.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _buildTrackTile(randomTracks[index]),
+                    child: _buildTrackTile(randomTracks, index),
                   ),
                 ),
               ),
@@ -396,16 +402,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTrackTile(Track track) {
+  Widget _buildTrackTile(List<Track> queue, int index) {
+    final track = queue[index];
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 220,
       child: InkWell(
         borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+        // Playing the whole row, not just this track, so the queue keeps going.
         onTap: () => context.read<PlaybackViewModel>().playTrack(
           track,
-          queue: [track],
-          startIndex: 0,
+          queue: queue,
+          startIndex: index,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),

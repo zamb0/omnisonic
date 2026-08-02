@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 enum FeishinImageShape { rounded, circle }
@@ -60,70 +61,88 @@ class _FeishinCardState extends State<FeishinCard> {
                 child: AnimatedScale(
                   scale: _isHovering ? 1.03 : 1.0,
                   duration: const Duration(milliseconds: 150),
-                  child: ClipRRect(
-                    borderRadius: isCircle
-                        ? BorderRadius.circular(999)
-                        : BorderRadius.circular(8),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        _buildImage(context, scheme),
-                        // Hover overlay with play and star buttons
-                        AnimatedOpacity(
-                          opacity: _isHovering ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 150),
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Star button
-                                  if (widget.onStar != null)
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: isCircle
+                          ? BorderRadius.circular(999)
+                          : BorderRadius.circular(14),
+                      // `0 12px 24px -14px` from the design's cover-art spec:
+                      // enough lift that the art floats over the tinted
+                      // backdrop without casting a visible grey box.
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 24,
+                          spreadRadius: -14,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: isCircle
+                          ? BorderRadius.circular(999)
+                          : BorderRadius.circular(14),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildImage(context, scheme),
+                          // Hover overlay with play and star buttons
+                          AnimatedOpacity(
+                            opacity: _isHovering ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 150),
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Star button
+                                    if (widget.onStar != null)
+                                      GestureDetector(
+                                        onTap: widget.onStar,
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: scheme.surface,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            widget.isStarred
+                                                ? Icons.star
+                                                : Icons.star_outline,
+                                            color: scheme.onSurface,
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 12),
+                                    // Play button
                                     GestureDetector(
-                                      onTap: widget.onStar,
+                                      onTap: widget.onTap,
                                       behavior: HitTestBehavior.opaque,
                                       child: Container(
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: scheme.tertiary,
+                                          color: scheme.onSurface,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          widget.isStarred
-                                              ? Icons.star
-                                              : Icons.star_outline,
-                                          color: scheme.onTertiary,
-                                          size: 20,
+                                          Icons.play_arrow,
+                                          color: scheme.surface,
+                                          size: 24,
                                         ),
                                       ),
                                     ),
-                                  const SizedBox(width: 12),
-                                  // Play button
-                                  GestureDetector(
-                                    onTap: widget.onTap,
-                                    behavior: HitTestBehavior.opaque,
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: scheme.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.play_arrow,
-                                        color: scheme.onPrimary,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -137,32 +156,32 @@ class _FeishinCardState extends State<FeishinCard> {
                 children: [
                   Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: OmnisonicTypography.bodySmall.copyWith(
+                      fontSize: 12.5,
+                      fontWeight: OmnisonicTypography.bold,
                       color: scheme.onSurface,
                     ),
                     maxLines: widget.titleMaxLines,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.subtitle != null) ...[
-                    const SizedBox(height: 2),
+                  if (widget.subtitle != null)
                     Text(
                       widget.subtitle!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      style: OmnisonicTypography.bodySmall.copyWith(
                         fontSize: 11,
+                        fontWeight: OmnisonicTypography.medium,
+                        color: scheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
                   if (widget.meta != null) ...[
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       widget.meta!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                        fontSize: 11,
+                      style: OmnisonicTypography.technical.copyWith(
+                        fontSize: 9.5,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

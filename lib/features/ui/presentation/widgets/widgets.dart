@@ -10,6 +10,9 @@ export 'server_dot.dart';
 // Layout Components
 export 'responsive_grid.dart';
 export 'section_header.dart';
+export 'desktop_top_bar.dart';
+export 'library_stats_rail.dart';
+export 'shell_art_tint.dart';
 
 // State Components
 export 'loading_indicator.dart';

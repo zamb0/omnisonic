@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dart:math';
-import 'dart:ui';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -12,10 +11,10 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../../core/utils/animation_utils.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/library_stats_rail.dart';
 import '../widgets/server_dot.dart';
 
 /// Home page displaying Feishin-style featured content and genres
@@ -27,12 +26,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  /// Ambient background tint sampled from whatever cover art Home is
-  /// currently showing most prominently, used for the blurred background
-  /// blob. Null until extraction finishes or if there's no artwork yet.
-  Color? _blobTint;
-  String? _blobSourceUrl;
-
   /// Client-side random sample of the full unified collection, refreshed
   /// whenever the underlying track list changes size (a new sync). There's
   /// no server-side "random tracks" endpoint in use, so this mirrors the
@@ -51,16 +44,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _updateBlobTint(String? coverArtUrl) {
-    if (coverArtUrl == _blobSourceUrl) return;
-    _blobSourceUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _blobSourceUrl == coverArtUrl) {
-        setState(() => _blobTint = color);
-      }
-    });
-  }
-
   List<Track> _randomTracksFrom(List<Track> allTracks) {
     if (_randomTracks == null ||
         _randomTracksSourceLength != allTracks.length) {
@@ -73,76 +56,49 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(child: _buildBackgroundBlob()),
-          RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                _buildAppBar(),
-                _buildOnboardingSection(),
-                _buildContinueListeningSection(),
-                _buildRandomTracksSection(),
-                _buildRecentlyAddedSection(),
-                _buildRecentlyPlayedSection(),
-                _buildMostPlayedSection(),
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
-              ],
-            ),
-          ),
+    final scroll = RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          _buildAppBar(),
+          _buildOnboardingSection(),
+          _buildContinueListeningSection(),
+          _buildRandomTracksSection(),
+          _buildRecentlyAddedSection(),
+          _buildRecentlyPlayedSection(),
+          _buildMostPlayedSection(),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
+      ),
+    );
+
+    // The stats rail is the design's second content column. It only appears
+    // once the feed beside it can still hold a sensible album row, otherwise
+    // both halves end up cramped.
+    return Scaffold(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < _statsRailBreakpoint) return scroll;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: scroll),
+              const SizedBox(width: 16),
+              const SizedBox(width: 300, child: LibraryStatsRail()),
+            ],
+          );
+        },
       ),
     );
   }
 
-  /// Large, softly blurred tint blob behind the whole page, sampled from the
-  /// most recently played track's cover art. Purely decorative — ignores
-  /// pointer events so it never intercepts taps meant for the content above.
-  Widget _buildBackgroundBlob() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        final source = viewModel.recentlyPlayedAlbums.isNotEmpty
-            ? viewModel.recentlyPlayedAlbums.first.coverArtUrl
-            : (viewModel.recentlyAddedAlbums.isNotEmpty
-                  ? viewModel.recentlyAddedAlbums.first.coverArtUrl
-                  : null);
-        _updateBlobTint(source);
-        final tint = _blobTint;
-        if (tint == null) return const SizedBox.shrink();
-
-        return IgnorePointer(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Transform.translate(
-              // Shifts the blob mostly above the visible area so only its
-              // soft lower edge shows — Container.margin must be
-              // non-negative, so the offset has to happen here instead.
-              offset: const Offset(0, -120),
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-                child: Container(
-                  width: 480,
-                  height: 360,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: tint.withValues(alpha: 0.35),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  static const double _statsRailBreakpoint = 1100;
 
   Widget _buildAppBar() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
         child: Row(
           children: [
             Expanded(
@@ -151,11 +107,11 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     'Home',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: OmnisonicTypography.pageTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   _buildServerSummaryLine(),
                 ],
               ),
@@ -294,12 +250,12 @@ class _HomePageState extends State<HomePage> {
 
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
             child: GlassSurface(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+              borderRadius: BorderRadius.circular(24),
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+                borderRadius: BorderRadius.circular(24),
                 onTap: () => context.read<PlaybackViewModel>().playTrack(
                   track,
                   queue: [track],
@@ -308,10 +264,10 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+                      borderRadius: BorderRadius.circular(14),
                       child: SizedBox(
-                        width: 52,
-                        height: 52,
+                        width: 62,
+                        height: 62,
                         child: track.coverArtUrl != null
                             ? CachedNetworkImage(
                                 imageUrl: track.coverArtUrl!.withCoverArtSize(
@@ -334,14 +290,17 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             'Pick up where you left',
-                            style: OmnisonicTypography.overline.copyWith(
+                            style: OmnisonicTypography.glassButton.copyWith(
+                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             track.title,
-                            style: OmnisonicTypography.titleSmall.copyWith(
+                            style: OmnisonicTypography.bodyMedium.copyWith(
+                              fontSize: 15,
+                              fontWeight: OmnisonicTypography.bold,
                               color: scheme.onSurface,
                             ),
                             maxLines: 1,
@@ -350,25 +309,48 @@ class _HomePageState extends State<HomePage> {
                           Text(
                             track.artist,
                             style: OmnisonicTypography.bodySmall.copyWith(
+                              fontWeight: OmnisonicTypography.medium,
                               color: scheme.onSurfaceVariant,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              ServerDot(serverId: track.serverId, size: 6),
+                              const SizedBox(width: 6),
+                              Text(
+                                track.quality.toString(),
+                                style: OmnisonicTypography.technical.copyWith(
+                                  fontSize: 9.5,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: scheme.primary,
+                        color: scheme.onSurface,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 20,
+                            spreadRadius: -6,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Icon(
                         Icons.play_arrow,
-                        color: scheme.onPrimary,
-                        size: 22,
+                        color: scheme.surface,
+                        size: 24,
                       ),
                     ),
                   ],
@@ -395,12 +377,11 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Random Tracks', Icons.shuffle_rounded),
+              _buildSectionHeader('Random Tracks', meta: 'shuffle all'),
               SizedBox(
                 height: 72,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: randomTracks.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -489,27 +470,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  /// Section heading: an oversized Gabarito title with an optional mono
+  /// counter aligned to its baseline. No icon chip — the redesign carries
+  /// hierarchy in the type, not in decoration beside it.
+  Widget _buildSectionHeader(String title, {String? meta}) {
     final scheme = Theme.of(context).colorScheme;
+    final wide =
+        MediaQuery.of(context).size.width >= ResponsiveBreakpoints.tablet;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: scheme.onPrimaryContainer),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: OmnisonicTypography.titleLarge.copyWith(
-              fontWeight: OmnisonicTypography.bold,
+          Expanded(
+            child: Text(
+              title,
+              style:
+                  (wide
+                          ? OmnisonicTypography.sectionTitle
+                          : OmnisonicTypography.sectionTitleSmall)
+                      .copyWith(color: scheme.onSurface),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (meta != null)
+            Text(
+              meta,
+              style: OmnisonicTypography.technical.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
         ],
       ),
     );
@@ -554,7 +547,7 @@ class _HomePageState extends State<HomePage> {
         return _buildAlbumSection(
           title: 'Recently Added',
           albums: albums,
-          icon: Icons.fiber_new_rounded,
+          meta: 'across all servers',
         );
       },
     );
@@ -571,7 +564,6 @@ class _HomePageState extends State<HomePage> {
         return _buildAlbumSection(
           title: 'Recently Played',
           albums: albums,
-          icon: Icons.history_rounded,
           showServerDots: true,
         );
       },
@@ -586,11 +578,7 @@ class _HomePageState extends State<HomePage> {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
-        return _buildAlbumSection(
-          title: 'Most Played',
-          albums: albums,
-          icon: Icons.trending_up_rounded,
-        );
+        return _buildAlbumSection(title: 'Most Played', albums: albums);
       },
     );
   }
@@ -598,24 +586,24 @@ class _HomePageState extends State<HomePage> {
   Widget _buildAlbumSection({
     required String title,
     required List<Album> albums,
-    required IconData icon,
+    String? meta,
     bool showServerDots = false,
   }) {
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title, icon),
+          _buildSectionHeader(title, meta: meta),
           SizedBox(
-            height: 240,
+            height: 244,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               itemCount: albums.length,
               itemBuilder: (context, index) {
                 final album = albums[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.only(right: 14),
                   child: _buildAlbumCard(album, showServerDot: showServerDots),
                 );
               },
@@ -643,18 +631,19 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         color: scheme.surfaceContainerHighest,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 24,
+                            spreadRadius: -14,
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         child: album.coverArtUrl != null
                             ? CachedNetworkImage(
                                 imageUrl: album.coverArtUrl!.withCoverArtSize(
@@ -683,30 +672,42 @@ class _HomePageState extends State<HomePage> {
                             : _buildPlaceholderArt(),
                       ),
                     ),
+                    // Source badge sits on a small glass chip rather than
+                    // bare on the art, so it stays legible over any cover.
                     if (showServerDot)
                       Positioned(
-                        right: 6,
+                        left: 6,
                         bottom: 6,
-                        child: ServerDot(serverId: album.serverId),
+                        child: GlassSurface(
+                          borderRadius: BorderRadius.circular(9),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
+                          child: ServerDot(serverId: album.serverId, size: 6),
+                        ),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 album.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  fontSize: 12.5,
+                  fontWeight: OmnisonicTypography.bold,
+                  color: scheme.onSurface,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 2),
               Text(
                 album.artist,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  fontSize: 11,
+                  fontWeight: OmnisonicTypography.medium,
+                  color: scheme.onSurfaceVariant,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

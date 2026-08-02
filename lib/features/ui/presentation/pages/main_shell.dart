@@ -5,6 +5,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 import '../widgets/feishin_shell.dart';
+import '../widgets/shell_art_tint.dart';
 
 /// Main shell widget that provides the bottom navigation structure
 class MainShell extends StatelessWidget {
@@ -14,20 +15,32 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The sidebar shell needs room for a 76-264px rail plus content, so it only
-    // takes over from the tablet breakpoint up. Below that the phone shell with
-    // the bottom bar is used, including on landscape phones.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        if (width >= ResponsiveBreakpoints.desktop) {
-          return _buildSidebarShell(context, extended: true);
-        }
-        if (width >= ResponsiveBreakpoints.tablet) {
-          return _buildSidebarShell(context, extended: false);
-        }
-        return _buildMobileShell(context);
-      },
+    // The art-tinted wash is the bottom layer of the glass stack and has to
+    // sit behind every pane in the window, including the page's own
+    // Scaffold — hence the transparent scaffold/canvas override for the
+    // whole shell subtree.
+    return ShellArtTint(
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          scaffoldBackgroundColor: Colors.transparent,
+          canvasColor: Colors.transparent,
+        ),
+        // The sidebar shell needs room for a 72-234px rail plus content, so it
+        // only takes over from the tablet breakpoint up. Below that the phone
+        // shell with the bottom bar is used, including on landscape phones.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            if (width >= ResponsiveBreakpoints.desktop) {
+              return _buildSidebarShell(context, extended: true);
+            }
+            if (width >= ResponsiveBreakpoints.tablet) {
+              return _buildSidebarShell(context, extended: false);
+            }
+            return _buildMobileShell(context);
+          },
+        ),
+      ),
     );
   }
 
@@ -178,7 +191,11 @@ class _NavPillItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(selected ? tab.selectedIcon : tab.icon, color: color, size: 24),
+            Icon(
+              selected ? tab.selectedIcon : tab.icon,
+              color: color,
+              size: 24,
+            ),
             const SizedBox(height: 2),
             Text(
               tab.label,

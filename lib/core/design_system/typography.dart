@@ -194,6 +194,80 @@ class OmnisonicTypography {
     height: 1.3,
   );
 
+  // ---------------------------------------------------------------------
+  // Liquid-glass shell styles
+  //
+  // The redesign leans on a much tighter set of type roles than the Material
+  // ramp above: an oversized Gabarito title per screen, a Gabarito section
+  // heading, a Gabarito nav/button label, and JetBrains Mono for every
+  // technical string (counts, bitrates, server ids, timestamps).
+  // ---------------------------------------------------------------------
+
+  /// Screen title — "Home", "Library". Gabarito 800 at display size.
+  static TextStyle get pageTitle => GoogleFonts.gabarito(
+    fontSize: 40,
+    fontWeight: extraBold,
+    letterSpacing: -0.8,
+    height: 1.0,
+  );
+
+  /// Section heading inside a screen — "Recently added".
+  static TextStyle get sectionTitle => GoogleFonts.gabarito(
+    fontSize: 30,
+    fontWeight: extraBold,
+    letterSpacing: -0.6,
+    height: 1.1,
+  );
+
+  /// Compact section heading, used where a full [sectionTitle] would crowd
+  /// the layout (mobile, side rails).
+  static TextStyle get sectionTitleSmall => GoogleFonts.gabarito(
+    fontSize: 22,
+    fontWeight: extraBold,
+    letterSpacing: -0.22,
+    height: 1.15,
+  );
+
+  /// All-caps mono label above a group — "SERVERS", "THIS WEEK".
+  static TextStyle get eyebrow => GoogleFonts.jetBrainsMono(
+    fontSize: 10,
+    fontWeight: semiBold,
+    letterSpacing: 0.8,
+    height: 1.4,
+  );
+
+  /// Sidebar / segmented-control label.
+  static TextStyle get navLabel => GoogleFonts.gabarito(
+    fontSize: 13.5,
+    fontWeight: semiBold,
+    letterSpacing: 0,
+    height: 1.2,
+  );
+
+  /// Glass button label — "Play", "Sync now".
+  static TextStyle get glassButton => GoogleFonts.gabarito(
+    fontSize: 13,
+    fontWeight: bold,
+    letterSpacing: 0,
+    height: 1.2,
+  );
+
+  /// Big number in a stat tile.
+  static TextStyle get statValue => GoogleFonts.gabarito(
+    fontSize: 21,
+    fontWeight: extraBold,
+    letterSpacing: -0.2,
+    height: 1.1,
+  );
+
+  /// Inline technical string — bitrate, server id, count, timestamp.
+  static TextStyle get technical => GoogleFonts.jetBrainsMono(
+    fontSize: 10.5,
+    fontWeight: semiBold,
+    letterSpacing: 0,
+    height: 1.3,
+  );
+
   // Button typography
   static TextStyle get buttonLarge => GoogleFonts.manrope(
     fontSize: 16,
@@ -295,6 +369,14 @@ extension OmnisonicTextTheme on TextTheme {
   TextStyle get nowPlayingArtist => OmnisonicTypography.nowPlayingArtist;
   TextStyle get duration => OmnisonicTypography.duration;
   TextStyle get metadata => OmnisonicTypography.metadata;
+  TextStyle get pageTitle => OmnisonicTypography.pageTitle;
+  TextStyle get sectionTitle => OmnisonicTypography.sectionTitle;
+  TextStyle get sectionTitleSmall => OmnisonicTypography.sectionTitleSmall;
+  TextStyle get eyebrow => OmnisonicTypography.eyebrow;
+  TextStyle get navLabel => OmnisonicTypography.navLabel;
+  TextStyle get glassButton => OmnisonicTypography.glassButton;
+  TextStyle get statValue => OmnisonicTypography.statValue;
+  TextStyle get technical => OmnisonicTypography.technical;
   TextStyle get buttonLarge => OmnisonicTypography.buttonLarge;
   TextStyle get buttonMedium => OmnisonicTypography.buttonMedium;
   TextStyle get buttonSmall => OmnisonicTypography.buttonSmall;

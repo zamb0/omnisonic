@@ -727,18 +727,35 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           _buildAlbumArtwork(context, scheme, 220),
           const SizedBox(height: 16),
         ],
+        // Eyebrow states the aggregation up front — this is the one screen
+        // where "the same album lives on N servers" is the point.
+        Text(
+          _albumVariants.length > 1
+              ? 'ALBUM · MERGED FROM ${_albumVariants.length} SERVERS'
+              : 'ALBUM',
+          style: OmnisonicTypography.eyebrow.copyWith(
+            fontSize: 10.5,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
         Text(
           _album.title,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: OmnisonicTypography.pageTitle.copyWith(
+            fontSize: includeArtwork ? 28 : 52,
+            fontWeight: OmnisonicTypography.black,
+            letterSpacing: includeArtwork ? -0.56 : -1.56,
+            color: scheme.onSurface,
+          ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         Text(
           _album.artist,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          style: OmnisonicTypography.bodyMedium.copyWith(
+            fontSize: includeArtwork ? 14 : 15,
+            fontWeight: OmnisonicTypography.semiBold,
+            color: scheme.onSurface,
+          ),
         ),
         if (includeSourcePanel && _albumVariants.length > 1) ...[
           const SizedBox(height: 12),

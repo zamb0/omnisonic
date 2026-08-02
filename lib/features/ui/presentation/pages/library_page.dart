@@ -100,10 +100,20 @@ class _LibraryPageState extends State<LibraryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(showTabBar ? 'Library' : activeTab.label),
+        // Oversized Gabarito title on a transparent bar: the art-tinted
+        // background has to run behind the header, not stop at it.
+        toolbarHeight: 72,
+        titleSpacing: 4,
+        title: Text(
+          showTabBar ? 'Library' : activeTab.label,
+          style: OmnisonicTypography.pageTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
             icon: const Icon(Icons.sync),

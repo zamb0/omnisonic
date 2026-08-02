@@ -9,6 +9,7 @@ import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
 
@@ -31,11 +32,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
-
-  /// Drives the desktop bar's glass sheen sweep. Runs continuously and
-  /// cheaply (a single translating gradient), so it's fine to leave
-  /// repeating for the bar's whole lifetime.
-  late AnimationController _sheenController;
 
   Track? _previousTrack;
 
@@ -61,10 +57,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             curve: AnimationManager.standardCurve,
           ),
         );
-    _sheenController = AnimationController(
-      duration: const Duration(seconds: 4),
-      vsync: this,
-    )..repeat();
   }
 
   @override
@@ -107,7 +99,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   @override
   void dispose() {
     _slideController.dispose();
-    _sheenController.dispose();
     super.dispose();
   }
 
@@ -357,7 +348,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
-  /// Full desktop 3-section bar: left (artwork+info), center (controls+progress), right (volume)
+  /// Full desktop 3-section bar: left (artwork+info), center
+  /// (controls+scrubber), right (lyrics/queue/volume).
+  ///
+  /// A floating pill inset from the window edges, not a full-bleed footer —
+  /// the art-tinted background has to stay visible around it.
   Widget _buildDesktopBar(
     BuildContext context,
     PlaybackViewModel vm,
@@ -368,82 +363,59 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     double progress,
     Color tint,
   ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(22),
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        height: 96,
         child: Stack(
           children: [
-            GlassPanel(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
-              padding: EdgeInsets.zero,
-              child: SizedBox(
-                height: 88,
-                child: Row(
-                  children: [
-                    // === LEFT: Artwork + Track Info ===
-                    _buildLeftSection(track, scheme),
-                    // === CENTER: Controls + Progress ===
-                    Expanded(
-                      child: _buildCenterSection(
-                        vm,
+            const Positioned.fill(child: GlassSheen()),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              // The side sections are fixed-width so the centre controls stay
+              // put as the track title changes; that only works while the
+              // window is wide enough to hold them, so the trailing controls
+              // drop out in order as it narrows.
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final showTextActions = width >= 900;
+                  final showVolumeSlider = width >= 1040;
+                  return Row(
+                    children: [
+                      // === LEFT: Artwork + Track Info ===
+                      _buildLeftSection(
+                        track,
                         scheme,
-                        position,
-                        duration,
-                        progress,
-                        tint,
+                        width: showTextActions ? 260 : 180,
                       ),
-                    ),
-                    // === RIGHT: Utility Icons ===
-                    _buildRightSection(context, scheme),
-                  ],
-                ),
+                      // === CENTER: Controls + Progress ===
+                      Expanded(
+                        child: _buildCenterSection(
+                          vm,
+                          scheme,
+                          position,
+                          duration,
+                          progress,
+                          tint,
+                        ),
+                      ),
+                      // === RIGHT: Utility Icons ===
+                      _buildRightSection(
+                        context,
+                        scheme,
+                        showTextActions: showTextActions,
+                        showVolumeSlider: showVolumeSlider,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
-            Positioned.fill(child: IgnorePointer(child: _buildSheenOverlay())),
           ],
         ),
       ),
-    );
-  }
-
-  /// Slow diagonal light sweep across the glass bar — purely decorative,
-  /// wrapped in [IgnorePointer] (by the caller) so it never intercepts taps.
-  Widget _buildSheenOverlay() {
-    return AnimatedBuilder(
-      animation: _sheenController,
-      builder: (context, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final height = constraints.maxHeight;
-            final dx = -width * 0.5 + _sheenController.value * width * 1.6;
-            return ClipRect(
-              child: Transform.translate(
-                offset: Offset(dx, 0),
-                child: Transform.rotate(
-                  angle: -0.3,
-                  child: Container(
-                    width: width * 0.2,
-                    height: height * 2,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.transparent,
-                          Colors.white.withValues(alpha: 0.10),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -454,7 +426,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     return widget.onTap == null ? base : '$base. Open player';
   }
 
-  Widget _buildLeftSection(Track track, ColorScheme scheme) {
+  Widget _buildLeftSection(
+    Track track,
+    ColorScheme scheme, {
+    required double width,
+  }) {
     return Semantics(
       button: widget.onTap != null,
       onTap: widget.onTap,
@@ -463,94 +439,102 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       child: GestureDetector(
         onTap: widget.onTap,
         child: SizedBox(
-          width: 280,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                // Album artwork. Tag matches full_screen_player.dart's
-                // artwork so opening the player animates the cover
-                // continuously instead of a hard cut.
-                Hero(
-                  tag: 'now-playing-artwork-${track.id}',
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: scheme.surfaceContainerHighest,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: track.coverArtUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: track.coverArtUrl!.withCoverArtSize(
-                                128,
-                              ),
-                              cacheKey: track.coverArtUrl!
-                                  .withCoverArtSize(128)
-                                  .subsonicCacheKey,
-                              cacheManager: OmnisonicImageCacheManager.instance,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 112,
-                              memCacheHeight: 112,
-                              fadeInDuration: const Duration(milliseconds: 120),
-                              useOldImageOnUrlChange: true,
-                              placeholder: (context, url) =>
-                                  _buildFallbackArtwork(),
-                              errorWidget: (context, url, error) =>
-                                  _buildFallbackArtwork(),
-                            )
-                          : _buildFallbackArtwork(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                // Track info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        track.title,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+          width: width,
+          child: Row(
+            children: [
+              // Album artwork. Tag matches full_screen_player.dart's
+              // artwork so opening the player animates the cover
+              // continuously instead of a hard cut.
+              Hero(
+                tag: 'now-playing-artwork-${track.id}',
+                child: Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: scheme.surfaceContainerHighest,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        blurRadius: 18,
+                        spreadRadius: -8,
+                        offset: const Offset(0, 8),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        track.artist,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (track.album.isNotEmpty) ...[
-                        const SizedBox(height: 1),
-                        Text(
-                          track.album,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: scheme.onSurfaceVariant.withValues(
-                                  alpha: 0.7,
-                                ),
-                                fontSize: 11,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
                     ],
                   ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: track.coverArtUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
+                            cacheKey: track.coverArtUrl!
+                                .withCoverArtSize(128)
+                                .subsonicCacheKey,
+                            cacheManager: OmnisonicImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 116,
+                            memCacheHeight: 116,
+                            fadeInDuration: const Duration(milliseconds: 120),
+                            useOldImageOnUrlChange: true,
+                            placeholder: (context, url) =>
+                                _buildFallbackArtwork(),
+                            errorWidget: (context, url, error) =>
+                                _buildFallbackArtwork(),
+                          )
+                        : _buildFallbackArtwork(),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 13),
+              // Track info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      track.title,
+                      style: OmnisonicTypography.bodyMedium.copyWith(
+                        fontSize: 14,
+                        fontWeight: OmnisonicTypography.bold,
+                        color: scheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      track.artist,
+                      style: OmnisonicTypography.bodySmall.copyWith(
+                        fontWeight: OmnisonicTypography.medium,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Source + quality: the only place the multi-server
+                    // machinery surfaces during ordinary playback.
+                    Row(
+                      children: [
+                        ServerDot(serverId: track.serverId, size: 6),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            track.quality.toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OmnisonicTypography.technical.copyWith(
+                              fontSize: 9.5,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -565,12 +549,17 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     double progress,
     Color tint,
   ) {
+    final timeStyle = OmnisonicTypography.technical.copyWith(
+      fontSize: 10,
+      color: scheme.onSurfaceVariant,
+    );
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Playback controls row. Horizontally scrollable rather than a
         // plain Row: at narrower "desktop" widths (this section only gets
-        // whatever's left after the fixed-width left/right sections) six
+        // whatever's left after the fixed-width left/right sections) five
         // 44px touch targets don't always fit, so this degrades to a
         // scroll instead of a hard overflow.
         Center(
@@ -580,49 +569,43 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               mainAxisSize: MainAxisSize.min,
               children: [
                 _iconBtn(
-                  Icons.stop,
-                  18,
-                  scheme.onSurfaceVariant,
-                  () => vm.stop(),
-                  label: 'Stop',
-                ),
-                const SizedBox(width: 8),
-                _iconBtn(
                   Icons.shuffle,
                   18,
-                  vm.shuffleEnabled ? scheme.primary : scheme.onSurfaceVariant,
+                  vm.shuffleEnabled
+                      ? scheme.onSurface
+                      : scheme.onSurfaceVariant,
                   () => vm.toggleShuffleMode(),
                   label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 _iconBtn(
                   Icons.skip_previous,
-                  22,
+                  24,
                   vm.hasPrevious
                       ? scheme.onSurface
                       : scheme.onSurface.withValues(alpha: 0.3),
                   vm.hasPrevious ? () => vm.skipToPrevious() : null,
                   label: 'Previous track',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 // Play/Pause - prominent circular button
                 _playPauseBtn(vm, scheme),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 _iconBtn(
                   Icons.skip_next,
-                  22,
+                  24,
                   vm.hasNext
                       ? scheme.onSurface
                       : scheme.onSurface.withValues(alpha: 0.3),
                   vm.hasNext ? () => vm.skipToNext() : null,
                   label: 'Next track',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 _iconBtn(
                   _repeatIcon(vm.repeatMode),
                   18,
                   vm.repeatMode != playback.RepeatMode.none
-                      ? scheme.primary
+                      ? scheme.onSurface
                       : scheme.onSurfaceVariant,
                   () => vm.toggleRepeatMode(),
                   label: _repeatLabel(vm.repeatMode),
@@ -631,10 +614,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             ),
           ),
         ),
-        const SizedBox(height: 4),
-        // Progress bar with timestamps
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+        const SizedBox(height: 6),
+        // Scrubber: a 4px hairline with mono timestamps either side, capped
+        // at the design's 520px so it stays a line rather than a bar.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
           child: Row(
             children: [
               // Flexible (not a bare Text) so at narrow desktop widths this
@@ -649,26 +633,16 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ),
                   overflow: TextOverflow.clip,
                   softWrap: false,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
+                  style: timeStyle,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 3,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 5,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 10,
-                    ),
-                    activeTrackColor: tint,
-                    inactiveTrackColor: scheme.surfaceContainerHighest,
-                    thumbColor: tint,
+                  data: _hairlineSliderTheme(
+                    context,
+                    activeColor: tint,
+                    inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
                   ),
                   child: Slider(
                     value: _draggingProgress ?? progress.clamp(0.0, 1.0),
@@ -685,16 +659,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Flexible(
                 child: Text(
                   _formatDuration(duration),
                   overflow: TextOverflow.clip,
                   softWrap: false,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
+                  style: timeStyle,
                 ),
               ),
             ],
@@ -704,84 +675,98 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
-  Widget _buildRightSection(BuildContext context, ColorScheme scheme) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _iconBtn(
-            Icons.lyrics_outlined,
-            18,
-            scheme.onSurfaceVariant,
+  /// Thumbless 4px track — the redesign treats progress and volume as
+  /// hairlines, not as Material sliders. The thumb is sized to zero rather
+  /// than removed so [Slider]'s drag handling and semantics stay intact.
+  SliderThemeData _hairlineSliderTheme(
+    BuildContext context, {
+    required Color activeColor,
+    required Color inactiveColor,
+  }) {
+    return SliderTheme.of(context).copyWith(
+      trackHeight: 4,
+      trackShape: const RoundedRectSliderTrackShape(),
+      thumbShape: const RoundSliderThumbShape(
+        enabledThumbRadius: 0,
+        disabledThumbRadius: 0,
+        pressedElevation: 0,
+        elevation: 0,
+      ),
+      overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+      activeTrackColor: activeColor,
+      inactiveTrackColor: inactiveColor,
+      thumbColor: activeColor,
+    );
+  }
+
+  /// Trailing controls. Sized to its content — a fixed width here overflows
+  /// as soon as the controls total more than it, which is what the hard-coded
+  /// 250 did.
+  Widget _buildRightSection(
+    BuildContext context,
+    ColorScheme scheme, {
+    required bool showTextActions,
+    required bool showVolumeSlider,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (showTextActions) ...[
+          _textBtn(
+            'Lyrics',
+            scheme,
             () => GoRouter.of(
               context,
             ).push(AppRouter.nowPlaying, extra: NowPlayingPanel.lyrics),
-            label: 'Lyrics',
           ),
-          const SizedBox(width: 8),
-          _iconBtn(
-            Icons.queue_music,
-            18,
-            scheme.onSurfaceVariant,
+          const SizedBox(width: 4),
+          _textBtn(
+            'Queue',
+            scheme,
             () => GoRouter.of(context).push(AppRouter.queue),
-            label: 'Queue',
           ),
-          const SizedBox(width: 8),
-          _iconBtn(
-            Icons.open_in_full,
-            16,
-            scheme.onSurfaceVariant,
-            widget.onTap,
-            label: 'Expand player',
-          ),
-          const SizedBox(width: 12),
-          Consumer<PlaybackViewModel>(
-            builder: (context, vm, child) {
-              final track = vm.currentTrack;
-              final isStarred = track?.isStarred ?? false;
+          const SizedBox(width: 4),
+        ],
+        Consumer<PlaybackViewModel>(
+          builder: (context, vm, child) {
+            final track = vm.currentTrack;
+            final isStarred = track?.isStarred ?? false;
 
-              return _iconBtn(
-                isStarred ? Icons.favorite : Icons.favorite_border,
-                18,
-                isStarred
-                    ? OmnisonicColors.favoriteIndicator
-                    : scheme.onSurfaceVariant,
-                track != null ? () => vm.toggleFavorite(track) : null,
-                label: isStarred ? 'Remove from favorites' : 'Add to favorites',
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          Consumer<PlaybackViewModel>(
-            builder: (context, vm, child) {
-              final volume = vm.volume.clamp(0.0, 1.0);
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _iconBtn(
-                    _volumeIcon(volume),
-                    18,
-                    scheme.onSurfaceVariant,
-                    () => _toggleMute(vm),
-                    label: volume > 0 ? 'Mute' : 'Unmute',
-                  ),
-                  const SizedBox(width: 8),
-                  // Volume slider
+            return _iconBtn(
+              isStarred ? Icons.favorite : Icons.favorite_border,
+              17,
+              isStarred
+                  ? OmnisonicColors.favoriteIndicator
+                  : scheme.onSurfaceVariant,
+              track != null ? () => vm.toggleFavorite(track) : null,
+              label: isStarred ? 'Remove from favorites' : 'Add to favorites',
+            );
+          },
+        ),
+        Consumer<PlaybackViewModel>(
+          builder: (context, vm, child) {
+            final volume = vm.volume.clamp(0.0, 1.0);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _iconBtn(
+                  _volumeIcon(volume),
+                  17,
+                  scheme.onSurfaceVariant,
+                  () => _toggleMute(vm),
+                  label: volume > 0 ? 'Mute' : 'Unmute',
+                ),
+                // Below the threshold the icon alone stays as a mute toggle;
+                // the slider is the first thing worth giving up.
+                if (showVolumeSlider)
                   SizedBox(
-                    width: 80,
+                    width: 70,
                     child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 3,
-                        thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 4,
-                        ),
-                        overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 8,
-                        ),
-                        activeTrackColor: scheme.onSurfaceVariant,
-                        inactiveTrackColor: scheme.surfaceContainerHighest,
-                        thumbColor: scheme.onSurfaceVariant,
+                      data: _hairlineSliderTheme(
+                        context,
+                        activeColor: scheme.onSurface,
+                        inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
                       ),
                       child: Slider(
                         value: volume,
@@ -792,11 +777,52 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       ),
                     ),
                   ),
-                ],
-              );
-            },
+              ],
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        // Expand: a soft-square chip rather than a bare icon, matching the
+        // design's trailing control.
+        Tooltip(
+          message: 'Expand player',
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(9),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: scheme.onSurface.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(
+                Icons.open_in_full,
+                size: 14,
+                color: scheme.onSurface,
+              ),
+            ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  /// Gabarito text action — the design's treatment for the bar's secondary
+  /// destinations, which read better as words than as another icon.
+  Widget _textBtn(String label, ColorScheme scheme, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Text(
+          label,
+          style: OmnisonicTypography.glassButton.copyWith(
+            fontSize: 11,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
@@ -827,15 +853,29 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 
   /// Circular play/pause button, sized to the comfortable touch target.
+  ///
+  /// Solid ink rather than the brand accent: in the redesign this is the one
+  /// element allowed to be fully opaque against the glass.
   Widget _playPauseBtn(PlaybackViewModel vm, ColorScheme scheme) {
     return Container(
       width: OmnisonicTouchTargets.iconButton,
       height: OmnisonicTouchTargets.iconButton,
-      decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: scheme.onSurface,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 20,
+            spreadRadius: -8,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: IconButton(
         icon: Icon(
           vm.isPlaying ? Icons.pause : Icons.play_arrow,
-          color: scheme.onPrimary,
+          color: scheme.surface,
         ),
         iconSize: 24,
         padding: EdgeInsets.zero,

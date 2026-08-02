@@ -1402,19 +1402,6 @@ class MusicRepositoryImpl implements MusicRepository {
     }
   }
 
-  /// Determines audio quality based on bitrate and format
-  AudioQuality _determineAudioQuality(int? bitRate, String? suffix) {
-    if (suffix?.toLowerCase() == 'flac') {
-      return AudioQuality.lossless;
-    }
-
-    if (bitRate == null) return AudioQuality.medium;
-
-    if (bitRate >= 320) return AudioQuality.high;
-    if (bitRate >= 192) return AudioQuality.medium;
-    return AudioQuality.low;
-  }
-
   /// Compares audio quality levels
   int _compareAudioQuality(AudioQuality quality1, AudioQuality quality2) {
     return quality1.qualityScore.compareTo(quality2.qualityScore);

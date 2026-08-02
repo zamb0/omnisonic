@@ -89,7 +89,7 @@ void main() {
       expect(styledText.fontSize, equals(baseStyle.fontSize));
 
       final opacityText = OmnisonicTypography.withOpacity(baseStyle, 0.5);
-      expect(opacityText.color?.alpha, equals((255 * 0.5).round()));
+      expect(opacityText.color?.a, closeTo(0.5, 0.01));
     });
   });
 }

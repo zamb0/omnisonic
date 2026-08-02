@@ -138,8 +138,6 @@ class CacheManager {
         return ResultHelper.failure(statsResult.failureOrNull!);
       }
 
-      final stats = statsResult.valueOrNull!;
-
       // Calculate target free space if not provided
       targetFreeSpace ??= (maxCacheSize * 0.3).round(); // Free up 30%
 
@@ -301,8 +299,6 @@ class CacheManager {
   /// Gets recommended cache size based on available storage
   static Future<Result<int>> getRecommendedCacheSize() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-
       // Use 10% of available space, max 5GB, min 500MB
       const minSize = 500 * 1024 * 1024; // 500MB
       const maxSize = 5 * 1024 * 1024 * 1024; // 5GB

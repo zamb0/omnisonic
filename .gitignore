@@ -50,3 +50,6 @@ app.*.map.json
 
 # Mac
 *.DS_Store
+
+# Vendored GPL-3.0 Feishin client kept as a UI reference, not part of the build.
+feishin/

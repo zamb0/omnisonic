@@ -68,6 +68,18 @@ class LocalMusicDataSource {
     }
   }
 
+  /// Get the tracks matching [ids], in database order.
+  Future<Result<List<Track>>> getTracksByIds(Iterable<String> ids) async {
+    try {
+      final tracks = await _database.musicDao.getTracksByIds(ids);
+      return ResultHelper.success(tracks);
+    } catch (e) {
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to get tracks by id: $e'),
+      );
+    }
+  }
+
   /// Get cached tracks
   Future<Result<List<Track>>> getCachedTracks() async {
     try {
@@ -424,7 +436,12 @@ class LocalMusicDataSource {
     }
   }
 
-  /// Sync music data from server (replace existing data)
+  /// Sync music data from a server into the local database.
+  ///
+  /// Rows are upserted and only the ones the server no longer reports are
+  /// deleted. A delete-then-insert would reset each track's download and star
+  /// state, and — now that foreign keys are enforced — would cascade the
+  /// user's playlist entries and cached files away on every sync.
   Future<Result<void>> syncMusicData(
     String serverId, {
     List<Track>? tracks,
@@ -433,20 +450,20 @@ class LocalMusicDataSource {
   }) async {
     try {
       await _database.transaction(() async {
-        // Clear existing data for this server
-        await _database.musicDao.deleteTracksByServerId(serverId);
-        await _database.musicDao.deleteAlbumsByServerId(serverId);
-        await _database.musicDao.deleteArtistsByServerId(serverId);
+        final dao = _database.musicDao;
 
-        // Insert new data
-        if (artists != null && artists.isNotEmpty) {
-          await _database.musicDao.insertArtists(artists);
+        // Artists and albums first: tracks reference them.
+        if (artists != null) {
+          await dao.upsertArtists(artists);
+          await dao.deleteStaleArtists(serverId, {for (final a in artists) a.id});
         }
-        if (albums != null && albums.isNotEmpty) {
-          await _database.musicDao.insertAlbums(albums);
+        if (albums != null) {
+          await dao.upsertAlbums(albums);
+          await dao.deleteStaleAlbums(serverId, {for (final a in albums) a.id});
         }
-        if (tracks != null && tracks.isNotEmpty) {
-          await _database.musicDao.insertTracks(tracks);
+        if (tracks != null) {
+          await dao.upsertTracks(tracks);
+          await dao.deleteStaleTracks(serverId, {for (final t in tracks) t.id});
         }
       });
       return ResultHelper.success(null);

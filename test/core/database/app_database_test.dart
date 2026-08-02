@@ -45,6 +45,19 @@ void main() {
     });
 
     test('should insert and retrieve track', () async {
+      // Tracks reference a server, and foreign keys are enforced.
+      await database.serverDao.insertServer(
+        MusicServer(
+          id: 'server1',
+          name: 'Test Server',
+          url: 'http://example.com',
+          username: 'testuser',
+          status: ServerStatus.online,
+          createdAt: DateTime.now(),
+        ),
+        'password123',
+      );
+
       final track = Track(
         id: 'track1',
         title: 'Test Song',

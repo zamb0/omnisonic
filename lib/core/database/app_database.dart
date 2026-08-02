@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -59,6 +59,45 @@ class AppDatabase extends _$AppDatabase {
           // Migration for version 3: Add isStarred column to tracks
           await m.addColumn(tracksTable, tracksTable.isStarred);
         }
+        if (from < 4) {
+          // Migration for version 4: indexes on every foreign key and on the
+          // columns the cache eviction queries order by.
+          //
+          // The music tables are dropped and recreated rather than indexed in
+          // place: enabling foreign keys (see beforeOpen) would otherwise trip
+          // over rows orphaned while the pragma was off. Servers are kept, so
+          // the app re-syncs its library once on first launch after the update
+          // and the user does not have to re-enter any credentials.
+          await m.deleteTable(cacheEntriesTable.actualTableName);
+          await m.deleteTable(duplicateGroupMembersTable.actualTableName);
+          await m.deleteTable(duplicateGroupsTable.actualTableName);
+          await m.deleteTable(playlistTracksTable.actualTableName);
+          await m.deleteTable(playlistsTable.actualTableName);
+          await m.deleteTable(tracksTable.actualTableName);
+          await m.deleteTable(albumsTable.actualTableName);
+          await m.deleteTable(artistsTable.actualTableName);
+
+          await m.createTable(artistsTable);
+          await m.createTable(albumsTable);
+          await m.createTable(tracksTable);
+          await m.createTable(playlistsTable);
+          await m.createTable(playlistTracksTable);
+          await m.createTable(duplicateGroupsTable);
+          await m.createTable(duplicateGroupMembersTable);
+          await m.createTable(cacheEntriesTable);
+
+          for (final index in allSchemaEntities.whereType<Index>()) {
+            await m.create(index);
+          }
+
+          // Clear the last sync marker so the next launch performs a full sync.
+          await customStatement('UPDATE servers_table SET last_sync = NULL');
+        }
+      },
+      beforeOpen: (details) async {
+        // Drift leaves foreign keys off by default, which silently disables
+        // every onDelete: cascade declared in tables.dart.
+        await customStatement('PRAGMA foreign_keys = ON');
       },
     );
   }

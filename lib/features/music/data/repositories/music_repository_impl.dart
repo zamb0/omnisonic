@@ -31,6 +31,14 @@ class MusicRepositoryImpl implements MusicRepository {
   final Map<String, List<Track>> _duplicateGroupsCache = {};
   DateTime? _lastDeduplicationUpdate;
 
+  /// How many albums a single `getAlbumList2` call asks for. Subsonic caps
+  /// this at 500, so it doubles as the paging stride.
+  static const int _albumPageSize = 500;
+
+  /// How many `getAlbum` requests are kept in flight while fetching tracks.
+  /// Sequential fetching makes a first sync take one round-trip per album.
+  static const int _albumFetchConcurrency = 6;
+
   MusicRepositoryImpl({
     required LocalMusicDataSource localDataSource,
     required SubsonicApiClient apiClient,
@@ -246,15 +254,22 @@ class MusicRepositoryImpl implements MusicRepository {
 
       // Fetch data from server
       final artistsResult = await _fetchArtistsFromServer(server, password);
-      final albumsResult = await _fetchAlbumsFromServer(server, password);
-      final tracksResult = await _fetchTracksFromServer(server, password);
-
       if (artistsResult.isFailure) {
         return ResultHelper.failure(artistsResult.failureOrNull!);
       }
+
+      final albumsResult = await _fetchAlbumsFromServer(server, password);
       if (albumsResult.isFailure) {
         return ResultHelper.failure(albumsResult.failureOrNull!);
       }
+
+      // Tracks are fetched per album, so reuse the albums we already have
+      // instead of asking the server for the same list twice.
+      final tracksResult = await _fetchTracksFromServer(
+        server,
+        password,
+        albumsResult.valueOrNull!,
+      );
       if (tracksResult.isFailure) {
         return ResultHelper.failure(tracksResult.failureOrNull!);
       }
@@ -1233,35 +1248,42 @@ class MusicRepositoryImpl implements MusicRepository {
     String password,
   ) async {
     try {
-      // Subsonic getAlbumList2 requires a 'type' parameter
-      final response = await _apiClient.getAlbums(
-        server,
-        password,
-        type: 'alphabeticalByName', // Get albums sorted alphabetically
-        size: 500, // Limit to 500 albums per request
-      );
-
-      if (!response.isSuccess) {
-        return ResultHelper.failure(
-          ServerFailure('Failed to fetch albums from ${server.name}'),
-        );
-      }
-
-      final albumsResponse = response.data;
-      if (albumsResponse == null) {
-        return ResultHelper.success([]);
-      }
-
-      // Convert Subsonic albums to domain albums
+      // getAlbumList2 caps a single response at `_albumPageSize`, so page
+      // through it until a short page comes back — otherwise libraries larger
+      // than one page are silently truncated.
       final albums = <Album>[];
-      for (final subsonicAlbum in albumsResponse.album) {
-        final domainAlbum = subsonicAlbum.toDomainAlbum(
-          server.id,
+
+      for (var offset = 0; ; offset += _albumPageSize) {
+        // Subsonic getAlbumList2 requires a 'type' parameter
+        final response = await _apiClient.getAlbums(
           server,
           password,
-          _apiClient,
+          type: 'alphabeticalByName', // Get albums sorted alphabetically
+          size: _albumPageSize,
+          offset: offset,
         );
-        albums.add(domainAlbum);
+
+        if (!response.isSuccess) {
+          return ResultHelper.failure(
+            ServerFailure('Failed to fetch albums from ${server.name}'),
+          );
+        }
+
+        final page = response.data?.album ?? const [];
+        if (page.isEmpty) break;
+
+        // Convert Subsonic albums to domain albums
+        for (final subsonicAlbum in page) {
+          final domainAlbum = subsonicAlbum.toDomainAlbum(
+            server.id,
+            server,
+            password,
+            _apiClient,
+          );
+          albums.add(domainAlbum);
+        }
+
+        if (page.length < _albumPageSize) break;
       }
 
       AppLog.info('Fetched ${albums.length} albums from server');
@@ -1272,57 +1294,28 @@ class MusicRepositoryImpl implements MusicRepository {
     }
   }
 
-  /// Fetches tracks from a specific server
+  /// Fetches the tracks of [albums] from [server].
+  ///
+  /// Albums come from the caller because the sync already fetched them; asking
+  /// the server for the same list again just doubles the round-trips.
   Future<Result<List<Track>>> _fetchTracksFromServer(
     MusicServer server,
     String password,
+    List<Album> albums,
   ) async {
     try {
-      // First get all albums to then fetch their tracks
-      final albumsResult = await _fetchAlbumsFromServer(server, password);
-      if (albumsResult.isFailure) {
-        return ResultHelper.failure(albumsResult.failureOrNull!);
-      }
-
-      final albums = albumsResult.valueOrNull!;
       final tracks = <Track>[];
 
-      // Fetch tracks for each album
-      for (final album in albums.take(10)) {
-        // Limit to first 10 albums for now
-        try {
-          // Extract original Subsonic ID from unique ID
-          final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
+      // Fetch tracks for every album, a few requests at a time.
+      for (var start = 0; start < albums.length; start += _albumFetchConcurrency) {
+        final batch = albums.skip(start).take(_albumFetchConcurrency);
 
-          final albumResponse = await _apiClient.getAlbum(
-            server,
-            password,
-            originalAlbumId,
-          );
+        final batchTracks = await Future.wait(
+          batch.map((album) => _fetchAlbumTracks(server, password, album)),
+        );
 
-          if (albumResponse.isSuccess && albumResponse.data != null) {
-            final albumData = albumResponse.data!;
-
-            // Convert Subsonic songs to domain tracks
-            for (final subsonicSong in albumData.song) {
-              final streamUrl = _apiClient.getStreamUrl(
-                server,
-                password,
-                subsonicSong.id,
-              );
-              final domainTrack = subsonicSong.toDomainTrack(
-                server.id,
-                streamUrl,
-                server,
-                password,
-                _apiClient,
-              );
-              tracks.add(domainTrack);
-            }
-          }
-        } catch (e) {
-          AppLog.warn('Failed to fetch tracks for album: $e');
-          // Continue with other albums
+        for (final albumTracks in batchTracks) {
+          tracks.addAll(albumTracks);
         }
       }
 
@@ -1331,6 +1324,48 @@ class MusicRepositoryImpl implements MusicRepository {
     } catch (e) {
       AppLog.warn('Error fetching tracks: $e');
       return ResultHelper.failure(NetworkFailure('Failed to fetch tracks: $e'));
+    }
+  }
+
+  /// Fetches the tracks of a single album, returning an empty list on failure
+  /// so one bad album cannot abort the whole sync.
+  Future<List<Track>> _fetchAlbumTracks(
+    MusicServer server,
+    String password,
+    Album album,
+  ) async {
+    try {
+      // Extract original Subsonic ID from unique ID
+      final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
+
+      final albumResponse = await _apiClient.getAlbum(
+        server,
+        password,
+        originalAlbumId,
+      );
+
+      if (!albumResponse.isSuccess || albumResponse.data == null) {
+        return const [];
+      }
+
+      // Convert Subsonic songs to domain tracks
+      return albumResponse.data!.song.map((subsonicSong) {
+        final streamUrl = _apiClient.getStreamUrl(
+          server,
+          password,
+          subsonicSong.id,
+        );
+        return subsonicSong.toDomainTrack(
+          server.id,
+          streamUrl,
+          server,
+          password,
+          _apiClient,
+        );
+      }).toList();
+    } catch (e) {
+      AppLog.warn('Failed to fetch tracks for album ${album.id}: $e');
+      return const [];
     }
   }
 

@@ -89,26 +89,25 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       return Left(DataFailure('Playlist not found'));
     }
 
-    // Get all tracks and filter by playlist track IDs
-    final allTracksResult = await _localMusicDataSource.getAllTracks();
-    if (allTracksResult.isFailure) {
-      return Left(allTracksResult.failureOrNull!);
+    // Load only the tracks this playlist references
+    final tracksResult = await _localMusicDataSource.getTracksByIds(
+      playlist.trackIds,
+    );
+    if (tracksResult.isFailure) {
+      return Left(tracksResult.failureOrNull!);
     }
 
-    final allTracks = allTracksResult.valueOrNull!;
-    final playlistTracks = <Track>[];
+    final tracksById = {
+      for (final track in tracksResult.valueOrNull!) track.id: track,
+    };
 
-    // Maintain the order of tracks as specified in the playlist
+    // Maintain the order of tracks as specified in the playlist, skipping the
+    // ones that are no longer in the library.
+    final playlistTracks = <Track>[];
     for (final trackId in playlist.trackIds) {
-      final track = allTracks.firstWhere(
-        (t) => t.id == trackId,
-        orElse: () => throw StateError('Track not found'),
-      );
-      try {
+      final track = tracksById[trackId];
+      if (track != null) {
         playlistTracks.add(track);
-      } catch (e) {
-        // Track not found, skip it (could be deleted)
-        continue;
       }
     }
 

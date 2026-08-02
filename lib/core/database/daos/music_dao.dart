@@ -161,6 +161,22 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     return data != null ? _trackFromData(data) : null;
   }
 
+  /// Loads the tracks matching [ids] in chunks, so callers do not have to pull
+  /// the whole library into memory to resolve a handful of IDs.
+  Future<List<Track>> getTracksByIds(Iterable<String> ids) async {
+    final unique = ids.toSet().toList();
+    if (unique.isEmpty) return const [];
+
+    final tracks = <Track>[];
+    for (final chunk in _chunked(unique)) {
+      final data = await (select(
+        tracksTable,
+      )..where((tbl) => tbl.id.isIn(chunk))).get();
+      tracks.addAll(data.map(_trackFromData));
+    }
+    return tracks;
+  }
+
   Future<List<Track>> getCachedTracks() async {
     final data = await (select(
       tracksTable,
@@ -178,6 +194,66 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     });
   }
 
+  /// Inserts [tracks], updating the rows that already exist.
+  ///
+  /// `isCached`, `cachePath` and `isStarred` are deliberately left alone: they
+  /// describe local state that the freshly mapped remote track knows nothing
+  /// about, so overwriting them would drop downloads and stars on every sync.
+  Future<void> upsertTracks(List<Track> tracks) async {
+    await batch((batch) {
+      for (final track in tracks) {
+        batch.insert(
+          tracksTable,
+          _trackToCompanion(track),
+          onConflict: DoUpdate((_) => _trackToRemoteCompanion(track)),
+        );
+      }
+    });
+  }
+
+  /// The subset of [_trackToCompanion] the server owns, used when updating a
+  /// track that is already in the database.
+  TracksTableCompanion _trackToRemoteCompanion(Track track) {
+    return TracksTableCompanion(
+      serverId: Value(track.serverId),
+      title: Value(track.title),
+      artist: Value(track.artist),
+      album: Value(track.album),
+      durationMs: Value(track.duration.inMilliseconds),
+      streamUrl: Value(track.streamUrl),
+      quality: Value(track.quality),
+      lastModified: Value(track.lastModified),
+      albumId: Value(track.albumId),
+      artistId: Value(track.artistId),
+      trackNumber: Value(track.trackNumber),
+      discNumber: Value(track.discNumber),
+      year: Value(track.year),
+      genre: Value(track.genre),
+      fileSize: Value(track.fileSize),
+      coverArtUrl: Value(track.coverArtUrl),
+    );
+  }
+
+  /// Deletes the tracks of [serverId] whose IDs are not in [keepIds].
+  ///
+  /// Used instead of a blanket delete-then-insert so that playlist entries and
+  /// cache rows referencing surviving tracks are not cascaded away.
+  Future<void> deleteStaleTracks(String serverId, Set<String> keepIds) async {
+    final existing =
+        await (selectOnly(tracksTable)
+              ..addColumns([tracksTable.id])
+              ..where(tracksTable.serverId.equals(serverId)))
+            .map((row) => row.read(tracksTable.id)!)
+            .get();
+
+    final stale = existing.where((id) => !keepIds.contains(id)).toList();
+    if (stale.isEmpty) return;
+
+    for (final chunk in _chunked(stale)) {
+      await (delete(tracksTable)..where((tbl) => tbl.id.isIn(chunk))).go();
+    }
+  }
+
   Future<void> updateTrack(Track track) async {
     await update(tracksTable).replace(_trackToCompanion(track));
   }
@@ -187,10 +263,13 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     bool isCached,
     String? cachePath,
   ) async {
+    // A null cachePath means "this track is no longer on disk", so it has to
+    // be written as SQL NULL — Value.absentIfNull would skip the column and
+    // leave the stale path behind.
     await (update(tracksTable)..where((tbl) => tbl.id.equals(trackId))).write(
       TracksTableCompanion(
         isCached: Value(isCached),
-        cachePath: Value.absentIfNull(cachePath),
+        cachePath: Value(cachePath),
       ),
     );
   }
@@ -242,6 +321,31 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     });
   }
 
+  Future<void> upsertAlbums(List<Album> albums) async {
+    await batch((batch) {
+      batch.insertAllOnConflictUpdate(
+        albumsTable,
+        albums.map(_albumToCompanion).toList(),
+      );
+    });
+  }
+
+  Future<void> deleteStaleAlbums(String serverId, Set<String> keepIds) async {
+    final existing =
+        await (selectOnly(albumsTable)
+              ..addColumns([albumsTable.id])
+              ..where(albumsTable.serverId.equals(serverId)))
+            .map((row) => row.read(albumsTable.id)!)
+            .get();
+
+    final stale = existing.where((id) => !keepIds.contains(id)).toList();
+    if (stale.isEmpty) return;
+
+    for (final chunk in _chunked(stale)) {
+      await (delete(albumsTable)..where((tbl) => tbl.id.isIn(chunk))).go();
+    }
+  }
+
   Future<void> updateAlbum(Album album) async {
     await update(albumsTable).replace(_albumToCompanion(album));
   }
@@ -284,6 +388,41 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
     await batch((batch) {
       batch.insertAll(artistsTable, artists.map(_artistToCompanion));
     });
+  }
+
+  Future<void> upsertArtists(List<Artist> artists) async {
+    await batch((batch) {
+      batch.insertAllOnConflictUpdate(
+        artistsTable,
+        artists.map(_artistToCompanion).toList(),
+      );
+    });
+  }
+
+  Future<void> deleteStaleArtists(String serverId, Set<String> keepIds) async {
+    final existing =
+        await (selectOnly(artistsTable)
+              ..addColumns([artistsTable.id])
+              ..where(artistsTable.serverId.equals(serverId)))
+            .map((row) => row.read(artistsTable.id)!)
+            .get();
+
+    final stale = existing.where((id) => !keepIds.contains(id)).toList();
+    if (stale.isEmpty) return;
+
+    for (final chunk in _chunked(stale)) {
+      await (delete(artistsTable)..where((tbl) => tbl.id.isIn(chunk))).go();
+    }
+  }
+
+  /// Splits [ids] into chunks that stay under SQLite's bound-variable limit.
+  static Iterable<List<String>> _chunked(
+    List<String> ids, {
+    int size = 500,
+  }) sync* {
+    for (var i = 0; i < ids.length; i += size) {
+      yield ids.sublist(i, i + size > ids.length ? ids.length : i + size);
+    }
   }
 
   Future<void> updateArtist(Artist artist) async {

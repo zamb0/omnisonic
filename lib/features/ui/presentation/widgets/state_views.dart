@@ -48,12 +48,42 @@ class LoadingStateView extends StatelessWidget {
   final int? itemCount;
 
   /// The same view as a sliver, for pages built from a [CustomScrollView].
+  ///
+  /// The list and grid variants become real slivers rather than being
+  /// wrapped in an adapter: a ListView inside a SliverToBoxAdapter is a
+  /// vertical viewport with unbounded height, which asserts at layout.
   static Widget sliver({
     SkeletonKind kind = SkeletonKind.list,
     int? itemCount,
-  }) => SliverToBoxAdapter(
-    child: LoadingStateView(kind: kind, itemCount: itemCount),
-  );
+  }) {
+    switch (kind) {
+      case SkeletonKind.list:
+        return SliverList.builder(
+          itemCount: itemCount ?? 8,
+          itemBuilder: (context, index) => const SkeletonTile(),
+        );
+      case SkeletonKind.grid:
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.lg),
+          sliver: SliverGrid.builder(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 180,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
+              childAspectRatio: 0.72,
+            ),
+            itemCount: itemCount ?? 8,
+            itemBuilder: (context, index) => const SkeletonCard(),
+          ),
+        );
+      case SkeletonKind.carousel:
+      case SkeletonKind.detailHeader:
+        // Both are fixed-height boxes, so an adapter is the right wrapper.
+        return SliverToBoxAdapter(
+          child: LoadingStateView(kind: kind, itemCount: itemCount),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

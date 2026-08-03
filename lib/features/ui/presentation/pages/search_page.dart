@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -45,10 +46,27 @@ class _SearchPageState extends State<SearchPage> {
   /// Server to restrict results to, or null for "All servers".
   String? _selectedServerId;
 
-  /// Memoized merge/dedupe results, keyed by the identity of the result list
-  /// they were computed from. Both passes are O(n log n) at best and used to
-  /// re-run on every chip tap and section toggle, because they sit inside the
-  /// BlocBuilder's builder.
+  /// Memoized filter and merge results.
+  ///
+  /// Both merge passes are O(n log n) at best and sit inside the
+  /// BlocBuilder's builder, so without this they re-run on every rebuild —
+  /// every chip tap, every section toggle, every keystroke's rebuild.
+  ///
+  /// The filter is memoized as well, and that part matters more than it
+  /// looks: `where().toList()` allocates a fresh list each build, so a
+  /// memo keyed on the merge input's identity would miss every single time
+  /// a server filter was active. It only ever hit in the unfiltered case,
+  /// where the input list is passed straight through.
+  List<Track>? _filterTracksSource;
+  String? _filterTracksServerId;
+  List<Track>? _filterTracksCache;
+  List<Album>? _filterAlbumsSource;
+  String? _filterAlbumsServerId;
+  List<Album>? _filterAlbumsCache;
+  List<Artist>? _filterArtistsSource;
+  String? _filterArtistsServerId;
+  List<Artist>? _filterArtistsCache;
+
   List<Track>? _mergedTracksSource;
   ({List<_MergedTrack> items, int rawTotal})? _mergedTracksCache;
   List<Album>? _mergedAlbumsSource;
@@ -94,33 +112,69 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The server list is read here rather than inside the header delegate:
+    // a delegate is not a widget and cannot subscribe to a provider, so
+    // watching it there would silently never rebuild when a server connects.
+    final servers = context.watch<ServerManagementViewModel>().servers;
+    final chipsVisible = servers.length >= 2;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search'),
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-      ),
-      body: Column(
-        children: [
-          _buildSearchBar(context),
-          _buildServerFilterChips(context),
-          Expanded(
-            child: BlocBuilder<SearchBloc, SearchState>(
-              builder: (context, state) {
-                return _buildSearchResults(state);
-              },
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('Search'),
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
+          ),
+          // Pinned and non-collapsing: the field is the page's entire
+          // purpose, so it must not scroll away with the results.
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SearchHeaderDelegate(
+              extent: _searchBarExtent + (chipsVisible ? _chipRowExtent : 0),
+              searchBar: SizedBox(
+                height: _searchBarExtent,
+                child: _buildSearchBar(context),
+              ),
+              chips: chipsVisible
+                  ? SizedBox(
+                      height: _chipRowExtent,
+                      child: _buildServerFilterChips(servers),
+                    )
+                  : null,
+              selectedServerId: _selectedServerId,
+              serverIds: [for (final server in servers) server.id],
             ),
+          ),
+          BlocBuilder<SearchBloc, SearchState>(
+            builder: (context, state) =>
+                SliverMainAxisGroup(slivers: _buildSearchResults(state)),
           ),
         ],
       ),
     );
   }
 
+  /// Height of the pinned header's two rows.
+  ///
+  /// A [SliverPersistentHeaderDelegate] has to declare its extent up front —
+  /// it cannot measure its child — so these are authoritative rather than
+  /// descriptive: both builders below lay out inside a SizedBox of exactly
+  /// this height.
+  static const double _searchBarExtent = 76;
+  static const double _chipRowExtent = 48;
+
   Widget _buildSearchBar(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.sm,
+      ),
       child: GlassSurface(
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -132,6 +186,12 @@ class _SearchPageState extends State<SearchPage> {
           ),
           decoration: InputDecoration(
             hintText: 'Search across all servers…',
+            // Dense, so the field's height is predictable and matches the
+            // extent the pinned header declares.
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: OmnisonicSpacing.sm,
+            ),
             prefixIcon: const Icon(OmnisonicIcons.search),
             // Driven by the controller rather than by the page's build cycle:
             // typing does not call setState, so a plain read of `.text` here
@@ -171,59 +231,91 @@ class _SearchPageState extends State<SearchPage> {
   /// "All servers" + one chip per connected server, each tinted with
   /// [OmnisonicColors.serverColorFor] so the filter reads consistently with
   /// the source dots shown on the result rows below.
-  Widget _buildServerFilterChips(BuildContext context) {
-    final serverViewModel = context.watch<ServerManagementViewModel>();
-    final servers = serverViewModel.servers;
-    if (servers.length < 2) {
-      // A single-server library has nothing to filter by.
-      return const SizedBox.shrink();
-    }
-
-    return SizedBox(
-      height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        children: [
+  Widget _buildServerFilterChips(List<MusicServer> servers) {
+    return ListView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        OmnisonicSpacing.md,
+        0,
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.sm,
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+          child: ChoiceChip(
+            label: const Text('All servers'),
+            selected: _selectedServerId == null,
+            onSelected: (_) => setState(() => _selectedServerId = null),
+          ),
+        ),
+        for (final server in servers)
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
             child: ChoiceChip(
-              label: const Text('All servers'),
-              selected: _selectedServerId == null,
-              onSelected: (_) => setState(() => _selectedServerId = null),
+              avatar: Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: OmnisonicColors.serverColorFor(server.id),
+                ),
+              ),
+              label: Text(server.name),
+              selected: _selectedServerId == server.id,
+              onSelected: (_) => setState(() => _selectedServerId = server.id),
             ),
           ),
-          for (final server in servers)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                avatar: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: OmnisonicColors.serverColorFor(server.id),
-                  ),
-                ),
-                label: Text(server.name),
-                selected: _selectedServerId == server.id,
-                onSelected: (_) =>
-                    setState(() => _selectedServerId = server.id),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 
   List<Track> _filterByServer(List<Track> tracks) {
     if (_selectedServerId == null) return tracks;
-    return tracks.where((t) => t.serverId == _selectedServerId).toList();
+    if (identical(_filterTracksSource, tracks) &&
+        _filterTracksServerId == _selectedServerId &&
+        _filterTracksCache != null) {
+      return _filterTracksCache!;
+    }
+    final filtered = tracks
+        .where((t) => t.serverId == _selectedServerId)
+        .toList();
+    _filterTracksSource = tracks;
+    _filterTracksServerId = _selectedServerId;
+    _filterTracksCache = filtered;
+    return filtered;
   }
 
   List<Album> _filterAlbumsByServer(List<Album> albums) {
     if (_selectedServerId == null) return albums;
-    return albums.where((a) => a.serverId == _selectedServerId).toList();
+    if (identical(_filterAlbumsSource, albums) &&
+        _filterAlbumsServerId == _selectedServerId &&
+        _filterAlbumsCache != null) {
+      return _filterAlbumsCache!;
+    }
+    final filtered = albums
+        .where((a) => a.serverId == _selectedServerId)
+        .toList();
+    _filterAlbumsSource = albums;
+    _filterAlbumsServerId = _selectedServerId;
+    _filterAlbumsCache = filtered;
+    return filtered;
+  }
+
+  List<Artist> _filterArtistsByServer(List<Artist> artists) {
+    if (_selectedServerId == null) return artists;
+    if (identical(_filterArtistsSource, artists) &&
+        _filterArtistsServerId == _selectedServerId &&
+        _filterArtistsCache != null) {
+      return _filterArtistsCache!;
+    }
+    final filtered = artists
+        .where((a) => a.serverId == _selectedServerId)
+        .toList();
+    _filterArtistsSource = artists;
+    _filterArtistsServerId = _selectedServerId;
+    _filterArtistsCache = filtered;
+    return filtered;
   }
 
   /// Merges same-track-on-multiple-servers duplicates in [tracks] into a
@@ -300,184 +392,164 @@ class _SearchPageState extends State<SearchPage> {
     return '$mergedCount $word';
   }
 
-  Widget _buildSearchResults(SearchState state) {
-    if (state.isInitial) {
-      return _buildSearchSuggestions();
-    } else if (state.isLoading) {
-      return const LoadingStateView(kind: SkeletonKind.list, itemCount: 5);
-    } else if (state.isSuccess) {
+  List<Widget> _buildSearchResults(SearchState state) {
+    if (state.isLoading) {
+      return [LoadingStateView.sliver(kind: SkeletonKind.list, itemCount: 5)];
+    }
+    if (state.isSuccess) {
       return _buildSearchResultsList(state);
-    } else if (state.isFailure) {
-      return _buildErrorState(state.errorMessage ?? 'Unknown error');
+    }
+    if (state.isFailure) {
+      return [
+        ErrorStateView.sliver(
+          title: 'Search error',
+          message: state.errorMessage ?? 'Unknown error',
+          onRetry: () {
+            final query = _searchController.text.trim();
+            if (query.isNotEmpty) {
+              context.read<SearchBloc>().add(SearchQueryChanged(query));
+            }
+          },
+        ),
+      ];
+    }
+    return _buildSearchSuggestions(state);
+  }
+
+  /// The idle state used to be six hardcoded genre chips and four static
+  /// "search tips" — eighty lines of content about nothing in the user's
+  /// library. Meanwhile SearchBloc has carried a working searchHistory, plus
+  /// SearchHistoryAdded/Cleared/SuggestionSelected events, that no widget
+  /// ever dispatched.
+  List<Widget> _buildSearchSuggestions(SearchState state) {
+    final history = state.searchHistory;
+
+    if (history.isEmpty) {
+      return [
+        const SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: OmnisonicIcons.searchOutline,
+            title: 'Search your music',
+            subtitle:
+                'Find tracks, albums and artists across every connected '
+                'server. Duplicates are merged automatically.',
+          ),
+        ),
+      ];
     }
 
-    return _buildSearchSuggestions();
-  }
-
-  Widget _buildSearchSuggestions() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionHeader(
-            title: 'Search Your Music',
-            subtitle: 'Find tracks, albums, and artists across all servers',
-          ),
-          const SizedBox(height: 24),
-          _buildQuickSearchSection(context),
-          const SizedBox(height: 24),
-          _buildSearchTipsSection(context),
-        ],
+    return [
+      SliverToBoxAdapter(
+        child: SectionHeader(
+          title: 'Recent searches',
+          seeAllLabel: 'Clear',
+          onSeeAllPressed: () =>
+              context.read<SearchBloc>().add(const SearchHistoryCleared()),
+        ),
       ),
-    );
-  }
-
-  Widget _buildQuickSearchSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Search',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildQuickSearchChip('Rock', OmnisonicIcons.musicNote),
-            _buildQuickSearchChip('Jazz', OmnisonicIcons.musicNote),
-            _buildQuickSearchChip('Classical', OmnisonicIcons.musicNote),
-            _buildQuickSearchChip('Electronic', OmnisonicIcons.musicNote),
-            _buildQuickSearchChip('Pop', OmnisonicIcons.musicNote),
-            _buildQuickSearchChip('Hip Hop', OmnisonicIcons.musicNote),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickSearchChip(String label, IconData icon) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16),
-      label: Text(label),
-      onPressed: () {
-        _searchController.text = label;
-        _onSearchChanged();
-      },
-    );
-  }
-
-  Widget _buildSearchTipsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Search Tips',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        _buildTipItem(context, 'Search by track name, artist, or album'),
-        _buildTipItem(context, 'Use quotes for exact matches: "Dark Side"'),
-        _buildTipItem(
-          context,
-          'Search across all connected servers simultaneously',
-        ),
-        _buildTipItem(context, 'Results are deduplicated automatically'),
-      ],
-    );
-  }
-
-  Widget _buildTipItem(BuildContext context, String tip) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            OmnisonicIcons.lightbulbOutline,
-            size: OmnisonicIconSizes.sm,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Wrap(
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.sm,
+            children: [
+              for (final query in history)
+                ActionChip(
+                  avatar: const Icon(
+                    OmnisonicIcons.history,
+                    size: OmnisonicIconSizes.sm,
+                  ),
+                  label: Text(query),
+                  onPressed: () => _runSearch(query),
+                ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              tip,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-    );
+    ];
   }
 
-  Widget _buildSearchResultsList(SearchState state) {
+  /// Runs [query] and records it, which is what promotes it into the recent
+  /// list the idle state renders.
+  void _runSearch(String query) {
+    _searchController.value = TextEditingValue(
+      text: query,
+      selection: TextSelection.collapsed(offset: query.length),
+    );
+    context.read<SearchBloc>().add(SearchHistoryAdded(query));
+  }
+
+  List<Widget> _buildSearchResultsList(SearchState state) {
     final tracks = _filterByServer(state.tracks);
     final albums = _filterAlbumsByServer(state.albums);
-    final artists = _selectedServerId == null
-        ? state.artists
-        : state.artists.where((a) => a.serverId == _selectedServerId).toList();
+    final artists = _filterArtistsByServer(state.artists);
 
     final hasResults =
         tracks.isNotEmpty || albums.isNotEmpty || artists.isNotEmpty;
 
     if (!hasResults) {
-      return EmptyState(
-        icon: OmnisonicIcons.searchOff,
-        title: 'No Results Found',
-        subtitle: _selectedServerId != null
-            ? 'No results on this server. Try "All servers" or different keywords.'
-            : 'Try different keywords or check your spelling',
-        action: TextButton(
-          onPressed: () {
-            _searchController.clear();
-            _searchFocusNode.requestFocus();
-          },
-          child: const Text('Try Again'),
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: OmnisonicIcons.searchOff,
+            title: 'No results found',
+            subtitle: _selectedServerId != null
+                ? 'Nothing on this server. Try "All servers" or different '
+                      'keywords.'
+                : 'Try different keywords or check your spelling.',
+            action: TextButton(
+              onPressed: () {
+                _searchController.clear();
+                _searchFocusNode.requestFocus();
+              },
+              child: const Text('Start over'),
+            ),
+          ),
         ),
-      );
+      ];
     }
 
+    // Both passes are memoized on the identity of the list they came from,
+    // so a chip tap or a section toggle re-renders without re-running the
+    // dedup engine.
     final mergedTracks = _mergeTracks(tracks);
     final mergedAlbums = _mergeAlbums(albums);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (mergedTracks.items.isNotEmpty)
-            _buildTracksSection(mergedTracks.items, mergedTracks.rawTotal),
-          if (mergedAlbums.albums.isNotEmpty)
-            _buildAlbumsSection(
-              mergedAlbums.albums,
-              mergedAlbums.sourceServerIds,
-              albums.length,
-            ),
-          if (artists.isNotEmpty) _buildArtistsSection(artists),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
+    return [
+      if (mergedTracks.items.isNotEmpty)
+        ..._buildTracksSection(mergedTracks.items, mergedTracks.rawTotal),
+      if (mergedAlbums.albums.isNotEmpty)
+        _buildAlbumsSection(
+          mergedAlbums.albums,
+          mergedAlbums.sourceServerIds,
+          albums.length,
+        ),
+      if (artists.isNotEmpty) _buildArtistsSection(artists),
+      const SliverToBoxAdapter(child: SizedBox(height: OmnisonicSpacing.xl)),
+    ];
   }
 
-  Widget _buildTracksSection(List<_MergedTrack> items, int rawTotal) {
+  /// The track list is the one place on this page with unbounded length, and
+  /// it used to be a shrinkWrap ListView with NeverScrollableScrollPhysics
+  /// inside a SingleChildScrollView — which builds and lays out every row
+  /// whether or not it is on screen, and turned "See All" on a large result
+  /// set into a full re-layout of the page.
+  ///
+  /// As a SliverList the rows are built on demand and expanding is just a
+  /// larger itemCount.
+  List<Widget> _buildTracksSection(List<_MergedTrack> items, int rawTotal) {
     final expanded = _isExpanded(_ResultSection.tracks);
     final visibleCount = expanded
         ? items.length
         : items.length.clamp(0, _trackPreviewCount);
     final tracks = items.map((i) => i.representative).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
+    return [
+      SliverToBoxAdapter(
+        child: SectionHeader(
           title: 'Tracks',
           subtitle: _resultCountLabel(items.length, rawTotal, 'result'),
           seeAllLabel: expanded ? 'Show Less' : 'See All',
@@ -485,10 +557,10 @@ class _SearchPageState extends State<SearchPage> {
               ? () => _toggleSection(_ResultSection.tracks)
               : null,
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+        sliver: SliverList.builder(
           itemCount: visibleCount,
           itemBuilder: (context, index) {
             final item = items[index];
@@ -503,117 +575,112 @@ class _SearchPageState extends State<SearchPage> {
             );
           },
         ),
-      ],
-    );
+      ),
+    ];
   }
 
+  /// A horizontal carousel cannot itself be a sliver inside a vertical
+  /// viewport, so this stays a box widget in an adapter. It was never the
+  /// perf problem: it is capped to a preview length and already lazy along
+  /// its own axis.
   Widget _buildAlbumsSection(
     List<Album> albums,
     Map<String, List<String>> sourceServerIds,
     int rawTotal,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          title: 'Albums',
-          subtitle: _resultCountLabel(albums.length, rawTotal, 'result'),
-          seeAllLabel: _isExpanded(_ResultSection.albums)
-              ? 'Show Less'
-              : 'See All',
-          onSeeAllPressed: albums.length > _carouselPreviewCount
-              ? () => _toggleSection(_ResultSection.albums)
-              : null,
-        ),
-        SizedBox(
-          height: 220,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _isExpanded(_ResultSection.albums)
-                ? albums.length
-                : albums.length.clamp(0, _carouselPreviewCount),
-            itemBuilder: (context, index) {
-              final album = albums[index];
-              final sources = sourceServerIds[album.id] ?? const [];
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Stack(
-                  children: [
-                    AlbumCard(
-                      album: album,
-                      width: 160,
-                      onTap: () => _onAlbumTapped(album),
-                    ),
-                    if (sources.length > 1)
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: ServerDotStack(serverIds: sources),
-                      ),
-                  ],
-                ),
-              );
-            },
+    final expanded = _isExpanded(_ResultSection.albums);
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: 'Albums',
+            subtitle: _resultCountLabel(albums.length, rawTotal, 'result'),
+            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            onSeeAllPressed: albums.length > _carouselPreviewCount
+                ? () => _toggleSection(_ResultSection.albums)
+                : null,
           ),
-        ),
-      ],
+          SizedBox(
+            height: 232,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: OmnisonicSpacing.md,
+              ),
+              itemCount: expanded
+                  ? albums.length
+                  : albums.length.clamp(0, _carouselPreviewCount),
+              itemBuilder: (context, index) {
+                final album = albums[index];
+                final sources = sourceServerIds[album.id] ?? const [];
+                return Padding(
+                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                  child: Stack(
+                    children: [
+                      AlbumCard(
+                        album: album,
+                        width: 160,
+                        onTap: () => _onAlbumTapped(album),
+                      ),
+                      if (sources.length > 1)
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: ServerDotStack(serverIds: sources),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildArtistsSection(List<Artist> artists) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          title: 'Artists',
-          subtitle: '${artists.length} result${artists.length != 1 ? 's' : ''}',
-          seeAllLabel: _isExpanded(_ResultSection.artists)
-              ? 'Show Less'
-              : 'See All',
-          onSeeAllPressed: artists.length > _carouselPreviewCount
-              ? () => _toggleSection(_ResultSection.artists)
-              : null,
-        ),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _isExpanded(_ResultSection.artists)
-                ? artists.length
-                : artists.length.clamp(0, _carouselPreviewCount),
-            itemBuilder: (context, index) {
-              final artist = artists[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: ArtistCard(
-                  artist: artist,
-                  width: 140,
-                  onTap: () => _onArtistTapped(artist),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+    final expanded = _isExpanded(_ResultSection.artists);
 
-  Widget _buildErrorState(String message) {
-    return EmptyState(
-      icon: OmnisonicIcons.errorOutline,
-      title: 'Search Error',
-      subtitle: message,
-      action: ElevatedButton(
-        onPressed: () {
-          if (_searchController.text.trim().isNotEmpty) {
-            context.read<SearchBloc>().add(
-              SearchQueryChanged(_searchController.text.trim()),
-            );
-          }
-        },
-        child: const Text('Retry'),
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            title: 'Artists',
+            subtitle:
+                '${artists.length} result${artists.length != 1 ? 's' : ''}',
+            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            onSeeAllPressed: artists.length > _carouselPreviewCount
+                ? () => _toggleSection(_ResultSection.artists)
+                : null,
+          ),
+          SizedBox(
+            height: 212,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: OmnisonicSpacing.md,
+              ),
+              itemCount: expanded
+                  ? artists.length
+                  : artists.length.clamp(0, _carouselPreviewCount),
+              itemBuilder: (context, index) {
+                final artist = artists[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                  child: ArtistCard(
+                    artist: artist,
+                    width: 140,
+                    onTap: () => _onArtistTapped(artist),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -732,3 +799,54 @@ class _DownloadTrackTile extends StatelessWidget {
 
 /// Result sections that can be expanded past their preview length.
 enum _ResultSection { tracks, albums, artists }
+
+/// Holds the search field, and the server chips when there is more than one
+/// server, pinned above the results.
+///
+/// [minExtent] equals [maxExtent] on purpose: this header does not collapse.
+/// A field that scrolls away is the one thing a search page cannot do.
+class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _SearchHeaderDelegate({
+    required this.extent,
+    required this.searchBar,
+    required this.chips,
+    required this.selectedServerId,
+    required this.serverIds,
+  });
+
+  final double extent;
+  final Widget searchBar;
+  final Widget? chips;
+
+  /// Only used by [shouldRebuild]. The delegate cannot watch a provider, so
+  /// the state it depends on has to be handed to it and compared here.
+  final String? selectedServerId;
+  final List<String> serverIds;
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      type: MaterialType.transparency,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [searchBar, ?chips],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SearchHeaderDelegate oldDelegate) =>
+      oldDelegate.extent != extent ||
+      oldDelegate.selectedServerId != selectedServerId ||
+      !listEquals(oldDelegate.serverIds, serverIds);
+}

@@ -1,17 +1,27 @@
-import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omnisonic/core/entities/entities.dart';
 import 'package:omnisonic/core/usecases/search_music_use_case.dart';
 import 'package:omnisonic/features/music/presentation/bloc/search_bloc.dart';
 
 /// Stand-ins for the event-driven half of the app's state management.
 ///
-/// Unlike the view models, blocs are naturally driven from outside: a test
-/// only needs to push states and record the events the widget dispatched.
-/// `bloc_test`'s [MockBloc] does exactly that, so these are thin wrappers
-/// that add the state constructors the pages care about.
+/// A real [Bloc] rather than a mock, for the same reason the view model
+/// fakes are hand-written: the widget subscribes to the state stream, so a
+/// test needs [emitState] to actually push through it. Events the widget
+/// dispatches land in [dispatched] instead of being handled.
+class FakeSearchBloc extends Bloc<SearchEvent, SearchState>
+    implements SearchBloc {
+  FakeSearchBloc([SearchState? initialState])
+    : super(initialState ?? const SearchState.initial()) {
+    on<SearchEvent>((event, emit) => dispatched.add(event));
+  }
 
-class FakeSearchBloc extends MockBloc<SearchEvent, SearchState>
-    implements SearchBloc {}
+  /// Every event the widget under test raised, in order.
+  final dispatched = <SearchEvent>[];
+
+  /// Pushes [state] through the stream the widget is listening to.
+  void emitState(SearchState state) => emit(state);
+}
 
 /// The four states `search_page` branches on, built without touching the
 /// real use case.

@@ -8,6 +8,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/download_preferences_service.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import '../../../../core/utils/haptics.dart';
 
 /// Settings screen. Every row here is backed by a real, already-persisted
 /// setting or a real piece of app state — nothing is a decorative stub.
@@ -106,6 +107,21 @@ class SettingsPage extends StatelessWidget {
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          AnimatedBuilder(
+            animation: Haptics.instance,
+            builder: (context, child) {
+              return SwitchListTile(
+                secondary: const Icon(OmnisonicIcons.touchApp),
+                title: const Text('Haptic feedback'),
+                subtitle: const Text(
+                  'A short tap when playback or the queue changes',
+                ),
+                value: Haptics.instance.enabled,
+                onChanged: Haptics.instance.setEnabled,
               );
             },
           ),

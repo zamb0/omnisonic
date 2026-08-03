@@ -13,6 +13,7 @@ import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../ui/presentation/pages/main_shell.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
+import '../../../../core/utils/haptics.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
 ///
@@ -160,6 +161,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
+  /// Flick speed, in logical pixels per second, that counts as a gesture
+  /// rather than a stray drag while scrolling the page behind.
+  static const double _flickVelocity = 300;
+
   /// Compact mobile bar: artwork + info + controls, with a thin progress bar on top
   Widget _buildMobileBar(
     BuildContext context,
@@ -184,6 +189,29 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           'Open the full player.',
       child: GestureDetector(
         onTap: widget.onTap,
+        // Flick up to expand, flick sideways to change track. The bar was
+        // tap-only, which meant the one control always on screen did one
+        // thing. Velocity rather than distance: the bar is 64px tall and
+        // sits over the nav pills, so there is no room for a drag threshold.
+        onVerticalDragEnd: (details) {
+          if ((details.primaryVelocity ?? 0) < -_flickVelocity) {
+            Haptics.impact();
+            widget.onTap?.call();
+          }
+        },
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() < _flickVelocity) return;
+          // Swiping left moves forward, matching the direction the queue
+          // travels rather than the direction of the finger.
+          if (velocity < 0 && vm.hasNext) {
+            Haptics.selection();
+            vm.skipToNext();
+          } else if (velocity > 0 && vm.hasPrevious) {
+            Haptics.selection();
+            vm.skipToPrevious();
+          }
+        },
         child: GlassPanel(
           borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
           padding: EdgeInsets.zero,
@@ -306,7 +334,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 isStarred
                                     ? OmnisonicColors.favoriteIndicator
                                     : scheme.onSurface.withValues(alpha: 0.7),
-                                () => vm.toggleFavorite(track),
+                                () {
+                                  Haptics.success();
+                                  vm.toggleFavorite(track);
+                                },
                                 label: isStarred
                                     ? 'Remove from favorites'
                                     : 'Add to favorites',
@@ -915,7 +946,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           iconSize: OmnisonicIconSizes.md,
           padding: EdgeInsets.zero,
           tooltip: vm.isPlaying ? 'Pause' : 'Play',
-          onPressed: () => vm.togglePlayPause(),
+          onPressed: () {
+            Haptics.impact();
+            vm.togglePlayPause();
+          },
         ),
       ),
     );

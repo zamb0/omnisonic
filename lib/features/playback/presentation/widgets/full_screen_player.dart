@@ -16,6 +16,7 @@ import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
+import '../../../../core/utils/haptics.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -283,11 +284,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, {required String title}) {
-    final scheme = Theme.of(context).colorScheme;
-    // The drag handle + header row (not the scrollable content below) is
-    // the swipe-down target, so it doesn't fight the seek bar, lyrics panel
-    // or queue list for the vertical-drag gesture.
+  /// Wraps [child] in the swipe-down-to-dismiss gesture.
+  ///
+  /// Applied to the header and the artwork, and deliberately not to the
+  /// content between them: the seek bar, lyrics panel and queue list all
+  /// want the vertical drag for themselves.
+  Widget _dismissible({required Widget child}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: (details) {
@@ -299,10 +301,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       onVerticalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
         if (_dismissDragExtent > 80 || velocity > 600) {
+          Haptics.impact();
           _closePlayer();
         }
         _dismissDragExtent = 0;
       },
+      child: child,
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, {required String title}) {
+    final scheme = Theme.of(context).colorScheme;
+    return _dismissible(
       child: Column(
         children: [
           Center(
@@ -367,51 +377,79 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
   Widget _buildArtwork(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Hero(
-        tag: 'now-playing-artwork-${track.id}',
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-            color: scheme.surfaceContainerHighest,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
+    return _dismissible(
+      child: _artworkSwipe(
+        child: Center(
+          child: Hero(
+            tag: 'now-playing-artwork-${track.id}',
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+                color: scheme.surfaceContainerHighest,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: track.coverArtUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        800,
-                      ).url,
-                      cacheKey: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        800,
-                      ).cacheKey,
-                      cacheManager: OmnisonicImageCacheManager.instance,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 800,
-                      memCacheHeight: 800,
-                      fadeInDuration: const Duration(milliseconds: 120),
-                      useOldImageOnUrlChange: true,
-                      placeholder: (context, url) =>
-                          _buildFallbackArtwork(context),
-                      errorWidget: (context, url, error) =>
-                          _buildFallbackArtwork(context),
-                    )
-                  : _buildFallbackArtwork(context),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: track.coverArtUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: SubsonicCoverArt.of(
+                            track.coverArtUrl!,
+                            800,
+                          ).url,
+                          cacheKey: SubsonicCoverArt.of(
+                            track.coverArtUrl!,
+                            800,
+                          ).cacheKey,
+                          cacheManager: OmnisonicImageCacheManager.instance,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 800,
+                          memCacheHeight: 800,
+                          fadeInDuration: const Duration(milliseconds: 120),
+                          useOldImageOnUrlChange: true,
+                          placeholder: (context, url) =>
+                              _buildFallbackArtwork(context),
+                          errorWidget: (context, url, error) =>
+                              _buildFallbackArtwork(context),
+                        )
+                      : _buildFallbackArtwork(context),
+                ),
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Horizontal flick over the artwork skips tracks.
+  ///
+  /// Swiping left moves forward, matching the direction the queue travels
+  /// rather than the direction of the finger.
+  Widget _artworkSwipe({required Widget child}) {
+    return Consumer<PlaybackViewModel>(
+      builder: (context, vm, _) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() < 300) return;
+          if (velocity < 0 && vm.hasNext) {
+            Haptics.selection();
+            vm.skipToNext();
+          } else if (velocity > 0 && vm.hasPrevious) {
+            Haptics.selection();
+            vm.skipToPrevious();
+          }
+        },
+        child: child,
       ),
     );
   }

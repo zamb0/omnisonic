@@ -8,6 +8,7 @@ import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 import '../widgets/account_menu.dart';
 import '../widgets/feishin_shell.dart';
 import '../widgets/shell_art_tint.dart';
+import '../../../../core/utils/haptics.dart';
 
 /// Which chrome the shell decided to render.
 enum ShellMode {
@@ -164,7 +165,11 @@ class MainShell extends StatelessWidget {
               child: _NavPillItem(
                 destination: destinations[i],
                 selected: currentIndex == i,
-                onTap: () => context.go(destinations[i].route),
+                onTap: () {
+                  if (currentIndex == i) return;
+                  Haptics.selection();
+                  context.go(destinations[i].route);
+                },
               ),
             ),
           const Flexible(

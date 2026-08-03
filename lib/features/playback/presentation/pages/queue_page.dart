@@ -9,6 +9,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
+import '../../../../core/utils/haptics.dart';
 
 /// Dedicated queue screen: a summary of what's playing now, and a
 /// reorderable "up next" list for everything queued after it.
@@ -21,7 +22,17 @@ class QueuePage extends StatelessWidget {
       builder: (context, vm, child) {
         final track = vm.currentTrack;
         return Scaffold(
-          appBar: AppBar(title: const Text('Queue')),
+          appBar: AppBar(
+            title: const Text('Queue'),
+            actions: [
+              if (vm.hasQueue)
+                IconButton(
+                  icon: const Icon(OmnisonicIcons.playlistRemove),
+                  tooltip: 'Clear queue',
+                  onPressed: () => _confirmClear(context, vm),
+                ),
+            ],
+          ),
           body: vm.isLoading
               ? const LoadingStateView(kind: SkeletonKind.list, itemCount: 6)
               : track == null
@@ -34,6 +45,36 @@ class QueuePage extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Clearing the queue throws away an ordering the user may have built by
+  /// hand, and there is no undo for it, so it asks first.
+  Future<void> _confirmClear(BuildContext context, PlaybackViewModel vm) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear the queue?'),
+        content: const Text(
+          'The current track keeps playing. Everything queued after it is '
+          'removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      Haptics.success();
+      await vm.clearQueue();
+    }
   }
 
   Widget _buildBody(BuildContext context, PlaybackViewModel vm, Track track) {
@@ -76,6 +117,7 @@ class QueuePage extends StatelessWidget {
                   // adjusts newIndex for the removed item, matching
                   // reorderQueueItem's post-removal-index contract exactly.
                   onReorderItem: (oldIndex, newIndex) {
+                    Haptics.selection();
                     final absOld = currentIndex + 1 + oldIndex;
                     final absNew = currentIndex + 1 + newIndex;
                     vm.reorderQueueItem(absOld, absNew);

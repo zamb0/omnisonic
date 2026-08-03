@@ -35,6 +35,7 @@ class OmnisonicIcons {
   static const IconData graphicEq = Icons.graphic_eq_rounded;
   static const IconData accessTime = Icons.access_time_rounded;
   static const IconData speedOutline = Icons.speed_outlined;
+  static const IconData touchApp = Icons.touch_app_rounded;
   static const IconData monitorHeart = Icons.monitor_heart_rounded;
 
   // --------------------------------------------------------------------
@@ -53,6 +54,7 @@ class OmnisonicIcons {
   static const IconData queueMusicOutline = Icons.queue_music_outlined;
   static const IconData playlistPlay = Icons.playlist_play_rounded;
   static const IconData playlistAdd = Icons.playlist_add_rounded;
+  static const IconData playlistRemove = Icons.playlist_remove_rounded;
   static const IconData star = Icons.star_rounded;
   static const IconData starOutline = Icons.star_outline;
   static const IconData favorite = Icons.favorite_rounded;

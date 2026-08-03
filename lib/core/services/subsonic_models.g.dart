@@ -66,9 +66,11 @@ Map<String, dynamic> _$PingResponseToJson(PingResponse instance) =>
 
 AlbumsResponse _$AlbumsResponseFromJson(Map<String, dynamic> json) =>
     AlbumsResponse(
-      album: (json['album'] as List<dynamic>)
-          .map((e) => SubsonicAlbum.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      album:
+          (json['album'] as List<dynamic>?)
+              ?.map((e) => SubsonicAlbum.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$AlbumsResponseToJson(AlbumsResponse instance) =>
@@ -102,9 +104,11 @@ AlbumResponse _$AlbumResponseFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['starred'] as String),
       year: _parseIntFromDynamic(json['year']),
       genre: json['genre'] as String?,
-      song: (json['song'] as List<dynamic>)
-          .map((e) => SubsonicSong.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      song:
+          (json['song'] as List<dynamic>?)
+              ?.map((e) => SubsonicSong.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$AlbumResponseToJson(AlbumResponse instance) =>

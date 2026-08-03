@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../app_database.dart';
 import '../tables.dart';
+import '../../entities/audio_quality.dart';
 import '../../entities/track.dart';
 import '../../entities/album.dart';
 import '../../entities/artist.dart';
@@ -175,6 +176,37 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       tracks.addAll(data.map(_trackFromData));
     }
     return tracks;
+  }
+
+  /// Returns the tracks matching every non-null filter.
+  ///
+  /// Pushed into SQL so callers do not have to load the whole library and
+  /// filter it in Dart.
+  Future<List<Track>> filterTracks({
+    String? genre,
+    int? year,
+    String? serverId,
+    List<AudioQuality>? allowedQualities,
+  }) async {
+    final query = select(tracksTable);
+
+    if (genre != null) {
+      query.where((tbl) => tbl.genre.lower().equals(genre.toLowerCase()));
+    }
+    if (year != null) {
+      query.where((tbl) => tbl.year.equals(year));
+    }
+    if (serverId != null) {
+      query.where((tbl) => tbl.serverId.equals(serverId));
+    }
+    if (allowedQualities != null) {
+      query.where(
+        (tbl) => tbl.quality.isIn(allowedQualities.map((q) => q.name).toList()),
+      );
+    }
+
+    final data = await query.get();
+    return data.map(_trackFromData).toList();
   }
 
   Future<List<Track>> getCachedTracks() async {
@@ -440,36 +472,58 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   // Search operations
-  Future<List<Track>> searchTracks(String query) async {
+  /// Cap on how many rows a search returns.
+  ///
+  /// A substring LIKE cannot use an index, so every search is a full table
+  /// scan; without a limit, a one-letter query materializes the whole library
+  /// on the UI isolate.
+  static const int defaultSearchLimit = 200;
+
+  Future<List<Track>> searchTracks(
+    String query, {
+    int limit = defaultSearchLimit,
+  }) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
     final data =
-        await (select(tracksTable)..where(
-              (tbl) =>
-                  tbl.title.lower().like(normalizedQuery) |
-                  tbl.artist.lower().like(normalizedQuery) |
-                  tbl.album.lower().like(normalizedQuery),
-            ))
+        await (select(tracksTable)
+              ..where(
+                (tbl) =>
+                    tbl.title.lower().like(normalizedQuery) |
+                    tbl.artist.lower().like(normalizedQuery) |
+                    tbl.album.lower().like(normalizedQuery),
+              )
+              ..limit(limit))
             .get();
     return data.map(_trackFromData).toList();
   }
 
-  Future<List<Album>> searchAlbums(String query) async {
+  Future<List<Album>> searchAlbums(
+    String query, {
+    int limit = defaultSearchLimit,
+  }) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
     final data =
-        await (select(albumsTable)..where(
-              (tbl) =>
-                  tbl.title.lower().like(normalizedQuery) |
-                  tbl.artist.lower().like(normalizedQuery),
-            ))
+        await (select(albumsTable)
+              ..where(
+                (tbl) =>
+                    tbl.title.lower().like(normalizedQuery) |
+                    tbl.artist.lower().like(normalizedQuery),
+              )
+              ..limit(limit))
             .get();
     return data.map(_albumFromData).toList();
   }
 
-  Future<List<Artist>> searchArtists(String query) async {
+  Future<List<Artist>> searchArtists(
+    String query, {
+    int limit = defaultSearchLimit,
+  }) async {
     final normalizedQuery = '%${query.toLowerCase()}%';
-    final data = await (select(
-      artistsTable,
-    )..where((tbl) => tbl.name.lower().like(normalizedQuery))).get();
+    final data =
+        await (select(artistsTable)
+              ..where((tbl) => tbl.name.lower().like(normalizedQuery))
+              ..limit(limit))
+            .get();
     return data.map(_artistFromData).toList();
   }
 

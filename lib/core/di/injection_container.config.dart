@@ -193,6 +193,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i670.MprisHandler>(),
       ),
     );
+    gh.factory<_i631.ManagePlaylistUseCase>(
+      () => _i631.ManagePlaylistUseCase(gh<_i331.PlaylistRepository>()),
+    );
     gh.lazySingleton<_i902.OfflineContentFilter>(
       () => appModule.offlineContentFilter(gh<_i763.OfflineRepository>()),
     );
@@ -201,6 +204,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i253.ServerStatusMonitor>(
       () => appModule.serverStatusMonitor(gh<_i632.ServerConnectionService>()),
+    );
+    gh.lazySingleton<_i693.PlaylistViewModel>(
+      () => _i693.PlaylistViewModel(
+        gh<_i331.PlaylistRepository>(),
+        gh<_i503.ManagePlaylistUseCase>(),
+      ),
     );
     gh.lazySingleton<_i296.ServerRepository>(
       () => appModule.serverRepository(
@@ -254,12 +263,6 @@ extension GetItInjectableX on _i174.GetIt {
         offlineRepository: gh<_i763.OfflineRepository>(),
       ),
     );
-    gh.factory<_i631.ManagePlaylistUseCase>(
-      () => _i631.ManagePlaylistUseCase(
-        gh<_i331.PlaylistRepository>(),
-        gh<_i331.MusicRepository>(),
-      ),
-    );
     gh.factory<_i882.SyncMusicCollectionUseCase>(
       () => _i882.SyncMusicCollectionUseCase(
         gh<_i331.MusicRepository>(),
@@ -275,12 +278,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
         gh<_i1002.AdaptiveStreamingService>(),
         gh<_i350.AppDatabase>(),
-      ),
-    );
-    gh.lazySingleton<_i693.PlaylistViewModel>(
-      () => _i693.PlaylistViewModel(
-        gh<_i331.PlaylistRepository>(),
-        gh<_i503.ManagePlaylistUseCase>(),
       ),
     );
     gh.lazySingleton<_i780.MusicLibraryViewModel>(

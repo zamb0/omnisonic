@@ -828,15 +828,15 @@ class MusicRepositoryImpl implements MusicRepository {
 
       // If track is not in any duplicate group, get it directly
       if (trackGroup == null) {
-        final allTracksResult = await getAllTracks();
-        if (allTracksResult.isFailure) {
-          return ResultHelper.failure(allTracksResult.failureOrNull!);
+        final trackResult = await _localDataSource.getTrackById(trackId);
+        if (trackResult.isFailure) {
+          return ResultHelper.failure(trackResult.failureOrNull!);
         }
 
-        final track = allTracksResult.valueOrNull!.firstWhere(
-          (t) => t.id == trackId,
-          orElse: () => throw StateError('Track not found'),
-        );
+        final track = trackResult.valueOrNull;
+        if (track == null) {
+          return ResultHelper.failure(DataFailure('Track not found: $trackId'));
+        }
 
         trackGroup = [track];
       }
@@ -896,42 +896,21 @@ class MusicRepositoryImpl implements MusicRepository {
     int? year,
     String? serverId,
     AudioQuality? minQuality,
-  }) async {
-    try {
-      final allTracksResult = await _localDataSource.getAllTracks();
-      if (allTracksResult.isFailure) {
-        return ResultHelper.failure(allTracksResult.failureOrNull!);
-      }
+  }) {
+    // The quality column stores the enum name, so "at least this good" becomes
+    // an IN over the qualities that qualify.
+    final allowedQualities = minQuality == null
+        ? null
+        : AudioQuality.values
+              .where((q) => _compareAudioQuality(q, minQuality) >= 0)
+              .toList();
 
-      var tracks = allTracksResult.valueOrNull!;
-
-      // Apply filters
-      if (genre != null) {
-        tracks = tracks
-            .where((t) => t.genre?.toLowerCase() == genre.toLowerCase())
-            .toList();
-      }
-
-      if (year != null) {
-        tracks = tracks.where((t) => t.year == year).toList();
-      }
-
-      if (serverId != null) {
-        tracks = tracks.where((t) => t.serverId == serverId).toList();
-      }
-
-      if (minQuality != null) {
-        tracks = tracks
-            .where((t) => _compareAudioQuality(t.quality, minQuality) >= 0)
-            .toList();
-      }
-
-      return ResultHelper.success(tracks);
-    } catch (e) {
-      return ResultHelper.failure(
-        UnknownFailure('Failed to filter tracks: $e'),
-      );
-    }
+    return _localDataSource.filterTracks(
+      genre: genre,
+      year: year,
+      serverId: serverId,
+      allowedQualities: allowedQualities,
+    );
   }
 
   @override

@@ -145,8 +145,10 @@ class OfflineRepositoryImpl implements OfflineRepository {
       }
 
       final allEntries = entriesResult.valueOrNull!;
+      // Set lookup, not a linear scan of trackIds per entry.
+      final wanted = trackIds.toSet();
       final entriesToRemove = allEntries.where(
-        (e) => trackIds.contains(e.trackId),
+        (e) => wanted.contains(e.trackId),
       );
 
       // Delete files

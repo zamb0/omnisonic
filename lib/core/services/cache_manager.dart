@@ -39,17 +39,24 @@ class CacheManager {
       int pinnedFileCount = 0;
       int validFiles = 0;
 
-      for (final entry in entries) {
-        final file = File(entry.filePath);
-        if (await file.exists()) {
-          totalSize += entry.fileSize;
-          fileCount++;
-          validFiles++;
+      // One stat call per entry, issued together rather than awaited one at a
+      // time — these stats are recomputed after every download, pin and
+      // removal.
+      final existence = await Future.wait(
+        entries.map((entry) => File(entry.filePath).exists()),
+      );
 
-          if (entry.isPinned) {
-            pinnedSize += entry.fileSize;
-            pinnedFileCount++;
-          }
+      for (var i = 0; i < entries.length; i++) {
+        if (!existence[i]) continue;
+
+        final entry = entries[i];
+        totalSize += entry.fileSize;
+        fileCount++;
+        validFiles++;
+
+        if (entry.isPinned) {
+          pinnedSize += entry.fileSize;
+          pinnedFileCount++;
         }
       }
 
@@ -180,23 +187,30 @@ class CacheManager {
     List<CacheEntry> entries,
   ) async {
     try {
+      // Stat every entry at once rather than walking the cache serially.
+      final sizes = await Future.wait(
+        entries.map((entry) async {
+          final file = File(entry.filePath);
+          return await file.exists() ? await file.length() : null;
+        }),
+      );
+
       final invalidEntries = <String>[];
+      for (var i = 0; i < entries.length; i++) {
+        final entry = entries[i];
+        final actualSize = sizes[i];
 
-      for (final entry in entries) {
-        final file = File(entry.filePath);
-
-        if (!await file.exists()) {
+        if (actualSize == null) {
           invalidEntries.add(entry.trackId);
           continue;
         }
 
         // Check file size matches
-        final actualSize = await file.length();
         if (actualSize != entry.fileSize) {
           invalidEntries.add(entry.trackId);
           // Delete corrupted file
           try {
-            await file.delete();
+            await File(entry.filePath).delete();
           } catch (e) {
             // Ignore deletion errors
           }

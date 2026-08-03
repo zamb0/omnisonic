@@ -1,4 +1,5 @@
 import '../app_database.dart';
+import '../../entities/audio_quality.dart';
 import '../../entities/track.dart';
 import '../../entities/album.dart';
 import '../../entities/artist.dart';
@@ -76,6 +77,28 @@ class LocalMusicDataSource {
     } catch (e) {
       return ResultHelper.failure(
         DatabaseFailure('Failed to get tracks by id: $e'),
+      );
+    }
+  }
+
+  /// Get the tracks matching the given filters
+  Future<Result<List<Track>>> filterTracks({
+    String? genre,
+    int? year,
+    String? serverId,
+    List<AudioQuality>? allowedQualities,
+  }) async {
+    try {
+      final tracks = await _database.musicDao.filterTracks(
+        genre: genre,
+        year: year,
+        serverId: serverId,
+        allowedQualities: allowedQualities,
+      );
+      return ResultHelper.success(tracks);
+    } catch (e) {
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to filter tracks: $e'),
       );
     }
   }

@@ -46,14 +46,26 @@ class PlaylistDao extends DatabaseAccessor<AppDatabase>
   // CRUD operations
   Future<List<Playlist>> getAllPlaylists() async {
     final playlistsData = await select(playlistsTable).get();
-    final playlists = <Playlist>[];
+    if (playlistsData.isEmpty) return const [];
 
-    for (final playlistData in playlistsData) {
-      final trackIds = await _getPlaylistTrackIds(playlistData.id);
-      playlists.add(_fromData(playlistData, trackIds));
+    // One query for every playlist's tracks instead of one query per
+    // playlist, which is what the loop over _getPlaylistTrackIds cost.
+    final entries =
+        await (select(playlistTracksTable)
+              ..orderBy([(tbl) => OrderingTerm(expression: tbl.position)]))
+            .get();
+
+    final trackIdsByPlaylist = <String, List<String>>{};
+    for (final entry in entries) {
+      trackIdsByPlaylist
+          .putIfAbsent(entry.playlistId, () => [])
+          .add(entry.trackId);
     }
 
-    return playlists;
+    return [
+      for (final playlistData in playlistsData)
+        _fromData(playlistData, trackIdsByPlaylist[playlistData.id] ?? const []),
+    ];
   }
 
   Future<Playlist?> getPlaylistById(String id) async {

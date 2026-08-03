@@ -119,16 +119,12 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     String playlistId,
     String trackId,
   ) async {
-    // Verify track exists
-    final allTracksResult = await _localMusicDataSource.getAllTracks();
-    if (allTracksResult.isFailure) {
-      return Left(allTracksResult.failureOrNull!);
+    // Verify track exists — by primary key, not by scanning the library
+    final trackResult = await _localMusicDataSource.getTrackById(trackId);
+    if (trackResult.isFailure) {
+      return Left(trackResult.failureOrNull!);
     }
-
-    final trackExists = allTracksResult.valueOrNull!.any(
-      (track) => track.id == trackId,
-    );
-    if (!trackExists) {
+    if (trackResult.valueOrNull == null) {
       return Left(DataFailure('Track not found: $trackId'));
     }
 

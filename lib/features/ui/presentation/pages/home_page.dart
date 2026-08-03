@@ -785,7 +785,10 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: () => context.push('/album-detail', extra: widget.album),
+        onTap: () => context.push(
+          AppRouter.albumDetailLocation(widget.album.id),
+          extra: widget.album,
+        ),
         child: Stack(
           children: [
             widget.child,

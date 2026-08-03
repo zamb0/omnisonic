@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
@@ -618,16 +620,16 @@ class _LibraryPageState extends State<LibraryPage> {
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.push('/album-detail', extra: album);
+    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
     // Navigate to artist detail page
-    context.push('/artist-detail', extra: artist);
+    context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }
 
   void _onPlaylistTapped(Playlist playlist) {
-    context.go('/playlist-detail?id=${playlist.id}');
+    context.go(AppRouter.playlistDetailLocation(playlist.id));
   }
 
   Future<void> _syncLibrary() async {

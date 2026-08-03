@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/widgets.dart';
@@ -186,11 +188,11 @@ class _FavoritesPageState extends State<FavoritesPage>
   }
 
   void _onAlbumTapped(Album album) {
-    context.push('/album-detail', extra: album);
+    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
-    context.push('/artist-detail', extra: artist);
+    context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }
 
   void _onTrackTapped(Track track, List<Track> queue) {

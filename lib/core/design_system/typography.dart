@@ -75,12 +75,8 @@ class OmnisonicTypography {
     height: 1.12,
   );
 
-  static TextStyle get displayMedium => _gabarito(
-    fontSize: 45,
-    fontWeight: bold,
-    letterSpacing: 0,
-    height: 1.16,
-  );
+  static TextStyle get displayMedium =>
+      _gabarito(fontSize: 45, fontWeight: bold, letterSpacing: 0, height: 1.16);
 
   static TextStyle get displaySmall => _gabarito(
     fontSize: 36,
@@ -178,12 +174,8 @@ class OmnisonicTypography {
   );
 
   // Music-specific typography styles
-  static TextStyle get trackTitle => _manrope(
-    fontSize: 16,
-    fontWeight: medium,
-    letterSpacing: 0,
-    height: 1.4,
-  );
+  static TextStyle get trackTitle =>
+      _manrope(fontSize: 16, fontWeight: medium, letterSpacing: 0, height: 1.4);
 
   static TextStyle get artistName => _manrope(
     fontSize: 14,
@@ -220,19 +212,11 @@ class OmnisonicTypography {
     height: 1.3,
   );
 
-  static TextStyle get duration => _mono(
-    fontSize: 12,
-    fontWeight: regular,
-    letterSpacing: 0.4,
-    height: 1.2,
-  );
+  static TextStyle get duration =>
+      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.4, height: 1.2);
 
-  static TextStyle get metadata => _mono(
-    fontSize: 12,
-    fontWeight: regular,
-    letterSpacing: 0.3,
-    height: 1.3,
-  );
+  static TextStyle get metadata =>
+      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.3, height: 1.3);
 
   // ---------------------------------------------------------------------
   // Liquid-glass shell styles
@@ -285,12 +269,8 @@ class OmnisonicTypography {
   );
 
   /// Glass button label — "Play", "Sync now".
-  static TextStyle get glassButton => _gabarito(
-    fontSize: 13,
-    fontWeight: bold,
-    letterSpacing: 0,
-    height: 1.2,
-  );
+  static TextStyle get glassButton =>
+      _gabarito(fontSize: 13, fontWeight: bold, letterSpacing: 0, height: 1.2);
 
   /// Big number in a stat tile.
   static TextStyle get statValue => _gabarito(

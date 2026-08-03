@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/album_grouping.dart';
@@ -697,7 +699,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   width: 96,
                   showMeta: false,
                   onTap: () {
-                    context.pushReplacement('/album-detail', extra: album);
+                    context.pushReplacement(
+                      AppRouter.albumDetailLocation(album.id),
+                      extra: album,
+                    );
                   },
                 ),
               ),

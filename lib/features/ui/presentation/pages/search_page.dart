@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../music/presentation/bloc/search_bloc.dart';
 import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
@@ -626,12 +628,12 @@ class _SearchPageState extends State<SearchPage> {
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.push('/album-detail', extra: album);
+    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
     // Navigate to artist detail page
-    context.push('/artist-detail', extra: artist);
+    context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }
 
   void _showTrackOptions(List<Track> tracks, int index) {

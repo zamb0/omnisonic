@@ -20,6 +20,7 @@ import '../../features/servers/presentation/pages/server_management_page.dart';
 import '../../features/music/presentation/pages/playlist_management_page.dart';
 import '../../features/music/presentation/pages/playlist_detail_page.dart';
 import '../../features/ui/presentation/pages/main_shell.dart';
+import 'entity_route.dart';
 
 /// Application routing configuration
 class AppRouter {
@@ -37,8 +38,29 @@ class AppRouter {
   static const String playlistManagement = '/playlist-management';
   static const String playlistDetail = '/playlist-detail';
 
+  /// The `?id=` a deep link carries. Detail routes are linkable by id even
+  /// when no entity travelled with the navigation.
+  static String _idParam(GoRouterState state) =>
+      state.uri.queryParameters['id'] ?? '';
+
+  /// Locations for the detail routes.
+  ///
+  /// Always navigate through these rather than writing the bare path: the id
+  /// in the URL is what survives a share, a restart or a restored window,
+  /// even when the entity itself is also passed as `extra`.
+  static String albumDetailLocation(String albumId) =>
+      '$albumDetail?id=${Uri.encodeComponent(albumId)}';
+
+  static String artistDetailLocation(String artistId) =>
+      '$artistDetail?id=${Uri.encodeComponent(artistId)}';
+
+  static String playlistDetailLocation(String playlistId) =>
+      '$playlistDetail?id=${Uri.encodeComponent(playlistId)}';
+
   static final GoRouter router = GoRouter(
     initialLocation: home,
+    errorBuilder: (context, state) =>
+        NotFoundPage(location: state.uri.toString()),
     routes: [
       ShellRoute(
         builder: (context, state, child) => MainShell(child: child),
@@ -110,11 +132,22 @@ class AppRouter {
             path: albumDetail,
             name: 'albumDetail',
             pageBuilder: (context, state) {
-              final album = state.extra as Album;
+              // `extra` is null for anything that isn't an in-app tap, so
+              // the id in the URL is what makes this route linkable.
+              final album = state.extra is Album ? state.extra as Album : null;
               return _fadePage(
                 context: context,
                 state: state,
-                child: AlbumDetailPage(album: album),
+                child: EntityRoute<Album>(
+                  entity: album,
+                  entityId: album?.id ?? _idParam(state),
+                  lookup: (library, id) =>
+                      library.albums.where((a) => a.id == id).firstOrNull,
+                  builder: (album) => AlbumDetailPage(album: album),
+                  missingTitle: 'Album not found',
+                  missingSubtitle:
+                      'It may have been removed, or its server is offline.',
+                ),
               );
             },
           ),
@@ -122,11 +155,22 @@ class AppRouter {
             path: artistDetail,
             name: 'artistDetail',
             pageBuilder: (context, state) {
-              final artist = state.extra as Artist;
+              final artist = state.extra is Artist
+                  ? state.extra as Artist
+                  : null;
               return _fadePage(
                 context: context,
                 state: state,
-                child: ArtistDetailPage(artist: artist),
+                child: EntityRoute<Artist>(
+                  entity: artist,
+                  entityId: artist?.id ?? _idParam(state),
+                  lookup: (library, id) =>
+                      library.artists.where((a) => a.id == id).firstOrNull,
+                  builder: (artist) => ArtistDetailPage(artist: artist),
+                  missingTitle: 'Artist not found',
+                  missingSubtitle:
+                      'They may have been removed, or their server is offline.',
+                ),
               );
             },
           ),

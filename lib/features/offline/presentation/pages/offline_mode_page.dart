@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/services/download_preferences_service.dart';
 import '../../domain/services/offline_content_filter.dart';
@@ -431,7 +433,10 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             AlbumCard(
               album: album,
-              onTap: () => context.push('/album-detail', extra: album),
+              onTap: () => context.push(
+                AppRouter.albumDetailLocation(album.id),
+                extra: album,
+              ),
             ),
             const Positioned(
               top: 8,
@@ -466,7 +471,10 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             ArtistCard(
               artist: artist,
-              onTap: () => context.push('/artist-detail', extra: artist),
+              onTap: () => context.push(
+                AppRouter.artistDetailLocation(artist.id),
+                extra: artist,
+              ),
             ),
             const Positioned(
               top: 8,
@@ -501,7 +509,8 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             PlaylistCard(
               playlist: playlist,
-              onTap: () => context.push('/playlist-detail?id=${playlist.id}'),
+              onTap: () =>
+                  context.push(AppRouter.playlistDetailLocation(playlist.id)),
             ),
             const Positioned(
               top: 8,

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
@@ -545,6 +547,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.push('/album-detail', extra: album);
+    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 }

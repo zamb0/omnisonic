@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/playlist_view_model.dart';
@@ -332,6 +334,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
   }
 
   void _navigateToPlaylistDetail(BuildContext context, Playlist playlist) {
-    context.go('/playlist-detail?id=${playlist.id}');
+    context.go(AppRouter.playlistDetailLocation(playlist.id));
   }
 }

@@ -679,36 +679,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  /// Sleep timer / output device / EQ row. None of these have a backing
-  /// feature yet, so they're rendered disabled rather than wired up to fake
-  /// behavior — visual placeholders for the mockup's control cluster.
-  Widget _buildUnimplementedControls(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final mutedColor = scheme.onSurfaceVariant.withValues(alpha: 0.4);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: null,
-          icon: Icon(Icons.bedtime_outlined, color: mutedColor),
-          tooltip: 'Sleep timer — not available yet',
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: null,
-          icon: Icon(Icons.speaker_outlined, color: mutedColor),
-          tooltip: 'Output device — not available yet',
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: null,
-          icon: Icon(Icons.equalizer, color: mutedColor),
-          tooltip: 'Equalizer — not available yet',
-        ),
-      ],
-    );
-  }
-
   /// Bottom glass panel showing where the current track is streaming from:
   /// source server, quality, whether the server is transcoding it, and
   /// whether it's been scrobbled yet.
@@ -729,49 +699,43 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     final isDirect = quality.qualityScore >= maxQuality.qualityScore;
     final scrobbled = playbackViewModel.hasScrobbledCurrentTrack;
 
-    return Column(
-      children: [
-        GlassPanel(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.md,
-            vertical: OmnisonicSpacing.sm,
+    return GlassPanel(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          ServerDot(serverId: track.serverId, size: 8),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$serverName · ${quality.format} ${quality.bitrate}kbps · '
+              '${isDirect ? 'Direct' : 'Transcoded'}',
+              style: OmnisonicTypography.metadata.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          child: Row(
-            children: [
-              ServerDot(serverId: track.serverId, size: 8),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '$serverName · ${quality.format} ${quality.bitrate}kbps · '
-                  '${isDirect ? 'Direct' : 'Transcoded'}',
-                  style: OmnisonicTypography.metadata.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                scrobbled ? Icons.check_circle : Icons.history,
-                size: 14,
-                color: scrobbled
-                    ? OmnisonicColors.successAccessible
-                    : scheme.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                scrobbled ? 'Scrobbled' : 'Not scrobbled yet',
-                style: OmnisonicTypography.metadata.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+          const SizedBox(width: 8),
+          Icon(
+            scrobbled ? Icons.check_circle : Icons.history,
+            size: 14,
+            color: scrobbled
+                ? OmnisonicColors.successAccessible
+                : scheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
-        ),
-        const SizedBox(height: OmnisonicSpacing.sm),
-        _buildUnimplementedControls(context),
-      ],
+          const SizedBox(width: 4),
+          Text(
+            scrobbled ? 'Scrobbled' : 'Not scrobbled yet',
+            style: OmnisonicTypography.metadata.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

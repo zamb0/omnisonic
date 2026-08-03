@@ -179,22 +179,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               ),
             ),
             const PopupMenuItem(
-              value: 'share',
-              child: ListTile(
-                leading: Icon(Icons.share),
-                title: Text('Share Playlist'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'export',
-              child: ListTile(
-                leading: Icon(Icons.download),
-                title: Text('Export Playlist'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
               value: 'duplicate',
               child: ListTile(
                 leading: Icon(Icons.copy),
@@ -369,12 +353,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       case 'edit':
         _showEditDialog(playlist);
         break;
-      case 'share':
-        _sharePlaylist(playlist);
-        break;
-      case 'export':
-        _exportPlaylist(playlist);
-        break;
       case 'duplicate':
         _duplicatePlaylist(playlist, viewModel);
         break;
@@ -388,20 +366,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     showDialog(
       context: context,
       builder: (context) => PlaylistEditDialog(playlist: playlist),
-    );
-  }
-
-  void _sharePlaylist(Playlist playlist) {
-    // TODO: Implement playlist sharing functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Playlist sharing coming soon!')),
-    );
-  }
-
-  void _exportPlaylist(Playlist playlist) {
-    // TODO: Implement playlist export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Playlist export coming soon!')),
     );
   }
 

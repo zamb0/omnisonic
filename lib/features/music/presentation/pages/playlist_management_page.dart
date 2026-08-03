@@ -198,10 +198,9 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
     return RefreshIndicator(
       onRefresh: viewModel.refreshPlaylists,
       child: ListView.builder(
-        itemCount: playlists.length + 1,
+        itemCount: playlists.length,
         itemBuilder: (context, index) {
-          if (index == 0) return _buildSmartPlaylistPromo(context);
-          final playlist = playlists[index - 1];
+          final playlist = playlists[index];
           return PlaylistListTile(
             playlist: playlist,
             onTap: () => _navigateToPlaylistDetail(context, playlist),
@@ -212,57 +211,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                 _showDuplicateDialog(context, playlist, viewModel),
           );
         },
-      ),
-    );
-  }
-
-  /// Non-functional teaser: there's no "smart playlist" concept anywhere in
-  /// the app today (grepped the whole codebase — `refreshSmartCollections`
-  /// on `MusicLibraryViewModel` is Home's recently-added/played rows, an
-  /// unrelated feature). Shown disabled with an explicit "Coming soon" label
-  /// rather than implying a working feature.
-  Widget _buildSmartPlaylistPromo(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-          border: Border.all(
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.4),
-            width: 1.5,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.auto_awesome_outlined, color: scheme.onSurfaceVariant),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Smart playlists',
-                      style: OmnisonicTypography.titleSmall.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Auto-updating playlists from rules. Coming soon.',
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

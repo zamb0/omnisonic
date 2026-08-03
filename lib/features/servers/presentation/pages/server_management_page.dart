@@ -158,7 +158,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           child: Column(
             children: [
               _buildServerSummary(viewModel),
-              _buildDuplicateStrategyPicker(context),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -184,68 +183,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           ),
         );
       },
-    );
-  }
-
-  /// Visual-only: there's no per-user duplicate-handling strategy anywhere
-  /// in the app today — `DeduplicationEngine` always merges to the single
-  /// best-quality copy automatically, with no way to switch strategies.
-  /// Shown disabled rather than wired to fake behavior.
-  Widget _buildDuplicateStrategyPicker(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.all(OmnisonicSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                'Duplicate handling',
-                style: OmnisonicTypography.overline.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Tooltip(
-                  message:
-                      'Not implemented yet — duplicates always merge to '
-                      'the best-quality copy automatically',
-                  child: ChoiceChip(
-                    label: const Text('Merge, best quality'),
-                    selected: true,
-                    onSelected: null,
-                  ),
-                ),
-                Tooltip(
-                  message: 'Not implemented yet',
-                  child: ChoiceChip(
-                    label: const Text('Merge, by priority'),
-                    selected: false,
-                    onSelected: null,
-                  ),
-                ),
-                Tooltip(
-                  message: 'Not implemented yet',
-                  child: ChoiceChip(
-                    label: const Text('Keep separate'),
-                    selected: false,
-                    onSelected: null,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 

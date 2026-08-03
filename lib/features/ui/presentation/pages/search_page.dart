@@ -603,7 +603,10 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            height: 232,
+            // 160 of square artwork plus the title/subtitle block. The card
+            // centres its art in whatever height it is given, so a taller
+            // box just adds a gap above the title.
+            height: 216,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
@@ -658,7 +661,7 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            height: 212,
+            height: 200,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(

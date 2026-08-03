@@ -172,35 +172,49 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAlbumHeaderContent(
-                        context,
-                        Theme.of(context).colorScheme,
-                        0,
-                        includeArtwork: true,
-                        includeSourcePanel: false,
+        // Two sliver columns rather than a Row inside one adapter. The whole
+        // desktop layout used to be a single box, which forced the track
+        // table to be an eager Column — a 500-track album built 500 rows on
+        // the first frame.
+        SliverPadding(
+          padding: const EdgeInsets.all(OmnisonicSpacing.lg),
+          sliver: SliverCrossAxisGroup(
+            slivers: [
+              SliverCrossAxisExpanded(
+                flex: 2,
+                sliver: SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAlbumHeaderContent(
+                            context,
+                            Theme.of(context).colorScheme,
+                            0,
+                            includeArtwork: true,
+                            includeSourcePanel: false,
+                          ),
+                          const SizedBox(height: OmnisonicSpacing.lg),
+                          _buildTracksHeaderRow(context),
+                          const SizedBox(height: OmnisonicSpacing.sm),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      _buildTracksHeaderRow(context),
-                      const SizedBox(height: 8),
-                      _buildTrackTable(context),
-                    ],
+                    ),
+                    ..._buildTrackTableSlivers(context),
+                  ],
+                ),
+              ),
+              SliverConstrainedCrossAxis(
+                maxExtent: 340 + OmnisonicSpacing.lg,
+                sliver: SliverPadding(
+                  padding: const EdgeInsets.only(left: OmnisonicSpacing.lg),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildResolutionPanel(context),
                   ),
                 ),
-                const SizedBox(width: 24),
-                SizedBox(width: 340, child: _buildResolutionPanel(context)),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
@@ -304,84 +318,83 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   // Desktop track table (SOURCE/FORMAT columns)
   // ---------------------------------------------------------------------
 
-  Widget _buildTrackTable(BuildContext context) {
+  List<Widget> _buildTrackTableSlivers(BuildContext context) {
     if (_isLoading) {
-      return const LoadingStateView(kind: SkeletonKind.list, itemCount: 6);
+      return [LoadingStateView.sliver(kind: SkeletonKind.list, itemCount: 6)];
     }
 
     final error = _errorMessage;
     if (error != null) {
-      return ErrorStateView(
-        title: 'Failed to load tracks',
-        message: error,
-        onRetry: _loadTracks,
-      );
+      return [
+        SliverToBoxAdapter(
+          child: ErrorStateView(
+            title: 'Failed to load tracks',
+            message: error,
+            onRetry: _loadTracks,
+          ),
+        ),
+      ];
     }
 
     if (_tracks.isEmpty) {
-      return const EmptyState(
-        icon: OmnisonicIcons.musicNoteOutline,
-        title: 'No tracks found',
-        subtitle: 'This album has no playable tracks on any connected server.',
-      );
+      return const [
+        SliverToBoxAdapter(
+          child: EmptyState(
+            icon: OmnisonicIcons.musicNoteOutline,
+            title: 'No tracks found',
+            subtitle:
+                'This album has no playable tracks on any connected server.',
+          ),
+        ),
+      ];
     }
 
+    return [
+      // Pinned, so the column labels stay above the rows you are reading
+      // rather than scrolling off with the album header.
+      SliverPersistentHeader(
+        pinned: true,
+        delegate: _TrackTableHeaderDelegate(
+          child: _buildTrackTableHeaderRow(context),
+        ),
+      ),
+      SliverList.builder(
+        itemCount: _tracks.length,
+        itemBuilder: (context, index) =>
+            _buildTrackTableRow(context, _tracks[index], index),
+      ),
+    ];
+  }
+
+  Widget _buildTrackTableHeaderRow(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    Widget label(String text, {TextAlign? align}) => Text(
+      text,
+      textAlign: align,
+      style: OmnisonicTypography.overline.copyWith(
+        color: scheme.onSurfaceVariant,
+      ),
+    );
+
+    return ColoredBox(
+      color: scheme.surface,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.md,
+              vertical: OmnisonicSpacing.sm,
+            ),
             child: Row(
               children: [
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '#',
-                    style: OmnisonicTypography.overline.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'TITLE',
-                    style: OmnisonicTypography.overline.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'SOURCE',
-                    style: OmnisonicTypography.overline.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 96,
-                  child: Text(
-                    'FORMAT',
-                    style: OmnisonicTypography.overline.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 32, child: label('#')),
+                Expanded(flex: 3, child: label('TITLE')),
+                Expanded(flex: 2, child: label('SOURCE')),
+                SizedBox(width: 96, child: label('FORMAT')),
                 SizedBox(
                   width: 48,
-                  child: Text(
-                    'TIME',
-                    textAlign: TextAlign.right,
-                    style: OmnisonicTypography.overline.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
+                  child: label('TIME', align: TextAlign.right),
                 ),
                 const SizedBox(width: 40),
               ],
@@ -391,8 +404,6 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             height: 1,
             color: scheme.outlineVariant.withValues(alpha: 0.4),
           ),
-          for (var i = 0; i < _tracks.length; i++)
-            _buildTrackTableRow(context, _tracks[i], i),
         ],
       ),
     );
@@ -1360,4 +1371,32 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     final seconds = duration.inSeconds % 60;
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
+}
+
+/// Pins the desktop track table's column labels above the rows.
+class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _TrackTableHeaderDelegate({required this.child});
+
+  final Widget child;
+
+  /// The label row is a fixed two-line block: one row of overline text plus
+  /// a divider.
+  static const double _extent = 33;
+
+  @override
+  double get minExtent => _extent;
+
+  @override
+  double get maxExtent => _extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => SizedBox(height: _extent, child: child);
+
+  @override
+  bool shouldRebuild(_TrackTableHeaderDelegate oldDelegate) =>
+      oldDelegate.child != child;
 }

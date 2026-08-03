@@ -18,7 +18,6 @@ class FeishinCard extends StatefulWidget {
     this.isStarred = false,
     this.width,
     this.imageShape = FeishinImageShape.rounded,
-    this.imageSize,
     this.titleMaxLines = 1,
   });
 
@@ -29,9 +28,13 @@ class FeishinCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onStar;
   final bool isStarred;
+  /// Fixed card width, for carousels where each item has to be the same
+  /// size regardless of what its neighbours contain.
+  ///
+  /// Left null in grids, where the column count decides the width.
   final double? width;
+
   final FeishinImageShape imageShape;
-  final double? imageSize;
   final int titleMaxLines;
 
   @override
@@ -46,7 +49,13 @@ class _FeishinCardState extends State<FeishinCard> {
     final scheme = Theme.of(context).colorScheme;
     final isCircle = widget.imageShape == FeishinImageShape.circle;
 
-    return MouseRegion(
+    // `width` and `imageSize` were both declared and never read: the card
+    // took its size entirely from its parent, so every `AlbumCard(width: 160)`
+    // in a carousel was a no-op and the cards were whatever the surrounding
+    // SizedBox happened to be. `width` is now honoured; `imageSize` is gone,
+    // because the image is an AspectRatio of the card and has no size of its
+    // own to set.
+    final card = MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
@@ -187,6 +196,9 @@ class _FeishinCardState extends State<FeishinCard> {
         ),
       ),
     );
+
+    final width = widget.width;
+    return width == null ? card : SizedBox(width: width, child: card);
   }
 
   Widget _buildImage(BuildContext context, ColorScheme scheme) {

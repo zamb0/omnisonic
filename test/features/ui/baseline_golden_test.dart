@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
 import 'package:omnisonic/features/ui/presentation/pages/home_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omnisonic/core/di/injection_container.dart';
+import 'package:omnisonic/core/services/deduplication_engine.dart';
+import 'package:omnisonic/features/music/presentation/bloc/search_bloc.dart';
 import 'package:omnisonic/features/ui/presentation/pages/library_page.dart';
+import 'package:omnisonic/features/ui/presentation/pages/search_page.dart';
+
+import '../../helpers/bloc_fakes.dart';
 
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
@@ -99,6 +106,56 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/home_desktop.png'),
+    );
+  });
+
+  testWidgets('search results at phone width', (tester) async {
+    if (!getIt.isRegistered<DeduplicationEngine>()) {
+      getIt.registerSingleton<DeduplicationEngine>(DeduplicationEngine());
+    }
+    addTearDown(() => getIt.unregister<DeduplicationEngine>());
+
+    final bloc = FakeSearchBloc(
+      SearchStates.success(
+        query: 'blue',
+        tracks: [
+          testTrack(
+            id: 'server1_s1',
+            title: 'Blue Monday',
+            duration: const Duration(minutes: 7, seconds: 29),
+          ),
+          testTrack(
+            id: 'server1_s2',
+            title: 'Blue in Green',
+            artist: 'Miles Davis',
+            duration: const Duration(minutes: 5, seconds: 27),
+          ),
+          testTrack(
+            id: 'server1_s3',
+            title: 'Bluebird',
+            artist: 'Buffalo Springfield',
+            duration: const Duration(minutes: 4, seconds: 28),
+          ),
+        ],
+        albums: testAlbums(6),
+        artists: testArtists(4),
+      ),
+    );
+    addTearDown(bloc.close);
+
+    await pumpAt(
+      tester,
+      location: AppRouter.search,
+      size: TestSizes.phone,
+      page: BlocProvider<SearchBloc>.value(
+        value: bloc,
+        child: const SearchPage(),
+      ),
+    );
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/search_phone.png'),
     );
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../entities/server_status.dart';
+
 /// Comprehensive color palette system for Omnisonic UI Enhancement
 class OmnisonicColors {
   // Primary Brand Colors
@@ -326,6 +328,24 @@ class OmnisonicColors {
       hash = (hash * 31 + unit) & 0x7fffffff;
     }
     return serverHueSwatches[hash % serverHueSwatches.length];
+  }
+
+  /// Palette colour for a server's connection state, so status chips do not
+  /// each pick their own `Colors.green` / `Colors.red`.
+  static Color statusColorFor(ServerStatus status) {
+    switch (status) {
+      case ServerStatus.online:
+        return success;
+      case ServerStatus.offline:
+      case ServerStatus.error:
+        return error;
+      case ServerStatus.connecting:
+        return warning;
+      case ServerStatus.authenticating:
+        return info;
+      case ServerStatus.syncing:
+        return primaryPurple;
+    }
   }
 }
 

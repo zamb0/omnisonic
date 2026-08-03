@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/widgets.dart';
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 
 /// Page displaying all starred (favorited) content
@@ -33,20 +34,27 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          children: [
-            Icon(Icons.star, size: 24),
-            SizedBox(width: 8),
-            Text('Favorites'),
-          ],
+        // Oversized display title on a transparent bar, matching Library: the
+        // art tint has to run behind the header rather than stop at it.
+        toolbarHeight: 72,
+        titleSpacing: OmnisonicSpacing.xs,
+        title: Text(
+          'Starred',
+          style: OmnisonicTypography.pageTitle.copyWith(
+            color: scheme.onSurface,
+          ),
         ),
-        elevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
         bottom: TabBar(
           controller: _tabController,
+          labelStyle: OmnisonicTypography.navLabel,
+          unselectedLabelStyle: OmnisonicTypography.navLabel,
+          labelColor: scheme.onSurface,
+          unselectedLabelColor: scheme.onSurfaceVariant,
+          indicatorColor: scheme.primary,
           tabs: const [
             Tab(text: 'Albums'),
             Tab(text: 'Artists'),
@@ -79,7 +87,10 @@ class _FavoritesPageState extends State<FavoritesPage>
         }
 
         return ResponsiveGridView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.lg,
+            vertical: OmnisonicSpacing.md,
+          ),
           minItemWidth: 160,
           spacing: 20,
           childAspectRatio: 0.72,
@@ -119,7 +130,10 @@ class _FavoritesPageState extends State<FavoritesPage>
         }
 
         return ResponsiveGridView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.lg,
+            vertical: OmnisonicSpacing.md,
+          ),
           minItemWidth: 150,
           spacing: 20,
           childAspectRatio: 0.72,
@@ -154,7 +168,10 @@ class _FavoritesPageState extends State<FavoritesPage>
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.lg,
+            vertical: OmnisonicSpacing.md,
+          ),
           itemCount: starredTracks.length,
           itemBuilder: (context, index) {
             final track = starredTracks[index];

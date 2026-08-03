@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playlist_view_model.dart';
@@ -45,11 +46,15 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: OmnisonicTypography.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -198,13 +203,16 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               ),
             ),
             const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
+                leading: Icon(
+                  Icons.delete,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 title: Text(
                   'Delete Playlist',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -230,14 +238,15 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                     children: [
                       Text(
                         '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: OmnisonicTypography.sectionTitleSmall,
                       ),
                       if (playlist.description?.isNotEmpty == true) ...[
                         const SizedBox(height: 4),
                         Text(
                           playlist.description!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                          style: OmnisonicTypography.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 8),
@@ -246,13 +255,16 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                           Icon(
                             playlist.isPublic ? Icons.public : Icons.lock,
                             size: 16,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             playlist.isPublic ? 'Public' : 'Private',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
+                            style: OmnisonicTypography.metadata.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -287,16 +299,20 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.music_note, size: 64, color: Colors.grey[400]),
+              Icon(
+                Icons.music_note,
+                size: 64,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(height: 16),
               Text(
                 'No tracks in this playlist',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: OmnisonicTypography.sectionTitle,
               ),
               const SizedBox(height: 8),
               Text(
                 'Add some tracks to get started',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: OmnisonicTypography.bodyMedium,
               ),
             ],
           ),
@@ -454,7 +470,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -503,7 +521,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Remove'),
           ),
         ],

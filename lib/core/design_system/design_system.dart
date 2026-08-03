@@ -8,6 +8,7 @@
 export 'colors.dart';
 export 'typography.dart';
 export 'spacing.dart';
+export 'text_scale.dart';
 export 'icons.dart';
 export 'theme.dart';
 export 'glass_surface.dart';

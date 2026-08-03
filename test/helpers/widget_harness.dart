@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omnisonic/core/design_system/design_system.dart';
+import 'package:omnisonic/core/design_system/theme_mode_controller.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
 import 'package:omnisonic/features/music/presentation/viewmodels/music_library_view_model.dart';
 import 'package:omnisonic/features/music/presentation/viewmodels/playlist_view_model.dart';
@@ -53,6 +54,12 @@ class TestViewModels {
     ChangeNotifierProvider<PlaybackViewModel>.value(value: playback),
     ChangeNotifierProvider<ServerManagementViewModel>.value(value: servers),
     ChangeNotifierProvider<PlaylistViewModel>.value(value: playlists),
+    // A plain singleton in the app rather than a DI registration, so the
+    // real one is fine here — it only reads SharedPreferences, which is
+    // absent in tests and leaves it on its default.
+    ChangeNotifierProvider<ThemeModeController>.value(
+      value: ThemeModeController.instance,
+    ),
   ];
 }
 

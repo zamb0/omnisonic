@@ -118,6 +118,11 @@ class _SearchPageState extends State<SearchPage> {
     final servers = context.watch<ServerManagementViewModel>().servers;
     final chipsVisible = servers.length >= 2;
 
+    // The header's extent has to be declared up front, so it is computed
+    // against the user's text size rather than assumed at 1x.
+    final barExtent = OmnisonicTextScale.textExtent(context, _searchBarExtent);
+    final chipExtent = OmnisonicTextScale.textExtent(context, _chipRowExtent);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -133,14 +138,14 @@ class _SearchPageState extends State<SearchPage> {
           SliverPersistentHeader(
             pinned: true,
             delegate: _SearchHeaderDelegate(
-              extent: _searchBarExtent + (chipsVisible ? _chipRowExtent : 0),
+              extent: barExtent + (chipsVisible ? chipExtent : 0),
               searchBar: SizedBox(
-                height: _searchBarExtent,
+                height: barExtent,
                 child: _buildSearchBar(context),
               ),
               chips: chipsVisible
                   ? SizedBox(
-                      height: _chipRowExtent,
+                      height: chipExtent,
                       child: _buildServerFilterChips(servers),
                     )
                   : null,
@@ -603,10 +608,11 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            // 160 of square artwork plus the title/subtitle block. The card
-            // centres its art in whatever height it is given, so a taller
-            // box just adds a gap above the title.
-            height: 216,
+            // 160 of square artwork plus the title/subtitle block. Only the
+            // text half grows with the user's text size — scaling the whole
+            // height would enlarge the artwork too and push the row off
+            // screen.
+            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 56),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
@@ -661,7 +667,7 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            height: 200,
+            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 40),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(

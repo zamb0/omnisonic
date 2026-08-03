@@ -40,7 +40,13 @@ class FeishinShell extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
           child: SizedBox(
             width: extended ? _extendedWidth : _railWidth,
-            child: _buildSidebar(context),
+            // The rail is a fixed 72px and the sidebar a fixed 234; neither
+            // can widen to fit larger labels, so the chrome stops growing
+            // where the content does not.
+            child: OmnisonicTextScale.clampChrome(
+              context,
+              _buildSidebar(context),
+            ),
           ),
         ),
         Expanded(
@@ -59,8 +65,11 @@ class FeishinShell extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(0, 10, 14, 12),
-                child: AnimatedNowPlayingBar(
-                  onTap: () => context.push(AppRouter.nowPlaying),
+                child: OmnisonicTextScale.clampChrome(
+                  context,
+                  AnimatedNowPlayingBar(
+                    onTap: () => context.push(AppRouter.nowPlaying),
+                  ),
                 ),
               ),
             ],

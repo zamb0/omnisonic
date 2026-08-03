@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/utils/animation_utils.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 
@@ -28,6 +30,7 @@ class FeishinCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onStar;
   final bool isStarred;
+
   /// Fixed card width, for carousels where each item has to be the same
   /// size regardless of what its neighbours contain.
   ///
@@ -69,7 +72,10 @@ class _FeishinCardState extends State<FeishinCard> {
                 aspectRatio: 1,
                 child: AnimatedScale(
                   scale: _isHovering ? 1.03 : 1.0,
-                  duration: const Duration(milliseconds: 150),
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    AnimationManager.fastDuration,
+                  ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: isCircle
@@ -91,7 +97,10 @@ class _FeishinCardState extends State<FeishinCard> {
                           // Hover overlay with play and star buttons
                           AnimatedOpacity(
                             opacity: _isHovering ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 150),
+                            duration: AnimationUtils.adjustedDuration(
+                              context,
+                              AnimationManager.fastDuration,
+                            ),
                             child: Container(
                               color: Colors.black.withValues(alpha: 0.4),
                               child: Center(

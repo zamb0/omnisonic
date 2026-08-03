@@ -115,15 +115,22 @@ class MainShell extends StatelessWidget {
       bottomNavigationBar: SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedNowPlayingBar(
-              onTap: () => context.push(AppRouter.nowPlaying),
-            ),
-            const SizedBox(height: OmnisonicSpacing.sm),
-            _buildBottomNavigation(context),
-          ],
+        // The bar and the nav pills are fixed furniture with nowhere to
+        // reflow: past ~1.3x they would take the screen away from the
+        // content the user enlarged the text to read. The page itself is
+        // outside this and scales without limit.
+        child: OmnisonicTextScale.clampChrome(
+          context,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedNowPlayingBar(
+                onTap: () => context.push(AppRouter.nowPlaying),
+              ),
+              const SizedBox(height: OmnisonicSpacing.sm),
+              _buildBottomNavigation(context),
+            ],
+          ),
         ),
       ),
     );
@@ -147,16 +154,22 @@ class MainShell extends StatelessWidget {
         horizontal: OmnisonicSpacing.sm,
         vertical: OmnisonicSpacing.xs,
       ),
+      // Flexible rather than fixed: five slots on a 375px phone at the
+      // largest chrome text size do not fit side by side, and the labels
+      // have to be allowed to ellipsize rather than overflow the bar.
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           for (var i = 0; i < destinations.length; i++)
-            _NavPillItem(
-              destination: destinations[i],
-              selected: currentIndex == i,
-              onTap: () => context.go(destinations[i].route),
+            Flexible(
+              child: _NavPillItem(
+                destination: destinations[i],
+                selected: currentIndex == i,
+                onTap: () => context.go(destinations[i].route),
+              ),
             ),
-          const AccountButton(axis: Axis.vertical, showLabel: true),
+          const Flexible(
+            child: AccountButton(axis: Axis.vertical, showLabel: true),
+          ),
         ],
       ),
     );
@@ -201,6 +214,8 @@ class _NavPillItem extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 destination.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: OmnisonicTypography.labelSmall.copyWith(
                   color: color,
                   fontWeight: selected

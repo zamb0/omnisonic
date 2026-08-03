@@ -174,182 +174,192 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     // Below this width four 44px targets plus artwork leave the title unreadable.
     final showFavorite = MediaQuery.of(context).size.width >= 380;
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: GlassPanel(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
-        padding: EdgeInsets.zero,
-        child: SizedBox(
-          height: 64,
-          child: Column(
-            children: [
-              // Thin progress bar at top
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(OmnisonicRadius.xxl),
-                ),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 2,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(tint),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      // Artwork. Tag matches full_screen_player.dart's
-                      // artwork so opening the player animates the cover
-                      // continuously instead of a hard cut.
-                      Hero(
-                        tag: 'now-playing-artwork-${track.id}',
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              OmnisonicRadius.xs,
-                            ),
-                            color: scheme.surfaceContainerHighest,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              OmnisonicRadius.xs,
-                            ),
-                            child: track.coverArtUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: SubsonicCoverArt.of(
-                                      track.coverArtUrl!,
-                                      128,
-                                    ).url,
-                                    cacheKey: SubsonicCoverArt.of(
-                                      track.coverArtUrl!,
-                                      128,
-                                    ).cacheKey,
-                                    cacheManager:
-                                        OmnisonicImageCacheManager.instance,
-                                    fit: BoxFit.cover,
-                                    memCacheWidth: 88,
-                                    memCacheHeight: 88,
-                                    fadeInDuration: const Duration(
-                                      milliseconds: 120,
-                                    ),
-                                    useOldImageOnUrlChange: true,
-                                    placeholder: (context, url) =>
-                                        _buildFallbackArtwork(),
-                                    errorWidget: (context, url, error) =>
-                                        _buildFallbackArtwork(),
-                                  )
-                                : _buildFallbackArtwork(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Title + Artist
-                      Expanded(
-                        child: Semantics(
-                          button: true,
-                          onTap: widget.onTap,
-                          label: _nowPlayingLabel(track),
-                          excludeSemantics: true,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                track.title,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: scheme.onSurface,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                track.artist,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                      fontSize: 11,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Compact controls. Every target is at least 44x44 with an
-                      // 8px gap, so on the narrowest phones the favourite button
-                      // is dropped rather than squeezing the track title away.
-                      if (showFavorite) ...[
-                        Consumer<PlaybackViewModel>(
-                          builder: (context, vm, child) {
-                            final isStarred = track.isStarred;
-                            return _iconBtn(
-                              isStarred
-                                  ? OmnisonicIcons.favorite
-                                  : OmnisonicIcons.favoriteOutline,
-                              20,
-                              isStarred
-                                  ? OmnisonicColors.favoriteIndicator
-                                  : scheme.onSurface.withValues(alpha: 0.7),
-                              () => vm.toggleFavorite(track),
-                              label: isStarred
-                                  ? 'Remove from favorites'
-                                  : 'Add to favorites',
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      _iconBtn(
-                        OmnisonicIcons.skipPrevious,
-                        22,
-                        vm.hasPrevious
-                            ? scheme.onSurface
-                            : scheme.onSurface.withValues(alpha: 0.3),
-                        vm.hasPrevious ? () => vm.skipToPrevious() : null,
-                        label: 'Previous track',
-                      ),
-                      const SizedBox(width: 8),
-                      _playPauseBtn(vm, scheme),
-                      if (showFavorite) ...[
-                        const SizedBox(width: 6),
-                        SizedBox(
-                          width: 18,
-                          height: 16,
-                          // AudioVisualizer's equalizer bars assume a ~300px
-                          // wide layout (fixed bar-width formula), so at
-                          // this icon size it overflows badly — a small
-                          // dedicated widget instead.
-                          child: Center(
-                            child: _MiniEqualizer(
-                              isPlaying: vm.isPlaying,
-                              color: tint,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(width: 8),
-                      _iconBtn(
-                        OmnisonicIcons.skipNext,
-                        22,
-                        vm.hasNext
-                            ? scheme.onSurface
-                            : scheme.onSurface.withValues(alpha: 0.3),
-                        vm.hasNext ? () => vm.skipToNext() : null,
-                        label: 'Next track',
-                      ),
-                    ],
+    // The whole bar is tappable, so it needs to announce itself as one
+    // control rather than as an unlabelled region containing others — a
+    // screen reader otherwise reads "0", the progress indicator's value.
+    return Semantics(
+      button: true,
+      label:
+          'Now playing: ${track.title} by ${track.artist}. '
+          'Open the full player.',
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: GlassPanel(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
+          padding: EdgeInsets.zero,
+          child: SizedBox(
+            height: 64,
+            child: Column(
+              children: [
+                // Thin progress bar at top
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(OmnisonicRadius.xxl),
+                  ),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0.0, 1.0),
+                    minHeight: 2,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(tint),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        // Artwork. Tag matches full_screen_player.dart's
+                        // artwork so opening the player animates the cover
+                        // continuously instead of a hard cut.
+                        Hero(
+                          tag: 'now-playing-artwork-${track.id}',
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                OmnisonicRadius.xs,
+                              ),
+                              color: scheme.surfaceContainerHighest,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                OmnisonicRadius.xs,
+                              ),
+                              child: track.coverArtUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: SubsonicCoverArt.of(
+                                        track.coverArtUrl!,
+                                        128,
+                                      ).url,
+                                      cacheKey: SubsonicCoverArt.of(
+                                        track.coverArtUrl!,
+                                        128,
+                                      ).cacheKey,
+                                      cacheManager:
+                                          OmnisonicImageCacheManager.instance,
+                                      fit: BoxFit.cover,
+                                      memCacheWidth: 88,
+                                      memCacheHeight: 88,
+                                      fadeInDuration: const Duration(
+                                        milliseconds: 120,
+                                      ),
+                                      useOldImageOnUrlChange: true,
+                                      placeholder: (context, url) =>
+                                          _buildFallbackArtwork(),
+                                      errorWidget: (context, url, error) =>
+                                          _buildFallbackArtwork(),
+                                    )
+                                  : _buildFallbackArtwork(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Title + Artist
+                        Expanded(
+                          child: Semantics(
+                            button: true,
+                            onTap: widget.onTap,
+                            label: _nowPlayingLabel(track),
+                            excludeSemantics: true,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  track.title,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: scheme.onSurface,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  track.artist,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                        fontSize: 11,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Compact controls. Every target is at least 44x44 with an
+                        // 8px gap, so on the narrowest phones the favourite button
+                        // is dropped rather than squeezing the track title away.
+                        if (showFavorite) ...[
+                          Consumer<PlaybackViewModel>(
+                            builder: (context, vm, child) {
+                              final isStarred = track.isStarred;
+                              return _iconBtn(
+                                isStarred
+                                    ? OmnisonicIcons.favorite
+                                    : OmnisonicIcons.favoriteOutline,
+                                20,
+                                isStarred
+                                    ? OmnisonicColors.favoriteIndicator
+                                    : scheme.onSurface.withValues(alpha: 0.7),
+                                () => vm.toggleFavorite(track),
+                                label: isStarred
+                                    ? 'Remove from favorites'
+                                    : 'Add to favorites',
+                                toggled: isStarred,
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        _iconBtn(
+                          OmnisonicIcons.skipPrevious,
+                          22,
+                          vm.hasPrevious
+                              ? scheme.onSurface
+                              : scheme.onSurface.withValues(alpha: 0.3),
+                          vm.hasPrevious ? () => vm.skipToPrevious() : null,
+                          label: 'Previous track',
+                        ),
+                        const SizedBox(width: 8),
+                        _playPauseBtn(vm, scheme),
+                        if (showFavorite) ...[
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 18,
+                            height: 16,
+                            // AudioVisualizer's equalizer bars assume a ~300px
+                            // wide layout (fixed bar-width formula), so at
+                            // this icon size it overflows badly — a small
+                            // dedicated widget instead.
+                            child: Center(
+                              child: _MiniEqualizer(
+                                isPlaying: vm.isPlaying,
+                                color: tint,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 8),
+                        _iconBtn(
+                          OmnisonicIcons.skipNext,
+                          22,
+                          vm.hasNext
+                              ? scheme.onSurface
+                              : scheme.onSurface.withValues(alpha: 0.3),
+                          vm.hasNext ? () => vm.skipToNext() : null,
+                          label: 'Next track',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -755,6 +765,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   : scheme.onSurfaceVariant,
               track != null ? () => vm.toggleFavorite(track) : null,
               label: isStarred ? 'Remove from favorites' : 'Add to favorites',
+              toggled: isStarred,
             );
           },
         ),
@@ -851,8 +862,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color color,
     VoidCallback? onPressed, {
     required String label,
+
+    /// Set for controls that are on/off — favourite, shuffle, repeat — so a
+    /// screen reader announces their state, which a tooltip alone does not.
+    bool? toggled,
   }) {
-    return IconButton(
+    final button = IconButton(
       onPressed: onPressed,
       icon: Icon(icon, size: size, color: color),
       iconSize: size,
@@ -864,6 +879,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         minHeight: OmnisonicTouchTargets.minimum,
       ),
     );
+
+    if (toggled == null) return button;
+    return Semantics(toggled: toggled, child: button);
   }
 
   /// Circular play/pause button, sized to the comfortable touch target.
@@ -886,15 +904,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           ),
         ],
       ),
-      child: IconButton(
-        icon: Icon(
-          vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
-          color: scheme.surface,
+      child: Semantics(
+        button: true,
+        label: vm.isPlaying ? 'Pause' : 'Play',
+        child: IconButton(
+          icon: Icon(
+            vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
+            color: scheme.surface,
+          ),
+          iconSize: OmnisonicIconSizes.md,
+          padding: EdgeInsets.zero,
+          tooltip: vm.isPlaying ? 'Pause' : 'Play',
+          onPressed: () => vm.togglePlayPause(),
         ),
-        iconSize: OmnisonicIconSizes.md,
-        padding: EdgeInsets.zero,
-        tooltip: vm.isPlaying ? 'Pause' : 'Play',
-        onPressed: () => vm.togglePlayPause(),
       ),
     );
   }

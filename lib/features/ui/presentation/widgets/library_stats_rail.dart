@@ -124,13 +124,17 @@ class _StatGrid extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // The tile is two lines of text in a fixed-aspect cell, so its height
+    // has to follow the text size — at 2x the label fell out of the bottom.
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
       mainAxisSpacing: 9,
       crossAxisSpacing: 9,
-      childAspectRatio: 1.85,
+      childAspectRatio: 1.85 / textScale,
       children: [
         for (final stat in stats)
           Container(
@@ -145,6 +149,8 @@ class _StatGrid extends StatelessWidget {
               children: [
                 Text(
                   stat.value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: OmnisonicTypography.statValue.copyWith(
                     color: scheme.onSurface,
                   ),
@@ -152,6 +158,8 @@ class _StatGrid extends StatelessWidget {
                 const SizedBox(height: 1),
                 Text(
                   stat.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: OmnisonicTypography.technical.copyWith(
                     fontSize: 9.5,
                     color: scheme.onSurfaceVariant,

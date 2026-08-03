@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/utils/animation_utils.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
@@ -784,7 +786,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           const SizedBox(height: OmnisonicSpacing.md),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 150),
+              duration: AnimationUtils.adjustedDuration(
+                context,
+                AnimationManager.fastDuration,
+              ),
               child: _buildPanelContent(
                 context,
                 playbackViewModel,

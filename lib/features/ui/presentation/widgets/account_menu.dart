@@ -51,6 +51,8 @@ class AccountButton extends StatelessWidget {
 
     final label = Text(
       'Account',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: vertical
           ? OmnisonicTypography.labelSmall.copyWith(
               color: color,

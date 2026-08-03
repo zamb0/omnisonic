@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Runs once before every test file in this package.
 ///
@@ -12,6 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// lock in fake metrics and any test that measures text is meaningless.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // ThemeModeController is a singleton that reads SharedPreferences from its
+  // constructor, so anything that touches it throws MissingPluginException
+  // without a store in place.
+  SharedPreferences.setMockInitialValues({});
   await _loadAppFonts();
   await testMain();
 }

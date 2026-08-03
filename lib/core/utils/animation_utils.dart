@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design_system/animation_manager.dart';
+import '../design_system/spacing.dart';
 
 /// Utility class for creating consistent animations throughout the app
 class AnimationUtils {
@@ -92,7 +93,9 @@ class AnimationUtils {
         vsync: Navigator.of(context),
       ),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OmnisonicRadius.lg),
+        ),
       ),
     );
   }

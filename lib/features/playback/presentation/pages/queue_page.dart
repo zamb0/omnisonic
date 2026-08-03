@@ -277,7 +277,7 @@ class _QueueRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               ClipRRect(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                 child: SizedBox(
                   width: 44,
                   height: 44,

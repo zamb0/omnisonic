@@ -120,7 +120,7 @@ class FeishinShell extends StatelessWidget {
       height: 22,
       decoration: BoxDecoration(
         color: scheme.onSurface,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Icon(
         OmnisonicIcons.graphicEq,

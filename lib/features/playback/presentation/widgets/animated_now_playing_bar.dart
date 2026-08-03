@@ -372,7 +372,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     return GlassPanel(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
       padding: EdgeInsets.zero,
       child: SizedBox(
         height: 96,
@@ -802,13 +802,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           message: 'Expand player',
           child: InkWell(
             onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
             child: Container(
               width: 30,
               height: 30,
               decoration: BoxDecoration(
                 color: scheme.onSurface.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
               ),
               child: Icon(
                 OmnisonicIcons.openInFull,

@@ -129,12 +129,12 @@ class PlaylistListTile extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         color: scheme.surfaceContainerHighest,
       ),
       child: playlist.coverArtUrl != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
               child: CachedNetworkImage(
                 imageUrl: SubsonicCoverArt.of(playlist.coverArtUrl!, 112).url,
                 cacheKey: SubsonicCoverArt.of(

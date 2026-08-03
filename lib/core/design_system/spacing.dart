@@ -108,6 +108,12 @@ class OmnisonicRadius {
   /// Nav pill / glass button corner in the sidebar chrome.
   static const double pill = 13.0;
 
+  // Not tokenized on purpose: the 1-2px rounding on drag handles, seek
+  // handles, visualizer bars and status dots is half the element's own
+  // thickness, not a scale step. A shared token there would be a number
+  // that happens to coincide, and changing it would square off or fully
+  // round the shape rather than restyle it.
+
   static const double card = md; // 12px
   static const double button = sm; // 8px
   static const double input = sm; // 8px

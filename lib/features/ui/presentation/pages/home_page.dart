@@ -367,7 +367,7 @@ class _HomePageState extends State<HomePage> {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                     child: SizedBox(
                       width: 44,
                       height: 44,
@@ -636,7 +636,7 @@ class _HomePageState extends State<HomePage> {
                         left: 6,
                         bottom: 6,
                         child: GlassSurface(
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 4,

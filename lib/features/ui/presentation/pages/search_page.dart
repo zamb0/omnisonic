@@ -43,6 +43,15 @@ class _SearchPageState extends State<SearchPage> {
   /// Server to restrict results to, or null for "All servers".
   String? _selectedServerId;
 
+  /// Memoized merge/dedupe results, keyed by the identity of the result list
+  /// they were computed from. Both passes are O(n log n) at best and used to
+  /// re-run on every chip tap and section toggle, because they sit inside the
+  /// BlocBuilder's builder.
+  List<Track>? _mergedTracksSource;
+  ({List<_MergedTrack> items, int rawTotal})? _mergedTracksCache;
+  List<Album>? _mergedAlbumsSource;
+  AlbumDedupeResult? _mergedAlbumsCache;
+
   bool _isExpanded(_ResultSection section) =>
       _expandedSections.contains(section);
 
@@ -221,6 +230,28 @@ class _SearchPageState extends State<SearchPage> {
   /// server's original ranking by keeping each group at its first
   /// occurrence's position.
   ({List<_MergedTrack> items, int rawTotal}) _mergeTracks(List<Track> tracks) {
+    if (identical(_mergedTracksSource, tracks) && _mergedTracksCache != null) {
+      return _mergedTracksCache!;
+    }
+    final merged = _computeMergedTracks(tracks);
+    _mergedTracksSource = tracks;
+    _mergedTracksCache = merged;
+    return merged;
+  }
+
+  AlbumDedupeResult _mergeAlbums(List<Album> albums) {
+    if (identical(_mergedAlbumsSource, albums) && _mergedAlbumsCache != null) {
+      return _mergedAlbumsCache!;
+    }
+    final merged = dedupeAlbumsByServer(albums);
+    _mergedAlbumsSource = albums;
+    _mergedAlbumsCache = merged;
+    return merged;
+  }
+
+  ({List<_MergedTrack> items, int rawTotal}) _computeMergedTracks(
+    List<Track> tracks,
+  ) {
     if (tracks.isEmpty) return (items: const [], rawTotal: 0);
 
     final engine = getIt<DeduplicationEngine>();
@@ -413,7 +444,7 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     final mergedTracks = _mergeTracks(tracks);
-    final mergedAlbums = dedupeAlbumsByServer(albums);
+    final mergedAlbums = _mergeAlbums(albums);
 
     return SingleChildScrollView(
       child: Column(

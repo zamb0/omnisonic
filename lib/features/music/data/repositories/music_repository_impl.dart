@@ -43,6 +43,9 @@ class MusicRepositoryImpl implements MusicRepository {
   /// home feed's track rows.
   static const int _albumListExpansion = 10;
 
+  /// Above this many tracks, deduplication is worth an isolate hop.
+  static const int _isolateDeduplicationThreshold = 2000;
+
   // Shared `getStarred2` response, see _getStarredContent.
   Future<Result<_StarredContent>>? _starredContentRequest;
   DateTime? _starredContentFetchedAt;
@@ -1193,8 +1196,12 @@ class MusicRepositoryImpl implements MusicRepository {
 
       final tracks = tracksResult.valueOrNull!;
 
-      // Use the deduplication engine to detect duplicates
-      final duplicateGroups = _deduplicationEngine.detectDuplicates(tracks);
+      // Large libraries are deduplicated on a background isolate: the pass
+      // is pure computation over a snapshot, and running it inline dropped
+      // frames on the UI isolate right after a sync.
+      final duplicateGroups = tracks.length >= _isolateDeduplicationThreshold
+          ? await compute(_detectDuplicatesIsolate, tracks)
+          : _deduplicationEngine.detectDuplicates(tracks);
 
       _duplicateGroupsCache.clear();
       _duplicateGroupsCache.addAll(duplicateGroups);
@@ -1309,3 +1316,9 @@ class _StarredContent {
   final List<Artist> artists;
   final List<Track> tracks;
 }
+
+/// Entry point for the background deduplication pass.
+///
+/// Top-level because `compute` cannot send a closure over an instance.
+Map<String, List<Track>> _detectDuplicatesIsolate(List<Track> tracks) =>
+    DeduplicationEngine().detectDuplicates(tracks);

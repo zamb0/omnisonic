@@ -8,35 +8,67 @@ class DeduplicationEngine {
 
   /// Groups tracks by similarity and returns duplicate groups
   /// Each group contains tracks that are considered duplicates
+  ///
+  /// Only tracks whose durations are within [_maxDurationDifferenceSeconds]
+  /// of each other are compared, which is what makes this tractable: a naive
+  /// pass compares every pair, so a 20k-track library costs 2×10⁸ Jaro-Winkler
+  /// computations. Bucketing by duration first turns that into a handful of
+  /// comparisons per track without changing which pairs can qualify — the
+  /// duration tolerance is a precondition for being a duplicate, not just a
+  /// 10% weight.
   Map<String, List<Track>> detectDuplicates(List<Track> tracks) {
     final duplicateGroups = <String, List<Track>>{};
-    final processedTracks = <String>{};
+    final processed = <String>{};
     var groupId = 0;
 
-    for (int i = 0; i < tracks.length; i++) {
-      final currentTrack = tracks[i];
+    // Normalized metadata is reused across every comparison a track takes
+    // part in, instead of being recomputed (four strings, four regexes) on
+    // each one.
+    final normalized = [
+      for (final track in tracks) _NormalizedTrack.of(track),
+    ];
 
-      // Skip if already processed
-      if (processedTracks.contains(currentTrack.id)) continue;
+    // Candidate index buckets, keyed by duration / tolerance. Two tracks
+    // within the tolerance are always in the same or an adjacent bucket.
+    final buckets = <int, List<int>>{};
+    for (var i = 0; i < tracks.length; i++) {
+      buckets.putIfAbsent(_durationBucket(tracks[i]), () => []).add(i);
+    }
+
+    for (var i = 0; i < tracks.length; i++) {
+      final currentTrack = tracks[i];
+      if (processed.contains(currentTrack.id)) continue;
 
       final duplicates = <Track>[currentTrack];
-      processedTracks.add(currentTrack.id);
+      processed.add(currentTrack.id);
 
-      // Find similar tracks
-      for (int j = i + 1; j < tracks.length; j++) {
+      final bucket = _durationBucket(currentTrack);
+      final candidates = <int>[
+        ...?buckets[bucket - 1],
+        ...?buckets[bucket],
+        ...?buckets[bucket + 1],
+      ]..sort();
+
+      for (final j in candidates) {
+        if (j <= i) continue;
+
         final candidateTrack = tracks[j];
+        if (processed.contains(candidateTrack.id)) continue;
 
-        // Skip if already processed
-        if (processedTracks.contains(candidateTrack.id)) continue;
+        // Adjacent buckets can still be up to twice the tolerance apart, and
+        // the tolerance is a precondition rather than a weight: two tracks
+        // with identical metadata but a four-minute difference are a radio
+        // edit and an extended mix, not duplicates.
+        final durationDelta =
+            (currentTrack.duration.inSeconds -
+                    candidateTrack.duration.inSeconds)
+                .abs();
+        if (durationDelta > _maxDurationDifferenceSeconds) continue;
 
-        final similarity = calculateSimilarityScore(
-          currentTrack,
-          candidateTrack,
-        );
-
+        final similarity = _similarityOf(normalized[i], normalized[j]);
         if (similarity >= _duplicateThreshold) {
           duplicates.add(candidateTrack);
-          processedTracks.add(candidateTrack.id);
+          processed.add(candidateTrack.id);
         }
       }
 
@@ -50,43 +82,33 @@ class DeduplicationEngine {
     return duplicateGroups;
   }
 
+  static int _durationBucket(Track track) =>
+      track.duration.inSeconds ~/ _maxDurationDifferenceSeconds;
+
   /// Calculates similarity score between two tracks
   /// Returns a value between 0.0 and 1.0, where 1.0 means identical
-  double calculateSimilarityScore(Track track1, Track track2) {
+  double calculateSimilarityScore(Track track1, Track track2) =>
+      _similarityOf(_NormalizedTrack.of(track1), _NormalizedTrack.of(track2));
+
+  double _similarityOf(_NormalizedTrack a, _NormalizedTrack b) {
     // Don't compare tracks from the same server with same ID
-    if (track1.serverId == track2.serverId && track1.id == track2.id) {
+    if (a.serverId == b.serverId && a.id == b.id) {
       return 0.0;
     }
 
     double score = 0.0;
 
     // Title similarity (40% weight)
-    final titleSimilarity = _calculateStringSimilarity(
-      _normalizeString(track1.title),
-      _normalizeString(track2.title),
-    );
-    score += titleSimilarity * 0.4;
+    score += _calculateStringSimilarity(a.title, b.title) * 0.4;
 
     // Artist similarity (30% weight)
-    final artistSimilarity = _calculateStringSimilarity(
-      _normalizeString(track1.artist),
-      _normalizeString(track2.artist),
-    );
-    score += artistSimilarity * 0.3;
+    score += _calculateStringSimilarity(a.artist, b.artist) * 0.3;
 
     // Album similarity (20% weight)
-    final albumSimilarity = _calculateStringSimilarity(
-      _normalizeString(track1.album),
-      _normalizeString(track2.album),
-    );
-    score += albumSimilarity * 0.2;
+    score += _calculateStringSimilarity(a.album, b.album) * 0.2;
 
     // Duration similarity (10% weight)
-    final durationSimilarity = _calculateDurationSimilarity(
-      track1.duration,
-      track2.duration,
-    );
-    score += durationSimilarity * 0.1;
+    score += _calculateDurationSimilarity(a.duration, b.duration) * 0.1;
 
     return score;
   }
@@ -102,8 +124,12 @@ class DeduplicationEngine {
       return duplicates.first;
     }
 
+    // Sort a copy: the caller's list is usually a group held in a cache, and
+    // reordering it in place would reorder that cache as a side effect.
+    final ranked = List<Track>.of(duplicates);
+
     // Sort by quality (highest first), then by server availability
-    duplicates.sort((a, b) {
+    ranked.sort((a, b) {
       // First, compare by audio quality
       final qualityComparison = b.quality.qualityScore.compareTo(
         a.quality.qualityScore,
@@ -120,17 +146,22 @@ class DeduplicationEngine {
       return sizeB.compareTo(sizeA);
     });
 
-    return duplicates.first;
+    return ranked.first;
   }
+
+  // Compiled once; these used to be rebuilt on every normalization, of which
+  // there are four per track comparison.
+  static final RegExp _specialCharacters = RegExp(r'[^\w\s]');
+  static final RegExp _repeatedWhitespace = RegExp(r'\s+');
 
   /// Normalizes a string for comparison by removing special characters,
   /// converting to lowercase, and trimming whitespace
-  String _normalizeString(String input) {
+  static String _normalizeString(String input) {
     return input
         .toLowerCase()
         .trim()
-        .replaceAll(RegExp(r'[^\w\s]'), '') // Remove special characters
-        .replaceAll(RegExp(r'\s+'), ' '); // Normalize whitespace
+        .replaceAll(_specialCharacters, '') // Remove special characters
+        .replaceAll(_repeatedWhitespace, ' '); // Normalize whitespace
   }
 
   /// Calculates string similarity using Jaro-Winkler algorithm
@@ -242,11 +273,39 @@ class DeduplicationEngine {
   }
 
   /// Generates a normalized metadata key for grouping similar tracks
-  String _generateMetadataKey(Track track) {
+  static String _generateMetadataKey(Track track) {
     final normalizedTitle = _normalizeString(track.title);
     final normalizedArtist = _normalizeString(track.artist);
     final durationMinutes = (track.duration.inSeconds / 60).round();
 
     return '${normalizedTitle}_${normalizedArtist}_${durationMinutes}min';
   }
+}
+
+/// A track with its comparison fields normalized once up front.
+class _NormalizedTrack {
+  const _NormalizedTrack({
+    required this.id,
+    required this.serverId,
+    required this.title,
+    required this.artist,
+    required this.album,
+    required this.duration,
+  });
+
+  factory _NormalizedTrack.of(Track track) => _NormalizedTrack(
+    id: track.id,
+    serverId: track.serverId,
+    title: DeduplicationEngine._normalizeString(track.title),
+    artist: DeduplicationEngine._normalizeString(track.artist),
+    album: DeduplicationEngine._normalizeString(track.album),
+    duration: track.duration,
+  );
+
+  final String id;
+  final String serverId;
+  final String title;
+  final String artist;
+  final String album;
+  final Duration duration;
 }

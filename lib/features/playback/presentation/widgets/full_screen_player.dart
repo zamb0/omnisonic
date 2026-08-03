@@ -314,7 +314,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               children: [
                 IconButton(
                   onPressed: _closePlayer,
-                  icon: const Icon(Icons.keyboard_arrow_down),
+                  icon: const Icon(OmnisonicIcons.keyboardArrowDown),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -336,7 +336,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                             }
                           : null,
                       icon: Icon(
-                        isStarred ? Icons.favorite : Icons.favorite_border,
+                        isStarred
+                            ? OmnisonicIcons.favorite
+                            : OmnisonicIcons.favoriteOutline,
                         color: isStarred
                             ? OmnisonicColors.favoriteIndicator
                             : scheme.onSurfaceVariant,
@@ -411,9 +413,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     return Container(
       color: scheme.surfaceContainerHighest,
       child: Icon(
-        Icons.music_note,
+        OmnisonicIcons.musicNote,
         color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-        size: 72,
+        size: OmnisonicIconSizes.xxxl,
       ),
     );
   }
@@ -556,7 +558,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       children: [
         _glassCircleButton(
           context,
-          icon: Icons.skip_previous,
+          icon: OmnisonicIcons.skipPrevious,
           onPressed: playbackViewModel.hasPrevious
               ? () => playbackViewModel.skipToPrevious()
               : null,
@@ -570,14 +572,16 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             backgroundColor: scheme.primary,
           ),
           child: Icon(
-            playbackViewModel.isPlaying ? Icons.pause : Icons.play_arrow,
-            size: 36,
+            playbackViewModel.isPlaying
+                ? OmnisonicIcons.pause
+                : OmnisonicIcons.playArrow,
+            size: OmnisonicIconSizes.lg,
           ),
         ),
         const SizedBox(width: 16),
         _glassCircleButton(
           context,
-          icon: Icons.skip_next,
+          icon: OmnisonicIcons.skipNext,
           onPressed: playbackViewModel.hasNext
               ? () => playbackViewModel.skipToNext()
               : null,
@@ -616,11 +620,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   IconData _getRepeatIcon(playback.RepeatMode repeatMode) {
     switch (repeatMode) {
       case playback.RepeatMode.none:
-        return Icons.repeat;
+        return OmnisonicIcons.repeat;
       case playback.RepeatMode.all:
-        return Icons.repeat;
+        return OmnisonicIcons.repeat;
       case playback.RepeatMode.one:
-        return Icons.repeat_one;
+        return OmnisonicIcons.repeatOne;
     }
   }
 
@@ -635,7 +639,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         IconButton(
           onPressed: () => playbackViewModel.toggleShuffleMode(),
           icon: Icon(
-            Icons.shuffle,
+            OmnisonicIcons.shuffle,
             color: playbackViewModel.shuffleEnabled
                 ? scheme.primary
                 : scheme.onSurfaceVariant,
@@ -666,7 +670,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     }
                   : null,
               icon: Icon(
-                isStarred ? Icons.favorite : Icons.favorite_border,
+                isStarred
+                    ? OmnisonicIcons.favorite
+                    : OmnisonicIcons.favoriteOutline,
                 color: isStarred
                     ? OmnisonicColors.favoriteIndicator
                     : scheme.onSurfaceVariant,
@@ -721,8 +727,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           ),
           const SizedBox(width: 8),
           Icon(
-            scrobbled ? Icons.check_circle : Icons.history,
-            size: 14,
+            scrobbled ? OmnisonicIcons.checkCircle : OmnisonicIcons.history,
+            size: OmnisonicIconSizes.inline,
             color: scrobbled
                 ? OmnisonicColors.successAccessible
                 : scheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -868,9 +874,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                             useOldImageOnUrlChange: true,
                           )
                         : Icon(
-                            Icons.music_note,
+                            OmnisonicIcons.musicNote,
                             color: scheme.onSurfaceVariant,
-                            size: 18,
+                            size: OmnisonicIconSizes.smd,
                           ),
                   ),
                 ),
@@ -893,8 +899,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 trailing: isCurrent
                     ? Icon(
                         playbackViewModel.isPlaying
-                            ? Icons.pause
-                            : Icons.play_arrow,
+                            ? OmnisonicIcons.pause
+                            : OmnisonicIcons.playArrow,
                         color: scheme.primary,
                       )
                     : null,
@@ -923,7 +929,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(Icons.arrow_forward, size: 16, color: scheme.primary),
+                Icon(
+                  OmnisonicIcons.arrowForward,
+                  size: OmnisonicIconSizes.sm,
+                  color: scheme.primary,
+                ),
               ],
             ),
           ),

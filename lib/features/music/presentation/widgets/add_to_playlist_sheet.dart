@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
+
 import '../../../../core/entities/entities.dart';
 import '../../../ui/presentation/widgets/section_header.dart';
 import '../viewmodels/playlist_view_model.dart';
@@ -42,7 +44,7 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
               itemBuilder: (context, index) {
                 final playlist = playlists[index];
                 return ListTile(
-                  leading: const Icon(Icons.playlist_play),
+                  leading: const Icon(OmnisonicIcons.playlistPlay),
                   title: Text(playlist.name),
                   subtitle: Text('${playlist.trackCount} tracks'),
                   onTap: () => Navigator.pop(sheetContext, playlist.id),

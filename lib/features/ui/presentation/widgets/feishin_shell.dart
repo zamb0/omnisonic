@@ -122,7 +122,11 @@ class FeishinShell extends StatelessWidget {
         color: scheme.onSurface,
         borderRadius: BorderRadius.circular(7),
       ),
-      child: Icon(Icons.graphic_eq_rounded, size: 14, color: scheme.surface),
+      child: Icon(
+        OmnisonicIcons.graphicEq,
+        size: OmnisonicIconSizes.inline,
+        color: scheme.surface,
+      ),
     );
 
     if (!extended) return Center(child: mark);
@@ -184,8 +188,8 @@ class FeishinShell extends StatelessWidget {
       item(AppDestinations.primary[1]), // Search
       _NavItem(
         extended: extended,
-        icon: Icons.album_outlined,
-        activeIcon: Icons.album,
+        icon: OmnisonicIcons.albumOutline,
+        activeIcon: OmnisonicIcons.album,
         label: 'Albums',
         count: library.albumCount,
         selected: isLibrary && activeLibraryTab == LibraryTab.albums,
@@ -193,8 +197,8 @@ class FeishinShell extends StatelessWidget {
       ),
       _NavItem(
         extended: extended,
-        icon: Icons.person_outline,
-        activeIcon: Icons.person,
+        icon: OmnisonicIcons.personOutline,
+        activeIcon: OmnisonicIcons.person,
         label: 'Artists',
         count: library.artistCount,
         selected: isLibrary && activeLibraryTab == LibraryTab.artists,
@@ -215,8 +219,8 @@ class FeishinShell extends StatelessWidget {
     if (!extended) {
       return _NavItem(
         extended: false,
-        icon: Icons.dns_outlined,
-        activeIcon: Icons.dns,
+        icon: OmnisonicIcons.dnsOutline,
+        activeIcon: OmnisonicIcons.dns,
         label: 'Servers',
         selected: path == AppRouter.servers,
         onTap: () => context.go(AppRouter.servers),
@@ -244,8 +248,8 @@ class FeishinShell extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Icon(
-                    Icons.add,
-                    size: 16,
+                    OmnisonicIcons.add,
+                    size: OmnisonicIconSizes.sm,
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -324,8 +328,10 @@ class FeishinShell extends StatelessWidget {
       );
       return Center(
         child: Icon(
-          isSyncing ? Icons.sync : Icons.health_and_safety_outlined,
-          size: 18,
+          isSyncing
+              ? OmnisonicIcons.sync
+              : OmnisonicIcons.healthAndSafetyOutline,
+          size: OmnisonicIconSizes.smd,
           color: scheme.onSurfaceVariant,
         ),
       );
@@ -488,7 +494,7 @@ class _NavItem extends StatelessWidget {
               children: [
                 Icon(
                   selected ? activeIcon : icon,
-                  size: 22,
+                  size: OmnisonicIconSizes.md,
                   color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: 4),

@@ -138,7 +138,7 @@ class QueuePage extends StatelessWidget {
                   : Container(
                       color: scheme.surfaceContainerHighest,
                       child: Icon(
-                        Icons.music_note,
+                        OmnisonicIcons.musicNote,
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
@@ -177,15 +177,17 @@ class QueuePage extends StatelessWidget {
           ),
           IconButton(
             onPressed: vm.hasPrevious ? () => vm.skipToPrevious() : null,
-            icon: const Icon(Icons.skip_previous),
+            icon: const Icon(OmnisonicIcons.skipPrevious),
           ),
           IconButton(
             onPressed: () => vm.togglePlayPause(),
-            icon: Icon(vm.isPlaying ? Icons.pause : Icons.play_arrow),
+            icon: Icon(
+              vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
+            ),
           ),
           IconButton(
             onPressed: vm.hasNext ? () => vm.skipToNext() : null,
-            icon: const Icon(Icons.skip_next),
+            icon: const Icon(OmnisonicIcons.skipNext),
           ),
         ],
       ),
@@ -216,7 +218,11 @@ class QueuePage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       child: Row(
         children: [
-          Icon(Icons.info_outline, size: 14, color: scheme.onSurfaceVariant),
+          Icon(
+            OmnisonicIcons.infoOutline,
+            size: OmnisonicIconSizes.inline,
+            color: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -293,9 +299,9 @@ class _QueueRow extends StatelessWidget {
                       : Container(
                           color: scheme.surfaceContainerHighest,
                           child: Icon(
-                            Icons.music_note,
+                            OmnisonicIcons.musicNote,
                             color: scheme.onSurfaceVariant,
-                            size: 18,
+                            size: OmnisonicIconSizes.smd,
                           ),
                         ),
                 ),
@@ -322,11 +328,11 @@ class _QueueRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.close, size: 18),
+                icon: const Icon(OmnisonicIcons.close, size: 18),
                 tooltip: 'Remove from queue',
                 onPressed: onRemove,
               ),
-              Icon(Icons.drag_handle, color: scheme.onSurfaceVariant),
+              Icon(OmnisonicIcons.dragHandle, color: scheme.onSurfaceVariant),
             ],
           ),
         ),

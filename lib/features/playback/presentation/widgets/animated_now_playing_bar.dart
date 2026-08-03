@@ -292,8 +292,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             final isStarred = track.isStarred;
                             return _iconBtn(
                               isStarred
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
+                                  ? OmnisonicIcons.favorite
+                                  : OmnisonicIcons.favoriteOutline,
                               20,
                               isStarred
                                   ? OmnisonicColors.favoriteIndicator
@@ -308,7 +308,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         const SizedBox(width: 8),
                       ],
                       _iconBtn(
-                        Icons.skip_previous,
+                        OmnisonicIcons.skipPrevious,
                         22,
                         vm.hasPrevious
                             ? scheme.onSurface
@@ -337,7 +337,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       ],
                       const SizedBox(width: 8),
                       _iconBtn(
-                        Icons.skip_next,
+                        OmnisonicIcons.skipNext,
                         22,
                         vm.hasNext
                             ? scheme.onSurface
@@ -581,7 +581,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               mainAxisSize: MainAxisSize.min,
               children: [
                 _iconBtn(
-                  Icons.shuffle,
+                  OmnisonicIcons.shuffle,
                   18,
                   vm.shuffleEnabled
                       ? scheme.onSurface
@@ -591,7 +591,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 ),
                 const SizedBox(width: 6),
                 _iconBtn(
-                  Icons.skip_previous,
+                  OmnisonicIcons.skipPrevious,
                   24,
                   vm.hasPrevious
                       ? scheme.onSurface
@@ -604,7 +604,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 _playPauseBtn(vm, scheme),
                 const SizedBox(width: 6),
                 _iconBtn(
-                  Icons.skip_next,
+                  OmnisonicIcons.skipNext,
                   24,
                   vm.hasNext
                       ? scheme.onSurface
@@ -746,7 +746,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             final isStarred = track?.isStarred ?? false;
 
             return _iconBtn(
-              isStarred ? Icons.favorite : Icons.favorite_border,
+              isStarred
+                  ? OmnisonicIcons.favorite
+                  : OmnisonicIcons.favoriteOutline,
               17,
               isStarred
                   ? OmnisonicColors.favoriteIndicator
@@ -809,8 +811,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 borderRadius: BorderRadius.circular(9),
               ),
               child: Icon(
-                Icons.open_in_full,
-                size: 14,
+                OmnisonicIcons.openInFull,
+                size: OmnisonicIconSizes.inline,
                 color: scheme.onSurface,
               ),
             ),
@@ -886,10 +888,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       ),
       child: IconButton(
         icon: Icon(
-          vm.isPlaying ? Icons.pause : Icons.play_arrow,
+          vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
           color: scheme.surface,
         ),
-        iconSize: 24,
+        iconSize: OmnisonicIconSizes.md,
         padding: EdgeInsets.zero,
         tooltip: vm.isPlaying ? 'Pause' : 'Play',
         onPressed: () => vm.togglePlayPause(),
@@ -898,7 +900,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 
   IconData _repeatIcon(playback.RepeatMode mode) {
-    return mode == playback.RepeatMode.one ? Icons.repeat_one : Icons.repeat;
+    return mode == playback.RepeatMode.one
+        ? OmnisonicIcons.repeatOne
+        : OmnisonicIcons.repeat;
   }
 
   String _repeatLabel(playback.RepeatMode mode) {
@@ -913,9 +917,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 
   IconData _volumeIcon(double volume) {
-    if (volume <= 0) return Icons.volume_off;
-    if (volume < 0.5) return Icons.volume_down;
-    return Icons.volume_up;
+    if (volume <= 0) return OmnisonicIcons.volumeOff;
+    if (volume < 0.5) return OmnisonicIcons.volumeDown;
+    return OmnisonicIcons.volumeUp;
   }
 
   /// Mutes to zero, remembering the previous level so the icon can restore it.
@@ -932,9 +936,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Icon(
-        Icons.music_note,
+        OmnisonicIcons.musicNote,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
-        size: 24,
+        size: OmnisonicIconSizes.md,
       ),
     );
   }

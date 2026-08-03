@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/design_system/design_system.dart';
 import '../models/sort_option.dart';
 
 /// Bottom sheet widget for selecting sort options
@@ -43,7 +45,10 @@ class SortOptionsSheet extends StatelessWidget {
           ? Text(subtitle, style: const TextStyle(fontSize: 12))
           : null,
       trailing: isSelected
-          ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+          ? Icon(
+              OmnisonicIcons.check,
+              color: Theme.of(context).colorScheme.primary,
+            )
           : null,
       onTap: () {
         Navigator.pop(context);
@@ -55,9 +60,9 @@ class SortOptionsSheet extends StatelessWidget {
   IconData _getIconForOption(SortOption option) {
     switch (option) {
       case SortOption.alphabetical:
-        return Icons.sort_by_alpha;
+        return OmnisonicIcons.sortByAlpha;
       case SortOption.recentlyAdded:
-        return Icons.access_time;
+        return OmnisonicIcons.accessTime;
     }
   }
 }

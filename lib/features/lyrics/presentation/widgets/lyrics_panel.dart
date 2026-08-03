@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/design_system/spacing.dart';
+import '../../../../core/design_system/design_system.dart';
+
 import '../../../../core/entities/entities.dart';
 import '../../utils/lrc_parser.dart';
 import '../viewmodels/lyrics_view_model.dart';
@@ -101,13 +102,13 @@ class _LyricsControls extends StatelessWidget {
               builder: (_) => LyricsSearchSheet(track: track),
             );
           },
-          icon: const Icon(Icons.search),
+          icon: const Icon(OmnisonicIcons.search),
           label: const Text('Search'),
         ),
         if (viewModel.override != null)
           OutlinedButton.icon(
             onPressed: viewModel.clearOverride,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(OmnisonicIcons.refresh),
             label: const Text('Auto'),
           ),
         if (hasSynced)
@@ -130,13 +131,13 @@ class _LyricsControls extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove),
+                  icon: const Icon(OmnisonicIcons.remove),
                   onPressed: () => viewModel.adjustOffset(-250),
                   tooltip: 'Offset -250ms',
                 ),
                 Text('${viewModel.offsetMs} ms'),
                 IconButton(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(OmnisonicIcons.add),
                   onPressed: () => viewModel.adjustOffset(250),
                   tooltip: 'Offset +250ms',
                 ),

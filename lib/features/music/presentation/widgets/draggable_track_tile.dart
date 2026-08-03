@@ -61,7 +61,7 @@ class DraggableTrackTile extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.drag_handle, color: scheme.onSurfaceVariant),
+          Icon(OmnisonicIcons.dragHandle, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
           _buildAlbumArt(scheme),
         ],
@@ -110,22 +110,26 @@ class DraggableTrackTile extends StatelessWidget {
                 placeholder: (context, url) => Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.music_note,
+                    OmnisonicIcons.musicNote,
                     color: scheme.onSurfaceVariant,
-                    size: 16,
+                    size: OmnisonicIconSizes.sm,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.music_note,
+                    OmnisonicIcons.musicNote,
                     color: scheme.onSurfaceVariant,
-                    size: 16,
+                    size: OmnisonicIconSizes.sm,
                   ),
                 ),
               ),
             )
-          : Icon(Icons.music_note, color: scheme.onSurfaceVariant, size: 16),
+          : Icon(
+              OmnisonicIcons.musicNote,
+              color: scheme.onSurfaceVariant,
+              size: 16,
+            ),
     );
   }
 
@@ -144,7 +148,7 @@ class DraggableTrackTile extends StatelessWidget {
             const PopupMenuItem(
               value: 'play',
               child: ListTile(
-                leading: Icon(Icons.play_arrow),
+                leading: Icon(OmnisonicIcons.playArrow),
                 title: Text('Play'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -152,7 +156,7 @@ class DraggableTrackTile extends StatelessWidget {
             const PopupMenuItem(
               value: 'add_to_queue',
               child: ListTile(
-                leading: Icon(Icons.queue_music),
+                leading: Icon(OmnisonicIcons.queueMusic),
                 title: Text('Add to Queue'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -160,7 +164,7 @@ class DraggableTrackTile extends StatelessWidget {
             const PopupMenuItem(
               value: 'add_to_playlist',
               child: ListTile(
-                leading: Icon(Icons.playlist_add),
+                leading: Icon(OmnisonicIcons.playlistAdd),
                 title: Text('Add to Playlist'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -169,7 +173,7 @@ class DraggableTrackTile extends StatelessWidget {
             PopupMenuItem(
               value: 'remove',
               child: ListTile(
-                leading: Icon(Icons.remove, color: scheme.error),
+                leading: Icon(OmnisonicIcons.remove, color: scheme.error),
                 title: Text(
                   'Remove from Playlist',
                   style: TextStyle(color: scheme.error),
@@ -178,7 +182,7 @@ class DraggableTrackTile extends StatelessWidget {
               ),
             ),
           ],
-          child: const Icon(Icons.more_vert),
+          child: const Icon(OmnisonicIcons.moreVert),
         ),
       ],
     );

@@ -96,7 +96,7 @@ class ServerListTile extends StatelessWidget {
                 const PopupMenuItem(
                   value: 'test',
                   child: ListTile(
-                    leading: Icon(Icons.wifi_protected_setup),
+                    leading: Icon(OmnisonicIcons.wifiProtectedSetup),
                     title: Text('Test Connection'),
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -104,7 +104,7 @@ class ServerListTile extends StatelessWidget {
                 const PopupMenuItem(
                   value: 'edit',
                   child: ListTile(
-                    leading: Icon(Icons.edit),
+                    leading: Icon(OmnisonicIcons.edit),
                     title: Text('Edit'),
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -113,7 +113,10 @@ class ServerListTile extends StatelessWidget {
                 const PopupMenuItem(
                   value: 'delete',
                   child: ListTile(
-                    leading: Icon(Icons.delete, color: OmnisonicColors.error),
+                    leading: Icon(
+                      OmnisonicIcons.delete,
+                      color: OmnisonicColors.error,
+                    ),
                     title: Text(
                       'Delete',
                       style: TextStyle(color: OmnisonicColors.error),
@@ -138,19 +141,19 @@ class ServerListTile extends StatelessWidget {
         children: [
           _buildStat(
             context,
-            Icons.album_outlined,
+            OmnisonicIcons.albumOutline,
             albumCount != null ? '$albumCount albums' : '— albums',
           ),
           const SizedBox(width: 16),
           _buildStat(
             context,
-            Icons.speed_outlined,
+            OmnisonicIcons.speedOutline,
             latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
           ),
           const SizedBox(width: 16),
           _buildStat(
             context,
-            Icons.sync_outlined,
+            OmnisonicIcons.syncOutline,
             server.lastSync != null
                 ? _formatDateTime(server.lastSync!)
                 : 'never synced',
@@ -165,7 +168,11 @@ class ServerListTile extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: scheme.onSurfaceVariant),
+        Icon(
+          icon,
+          size: OmnisonicIconSizes.inline,
+          color: scheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 4),
         Text(
           label,
@@ -185,7 +192,11 @@ class ServerListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         color: _getStatusColor(server.status).withValues(alpha: 0.1),
       ),
-      child: Icon(Icons.dns, color: _getStatusColor(server.status), size: 24),
+      child: Icon(
+        OmnisonicIcons.dns,
+        color: _getStatusColor(server.status),
+        size: 24,
+      ),
     );
   }
 
@@ -203,7 +214,7 @@ class ServerListTile extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: color),
+          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
           const SizedBox(width: 4),
           Text(
             text,
@@ -238,17 +249,17 @@ class ServerListTile extends StatelessWidget {
   IconData _getStatusIcon(ServerStatus status) {
     switch (status) {
       case ServerStatus.online:
-        return Icons.check_circle;
+        return OmnisonicIcons.checkCircle;
       case ServerStatus.offline:
-        return Icons.error;
+        return OmnisonicIcons.error;
       case ServerStatus.connecting:
-        return Icons.sync;
+        return OmnisonicIcons.sync;
       case ServerStatus.authenticating:
-        return Icons.lock;
+        return OmnisonicIcons.lock;
       case ServerStatus.syncing:
-        return Icons.sync_alt;
+        return OmnisonicIcons.syncAlt;
       case ServerStatus.error:
-        return Icons.warning;
+        return OmnisonicIcons.warning;
     }
   }
 

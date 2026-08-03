@@ -72,8 +72,8 @@ class DesktopTopBar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.person_outline,
-                  size: 18,
+                  OmnisonicIcons.personOutline,
+                  size: OmnisonicIconSizes.smd,
                   color: scheme.surface,
                 ),
               ),
@@ -109,7 +109,11 @@ class _SearchField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
         child: Row(
           children: [
-            Icon(Icons.search, size: 16, color: scheme.onSurfaceVariant),
+            Icon(
+              OmnisonicIcons.search,
+              size: OmnisonicIconSizes.sm,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

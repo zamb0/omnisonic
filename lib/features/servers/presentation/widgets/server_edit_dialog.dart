@@ -108,7 +108,11 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info, color: OmnisonicColors.info, size: 20),
+                      Icon(
+                        OmnisonicIcons.info,
+                        color: OmnisonicColors.info,
+                        size: 20,
+                      ),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(

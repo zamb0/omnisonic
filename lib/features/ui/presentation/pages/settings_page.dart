@@ -56,9 +56,9 @@ class SettingsPage extends StatelessWidget {
   Widget _buildThemeModeCard(BuildContext context) {
     final current = context.watch<ThemeModeController>().themeMode;
     const options = {
-      ThemeMode.system: (Icons.brightness_auto, 'System'),
-      ThemeMode.light: (Icons.light_mode, 'Light'),
-      ThemeMode.dark: (Icons.dark_mode, 'Dark'),
+      ThemeMode.system: (OmnisonicIcons.brightnessAuto, 'System'),
+      ThemeMode.light: (OmnisonicIcons.lightMode, 'Light'),
+      ThemeMode.dark: (OmnisonicIcons.darkMode, 'Dark'),
     };
 
     return GlassSurface(
@@ -95,7 +95,7 @@ class SettingsPage extends StatelessWidget {
           Consumer<PlaybackViewModel>(
             builder: (context, vm, child) {
               return ListTile(
-                leading: const Icon(Icons.graphic_eq),
+                leading: const Icon(OmnisonicIcons.graphicEq),
                 title: const Text('Streaming quality'),
                 subtitle: const Text(
                   'Automatic — adapts to your network connection',
@@ -124,7 +124,7 @@ class SettingsPage extends StatelessWidget {
             animation: DownloadPreferencesService.instance,
             builder: (context, child) {
               return SwitchListTile(
-                secondary: const Icon(Icons.wifi),
+                secondary: const Icon(OmnisonicIcons.wifi),
                 title: const Text('Wi-Fi only downloads'),
                 subtitle: const Text('Only download new content on Wi-Fi'),
                 value: DownloadPreferencesService.instance.wifiOnlyEnabled,
@@ -135,10 +135,10 @@ class SettingsPage extends StatelessWidget {
           ),
           const Divider(height: 1),
           ListTile(
-            leading: const Icon(Icons.download_outlined),
+            leading: const Icon(OmnisonicIcons.downloadOutline),
             title: const Text('Downloads'),
             subtitle: const Text('Manage offline content'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(OmnisonicIcons.chevronRight),
             onTap: () => context.push(AppRouter.downloads),
           ),
         ],
@@ -154,14 +154,14 @@ class SettingsPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
           padding: EdgeInsets.zero,
           child: ListTile(
-            leading: const Icon(Icons.dns_outlined),
+            leading: const Icon(OmnisonicIcons.dnsOutline),
             title: const Text('Servers'),
             subtitle: Text(
               count == 0
                   ? 'No servers connected'
                   : '$count server${count == 1 ? '' : 's'} connected',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(OmnisonicIcons.chevronRight),
             onTap: () => context.push(AppRouter.servers),
           ),
         );

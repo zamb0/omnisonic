@@ -55,7 +55,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                   const OfflineIndicator(showWhenOnline: true),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(OmnisonicIcons.refresh),
                     onPressed: viewModel.isLoading
                         ? null
                         : () => viewModel.refreshOfflineCollection(),
@@ -67,7 +67,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                       const PopupMenuItem(
                         value: 'stats',
                         child: ListTile(
-                          leading: Icon(Icons.analytics),
+                          leading: Icon(OmnisonicIcons.analytics),
                           title: Text('Statistics'),
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -75,7 +75,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                       const PopupMenuItem(
                         value: 'settings',
                         child: ListTile(
-                          leading: Icon(Icons.settings),
+                          leading: Icon(OmnisonicIcons.settings),
                           title: Text('Settings'),
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -90,10 +90,10 @@ class _OfflineModePageState extends State<OfflineModePage>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Tracks', icon: Icon(Icons.music_note)),
-            Tab(text: 'Albums', icon: Icon(Icons.album)),
-            Tab(text: 'Artists', icon: Icon(Icons.person)),
-            Tab(text: 'Playlists', icon: Icon(Icons.playlist_play)),
+            Tab(text: 'Tracks', icon: Icon(OmnisonicIcons.musicNote)),
+            Tab(text: 'Albums', icon: Icon(OmnisonicIcons.album)),
+            Tab(text: 'Artists', icon: Icon(OmnisonicIcons.person)),
+            Tab(text: 'Playlists', icon: Icon(OmnisonicIcons.playlistPlay)),
           ],
         ),
       ),
@@ -109,8 +109,8 @@ class _OfflineModePageState extends State<OfflineModePage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
-                    size: 64,
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
                     color: OmnisonicColors.error.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
@@ -145,8 +145,8 @@ class _OfflineModePageState extends State<OfflineModePage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.cloud_off,
-                    size: 64,
+                    OmnisonicIcons.cloudOff,
+                    size: OmnisonicIconSizes.xxxl,
                     color: OmnisonicColors.neutralGray500.withValues(
                       alpha: 0.6,
                     ),

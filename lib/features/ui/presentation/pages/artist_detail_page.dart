@@ -78,7 +78,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         SliverAppBar(
           pinned: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(OmnisonicIcons.arrowBack),
             onPressed: () {
               if (context.canPop()) {
                 context.pop();
@@ -96,13 +96,13 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             if (_albums.isNotEmpty)
               IconButton(
                 tooltip: 'Play All',
-                icon: const Icon(Icons.play_arrow),
+                icon: const Icon(OmnisonicIcons.playArrow),
                 onPressed: _playArtist,
               ),
             if (_albums.isNotEmpty)
               IconButton(
                 tooltip: 'Shuffle',
-                icon: const Icon(Icons.shuffle),
+                icon: const Icon(OmnisonicIcons.shuffle),
                 onPressed: _shuffleArtist,
               ),
           ],
@@ -125,7 +125,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                 if (_albums.isNotEmpty)
                   IconButton(
                     onPressed: _loadAlbums,
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(OmnisonicIcons.refresh),
                     tooltip: 'Refresh',
                   ),
               ],
@@ -159,8 +159,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.error_outline,
-                  size: 48,
+                  OmnisonicIcons.errorOutline,
+                  size: OmnisonicIconSizes.xxl,
                   color: Theme.of(context).colorScheme.error,
                 ),
                 const SizedBox(height: 16),
@@ -194,8 +194,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.album_outlined,
-                  size: 48,
+                  OmnisonicIcons.albumOutline,
+                  size: OmnisonicIconSizes.xxl,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: OmnisonicSpacing.md),
@@ -287,12 +287,20 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           children: [
             _buildMetadataChip(
               context,
-              Icons.album,
+              OmnisonicIcons.album,
               '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
             ),
-            _buildMetadataChip(context, Icons.dns, _getServerName(context)),
+            _buildMetadataChip(
+              context,
+              OmnisonicIcons.dns,
+              _getServerName(context),
+            ),
             if (widget.artist.musicBrainzId != null)
-              _buildMetadataChip(context, Icons.fingerprint, 'MusicBrainz'),
+              _buildMetadataChip(
+                context,
+                OmnisonicIcons.fingerprint,
+                'MusicBrainz',
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -317,7 +325,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             children: [
               ElevatedButton.icon(
                 onPressed: _playArtist,
-                icon: const Icon(Icons.play_arrow),
+                icon: const Icon(OmnisonicIcons.playArrow),
                 label: const Text('Play All'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -329,7 +337,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
               const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: _shuffleArtist,
-                icon: const Icon(Icons.shuffle),
+                icon: const Icon(OmnisonicIcons.shuffle),
                 label: const Text('Shuffle'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -429,7 +437,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                   placeholder: (context, url) => Container(
                     color: scheme.surfaceContainerHighest,
                     child: Icon(
-                      Icons.person,
+                      OmnisonicIcons.person,
                       size: size * 0.45,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -437,7 +445,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                   errorWidget: (context, url, error) => Container(
                     color: scheme.surfaceContainerHighest,
                     child: Icon(
-                      Icons.person,
+                      OmnisonicIcons.person,
                       size: size * 0.45,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -446,7 +454,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
               : Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.person,
+                    OmnisonicIcons.person,
                     size: size * 0.45,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -468,7 +476,11 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: OmnisonicIconSizes.sm,
+            color: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Text(
             label,

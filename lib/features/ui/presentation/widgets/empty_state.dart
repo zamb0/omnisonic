@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/design_system/design_system.dart';
+
 /// A widget for displaying empty states with consistent styling
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -27,7 +29,11 @@ class EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: scheme.onSurfaceVariant),
+            Icon(
+              icon,
+              size: OmnisonicIconSizes.xxl,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 12),
             Text(
               title,

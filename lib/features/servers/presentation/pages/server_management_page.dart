@@ -50,12 +50,12 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         title: const Text('Server Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(OmnisonicIcons.add),
             onPressed: () => _showAddServerDialog(context),
             tooltip: 'Add Server',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(OmnisonicIcons.refresh),
             onPressed: () => _refreshServers(context),
             tooltip: 'Refresh',
           ),
@@ -72,7 +72,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 value: 'sync',
                 child: Row(
                   children: [
-                    Icon(Icons.sync),
+                    Icon(OmnisonicIcons.sync),
                     SizedBox(width: 8),
                     Text('Sync All Servers'),
                   ],
@@ -84,8 +84,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Servers', icon: Icon(Icons.dns)),
-            Tab(text: 'Status', icon: Icon(Icons.monitor_heart)),
+            Tab(text: 'Servers', icon: Icon(OmnisonicIcons.dns)),
+            Tab(text: 'Status', icon: Icon(OmnisonicIcons.monitorHeart)),
           ],
         ),
       ),
@@ -100,7 +100,11 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: scheme.error),
+                  Icon(
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
+                    color: scheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -134,13 +138,13 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
     if (servers.isEmpty) {
       return EmptyState(
-        icon: Icons.dns,
+        icon: OmnisonicIcons.dns,
         title: 'No Servers Connected',
         subtitle:
             'Add your first Subsonic server to get started with music streaming',
         action: ElevatedButton.icon(
           onPressed: () => _showAddServerDialog(context),
-          icon: const Icon(Icons.add),
+          icon: const Icon(OmnisonicIcons.add),
           label: const Text('Add Server'),
         ),
       );
@@ -204,7 +208,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Total Servers',
                     count: stats['total']!,
-                    icon: Icons.dns,
+                    icon: OmnisonicIcons.dns,
                     color: OmnisonicColors.info,
                   ),
                 ),
@@ -213,7 +217,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Online',
                     count: stats['online']!,
-                    icon: Icons.check_circle,
+                    icon: OmnisonicIcons.checkCircle,
                     color: OmnisonicColors.success,
                   ),
                 ),
@@ -226,7 +230,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Offline',
                     count: stats['offline']!,
-                    icon: Icons.error,
+                    icon: OmnisonicIcons.error,
                     color: OmnisonicColors.error,
                   ),
                 ),
@@ -235,7 +239,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Connecting',
                     count: stats['connecting']!,
-                    icon: Icons.sync,
+                    icon: OmnisonicIcons.sync,
                     color: OmnisonicColors.warning,
                   ),
                 ),
@@ -246,7 +250,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             const SizedBox(height: 16),
             if (viewModel.servers.isEmpty)
               const EmptyState(
-                icon: Icons.dns,
+                icon: OmnisonicIcons.dns,
                 title: 'No Servers',
                 subtitle: 'Add servers to see detailed status information',
               )
@@ -266,7 +270,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(Icons.dns, color: scheme.onSurfaceVariant),
+          Icon(OmnisonicIcons.dns, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(
             '${viewModel.serverCount} server${viewModel.serverCount != 1 ? 's' : ''}',
@@ -313,7 +317,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           const Spacer(),
           ElevatedButton.icon(
             onPressed: () => _showAddServerDialog(context),
-            icon: const Icon(Icons.add, size: 16),
+            icon: const Icon(OmnisonicIcons.add, size: 16),
             label: const Text('Add'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -382,27 +386,27 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
     switch (status) {
       case ServerStatus.online:
-        icon = Icons.check_circle;
+        icon = OmnisonicIcons.checkCircle;
         text = 'Online';
         break;
       case ServerStatus.offline:
-        icon = Icons.error;
+        icon = OmnisonicIcons.error;
         text = 'Offline';
         break;
       case ServerStatus.connecting:
-        icon = Icons.sync;
+        icon = OmnisonicIcons.sync;
         text = 'Connecting';
         break;
       case ServerStatus.authenticating:
-        icon = Icons.lock;
+        icon = OmnisonicIcons.lock;
         text = 'Authenticating';
         break;
       case ServerStatus.syncing:
-        icon = Icons.sync_alt;
+        icon = OmnisonicIcons.syncAlt;
         text = 'Syncing';
         break;
       case ServerStatus.error:
-        icon = Icons.warning;
+        icon = OmnisonicIcons.warning;
         text = 'Error';
         break;
     }
@@ -416,7 +420,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
           const SizedBox(width: 4),
           Text(
             text,

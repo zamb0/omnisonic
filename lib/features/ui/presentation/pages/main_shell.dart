@@ -196,7 +196,7 @@ class _NavPillItem extends StatelessWidget {
               Icon(
                 selected ? destination.activeIcon : destination.icon,
                 color: color,
-                size: 24,
+                size: OmnisonicIconSizes.md,
               ),
               const SizedBox(height: 2),
               Text(

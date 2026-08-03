@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/design_system/spacing.dart';
+import '../../../../core/design_system/design_system.dart';
+
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/lyrics_view_model.dart';
 
@@ -92,7 +93,7 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.search),
+                            : const Icon(OmnisonicIcons.search),
                         label: const Text('Search'),
                       ),
                     ),
@@ -155,8 +156,8 @@ class _SearchResultsList extends StatelessWidget {
             title: Text(result.title),
             subtitle: Text(result.artist),
             trailing: result.isSynced
-                ? const Icon(Icons.sync)
-                : const Icon(Icons.text_snippet_outlined),
+                ? const Icon(OmnisonicIcons.sync)
+                : const Icon(OmnisonicIcons.textSnippetOutline),
             onTap: () async {
               await viewModel.applySearchResult(result);
               if (context.mounted) Navigator.pop(context);

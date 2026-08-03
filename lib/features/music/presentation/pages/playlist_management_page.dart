@@ -32,7 +32,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
         title: const Text('Playlist Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(OmnisonicIcons.add),
             onPressed: () => _showCreatePlaylistDialog(context),
             tooltip: 'Create Playlist',
           ),
@@ -50,8 +50,8 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
-                    size: 64,
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
                     color: Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(height: 16),
@@ -93,10 +93,10 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
           TextField(
             decoration: InputDecoration(
               hintText: 'Search playlists...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(OmnisonicIcons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(OmnisonicIcons.clear),
                       onPressed: () {
                         setState(() {
                           _searchQuery = '';
@@ -166,8 +166,8 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.playlist_play,
-              size: 64,
+              OmnisonicIcons.playlistPlay,
+              size: OmnisonicIconSizes.xxxl,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
@@ -188,7 +188,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => _showCreatePlaylistDialog(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(OmnisonicIcons.add),
                 label: const Text('Create Playlist'),
               ),
             ],

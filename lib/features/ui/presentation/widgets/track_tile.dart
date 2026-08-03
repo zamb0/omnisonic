@@ -127,9 +127,9 @@ class TrackTile extends StatelessWidget {
           if (onMorePressed != null) ...[
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.more_vert),
+              icon: const Icon(OmnisonicIcons.moreVert),
               onPressed: onMorePressed,
-              iconSize: 20,
+              iconSize: OmnisonicIconSizes.smd,
             ),
           ],
         ],
@@ -161,15 +161,21 @@ class TrackTile extends StatelessWidget {
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
                   color: scheme.surfaceContainerHighest,
-                  child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
+                  child: Icon(
+                    OmnisonicIcons.musicNote,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: scheme.surfaceContainerHighest,
-                  child: Icon(Icons.music_note, color: scheme.onSurfaceVariant),
+                  child: Icon(
+                    OmnisonicIcons.musicNote,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             )
-          : Icon(Icons.music_note, color: scheme.onSurfaceVariant),
+          : Icon(OmnisonicIcons.musicNote, color: scheme.onSurfaceVariant),
     );
   }
 

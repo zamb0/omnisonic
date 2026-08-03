@@ -1,285 +1,198 @@
 import 'package:flutter/material.dart';
 
-/// Icon system for Omnisonic UI Enhancement
-/// Provides consistent icon usage across the application
+/// Every icon the app draws, named once.
+///
+/// Call sites used to reach for `Icons.*` directly — 386 of them across 31
+/// files, mixing the filled, outlined, sharp and rounded families for the
+/// same concept, so a refresh glyph had square corners in one screen and
+/// round ones in the next.
+///
+/// The rounded family is the app's: it pairs with `OmnisonicRadius.full`
+/// and `.pill`, which the glass chrome is built from. Where a concept has an
+/// inactive state as well, the `*Outline` member is that state — Material
+/// has no rounded outline variants, so those stay in the outlined family,
+/// which is the same pairing Material's own navigation components use.
 class OmnisonicIcons {
-  // Music playback icons
-  static const IconData play = Icons.play_arrow_rounded;
+  const OmnisonicIcons._();
+
+  // --------------------------------------------------------------------
+  // Playback transport
+  //
+  // Rounded throughout: these sit next to the pill-shaped
+  // controls and full-radius buttons the redesign is built on.
+  // --------------------------------------------------------------------
+
+  static const IconData playArrow = Icons.play_arrow_rounded;
   static const IconData pause = Icons.pause_rounded;
-  static const IconData stop = Icons.stop_rounded;
   static const IconData skipNext = Icons.skip_next_rounded;
   static const IconData skipPrevious = Icons.skip_previous_rounded;
-  static const IconData fastForward = Icons.fast_forward_rounded;
-  static const IconData fastRewind = Icons.fast_rewind_rounded;
-  static const IconData replay = Icons.replay_rounded;
   static const IconData shuffle = Icons.shuffle_rounded;
   static const IconData repeat = Icons.repeat_rounded;
   static const IconData repeatOne = Icons.repeat_one_rounded;
-
-  // Volume and audio icons
   static const IconData volumeUp = Icons.volume_up_rounded;
   static const IconData volumeDown = Icons.volume_down_rounded;
-  static const IconData volumeMute = Icons.volume_mute_rounded;
   static const IconData volumeOff = Icons.volume_off_rounded;
-  static const IconData equalizer = Icons.equalizer_rounded;
-  static const IconData audiotrack = Icons.audiotrack_rounded;
+  static const IconData graphicEq = Icons.graphic_eq_rounded;
+  static const IconData accessTime = Icons.access_time_rounded;
+  static const IconData speedOutline = Icons.speed_outlined;
+  static const IconData monitorHeart = Icons.monitor_heart_rounded;
 
-  // Navigation icons
-  static const IconData home = Icons.home_rounded;
-  static const IconData search = Icons.search_rounded;
-  static const IconData library = Icons.library_music_rounded;
-  static const IconData playlist = Icons.playlist_play_rounded;
+  // --------------------------------------------------------------------
+  // Library and content
+  // --------------------------------------------------------------------
+
+  static const IconData musicNote = Icons.music_note_rounded;
+  static const IconData musicNoteOutline = Icons.music_note_outlined;
   static const IconData album = Icons.album_rounded;
-  static const IconData artist = Icons.person_rounded;
-  static const IconData folder = Icons.folder_rounded;
-  static const IconData settings = Icons.settings_rounded;
-
-  // Action icons
+  static const IconData albumOutline = Icons.album_outlined;
+  static const IconData person = Icons.person_rounded;
+  static const IconData personOutline = Icons.person_outline;
+  static const IconData libraryMusic = Icons.library_music_rounded;
+  static const IconData libraryMusicOutline = Icons.library_music_outlined;
+  static const IconData queueMusic = Icons.queue_music_rounded;
+  static const IconData queueMusicOutline = Icons.queue_music_outlined;
+  static const IconData playlistPlay = Icons.playlist_play_rounded;
+  static const IconData playlistAdd = Icons.playlist_add_rounded;
+  static const IconData star = Icons.star_rounded;
+  static const IconData starOutline = Icons.star_outline;
   static const IconData favorite = Icons.favorite_rounded;
-  static const IconData favoriteOutline = Icons.favorite_outline_rounded;
+  static const IconData favoriteOutline = Icons.favorite_border;
+  static const IconData textSnippetOutline = Icons.text_snippet_outlined;
+  static const IconData calendarToday = Icons.calendar_today_rounded;
+
+  // --------------------------------------------------------------------
+  // Navigation and structure
+  //
+  // The `*Outline` members are the inactive halves of nav pairs; the solid
+  // member of each pair marks the current destination.
+  // --------------------------------------------------------------------
+
+  static const IconData home = Icons.home_rounded;
+  static const IconData homeOutline = Icons.home_outlined;
+  static const IconData search = Icons.search_rounded;
+  static const IconData searchOutline = Icons.search_outlined;
+  static const IconData searchOff = Icons.search_off_rounded;
+  static const IconData settings = Icons.settings_rounded;
+  static const IconData settingsOutline = Icons.settings_outlined;
+  static const IconData dns = Icons.dns_rounded;
+  static const IconData dnsOutline = Icons.dns_outlined;
+  static const IconData lan = Icons.lan_rounded;
+  static const IconData arrowBack = Icons.arrow_back_rounded;
+  static const IconData arrowForward = Icons.arrow_forward_rounded;
+  static const IconData chevronRight = Icons.chevron_right_rounded;
+  static const IconData keyboardArrowDown = Icons.keyboard_arrow_down_rounded;
+  static const IconData moreVert = Icons.more_vert_rounded;
+  static const IconData openInFull = Icons.open_in_full_rounded;
+  static const IconData exploreOff = Icons.explore_off_rounded;
+
+  // --------------------------------------------------------------------
+  // Actions
+  // --------------------------------------------------------------------
+
   static const IconData add = Icons.add_rounded;
   static const IconData remove = Icons.remove_rounded;
-  static const IconData delete = Icons.delete_rounded;
-  static const IconData edit = Icons.edit_rounded;
-  static const IconData share = Icons.share_rounded;
-  static const IconData download = Icons.download_rounded;
-  static const IconData upload = Icons.upload_rounded;
-
-  // UI control icons
-  static const IconData menu = Icons.menu_rounded;
   static const IconData close = Icons.close_rounded;
-  static const IconData back = Icons.arrow_back_rounded;
-  static const IconData forward = Icons.arrow_forward_rounded;
-  static const IconData expand = Icons.expand_more_rounded;
-  static const IconData collapse = Icons.expand_less_rounded;
-  static const IconData fullscreen = Icons.fullscreen_rounded;
-  static const IconData fullscreenExit = Icons.fullscreen_exit_rounded;
-
-  // Status icons
-  static const IconData online = Icons.cloud_done_rounded;
-  static const IconData offline = Icons.cloud_off_rounded;
+  static const IconData clear = Icons.clear_rounded;
+  static const IconData check = Icons.check_rounded;
+  static const IconData checkCircle = Icons.check_circle_rounded;
+  static const IconData edit = Icons.edit_rounded;
+  static const IconData delete = Icons.delete_rounded;
+  static const IconData copy = Icons.copy_rounded;
+  static const IconData download = Icons.download_rounded;
+  static const IconData downloadOutline = Icons.download_outlined;
+  static const IconData downloadDone = Icons.download_done_rounded;
+  static const IconData downloading = Icons.downloading_rounded;
+  static const IconData refresh = Icons.refresh_rounded;
   static const IconData sync = Icons.sync_rounded;
-  static const IconData syncProblem = Icons.sync_problem_rounded;
-  static const IconData error = Icons.error_rounded;
-  static const IconData warning = Icons.warning_rounded;
-  static const IconData info = Icons.info_rounded;
-  static const IconData success = Icons.check_circle_rounded;
-
-  // Theme and display icons
-  static const IconData lightMode = Icons.light_mode_rounded;
-  static const IconData darkMode = Icons.dark_mode_rounded;
-  static const IconData autoMode = Icons.brightness_auto_rounded;
+  static const IconData syncOutline = Icons.sync_outlined;
+  static const IconData syncAlt = Icons.sync_alt_rounded;
+  static const IconData reorder = Icons.reorder_rounded;
+  static const IconData dragHandle = Icons.drag_handle_rounded;
+  static const IconData filterList = Icons.filter_list_rounded;
+  static const IconData filterAltOff = Icons.filter_alt_off_rounded;
+  static const IconData sort = Icons.sort_rounded;
+  static const IconData sortByAlpha = Icons.sort_by_alpha_rounded;
   static const IconData visibility = Icons.visibility_rounded;
   static const IconData visibilityOff = Icons.visibility_off_rounded;
+  static const IconData lock = Icons.lock_rounded;
+  static const IconData fingerprint = Icons.fingerprint_rounded;
+  static const IconData public = Icons.public_rounded;
 
-  // Server and connection icons
-  static const IconData server = Icons.dns_rounded;
-  static const IconData wifi = Icons.wifi_rounded;
-  static const IconData wifiOff = Icons.wifi_off_rounded;
-  static const IconData signal = Icons.signal_cellular_4_bar_rounded;
-  static const IconData signalOff = Icons.signal_cellular_off_rounded;
+  // --------------------------------------------------------------------
+  // Status and feedback
+  // --------------------------------------------------------------------
 
-  // Queue and playlist icons
-  static const IconData queue = Icons.queue_music_rounded;
-  static const IconData queueAdd = Icons.queue_rounded;
-  static const IconData playlistAdd = Icons.playlist_add_rounded;
-  static const IconData playlistRemove = Icons.playlist_remove_rounded;
-  static const IconData reorder = Icons.reorder_rounded;
-
-  // Filter and sort icons
-  static const IconData filter = Icons.filter_list_rounded;
-  static const IconData sort = Icons.sort_rounded;
-  static const IconData sortAsc = Icons.sort_by_alpha_rounded;
-  static const IconData sortDesc = Icons.sort_rounded;
-  static const IconData clear = Icons.clear_rounded;
-
-  // View mode icons
-  static const IconData gridView = Icons.grid_view_rounded;
-  static const IconData listView = Icons.view_list_rounded;
-  static const IconData cardView = Icons.view_module_rounded;
-
-  // More icons
-  static const IconData more = Icons.more_vert_rounded;
-  static const IconData moreHoriz = Icons.more_horiz_rounded;
-  static const IconData options = Icons.tune_rounded;
-
-  // Gesture icons
-  static const IconData swipeUp = Icons.swipe_up_rounded;
-  static const IconData swipeDown = Icons.swipe_down_rounded;
-  static const IconData swipeLeft = Icons.swipe_left_rounded;
-  static const IconData swipeRight = Icons.swipe_right_rounded;
-  static const IconData tap = Icons.touch_app_rounded;
-
-  // Time and duration icons
-  static const IconData schedule = Icons.schedule_rounded;
-  static const IconData timer = Icons.timer_rounded;
+  static const IconData error = Icons.error_rounded;
+  static const IconData errorOutline = Icons.error_outline;
+  static const IconData warning = Icons.warning_rounded;
+  static const IconData warningAmber = Icons.warning_amber_rounded;
+  static const IconData info = Icons.info_rounded;
+  static const IconData infoOutline = Icons.info_outline;
   static const IconData history = Icons.history_rounded;
-  static const IconData recent = Icons.access_time_rounded;
+  static const IconData circleOutline = Icons.circle_outlined;
+  static const IconData offlinePin = Icons.offline_pin_rounded;
+  static const IconData cloudDone = Icons.cloud_done_rounded;
+  static const IconData cloudOff = Icons.cloud_off_rounded;
+  static const IconData healthAndSafetyOutline =
+      Icons.health_and_safety_outlined;
+  static const IconData analytics = Icons.analytics_rounded;
+  static const IconData lightbulbOutline = Icons.lightbulb_outline;
+  static const IconData darkMode = Icons.dark_mode_rounded;
+  static const IconData lightMode = Icons.light_mode_rounded;
+  static const IconData brightnessAuto = Icons.brightness_auto_rounded;
+
+  // --------------------------------------------------------------------
+  // Connectivity
+  // --------------------------------------------------------------------
+
+  static const IconData wifi = Icons.wifi_rounded;
+  static const IconData wifiProtectedSetup = Icons.wifi_protected_setup_rounded;
+  static const IconData networkCell = Icons.network_cell_rounded;
+  static const IconData networkWifi1Bar = Icons.network_wifi_1_bar_rounded;
+  static const IconData networkWifi2Bar = Icons.network_wifi_2_bar_rounded;
+  static const IconData signalCellular4Bar =
+      Icons.signal_cellular_4_bar_rounded;
+  static const IconData signalCellularOff = Icons.signal_cellular_off_rounded;
 }
 
-/// Icon sizes for consistent sizing across the app
+/// Icon sizes, as a ladder rather than as literals at the call site.
+///
+/// Feature code carried around sixty bare `size:` numbers — 10, 12, 14, 15,
+/// 16, 18, 20, 22, 24, 36, 72, 80 — which is not a scale, it is a scatter.
+/// The in-between rungs ([inline], [smd]) exist because real UI needed them,
+/// not for symmetry.
 class OmnisonicIconSizes {
+  const OmnisonicIconSizes._();
+
+  /// Status dots and source markers, where the glyph reads as a bullet.
+  static const double nano = 8.0;
+
+  /// Dense metadata: quality badges, server chips.
   static const double xs = 12.0;
+
+  /// Beside caption-sized text, where [sm] would out-weigh the words.
+  static const double inline = 14.0;
+
+  /// Inline with body text; the brand mark in the collapsed rail.
   static const double sm = 16.0;
+
+  /// Secondary controls that must not compete with the primary one beside
+  /// them; the icon inside a search field.
+  static const double smd = 20.0;
+
+  /// The default. App bars, list items, nav, card actions.
   static const double md = 24.0;
+
+  /// Emphasised affordances inside a panel.
   static const double lg = 32.0;
+
+  /// The player's primary transport control.
   static const double xl = 40.0;
+
+  /// Empty-state and placeholder glyphs.
   static const double xxl = 48.0;
-  static const double xxxl = 56.0;
 
-  // Semantic sizes
-  static const double tiny = xs;
-  static const double small = sm;
-  static const double medium = md;
-  static const double large = lg;
-  static const double extraLarge = xl;
-  static const double huge = xxl;
-  static const double massive = xxxl;
-
-  // Component-specific sizes
-  static const double appBar = md;
-  static const double button = sm;
-  static const double fab = lg;
-  static const double listItem = md;
-  static const double card = md;
-  static const double playButton = xl;
-  static const double nowPlaying = lg;
-  static const double navigation = md;
-  static const double status = sm;
-}
-
-/// Asset paths for custom icons and images
-class OmnisonicAssets {
-  // Base paths
-  static const String _iconsPath = 'assets/icons';
-  static const String _imagesPath = 'assets/images';
-  static const String _fontsPath = 'assets/fonts';
-
-  // Custom icons (if any)
-  static const String logoIcon = '$_iconsPath/omnisonic_logo.svg';
-  static const String logoIconPng = '$_iconsPath/omnisonic_logo.png';
-  static const String musicNote = '$_iconsPath/music_note.svg';
-  static const String waveform = '$_iconsPath/waveform.svg';
-
-  // Placeholder images
-  static const String albumPlaceholder = '$_imagesPath/album_placeholder.png';
-  static const String artistPlaceholder = '$_imagesPath/artist_placeholder.png';
-  static const String playlistPlaceholder =
-      '$_imagesPath/playlist_placeholder.png';
-
-  // Background images
-  static const String gradientBackground = '$_imagesPath/gradient_bg.png';
-  static const String musicBackground = '$_imagesPath/music_bg.png';
-
-  // Font files
-  static const String interRegular = '$_fontsPath/Inter-Regular.ttf';
-  static const String interMedium = '$_fontsPath/Inter-Medium.ttf';
-  static const String interSemiBold = '$_fontsPath/Inter-SemiBold.ttf';
-  static const String interBold = '$_fontsPath/Inter-Bold.ttf';
-
-  static const String poppinsRegular = '$_fontsPath/Poppins-Regular.ttf';
-  static const String poppinsMedium = '$_fontsPath/Poppins-Medium.ttf';
-  static const String poppinsSemiBold = '$_fontsPath/Poppins-SemiBold.ttf';
-  static const String poppinsBold = '$_fontsPath/Poppins-Bold.ttf';
-}
-
-/// Utility class for creating consistent icon widgets
-class OmnisonicIconWidget extends StatelessWidget {
-  final IconData icon;
-  final double? size;
-  final Color? color;
-  final String? semanticLabel;
-  final TextDirection? textDirection;
-
-  const OmnisonicIconWidget(
-    this.icon, {
-    super.key,
-    this.size,
-    this.color,
-    this.semanticLabel,
-    this.textDirection,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      icon,
-      size: size ?? OmnisonicIconSizes.medium,
-      color: color ?? Theme.of(context).iconTheme.color,
-      semanticLabel: semanticLabel,
-      textDirection: textDirection,
-    );
-  }
-
-  // Factory constructors for common icon types
-  factory OmnisonicIconWidget.play({
-    double? size,
-    Color? color,
-    String? semanticLabel,
-  }) {
-    return OmnisonicIconWidget(
-      OmnisonicIcons.play,
-      size: size ?? OmnisonicIconSizes.playButton,
-      color: color,
-      semanticLabel: semanticLabel ?? 'Play',
-    );
-  }
-
-  factory OmnisonicIconWidget.pause({
-    double? size,
-    Color? color,
-    String? semanticLabel,
-  }) {
-    return OmnisonicIconWidget(
-      OmnisonicIcons.pause,
-      size: size ?? OmnisonicIconSizes.playButton,
-      color: color,
-      semanticLabel: semanticLabel ?? 'Pause',
-    );
-  }
-
-  factory OmnisonicIconWidget.favorite({
-    bool filled = false,
-    double? size,
-    Color? color,
-    String? semanticLabel,
-  }) {
-    return OmnisonicIconWidget(
-      filled ? OmnisonicIcons.favorite : OmnisonicIcons.favoriteOutline,
-      size: size ?? OmnisonicIconSizes.medium,
-      color: color,
-      semanticLabel:
-          semanticLabel ??
-          (filled ? 'Remove from favorites' : 'Add to favorites'),
-    );
-  }
-
-  factory OmnisonicIconWidget.navigation({
-    required IconData icon,
-    double? size,
-    Color? color,
-    String? semanticLabel,
-  }) {
-    return OmnisonicIconWidget(
-      icon,
-      size: size ?? OmnisonicIconSizes.navigation,
-      color: color,
-      semanticLabel: semanticLabel,
-    );
-  }
-}
-
-/// Extension for easy icon access from context
-extension OmnisonicIconTheme on ThemeData {
-  IconThemeData get omnisonicIconTheme =>
-      iconTheme.copyWith(size: OmnisonicIconSizes.medium);
-
-  IconThemeData get playbackIconTheme =>
-      iconTheme.copyWith(size: OmnisonicIconSizes.playButton);
-
-  IconThemeData get navigationIconTheme =>
-      iconTheme.copyWith(size: OmnisonicIconSizes.navigation);
-
-  IconThemeData get statusIconTheme =>
-      iconTheme.copyWith(size: OmnisonicIconSizes.status);
+  /// The largest an icon gets: full-page empty states and cover-art
+  /// placeholders.
+  static const double xxxl = 64.0;
 }

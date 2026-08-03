@@ -82,7 +82,7 @@ class _FavoritesPageState extends State<FavoritesPage>
 
         if (starredAlbums.isEmpty) {
           return EmptyState(
-            icon: Icons.star_outline,
+            icon: OmnisonicIcons.starOutline,
             title: 'No Starred Albums',
             subtitle: 'Star your favorite albums to see them here',
           );
@@ -125,7 +125,7 @@ class _FavoritesPageState extends State<FavoritesPage>
 
         if (starredArtists.isEmpty) {
           return EmptyState(
-            icon: Icons.star_outline,
+            icon: OmnisonicIcons.starOutline,
             title: 'No Starred Artists',
             subtitle: 'Star your favorite artists to see them here',
           );
@@ -163,7 +163,7 @@ class _FavoritesPageState extends State<FavoritesPage>
 
         if (starredTracks.isEmpty) {
           return EmptyState(
-            icon: Icons.star_outline,
+            icon: OmnisonicIcons.starOutline,
             title: 'No Starred Tracks',
             subtitle: 'Star your favorite tracks to see them here',
           );

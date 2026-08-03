@@ -299,9 +299,9 @@ class _HomePageState extends State<HomePage> {
                         boxShadow: OmnisonicShadows.artCompact,
                       ),
                       child: Icon(
-                        Icons.play_arrow,
+                        OmnisonicIcons.playArrow,
                         color: scheme.surface,
-                        size: 24,
+                        size: OmnisonicIconSizes.md,
                       ),
                     ),
                   ],
@@ -478,14 +478,14 @@ class _HomePageState extends State<HomePage> {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: EmptyState(
-            icon: Icons.dns_outlined,
+            icon: OmnisonicIcons.dnsOutline,
             title: 'No music server yet',
             subtitle:
                 'Add a Subsonic-compatible server to start browsing and '
                 'playing your library.',
             action: FilledButton.icon(
               onPressed: () => context.push(AppRouter.servers),
-              icon: const Icon(Icons.add),
+              icon: const Icon(OmnisonicIcons.add),
               label: const Text('Add a server'),
             ),
           ),
@@ -680,9 +680,9 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: scheme.surfaceContainerHighest,
       child: Icon(
-        Icons.album,
+        OmnisonicIcons.album,
         color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
-        size: 48,
+        size: OmnisonicIconSizes.xxl,
       ),
     );
   }
@@ -732,12 +732,12 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _HoverButton(
-                          icon: Icons.shuffle,
+                          icon: OmnisonicIcons.shuffle,
                           onPressed: () => _shuffleAlbum(context),
                         ),
                         const SizedBox(width: 8),
                         _HoverButton(
-                          icon: Icons.play_arrow,
+                          icon: OmnisonicIcons.playArrow,
                           onPressed: () => _playAlbum(context),
                           isPrimary: true,
                         ),

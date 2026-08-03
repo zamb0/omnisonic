@@ -104,8 +104,8 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                            ? OmnisonicIcons.visibility
+                            : OmnisonicIcons.visibilityOff,
                       ),
                       onPressed: () {
                         setState(() {
@@ -148,7 +148,7 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.wifi_protected_setup),
+                            : const Icon(OmnisonicIcons.wifiProtectedSetup),
                         label: Text(
                           _isTesting ? 'Testing...' : 'Test Connection',
                         ),
@@ -175,11 +175,13 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                     child: Row(
                       children: [
                         Icon(
-                          _testPassed ? Icons.check_circle : Icons.error,
+                          _testPassed
+                              ? OmnisonicIcons.checkCircle
+                              : OmnisonicIcons.error,
                           color: _testPassed
                               ? OmnisonicColors.success
                               : OmnisonicColors.error,
-                          size: 20,
+                          size: OmnisonicIconSizes.smd,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -332,7 +334,11 @@ class _NavidromeTips extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.info, color: OmnisonicColors.info, size: 20),
+            const Icon(
+              OmnisonicIcons.info,
+              color: OmnisonicColors.info,
+              size: 20,
+            ),
             const SizedBox(width: OmnisonicSpacing.sm),
             Text(
               'Navidrome Setup Tips',

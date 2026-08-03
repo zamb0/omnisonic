@@ -42,7 +42,11 @@ class AccountButton extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: color, width: 1.5),
       ),
-      child: Icon(Icons.person_outline, size: 15, color: color),
+      child: Icon(
+        OmnisonicIcons.personOutline,
+        size: OmnisonicIconSizes.sm,
+        color: color,
+      ),
     );
 
     final label = Text(

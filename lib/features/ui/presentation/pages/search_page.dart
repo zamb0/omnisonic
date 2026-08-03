@@ -132,7 +132,7 @@ class _SearchPageState extends State<SearchPage> {
           ),
           decoration: InputDecoration(
             hintText: 'Search across all servers…',
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: const Icon(OmnisonicIcons.search),
             // Driven by the controller rather than by the page's build cycle:
             // typing does not call setState, so a plain read of `.text` here
             // would leave the clear button stale.
@@ -143,7 +143,7 @@ class _SearchPageState extends State<SearchPage> {
                   return const SizedBox.shrink();
                 }
                 return IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(OmnisonicIcons.clear),
                   tooltip: 'Clear search',
                   onPressed: () {
                     _searchController.clear();
@@ -348,12 +348,12 @@ class _SearchPageState extends State<SearchPage> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildQuickSearchChip('Rock', Icons.music_note),
-            _buildQuickSearchChip('Jazz', Icons.music_note),
-            _buildQuickSearchChip('Classical', Icons.music_note),
-            _buildQuickSearchChip('Electronic', Icons.music_note),
-            _buildQuickSearchChip('Pop', Icons.music_note),
-            _buildQuickSearchChip('Hip Hop', Icons.music_note),
+            _buildQuickSearchChip('Rock', OmnisonicIcons.musicNote),
+            _buildQuickSearchChip('Jazz', OmnisonicIcons.musicNote),
+            _buildQuickSearchChip('Classical', OmnisonicIcons.musicNote),
+            _buildQuickSearchChip('Electronic', OmnisonicIcons.musicNote),
+            _buildQuickSearchChip('Pop', OmnisonicIcons.musicNote),
+            _buildQuickSearchChip('Hip Hop', OmnisonicIcons.musicNote),
           ],
         ),
       ],
@@ -400,8 +400,8 @@ class _SearchPageState extends State<SearchPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.lightbulb_outline,
-            size: 16,
+            OmnisonicIcons.lightbulbOutline,
+            size: OmnisonicIconSizes.sm,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
@@ -430,7 +430,7 @@ class _SearchPageState extends State<SearchPage> {
 
     if (!hasResults) {
       return EmptyState(
-        icon: Icons.search_off,
+        icon: OmnisonicIcons.searchOff,
         title: 'No Results Found',
         subtitle: _selectedServerId != null
             ? 'No results on this server. Try "All servers" or different keywords.'
@@ -602,7 +602,7 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _buildErrorState(String message) {
     return EmptyState(
-      icon: Icons.error_outline,
+      icon: OmnisonicIcons.errorOutline,
       title: 'Search Error',
       subtitle: message,
       action: ElevatedButton(
@@ -646,7 +646,7 @@ class _SearchPageState extends State<SearchPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.play_arrow),
+              leading: const Icon(OmnisonicIcons.playArrow),
               title: const Text('Play Now'),
               onTap: () {
                 Navigator.pop(context);
@@ -654,7 +654,7 @@ class _SearchPageState extends State<SearchPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.queue_music),
+              leading: const Icon(OmnisonicIcons.queueMusic),
               title: const Text('Add to Queue'),
               onTap: () {
                 Navigator.pop(context);
@@ -665,7 +665,7 @@ class _SearchPageState extends State<SearchPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.playlist_add),
+              leading: const Icon(OmnisonicIcons.playlistAdd),
               title: const Text('Add to Playlist'),
               onTap: () {
                 Navigator.pop(context);
@@ -696,10 +696,10 @@ class _DownloadTrackTile extends StatelessWidget {
     return ListTile(
       leading: Icon(
         isDownloaded
-            ? Icons.download_done
+            ? OmnisonicIcons.downloadDone
             : isDownloading
-            ? Icons.downloading
-            : Icons.download_outlined,
+            ? OmnisonicIcons.downloading
+            : OmnisonicIcons.downloadOutline,
       ),
       title: Text(
         isDownloaded

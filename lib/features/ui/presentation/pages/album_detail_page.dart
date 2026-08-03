@@ -150,7 +150,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 if (_tracks.isNotEmpty)
                   IconButton(
                     onPressed: _loadTracks,
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(OmnisonicIcons.refresh),
                     tooltip: 'Refresh',
                   ),
               ],
@@ -210,7 +210,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return SliverAppBar(
       pinned: true,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(OmnisonicIcons.arrowBack),
         onPressed: () {
           if (context.canPop()) {
             context.pop();
@@ -224,19 +224,19 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Play',
-            icon: const Icon(Icons.play_arrow),
+            icon: const Icon(OmnisonicIcons.playArrow),
             onPressed: _playAlbum,
           ),
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Shuffle',
-            icon: const Icon(Icons.shuffle),
+            icon: const Icon(OmnisonicIcons.shuffle),
             onPressed: _shuffleAlbum,
           ),
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Download album',
-            icon: const Icon(Icons.download_outlined),
+            icon: const Icon(OmnisonicIcons.downloadOutline),
             onPressed: _downloadAlbum,
           ),
       ],
@@ -256,7 +256,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         if (_tracks.isNotEmpty)
           IconButton(
             onPressed: _loadTracks,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(OmnisonicIcons.refresh),
             tooltip: 'Refresh',
           ),
       ],
@@ -283,8 +283,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.error_outline,
-                  size: 48,
+                  OmnisonicIcons.errorOutline,
+                  size: OmnisonicIconSizes.xxl,
                   color: Theme.of(context).colorScheme.error,
                 ),
                 const SizedBox(height: 16),
@@ -318,8 +318,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.music_note_outlined,
-                  size: 48,
+                  OmnisonicIcons.musicNoteOutline,
+                  size: OmnisonicIconSizes.xxl,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: OmnisonicSpacing.md),
@@ -554,7 +554,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             SizedBox(
               width: 40,
               child: IconButton(
-                icon: const Icon(Icons.more_vert, size: 18),
+                icon: const Icon(OmnisonicIcons.moreVert, size: 18),
                 onPressed: () => _showTrackOptions(track),
               ),
             ),
@@ -631,8 +631,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             Row(
               children: [
                 Icon(
-                  Icons.warning_amber_rounded,
-                  size: 16,
+                  OmnisonicIcons.warningAmber,
+                  size: OmnisonicIconSizes.sm,
                   color: OmnisonicColors.warningAccessible,
                 ),
                 const SizedBox(width: 6),
@@ -804,25 +804,29 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             if (_album.year != null)
               _buildMetadataChip(
                 context,
-                Icons.calendar_today,
+                OmnisonicIcons.calendarToday,
                 '${_album.year}',
               ),
             if (_album.genre != null)
-              _buildMetadataChip(context, Icons.music_note, _album.genre!),
+              _buildMetadataChip(
+                context,
+                OmnisonicIcons.musicNote,
+                _album.genre!,
+              ),
             _buildMetadataChip(
               context,
-              Icons.queue_music,
+              OmnisonicIcons.queueMusic,
               '${_tracks.length} track${_tracks.length == 1 ? '' : 's'}',
             ),
             if (_tracks.isNotEmpty)
               _buildMetadataChip(
                 context,
-                Icons.access_time,
+                OmnisonicIcons.accessTime,
                 _formatTotalDuration(_tracks),
               ),
             _buildMetadataChip(
               context,
-              Icons.dns,
+              OmnisonicIcons.dns,
               _getServerNameForAlbum(context, _album),
             ),
           ],
@@ -833,7 +837,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             children: [
               ElevatedButton.icon(
                 onPressed: _playAlbum,
-                icon: const Icon(Icons.play_arrow),
+                icon: const Icon(OmnisonicIcons.playArrow),
                 label: const Text('Play'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -845,7 +849,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: _shuffleAlbum,
-                icon: const Icon(Icons.shuffle),
+                icon: const Icon(OmnisonicIcons.shuffle),
                 label: const Text('Shuffle'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -857,7 +861,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: _downloadAlbum,
-                icon: const Icon(Icons.download_outlined),
+                icon: const Icon(OmnisonicIcons.downloadOutline),
                 label: const Text('Download'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -907,7 +911,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   placeholder: (context, url) => Container(
                     color: scheme.surfaceContainerHighest,
                     child: Icon(
-                      Icons.album,
+                      OmnisonicIcons.album,
                       size: size * 0.5,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -916,7 +920,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                     Container(
                       color: scheme.surfaceContainerHighest,
                       child: Icon(
-                        Icons.album,
+                        OmnisonicIcons.album,
                         size: size * 0.5,
                         color: scheme.onSurfaceVariant,
                       ),
@@ -928,7 +932,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               : Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.album,
+                    OmnisonicIcons.album,
                     size: size * 0.5,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -1118,11 +1122,13 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               ),
             ),
             Icon(
-              selected ? Icons.check_circle : Icons.circle_outlined,
+              selected
+                  ? OmnisonicIcons.checkCircle
+                  : OmnisonicIcons.circleOutline,
               color: selected
                   ? scheme.primary
                   : scheme.onSurfaceVariant.withValues(alpha: 0.4),
-              size: 20,
+              size: OmnisonicIconSizes.smd,
             ),
           ],
         ),
@@ -1142,7 +1148,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: OmnisonicIconSizes.sm,
+            color: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1317,7 +1327,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.play_arrow),
+              leading: const Icon(OmnisonicIcons.playArrow),
               title: const Text('Play Now'),
               onTap: () {
                 context.pop();
@@ -1325,7 +1335,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.queue_music),
+              leading: const Icon(OmnisonicIcons.queueMusic),
               title: const Text('Add to Queue'),
               onTap: () {
                 context.pop();
@@ -1336,7 +1346,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.playlist_add),
+              leading: const Icon(OmnisonicIcons.playlistAdd),
               title: const Text('Add to Playlist'),
               onTap: () {
                 context.pop();
@@ -1344,7 +1354,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.info),
+              leading: const Icon(OmnisonicIcons.info),
               title: const Text('Track Info'),
               onTap: () {
                 context.pop();

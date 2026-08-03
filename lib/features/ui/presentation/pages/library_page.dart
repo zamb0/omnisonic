@@ -126,12 +126,12 @@ class _LibraryPageState extends State<LibraryPage> {
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync),
+            icon: const Icon(OmnisonicIcons.sync),
             onPressed: _syncLibrary,
             tooltip: 'Sync Library',
           ),
           IconButton(
-            icon: const Icon(Icons.sort),
+            icon: const Icon(OmnisonicIcons.sort),
             onPressed: _showSortOptions,
             tooltip: 'Sort Options',
           ),
@@ -202,7 +202,7 @@ class _LibraryPageState extends State<LibraryPage> {
             !viewModel.showStarredOnly &&
             viewModel.selectedGenre == null) {
           return EmptyState(
-            icon: Icons.album,
+            icon: OmnisonicIcons.album,
             title: 'No Albums',
             subtitle:
                 'Connect to servers and sync your library to see albums here',
@@ -230,7 +230,7 @@ class _LibraryPageState extends State<LibraryPage> {
               Expanded(
                 child: displayedAlbums.isEmpty
                     ? EmptyState(
-                        icon: Icons.filter_alt_off,
+                        icon: OmnisonicIcons.filterAltOff,
                         title: 'No Results',
                         subtitle: _searchQuery.isNotEmpty
                             ? 'No albums match "$_searchQuery"'
@@ -300,7 +300,11 @@ class _LibraryPageState extends State<LibraryPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Icon(Icons.search, size: 20, color: scheme.onSurfaceVariant),
+            Icon(
+              OmnisonicIcons.search,
+              size: OmnisonicIconSizes.smd,
+              color: scheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -321,7 +325,7 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
             if (_searchQuery.isNotEmpty)
               IconButton(
-                icon: const Icon(Icons.close, size: 18),
+                icon: const Icon(OmnisonicIcons.close, size: 18),
                 tooltip: 'Clear search',
                 onPressed: () {
                   _searchController.clear();
@@ -369,7 +373,7 @@ class _LibraryPageState extends State<LibraryPage> {
         final artists = viewModel.artists;
         if (artists.isEmpty) {
           return EmptyState(
-            icon: Icons.person,
+            icon: OmnisonicIcons.person,
             title: 'No Artists',
             subtitle:
                 'Connect to servers and sync your library to see artists here',
@@ -430,8 +434,8 @@ class _LibraryPageState extends State<LibraryPage> {
             Row(
               children: [
                 Icon(
-                  Icons.filter_list,
-                  size: 20,
+                  OmnisonicIcons.filterList,
+                  size: OmnisonicIconSizes.smd,
                   color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
                 const SizedBox(width: 8),
@@ -441,7 +445,7 @@ class _LibraryPageState extends State<LibraryPage> {
                     viewModel.selectedGenre != null)
                   TextButton.icon(
                     onPressed: () => viewModel.clearFilters(),
-                    icon: const Icon(Icons.clear, size: 16),
+                    icon: const Icon(OmnisonicIcons.clear, size: 16),
                     label: const Text('Clear'),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -462,7 +466,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   label: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star, size: 16),
+                      Icon(OmnisonicIcons.star, size: 16),
                       SizedBox(width: 4),
                       Text('Starred'),
                     ],
@@ -475,15 +479,15 @@ class _LibraryPageState extends State<LibraryPage> {
                   PopupMenuButton<String>(
                     child: Chip(
                       avatar: Icon(
-                        Icons.music_note,
-                        size: 16,
+                        OmnisonicIcons.musicNote,
+                        size: OmnisonicIconSizes.sm,
                         color: viewModel.selectedGenre != null
                             ? Theme.of(context).colorScheme.primary
                             : null,
                       ),
                       label: Text(viewModel.selectedGenre ?? 'All Genres'),
                       deleteIcon: viewModel.selectedGenre != null
-                          ? const Icon(Icons.close, size: 16)
+                          ? const Icon(OmnisonicIcons.close, size: 16)
                           : null,
                       onDeleted: viewModel.selectedGenre != null
                           ? () => viewModel.setGenreFilter(null)

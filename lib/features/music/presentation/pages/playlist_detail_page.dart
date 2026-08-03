@@ -47,8 +47,8 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
-                    size: 64,
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
                     color: Theme.of(context).colorScheme.error,
                   ),
                   const SizedBox(height: 16),
@@ -151,15 +151,17 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   ],
                 )
               : const Icon(
-                  Icons.playlist_play,
-                  size: 80,
+                  OmnisonicIcons.playlistPlay,
+                  size: OmnisonicIconSizes.xxxl,
                   color: Colors.white70,
                 ),
         ),
       ),
       actions: [
         IconButton(
-          icon: Icon(_isReorderMode ? Icons.check : Icons.reorder),
+          icon: Icon(
+            _isReorderMode ? OmnisonicIcons.check : OmnisonicIcons.reorder,
+          ),
           onPressed: () {
             setState(() {
               _isReorderMode = !_isReorderMode;
@@ -173,7 +175,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
             const PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit),
+                leading: Icon(OmnisonicIcons.edit),
                 title: Text('Edit Playlist'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -181,7 +183,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
             const PopupMenuItem(
               value: 'duplicate',
               child: ListTile(
-                leading: Icon(Icons.copy),
+                leading: Icon(OmnisonicIcons.copy),
                 title: Text('Duplicate'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -191,7 +193,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               value: 'delete',
               child: ListTile(
                 leading: Icon(
-                  Icons.delete,
+                  OmnisonicIcons.delete,
                   color: Theme.of(context).colorScheme.error,
                 ),
                 title: Text(
@@ -239,8 +241,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                       Row(
                         children: [
                           Icon(
-                            playlist.isPublic ? Icons.public : Icons.lock,
-                            size: 16,
+                            playlist.isPublic
+                                ? OmnisonicIcons.public
+                                : OmnisonicIcons.lock,
+                            size: OmnisonicIconSizes.sm,
                             color: Theme.of(
                               context,
                             ).colorScheme.onSurfaceVariant,
@@ -265,7 +269,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                       onPressed: playlist.trackCount > 0
                           ? () => _playPlaylist(playbackViewModel)
                           : null,
-                      icon: const Icon(Icons.play_arrow),
+                      icon: const Icon(OmnisonicIcons.playArrow),
                       label: const Text('Play'),
                     );
                   },
@@ -288,8 +292,8 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.music_note,
-                size: 64,
+                OmnisonicIcons.musicNote,
+                size: OmnisonicIconSizes.xxxl,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),

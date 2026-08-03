@@ -89,7 +89,7 @@ class OmnisonicTheme {
             OmnisonicTouchTargets.iconButton,
             OmnisonicTouchTargets.iconButton,
           ),
-          iconSize: OmnisonicIconSizes.medium,
+          iconSize: OmnisonicIconSizes.md,
         ),
       ),
 
@@ -99,7 +99,7 @@ class OmnisonicTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         ),
-        iconSize: OmnisonicIconSizes.large,
+        iconSize: OmnisonicIconSizes.lg,
       ),
 
       // List Tile Theme
@@ -216,11 +216,11 @@ class OmnisonicTheme {
       ),
       iconTheme: IconThemeData(
         color: OmnisonicColors.lightColorScheme.onSurface,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
       primaryIconTheme: IconThemeData(
         color: OmnisonicColors.lightColorScheme.onPrimary,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
 
       // Slider Theme
@@ -251,11 +251,11 @@ class OmnisonicTheme {
         unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.lightColorScheme.primary,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         unselectedIconTheme: IconThemeData(
           color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
@@ -273,7 +273,7 @@ class OmnisonicTheme {
         ),
         iconTheme: WidgetStateProperty.all(
           IconThemeData(
-            size: OmnisonicIconSizes.navigation,
+            size: OmnisonicIconSizes.md,
             color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
           ),
         ),
@@ -366,7 +366,7 @@ class OmnisonicTheme {
             OmnisonicTouchTargets.iconButton,
             OmnisonicTouchTargets.iconButton,
           ),
-          iconSize: OmnisonicIconSizes.medium,
+          iconSize: OmnisonicIconSizes.md,
         ),
       ),
 
@@ -376,7 +376,7 @@ class OmnisonicTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         ),
-        iconSize: OmnisonicIconSizes.large,
+        iconSize: OmnisonicIconSizes.lg,
       ),
 
       // List Tile Theme
@@ -493,11 +493,11 @@ class OmnisonicTheme {
       ),
       iconTheme: IconThemeData(
         color: OmnisonicColors.darkColorScheme.onSurface,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
       primaryIconTheme: IconThemeData(
         color: OmnisonicColors.darkColorScheme.onPrimary,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
 
       // Slider Theme
@@ -528,11 +528,11 @@ class OmnisonicTheme {
         unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.darkColorScheme.primary,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         unselectedIconTheme: IconThemeData(
           color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
@@ -550,7 +550,7 @@ class OmnisonicTheme {
         ),
         iconTheme: WidgetStateProperty.all(
           IconThemeData(
-            size: OmnisonicIconSizes.navigation,
+            size: OmnisonicIconSizes.md,
             color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
           ),
         ),

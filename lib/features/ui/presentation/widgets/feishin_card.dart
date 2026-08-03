@@ -103,10 +103,10 @@ class _FeishinCardState extends State<FeishinCard> {
                                           ),
                                           child: Icon(
                                             widget.isStarred
-                                                ? Icons.star
-                                                : Icons.star_outline,
+                                                ? OmnisonicIcons.star
+                                                : OmnisonicIcons.starOutline,
                                             color: scheme.onSurface,
-                                            size: 20,
+                                            size: OmnisonicIconSizes.smd,
                                           ),
                                         ),
                                       ),
@@ -123,9 +123,9 @@ class _FeishinCardState extends State<FeishinCard> {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          Icons.play_arrow,
+                                          OmnisonicIcons.playArrow,
                                           color: scheme.surface,
-                                          size: 24,
+                                          size: OmnisonicIconSizes.md,
                                         ),
                                       ),
                                     ),
@@ -192,7 +192,11 @@ class _FeishinCardState extends State<FeishinCard> {
   Widget _buildImage(BuildContext context, ColorScheme scheme) {
     final placeholder = Container(
       color: scheme.surfaceContainerHighest,
-      child: Icon(Icons.music_note, color: scheme.onSurfaceVariant, size: 32),
+      child: Icon(
+        OmnisonicIcons.musicNote,
+        color: scheme.onSurfaceVariant,
+        size: 32,
+      ),
     );
 
     if (widget.imageUrl == null) return placeholder;

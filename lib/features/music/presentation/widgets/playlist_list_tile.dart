@@ -61,8 +61,10 @@ class PlaylistListTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    playlist.isPublic ? Icons.public : Icons.lock,
-                    size: 12,
+                    playlist.isPublic
+                        ? OmnisonicIcons.public
+                        : OmnisonicIcons.lock,
+                    size: OmnisonicIconSizes.xs,
                     color: scheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
@@ -91,7 +93,7 @@ class PlaylistListTile extends StatelessWidget {
               const PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
-                  leading: Icon(Icons.edit),
+                  leading: Icon(OmnisonicIcons.edit),
                   title: Text('Edit'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -99,7 +101,7 @@ class PlaylistListTile extends StatelessWidget {
               const PopupMenuItem(
                 value: 'duplicate',
                 child: ListTile(
-                  leading: Icon(Icons.copy),
+                  leading: Icon(OmnisonicIcons.copy),
                   title: Text('Duplicate'),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -108,7 +110,7 @@ class PlaylistListTile extends StatelessWidget {
               PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: scheme.error),
+                  leading: Icon(OmnisonicIcons.delete, color: scheme.error),
                   title: Text('Delete', style: TextStyle(color: scheme.error)),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -148,22 +150,26 @@ class PlaylistListTile extends StatelessWidget {
                 placeholder: (context, url) => Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.playlist_play,
+                    OmnisonicIcons.playlistPlay,
                     color: scheme.onSurfaceVariant,
-                    size: 24,
+                    size: OmnisonicIconSizes.md,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.playlist_play,
+                    OmnisonicIcons.playlistPlay,
                     color: scheme.onSurfaceVariant,
-                    size: 24,
+                    size: OmnisonicIconSizes.md,
                   ),
                 ),
               ),
             )
-          : Icon(Icons.playlist_play, color: scheme.onSurfaceVariant, size: 24),
+          : Icon(
+              OmnisonicIcons.playlistPlay,
+              color: scheme.onSurfaceVariant,
+              size: 24,
+            ),
     );
   }
 

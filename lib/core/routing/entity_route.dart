@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../design_system/design_system.dart';
 import '../../features/music/presentation/viewmodels/music_library_view_model.dart';
 import '../../features/ui/presentation/widgets/widgets.dart';
 import 'app_router.dart';
@@ -66,7 +67,7 @@ class EntityRoute<T> extends StatelessWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(leading: const _BackToLibraryButton()),
       body: EmptyState(
-        icon: Icons.search_off,
+        icon: OmnisonicIcons.searchOff,
         title: missingTitle,
         subtitle: missingSubtitle,
         action: FilledButton(
@@ -90,7 +91,7 @@ class NotFoundPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(leading: const _BackToLibraryButton()),
       body: EmptyState(
-        icon: Icons.explore_off,
+        icon: OmnisonicIcons.exploreOff,
         title: 'Page not found',
         subtitle: 'Nothing lives at $location.',
         action: FilledButton(
@@ -108,7 +109,7 @@ class _BackToLibraryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.arrow_back),
+      icon: const Icon(OmnisonicIcons.arrowBack),
       tooltip: 'Back',
       onPressed: () =>
           context.canPop() ? context.pop() : context.go(AppRouter.library),

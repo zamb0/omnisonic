@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design_system/design_system.dart';
 import 'app_router.dart';
 
 /// Where a destination lives in the navigation hierarchy.
@@ -51,30 +52,30 @@ class AppDestinations {
   static const List<AppDestination> primary = [
     AppDestination(
       route: AppRouter.home,
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
+      icon: OmnisonicIcons.homeOutline,
+      activeIcon: OmnisonicIcons.home,
       label: 'Home',
       scope: DestinationScope.primary,
     ),
     AppDestination(
       route: AppRouter.search,
-      icon: Icons.search_outlined,
-      activeIcon: Icons.search,
+      icon: OmnisonicIcons.searchOutline,
+      activeIcon: OmnisonicIcons.search,
       label: 'Search',
       scope: DestinationScope.primary,
     ),
     AppDestination(
       route: AppRouter.library,
-      icon: Icons.library_music_outlined,
-      activeIcon: Icons.library_music,
+      icon: OmnisonicIcons.libraryMusicOutline,
+      activeIcon: OmnisonicIcons.libraryMusic,
       label: 'Library',
       scope: DestinationScope.primary,
       alsoSelectedBy: [AppRouter.albumDetail, AppRouter.artistDetail],
     ),
     AppDestination(
       route: AppRouter.playlistManagement,
-      icon: Icons.queue_music_outlined,
-      activeIcon: Icons.queue_music,
+      icon: OmnisonicIcons.queueMusicOutline,
+      activeIcon: OmnisonicIcons.queueMusic,
       label: 'Playlists',
       scope: DestinationScope.primary,
       alsoSelectedBy: [AppRouter.playlistDetail],
@@ -85,29 +86,29 @@ class AppDestinations {
   static const List<AppDestination> secondary = [
     AppDestination(
       route: AppRouter.favorites,
-      icon: Icons.star_outline,
-      activeIcon: Icons.star,
+      icon: OmnisonicIcons.starOutline,
+      activeIcon: OmnisonicIcons.star,
       label: 'Starred',
       scope: DestinationScope.secondary,
     ),
     AppDestination(
       route: AppRouter.downloads,
-      icon: Icons.download_outlined,
-      activeIcon: Icons.download,
+      icon: OmnisonicIcons.downloadOutline,
+      activeIcon: OmnisonicIcons.download,
       label: 'Downloads',
       scope: DestinationScope.secondary,
     ),
     AppDestination(
       route: AppRouter.servers,
-      icon: Icons.dns_outlined,
-      activeIcon: Icons.dns,
+      icon: OmnisonicIcons.dnsOutline,
+      activeIcon: OmnisonicIcons.dns,
       label: 'Servers',
       scope: DestinationScope.secondary,
     ),
     AppDestination(
       route: AppRouter.settings,
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
+      icon: OmnisonicIcons.settingsOutline,
+      activeIcon: OmnisonicIcons.settings,
       label: 'Settings',
       scope: DestinationScope.secondary,
     ),

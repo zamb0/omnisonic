@@ -12,9 +12,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
-import '../widgets/empty_state.dart';
-import '../widgets/library_stats_rail.dart';
-import '../widgets/server_dot.dart';
+import '../widgets/widgets.dart';
 import 'main_shell.dart';
 
 /// Home page displaying Feishin-style featured content and genres
@@ -81,6 +79,7 @@ class _HomePageState extends State<HomePage> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           _buildAppBar(),
+          _buildErrorBanner(),
           _buildOnboardingSection(),
           _buildContinueListeningSection(),
           _buildRandomTracksSection(),
@@ -192,6 +191,77 @@ class _HomePageState extends State<HomePage> {
   /// "Pick up where you left" card: the single most recently played track,
   /// presented as a glass panel over its own art. Purely a shortcut into
   /// existing playback — there's no persisted resume position to restore.
+  /// What a section shows when it has nothing in it.
+  ///
+  /// A skeleton while the library is still arriving, and nothing at all
+  /// afterwards: an empty "Recently Played" row on a fresh install is noise,
+  /// not information. The sections used to return [SizedBox.shrink] in both
+  /// cases, so a first sync looked like an app with no content rather than
+  /// one that was still working.
+  Widget _sectionPlaceholder(MusicLibraryViewModel viewModel, String title) {
+    if (!viewModel.isLoading && !viewModel.isSyncing) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(title),
+          const LoadingStateView(kind: SkeletonKind.carousel),
+        ],
+      ),
+    );
+  }
+
+  /// Surfaced above the feed rather than replacing it: a failed refresh
+  /// should not hide the content that did load.
+  Widget _buildErrorBanner() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        final message = viewModel.errorMessage;
+        if (message == null) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+
+        final scheme = Theme.of(context).colorScheme;
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: OmnisonicSpacing.md),
+            child: GlassPanel(
+              padding: const EdgeInsets.all(OmnisonicSpacing.md),
+              child: Row(
+                children: [
+                  Icon(
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.smd,
+                    color: scheme.error,
+                  ),
+                  const SizedBox(width: OmnisonicSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      message,
+                      style: OmnisonicTypography.bodySmall.copyWith(
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      viewModel.clearError();
+                      _onRefresh();
+                    },
+                    child: const Text('Try again'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildContinueListeningSection() {
     return Consumer<MusicLibraryViewModel>(
       builder: (context, viewModel, child) {
@@ -320,7 +390,7 @@ class _HomePageState extends State<HomePage> {
     return Consumer<MusicLibraryViewModel>(
       builder: (context, viewModel, child) {
         if (viewModel.tracks.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
+          return _sectionPlaceholder(viewModel, 'Random Tracks');
         }
         final randomTracks = _randomTracksFrom(viewModel.tracks);
 
@@ -499,7 +569,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context, viewModel, child) {
         final albums = viewModel.recentlyAddedAlbums;
         if (albums.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
+          return _sectionPlaceholder(viewModel, 'Recently Added');
         }
 
         return _buildAlbumSection(
@@ -516,7 +586,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context, viewModel, child) {
         final albums = viewModel.recentlyPlayedAlbums;
         if (albums.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
+          return _sectionPlaceholder(viewModel, 'Recently Played');
         }
 
         return _buildAlbumSection(
@@ -533,7 +603,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context, viewModel, child) {
         final albums = viewModel.mostPlayedAlbums;
         if (albums.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
+          return _sectionPlaceholder(viewModel, 'Most Played');
         }
 
         return _buildAlbumSection(title: 'Most Played', albums: albums);
@@ -636,7 +706,9 @@ class _HomePageState extends State<HomePage> {
                         left: 6,
                         bottom: 6,
                         child: GlassSurface(
-                          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+                          borderRadius: BorderRadius.circular(
+                            OmnisonicRadius.sm,
+                          ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 4,

@@ -10,7 +10,7 @@ import '../viewmodels/playlist_view_model.dart';
 import '../widgets/playlist_creation_dialog.dart';
 import '../widgets/playlist_edit_dialog.dart';
 import '../widgets/playlist_list_tile.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Page for managing playlists - creation, editing, deletion, and organization
 class PlaylistManagementPage extends StatefulWidget {
@@ -41,7 +41,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
       body: Consumer<PlaylistViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(kind: SkeletonKind.list);
           }
 
           if (viewModel.errorMessage != null) {

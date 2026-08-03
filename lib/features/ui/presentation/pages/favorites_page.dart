@@ -64,9 +64,13 @@ class _FavoritesPageState extends State<FavoritesPage>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildAlbumsTab(), _buildArtistsTab(), _buildTracksTab()],
+      body: RefreshIndicator(
+        onRefresh: () =>
+            context.read<MusicLibraryViewModel>().refreshSmartCollections(),
+        child: TabBarView(
+          controller: _tabController,
+          children: [_buildAlbumsTab(), _buildArtistsTab(), _buildTracksTab()],
+        ),
       ),
     );
   }
@@ -76,39 +80,39 @@ class _FavoritesPageState extends State<FavoritesPage>
       builder: (context, viewModel, child) {
         final starredAlbums = viewModel.starredAlbums;
 
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (starredAlbums.isEmpty) {
-          return EmptyState(
+        return AsyncStateSwitcher(
+          isLoading: viewModel.isLoading,
+          error: viewModel.errorMessage,
+          onRetry: () => _retry(viewModel),
+          isEmpty: starredAlbums.isEmpty,
+          skeleton: SkeletonKind.grid,
+          empty: const EmptyState(
             icon: OmnisonicIcons.starOutline,
             title: 'No Starred Albums',
             subtitle: 'Star your favorite albums to see them here',
-          );
-        }
-
-        return ResponsiveGridView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.lg,
-            vertical: OmnisonicSpacing.md,
           ),
-          minItemWidth: 160,
-          spacing: 20,
-          childAspectRatio: 0.72,
-          itemCount: starredAlbums.length,
-          itemBuilder: (context, index) {
-            final album = starredAlbums[index];
-            final isStarred = viewModel.isAlbumStarred(album);
-            return AlbumCard(
-              album: album,
-              onTap: () => _onAlbumTapped(album),
-              onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
-              isStarred: isStarred,
-              showArtist: true,
-              showMeta: true,
-            );
-          },
+          builder: (context) => ResponsiveGridView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.lg,
+              vertical: OmnisonicSpacing.md,
+            ),
+            minItemWidth: 160,
+            spacing: 20,
+            childAspectRatio: 0.72,
+            itemCount: starredAlbums.length,
+            itemBuilder: (context, index) {
+              final album = starredAlbums[index];
+              final isStarred = viewModel.isAlbumStarred(album);
+              return AlbumCard(
+                album: album,
+                onTap: () => _onAlbumTapped(album),
+                onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
+                isStarred: isStarred,
+                showArtist: true,
+                showMeta: true,
+              );
+            },
+          ),
         );
       },
     );
@@ -119,34 +123,34 @@ class _FavoritesPageState extends State<FavoritesPage>
       builder: (context, viewModel, child) {
         final starredArtists = viewModel.starredArtists;
 
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (starredArtists.isEmpty) {
-          return EmptyState(
+        return AsyncStateSwitcher(
+          isLoading: viewModel.isLoading,
+          error: viewModel.errorMessage,
+          onRetry: () => _retry(viewModel),
+          isEmpty: starredArtists.isEmpty,
+          skeleton: SkeletonKind.grid,
+          empty: const EmptyState(
             icon: OmnisonicIcons.starOutline,
             title: 'No Starred Artists',
             subtitle: 'Star your favorite artists to see them here',
-          );
-        }
-
-        return ResponsiveGridView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.lg,
-            vertical: OmnisonicSpacing.md,
           ),
-          minItemWidth: 150,
-          spacing: 20,
-          childAspectRatio: 0.72,
-          itemCount: starredArtists.length,
-          itemBuilder: (context, index) {
-            final artist = starredArtists[index];
-            return ArtistCard(
-              artist: artist,
-              onTap: () => _onArtistTapped(artist),
-            );
-          },
+          builder: (context) => ResponsiveGridView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.lg,
+              vertical: OmnisonicSpacing.md,
+            ),
+            minItemWidth: 150,
+            spacing: 20,
+            childAspectRatio: 0.72,
+            itemCount: starredArtists.length,
+            itemBuilder: (context, index) {
+              final artist = starredArtists[index];
+              return ArtistCard(
+                artist: artist,
+                onTap: () => _onArtistTapped(artist),
+              );
+            },
+          ),
         );
       },
     );
@@ -157,34 +161,38 @@ class _FavoritesPageState extends State<FavoritesPage>
       builder: (context, viewModel, child) {
         final starredTracks = viewModel.starredTracks;
 
-        if (viewModel.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (starredTracks.isEmpty) {
-          return EmptyState(
+        return AsyncStateSwitcher(
+          isLoading: viewModel.isLoading,
+          error: viewModel.errorMessage,
+          onRetry: () => _retry(viewModel),
+          isEmpty: starredTracks.isEmpty,
+          empty: const EmptyState(
             icon: OmnisonicIcons.starOutline,
             title: 'No Starred Tracks',
             subtitle: 'Star your favorite tracks to see them here',
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.lg,
-            vertical: OmnisonicSpacing.md,
           ),
-          itemCount: starredTracks.length,
-          itemBuilder: (context, index) {
-            final track = starredTracks[index];
-            return TrackTile(
-              track: track,
-              onTap: () => _onTrackTapped(track, starredTracks),
-            );
-          },
+          builder: (context) => ListView.builder(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.lg,
+              vertical: OmnisonicSpacing.md,
+            ),
+            itemCount: starredTracks.length,
+            itemBuilder: (context, index) {
+              final track = starredTracks[index];
+              return TrackTile(
+                track: track,
+                onTap: () => _onTrackTapped(track, starredTracks),
+              );
+            },
+          ),
         );
       },
     );
+  }
+
+  void _retry(MusicLibraryViewModel viewModel) {
+    viewModel.clearError();
+    viewModel.refreshSmartCollections();
   }
 
   void _onAlbumTapped(Album album) {

@@ -197,6 +197,13 @@ class _LibraryPageState extends State<LibraryPage> {
           return _buildLoadingGrid(minItemWidth: _albumGridMinItemWidth);
         }
 
+        // A sync failure used to surface only as a SnackBar, which is gone
+        // three seconds later and leaves an empty grid behind it.
+        final error = viewModel.errorMessage;
+        if (error != null) {
+          return ErrorStateView(message: error, onRetry: _syncLibrary);
+        }
+
         final albums = viewModel.filteredAlbums;
         if (albums.isEmpty &&
             !viewModel.showStarredOnly &&
@@ -370,6 +377,11 @@ class _LibraryPageState extends State<LibraryPage> {
           return _buildLoadingGrid();
         }
 
+        final error = viewModel.errorMessage;
+        if (error != null) {
+          return ErrorStateView(message: error, onRetry: _syncLibrary);
+        }
+
         final artists = viewModel.artists;
         if (artists.isEmpty) {
           return EmptyState(
@@ -418,7 +430,7 @@ class _LibraryPageState extends State<LibraryPage> {
       spacing: 20,
       childAspectRatio: 0.72,
       itemCount: 8,
-      itemBuilder: (context, index) => const ShimmerCard(),
+      itemBuilder: (context, index) => SkeletonCard(width: minItemWidth),
     );
   }
 
@@ -545,22 +557,21 @@ class _LibraryPageState extends State<LibraryPage> {
 
   Future<void> _syncLibrary() async {
     final messenger = ScaffoldMessenger.of(context);
+    final viewModel = context.read<MusicLibraryViewModel>();
+
+    viewModel.clearError();
     messenger.showSnackBar(const SnackBar(content: Text('Syncing library...')));
 
-    final success = await context
-        .read<MusicLibraryViewModel>()
-        .syncCollection();
+    final success = await viewModel.syncCollection();
     if (!mounted) return;
 
     messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Library synced' : 'Sync failed'),
-        action: success
-            ? null
-            : SnackBarAction(label: 'Retry', onPressed: _syncLibrary),
-      ),
-    );
+    // Only the success case is a SnackBar now. A failure renders inline
+    // through ErrorStateView, which stays on screen and keeps its Retry
+    // rather than disappearing after three seconds.
+    if (success) {
+      messenger.showSnackBar(const SnackBar(content: Text('Library synced')));
+    }
   }
 
   void _showSortOptions() {

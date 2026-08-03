@@ -59,7 +59,7 @@ class EntityRoute<T> extends StatelessWidget {
     if (library.collection == null || library.isLoading) {
       return const Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(child: CircularProgressIndicator()),
+        body: LoadingStateView(kind: SkeletonKind.detailHeader),
       );
     }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:omnisonic/core/entities/entities.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
 import 'package:omnisonic/core/routing/entity_route.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/widgets.dart';
 import 'package:omnisonic/features/music/presentation/viewmodels/music_library_view_model.dart';
 import 'package:provider/provider.dart';
 
@@ -129,7 +130,7 @@ void main() {
       settle: false,
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(LoadingStateView), findsOneWidget);
     expect(find.text('Album not found'), findsNothing);
 
     library.emitCollection(albums: testAlbums(3));

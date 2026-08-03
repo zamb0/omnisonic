@@ -9,10 +9,7 @@ import '../../../../core/services/download_preferences_service.dart';
 import '../../domain/services/offline_content_filter.dart';
 import '../viewmodels/offline_mode_view_model.dart';
 import '../widgets/offline_indicator.dart';
-import '../../../ui/presentation/widgets/track_tile.dart';
-import '../../../ui/presentation/widgets/album_card.dart';
-import '../../../ui/presentation/widgets/artist_card.dart';
-import '../../../ui/presentation/widgets/playlist_card.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 
 /// Page for managing offline mode and viewing offline content
@@ -100,75 +97,22 @@ class _OfflineModePageState extends State<OfflineModePage>
       body: Consumer<OfflineModeViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingStateView(kind: SkeletonKind.list);
           }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    OmnisonicIcons.errorOutline,
-                    size: OmnisonicIconSizes.xxxl,
-                    color: OmnisonicColors.error.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      viewModel.errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: OmnisonicColors.neutralGray600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => viewModel.refreshOfflineCollection(),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+          final error = viewModel.errorMessage;
+          if (error != null) {
+            return ErrorStateView(
+              message: error,
+              onRetry: viewModel.refreshOfflineCollection,
             );
           }
 
           if (!viewModel.hasOfflineContent) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    OmnisonicIcons.cloudOff,
-                    size: OmnisonicIconSizes.xxxl,
-                    color: OmnisonicColors.neutralGray500.withValues(
-                      alpha: 0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Offline Content',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      'Download music for offline listening to see it here.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: OmnisonicColors.neutralGray600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            return const EmptyState(
+              icon: OmnisonicIcons.cloudOff,
+              title: 'No Offline Content',
+              subtitle: 'Download music for offline listening to see it here.',
             );
           }
 
@@ -391,7 +335,11 @@ class _OfflineModePageState extends State<OfflineModePage>
     final tracks = viewModel.offlineTracks;
 
     if (tracks.isEmpty) {
-      return const Center(child: Text('No offline tracks available'));
+      return const EmptyState(
+        icon: OmnisonicIcons.musicNoteOutline,
+        title: 'No offline tracks',
+        subtitle: 'Downloaded tracks appear here.',
+      );
     }
 
     return ListView.builder(
@@ -415,17 +363,18 @@ class _OfflineModePageState extends State<OfflineModePage>
     final albums = viewModel.offlineAlbums;
 
     if (albums.isEmpty) {
-      return const Center(child: Text('No offline albums available'));
+      return const EmptyState(
+        icon: OmnisonicIcons.albumOutline,
+        title: 'No offline albums',
+        subtitle: 'Download an album to listen without a connection.',
+      );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
+    return ResponsiveGridView(
+      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      minItemWidth: 160,
+      spacing: OmnisonicSpacing.md,
+      childAspectRatio: 0.8,
       itemCount: albums.length,
       itemBuilder: (context, index) {
         final album = albums[index];
@@ -453,17 +402,18 @@ class _OfflineModePageState extends State<OfflineModePage>
     final artists = viewModel.offlineArtists;
 
     if (artists.isEmpty) {
-      return const Center(child: Text('No offline artists available'));
+      return const EmptyState(
+        icon: OmnisonicIcons.personOutline,
+        title: 'No offline artists',
+        subtitle: 'Artists appear here once their music is downloaded.',
+      );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
+    return ResponsiveGridView(
+      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      minItemWidth: 160,
+      spacing: OmnisonicSpacing.md,
+      childAspectRatio: 0.9,
       itemCount: artists.length,
       itemBuilder: (context, index) {
         final artist = artists[index];
@@ -491,17 +441,18 @@ class _OfflineModePageState extends State<OfflineModePage>
     final playlists = viewModel.offlinePlaylists;
 
     if (playlists.isEmpty) {
-      return const Center(child: Text('No offline playlists available'));
+      return const EmptyState(
+        icon: OmnisonicIcons.playlistPlay,
+        title: 'No offline playlists',
+        subtitle: 'Downloaded playlists appear here.',
+      );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
+    return ResponsiveGridView(
+      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      minItemWidth: 160,
+      spacing: OmnisonicSpacing.md,
+      childAspectRatio: 0.8,
       itemCount: playlists.length,
       itemBuilder: (context, index) {
         final playlist = playlists[index];

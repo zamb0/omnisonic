@@ -10,7 +10,7 @@ import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
-import '../../../ui/presentation/widgets/server_dot.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
@@ -86,7 +86,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         final progress = playbackViewModel.progress;
 
         if (currentTrack == null) {
-          return const Scaffold(body: Center(child: Text('No track playing')));
+          return const Scaffold(
+            body: EmptyState(
+              icon: OmnisonicIcons.musicNoteOutline,
+              title: 'Nothing playing',
+              subtitle: 'Pick a track and it will show up here.',
+            ),
+          );
         }
 
         _updateTint(currentTrack.coverArtUrl);

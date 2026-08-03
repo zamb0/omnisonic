@@ -9,7 +9,7 @@ import '../viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/draggable_track_tile.dart';
 import '../widgets/playlist_edit_dialog.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Detailed view of a playlist with track management and drag-and-drop reordering
 class PlaylistDetailPage extends StatefulWidget {
@@ -38,53 +38,49 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       body: Consumer<PlaylistViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(kind: SkeletonKind.detailHeader);
           }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    OmnisonicIcons.errorOutline,
-                    size: OmnisonicIconSizes.xxxl,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage!,
-                    style: OmnisonicTypography.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      viewModel.clearError();
-                      viewModel.selectPlaylist(widget.playlistId);
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+          final error = viewModel.errorMessage;
+          if (error != null) {
+            return ErrorStateView(
+              message: error,
+              onRetry: () => _reload(viewModel),
             );
           }
 
           final playlist = viewModel.selectedPlaylist;
           if (playlist == null) {
-            return const Center(child: Text('Playlist not found'));
+            return EmptyState(
+              icon: OmnisonicIcons.playlistPlay,
+              title: 'Playlist not found',
+              subtitle: 'It may have been deleted, or its server is offline.',
+              action: FilledButton.icon(
+                onPressed: () => _reload(viewModel),
+                icon: const Icon(OmnisonicIcons.refresh),
+                label: const Text('Try again'),
+              ),
+            );
           }
 
-          return CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(playlist, viewModel),
-              _buildPlaylistInfo(playlist),
-              _buildTrackList(playlist, viewModel),
-            ],
+          return RefreshIndicator(
+            onRefresh: () async => _reload(viewModel),
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(playlist, viewModel),
+                _buildPlaylistInfo(playlist),
+                _buildTrackList(playlist, viewModel),
+              ],
+            ),
           );
         },
       ),
     );
+  }
+
+  void _reload(PlaylistViewModel viewModel) {
+    viewModel.clearError();
+    viewModel.selectPlaylist(widget.playlistId);
   }
 
   Widget _buildSliverAppBar(Playlist playlist, PlaylistViewModel viewModel) {

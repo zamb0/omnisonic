@@ -118,13 +118,21 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
-          return _buildDesktopScaffold(context);
-        }
-        return _buildMobileScaffold(context);
-      },
+    // The page used to return a bare CustomScrollView. Without a Scaffold,
+    // the SnackBars raised from the track sheet had nothing to attach to and
+    // the AppBar had no scaffold geometry to work with.
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _loadTracks,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
+              return _buildDesktopScaffold(context);
+            }
+            return _buildMobileScaffold(context);
+          },
+        ),
+      ),
     );
   }
 
@@ -146,13 +154,6 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const Spacer(),
-                if (_tracks.isNotEmpty)
-                  IconButton(
-                    onPressed: _loadTracks,
-                    icon: const Icon(OmnisonicIcons.refresh),
-                    tooltip: 'Refresh',
-                  ),
               ],
             ),
           ),
@@ -253,83 +254,32 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const Spacer(),
-        if (_tracks.isNotEmpty)
-          IconButton(
-            onPressed: _loadTracks,
-            icon: const Icon(OmnisonicIcons.refresh),
-            tooltip: 'Refresh',
-          ),
       ],
     );
   }
 
   Widget _buildTracksContent() {
     if (_isLoading) {
-      return const SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
+      return LoadingStateView.sliver(kind: SkeletonKind.list, itemCount: 6);
     }
 
-    if (_errorMessage != null) {
-      return SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              children: [
-                Icon(
-                  OmnisonicIcons.errorOutline,
-                  size: OmnisonicIconSizes.xxl,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load tracks',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadTracks,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
+    final error = _errorMessage;
+    if (error != null) {
+      return ErrorStateView.sliver(
+        title: 'Failed to load tracks',
+        message: error,
+        onRetry: _loadTracks,
       );
     }
 
     if (_tracks.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(OmnisonicSpacing.xxl),
-            child: Column(
-              children: [
-                Icon(
-                  OmnisonicIcons.musicNoteOutline,
-                  size: OmnisonicIconSizes.xxl,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                Text(
-                  'No tracks found',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
+      return const SliverToBoxAdapter(
+        child: EmptyState(
+          icon: OmnisonicIcons.musicNoteOutline,
+          title: 'No tracks found',
+          subtitle:
+              'This album has no playable tracks on any connected '
+              'server.',
         ),
       );
     }
@@ -356,36 +306,23 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   Widget _buildTrackTable(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(),
-        ),
+      return const LoadingStateView(kind: SkeletonKind.list, itemCount: 6);
+    }
+
+    final error = _errorMessage;
+    if (error != null) {
+      return ErrorStateView(
+        title: 'Failed to load tracks',
+        message: error,
+        onRetry: _loadTracks,
       );
     }
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Text(_errorMessage!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _loadTracks,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+
     if (_tracks.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text('No tracks found'),
-        ),
+      return const EmptyState(
+        icon: OmnisonicIcons.musicNoteOutline,
+        title: 'No tracks found',
+        subtitle: 'This album has no playable tracks on any connected server.',
       );
     }
 

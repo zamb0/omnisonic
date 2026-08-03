@@ -278,7 +278,6 @@ class OmnisonicTheme {
           ),
         ),
       ),
-
     );
   }
 
@@ -553,7 +552,6 @@ class OmnisonicTheme {
           ),
         ),
       ),
-
     );
   }
 }

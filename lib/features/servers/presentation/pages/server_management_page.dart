@@ -9,8 +9,7 @@ import '../widgets/server_add_dialog.dart';
 import '../widgets/server_edit_dialog.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/server_status_card.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
-import '../../../ui/presentation/widgets/empty_state.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Enhanced server management page for adding, configuring, and monitoring Subsonic servers
 class ServerManagementPage extends StatefulWidget {
@@ -92,7 +91,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       body: Consumer<ServerManagementViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(
+              kind: SkeletonKind.list,
+              itemCount: 4,
+            );
           }
 
           if (viewModel.errorMessage != null) {

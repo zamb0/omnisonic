@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../ui/presentation/widgets/widgets.dart';
+
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
@@ -20,14 +22,13 @@ class QueuePage extends StatelessWidget {
         final track = vm.currentTrack;
         return Scaffold(
           appBar: AppBar(title: const Text('Queue')),
-          body: track == null
-              ? Center(
-                  child: Text(
-                    'Nothing playing',
-                    style: OmnisonicTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+          body: vm.isLoading
+              ? const LoadingStateView(kind: SkeletonKind.list, itemCount: 6)
+              : track == null
+              ? const EmptyState(
+                  icon: OmnisonicIcons.queueMusicOutline,
+                  title: 'Nothing playing',
+                  subtitle: 'Start a track and the queue will fill up here.',
                 )
               : _buildBody(context, vm, track),
         );
@@ -60,13 +61,10 @@ class QueuePage extends StatelessWidget {
         ),
         Expanded(
           child: upNext.isEmpty
-              ? Center(
-                  child: Text(
-                    'Nothing queued next',
-                    style: OmnisonicTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+              ? const EmptyState(
+                  icon: OmnisonicIcons.queueMusicOutline,
+                  title: 'Nothing queued next',
+                  subtitle: 'Add tracks from an album or playlist.',
                 )
               : ReorderableListView.builder(
                   padding: const EdgeInsets.symmetric(

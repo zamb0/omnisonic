@@ -73,139 +73,94 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          leading: IconButton(
-            icon: const Icon(OmnisonicIcons.arrowBack),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/library');
-              }
-            },
-          ),
-          title: Text(
-            widget.artist.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          actions: [
-            if (_albums.isNotEmpty)
-              IconButton(
-                tooltip: 'Play All',
-                icon: const Icon(OmnisonicIcons.playArrow),
-                onPressed: _playArtist,
+    // Same reason as the album page: a bare CustomScrollView leaves SnackBars
+    // and the AppBar without a Scaffold to sit in.
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _loadAlbums,
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              leading: IconButton(
+                icon: const Icon(OmnisonicIcons.arrowBack),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/library');
+                  }
+                },
               ),
-            if (_albums.isNotEmpty)
-              IconButton(
-                tooltip: 'Shuffle',
-                icon: const Icon(OmnisonicIcons.shuffle),
-                onPressed: _shuffleArtist,
+              title: Text(
+                widget.artist.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-          ],
-        ),
-        SliverToBoxAdapter(child: _buildArtistHeader(context)),
-
-        // Albums section header
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Albums',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
+              actions: [
                 if (_albums.isNotEmpty)
                   IconButton(
-                    onPressed: _loadAlbums,
-                    icon: const Icon(OmnisonicIcons.refresh),
-                    tooltip: 'Refresh',
+                    tooltip: 'Play All',
+                    icon: const Icon(OmnisonicIcons.playArrow),
+                    onPressed: _playArtist,
+                  ),
+                if (_albums.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Shuffle',
+                    icon: const Icon(OmnisonicIcons.shuffle),
+                    onPressed: _shuffleArtist,
                   ),
               ],
             ),
-          ),
-        ),
+            SliverToBoxAdapter(child: _buildArtistHeader(context)),
 
-        // Albums content
-        _buildAlbumsContent(),
-      ],
+            // Albums section header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Albums',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Albums content
+            _buildAlbumsContent(),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildAlbumsContent() {
     if (_isLoading) {
-      return const SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
+      return LoadingStateView.sliver(kind: SkeletonKind.grid, itemCount: 6);
     }
 
-    if (_errorMessage != null) {
-      return SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              children: [
-                Icon(
-                  OmnisonicIcons.errorOutline,
-                  size: OmnisonicIconSizes.xxl,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load albums',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadAlbums,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
+    final error = _errorMessage;
+    if (error != null) {
+      return ErrorStateView.sliver(
+        title: 'Failed to load albums',
+        message: error,
+        onRetry: _loadAlbums,
       );
     }
 
     if (_albums.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(OmnisonicSpacing.xxl),
-            child: Column(
-              children: [
-                Icon(
-                  OmnisonicIcons.albumOutline,
-                  size: OmnisonicIconSizes.xxl,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                Text(
-                  'No albums found',
-                  style: OmnisonicTypography.sectionTitleSmall,
-                ),
-              ],
-            ),
-          ),
+      return const SliverToBoxAdapter(
+        child: EmptyState(
+          icon: OmnisonicIcons.albumOutline,
+          title: 'No albums found',
+          subtitle:
+              'None of the connected servers have albums by this '
+              'artist.',
         ),
       );
     }

@@ -304,7 +304,7 @@ class _SearchPageState extends State<SearchPage> {
     if (state.isInitial) {
       return _buildSearchSuggestions();
     } else if (state.isLoading) {
-      return const LoadingIndicator(message: 'Searching...');
+      return const LoadingStateView(kind: SkeletonKind.list, itemCount: 5);
     } else if (state.isSuccess) {
       return _buildSearchResultsList(state);
     } else if (state.isFailure) {

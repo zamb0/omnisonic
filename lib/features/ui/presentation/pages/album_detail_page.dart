@@ -39,6 +39,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   /// source to compare.
   final Map<String, List<Track>> _variantTracksCache = {};
 
+  /// Source notes keyed by track ID, rebuilt whenever a variant's tracks
+  /// arrive. [_sourceNoteFor] is called once per visible row and used to walk
+  /// every variant's tracks and read the server list from the context on each
+  /// call, which made scrolling cost O(variants x tracks) per row.
+  Map<String, String>? _sourceNotes;
+
+  /// Server ID to display name, so per-row lookups do not read the provider
+  /// and scan the server list again for every visible track.
+  Map<String, String> _serverNames = const {};
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +69,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       try {
         final tracks = await musicRepository.getAlbumTracks(variant.id);
         if (!mounted) return;
-        setState(() => _variantTracksCache[variant.id] = tracks);
+        setState(() {
+          _variantTracksCache[variant.id] = tracks;
+          _rebuildSourceNotes();
+        });
       } catch (_) {
         // Best-effort: a source that fails to load just won't get a quality
         // summary or count toward the cross-source note comparisons.
@@ -91,6 +104,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         _tracks = albumTracks;
         _isLoading = false;
         _variantTracksCache[_album.id] = albumTracks;
+        _rebuildSourceNotes();
       });
     } catch (e) {
       setState(() {
@@ -318,7 +332,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           showTrackNumber: true,
           serverId: _albumVariants.length > 1 ? track.serverId : null,
           qualityLabel: track.quality.format,
-          sourceNote: _sourceNoteFor(track),
+          sourceNote: _sourceNotes?[track.id],
           onTap: () => _onTrackTapped(track, index),
           onMorePressed: () => _showTrackOptions(track),
         );
@@ -439,7 +453,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   Widget _buildTrackTableRow(BuildContext context, Track track, int index) {
     final scheme = Theme.of(context).colorScheme;
-    final note = _sourceNoteFor(track);
+    final note = _sourceNotes?[track.id];
     final showSource = _albumVariants.length > 1;
 
     return InkWell(
@@ -941,7 +955,24 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   /// One-line comparison note for [track] against the same track number on
   /// other sources of this album, or null when there's nothing noteworthy
   /// (single source, still loading, or this copy is already the best one).
-  String? _sourceNoteFor(Track track) {
+  /// Recomputes [_sourceNotes] for every track currently on screen.
+  void _rebuildSourceNotes() {
+    final notes = <String, String>{};
+    final serverNames = {
+      for (final server in context.read<ServerManagementViewModel>().servers)
+        server.id: server.name,
+    };
+    _serverNames = serverNames;
+
+    for (final track in _tracks) {
+      final note = _sourceNoteFor(track, serverNames);
+      if (note != null) notes[track.id] = note;
+    }
+
+    _sourceNotes = notes;
+  }
+
+  String? _sourceNoteFor(Track track, Map<String, String> serverNames) {
     if (_albumVariants.length <= 1 || track.trackNumber == null) return null;
 
     final matches = <Track>[];
@@ -952,7 +983,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       // Every variant's tracks are in yet and none of them have this track
       // number besides the copy we're looking at.
       if (_variantTracksCache.length < _albumVariants.length) return null;
-      return 'Only on ${_serverNameFor(track.serverId)}';
+      return 'Only on ${serverNames[track.serverId] ?? track.serverId}';
     }
 
     final best = matches.reduce(
@@ -964,16 +995,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     }
     if (best.quality.qualityScore >= AudioQuality.lossless.qualityScore &&
         track.quality.qualityScore < AudioQuality.lossless.qualityScore) {
-      return 'Lossless available on ${_serverNameFor(best.serverId)}';
+      return 'Lossless available on '
+          '${serverNames[best.serverId] ?? best.serverId}';
     }
-    return 'Higher quality on ${_serverNameFor(best.serverId)}';
+    return 'Higher quality on ${serverNames[best.serverId] ?? best.serverId}';
   }
 
-  String _serverNameFor(String serverId) {
-    final serverViewModel = context.read<ServerManagementViewModel>();
-    final matches = serverViewModel.servers.where((s) => s.id == serverId);
-    return matches.isEmpty ? serverId : matches.first.name;
-  }
+  String _serverNameFor(String serverId) =>
+      _serverNames[serverId] ?? serverId;
 
   Widget _buildSourcePanel(BuildContext context, ColorScheme scheme) {
     final serverViewModel = context.read<ServerManagementViewModel>();

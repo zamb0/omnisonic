@@ -13,6 +13,7 @@ import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/utils/debouncer.dart';
 import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/animation_utils.dart';
 
@@ -32,6 +33,10 @@ class _LibraryPageState extends State<LibraryPage> {
 
   late LibrarySortState _sortState;
   late TextEditingController _searchController;
+
+  /// Filtering runs over the whole sorted album list, so it waits for a pause
+  /// in typing rather than running on every keystroke.
+  final Debouncer _searchDebouncer = Debouncer();
   String _searchQuery = '';
 
   // Dedupe + sort are O(n log n) over the whole collection; memoized here so
@@ -54,6 +59,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   void dispose() {
+    _searchDebouncer.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -305,8 +311,10 @@ class _LibraryPageState extends State<LibraryPage> {
                   hintText: 'Search albums',
                   isDense: true,
                 ),
-                onChanged: (value) =>
-                    setState(() => _searchQuery = value.trim().toLowerCase()),
+                onChanged: (value) => _searchDebouncer.run(() {
+                  if (!mounted) return;
+                  setState(() => _searchQuery = value.trim().toLowerCase());
+                }),
               ),
             ),
             if (_searchQuery.isNotEmpty)
@@ -315,6 +323,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 tooltip: 'Clear search',
                 onPressed: () {
                   _searchController.clear();
+                  _searchDebouncer.cancel();
                   setState(() => _searchQuery = '');
                 },
                 constraints: const BoxConstraints(),

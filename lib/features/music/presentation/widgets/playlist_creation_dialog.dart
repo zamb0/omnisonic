@@ -148,7 +148,7 @@ class _PlaylistCreationDialogState extends State<PlaylistCreationDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to create playlist: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

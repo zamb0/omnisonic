@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/animation_constants.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// A consistent loading indicator widget
 class LoadingIndicator extends StatelessWidget {
@@ -23,7 +24,9 @@ class LoadingIndicator extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: OmnisonicTypography.bodyLarge.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -87,6 +90,8 @@ class _ShimmerCardState extends State<ShimmerCard>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -98,7 +103,11 @@ class _ShimmerCardState extends State<ShimmerCard>
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [Colors.grey[300]!, Colors.grey[100]!, Colors.grey[300]!],
+              colors: [
+                scheme.surfaceContainerHighest,
+                scheme.surfaceContainerHigh,
+                scheme.surfaceContainerHighest,
+              ],
               stops: [
                 _animation.value - 0.3,
                 _animation.value,

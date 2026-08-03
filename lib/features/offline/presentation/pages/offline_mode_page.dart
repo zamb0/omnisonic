@@ -109,7 +109,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.red.withValues(alpha: 0.6),
+                    color: OmnisonicColors.error.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -122,9 +122,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                     child: Text(
                       viewModel.errorMessage!,
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: OmnisonicColors.neutralGray600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -145,7 +145,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                   Icon(
                     Icons.cloud_off,
                     size: 64,
-                    color: Colors.grey.withValues(alpha: 0.6),
+                    color: OmnisonicColors.neutralGray500.withValues(
+                      alpha: 0.6,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -158,9 +160,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                     child: Text(
                       'Download music for offline listening to see it here.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: OmnisonicColors.neutralGray600,
+                      ),
                     ),
                   ),
                 ],
@@ -371,10 +373,13 @@ class _OfflineModePageState extends State<OfflineModePage>
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: OmnisonicColors.neutralGray600),
+        ),
         Text(
           percentage,
-          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          style: TextStyle(fontSize: 11, color: OmnisonicColors.neutralGray600),
         ),
       ],
     );

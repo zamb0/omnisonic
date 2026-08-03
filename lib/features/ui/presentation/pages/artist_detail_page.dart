@@ -9,6 +9,7 @@ import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// Artist detail page showing albums with enhanced functionality
 class ArtistDetailPage extends StatefulWidget {
@@ -155,7 +156,11 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             padding: const EdgeInsets.all(32),
             child: Column(
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load albums',
@@ -180,17 +185,21 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     }
 
     if (_albums.isEmpty) {
-      return const SliverToBoxAdapter(
+      return SliverToBoxAdapter(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(32),
+            padding: const EdgeInsets.all(OmnisonicSpacing.xxl),
             child: Column(
               children: [
-                Icon(Icons.album_outlined, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(
+                  Icons.album_outlined,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: OmnisonicSpacing.md),
                 Text(
                   'No albums found',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: OmnisonicTypography.sectionTitleSmall,
                 ),
               ],
             ),

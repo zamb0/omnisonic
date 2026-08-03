@@ -42,7 +42,9 @@ class SortOptionsSheet extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(subtitle, style: const TextStyle(fontSize: 12))
           : null,
-      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+      trailing: isSelected
+          ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+          : null,
       onTap: () {
         Navigator.pop(context);
         onOptionSelected(option);

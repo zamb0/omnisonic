@@ -66,9 +66,9 @@ class ServerListTile extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'User: ${server.username}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: OmnisonicColors.neutralGray600,
+                ),
               ),
             ],
           ),
@@ -77,7 +77,7 @@ class ServerListTile extends StatelessWidget {
             Text(
               'Last sync: ${_formatDateTime(server.lastSync!)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+                color: OmnisonicColors.neutralGray600,
                 fontSize: 11,
               ),
             ),
@@ -113,8 +113,11 @@ class ServerListTile extends StatelessWidget {
                 const PopupMenuItem(
                   value: 'delete',
                   child: ListTile(
-                    leading: Icon(Icons.delete, color: Colors.red),
-                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    leading: Icon(Icons.delete, color: OmnisonicColors.error),
+                    title: Text(
+                      'Delete',
+                      style: TextStyle(color: OmnisonicColors.error),
+                    ),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
@@ -218,17 +221,17 @@ class ServerListTile extends StatelessWidget {
   Color _getStatusColor(ServerStatus status) {
     switch (status) {
       case ServerStatus.online:
-        return Colors.green;
+        return OmnisonicColors.success;
       case ServerStatus.offline:
-        return Colors.red;
+        return OmnisonicColors.error;
       case ServerStatus.connecting:
-        return Colors.orange;
+        return OmnisonicColors.warning;
       case ServerStatus.authenticating:
-        return Colors.blue;
+        return OmnisonicColors.info;
       case ServerStatus.syncing:
-        return Colors.purple;
+        return OmnisonicColors.primaryPurple;
       case ServerStatus.error:
-        return Colors.red;
+        return OmnisonicColors.error;
     }
   }
 

@@ -100,11 +100,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: scheme.error,
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: scheme.error),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -263,10 +259,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Server Statistics',
-              style: OmnisonicTypography.sectionTitle,
-            ),
+            Text('Server Statistics', style: OmnisonicTypography.sectionTitle),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -312,10 +305,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               ],
             ),
             const SizedBox(height: 24),
-            Text(
-              'Server Details',
-              style: OmnisonicTypography.sectionTitle,
-            ),
+            Text('Server Details', style: OmnisonicTypography.sectionTitle),
             const SizedBox(height: 16),
             if (viewModel.servers.isEmpty)
               const EmptyState(

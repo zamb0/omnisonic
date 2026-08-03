@@ -245,7 +245,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                         Text(
                           playlist.description!,
                           style: OmnisonicTypography.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -255,7 +257,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                           Icon(
                             playlist.isPublic ? Icons.public : Icons.lock,
                             size: 16,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(

@@ -47,7 +47,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -159,7 +163,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.playlist_play, size: 64, color: Colors.grey[400]),
+            Icon(
+              Icons.playlist_play,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty
@@ -318,7 +326,9 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],

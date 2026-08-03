@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -26,6 +27,8 @@ class DraggableTrackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
@@ -35,7 +38,7 @@ class DraggableTrackTile extends StatelessWidget {
       child: ListTile(
         visualDensity: VisualDensity.compact,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        leading: _buildLeading(),
+        leading: _buildLeading(scheme),
         title: Text(
           track.title,
           style: const TextStyle(fontWeight: FontWeight.w500),
@@ -47,20 +50,20 @@ class DraggableTrackTile extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: _buildTrailing(context),
+        trailing: _buildTrailing(context, scheme),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildLeading() {
+  Widget _buildLeading(ColorScheme scheme) {
     if (showDragHandle) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.drag_handle, color: Colors.grey),
+          Icon(Icons.drag_handle, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
-          _buildAlbumArt(),
+          _buildAlbumArt(scheme),
         ],
       );
     }
@@ -72,26 +75,25 @@ class DraggableTrackTile extends StatelessWidget {
           width: 24,
           child: Text(
             '${index + 1}',
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+            style: OmnisonicTypography.metadata.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(width: 8),
-        _buildAlbumArt(),
+        _buildAlbumArt(scheme),
       ],
     );
   }
 
-  Widget _buildAlbumArt() {
+  Widget _buildAlbumArt(ColorScheme scheme) {
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
-        color: Colors.grey[300],
+        color: scheme.surfaceContainerHighest,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
@@ -106,28 +108,28 @@ class DraggableTrackTile extends StatelessWidget {
                 fadeInDuration: const Duration(milliseconds: 120),
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
                     Icons.music_note,
-                    color: Colors.grey,
+                    color: scheme.onSurfaceVariant,
                     size: 16,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
                     Icons.music_note,
-                    color: Colors.grey,
+                    color: scheme.onSurfaceVariant,
                     size: 16,
                   ),
                 ),
               ),
             )
-          : const Icon(Icons.music_note, color: Colors.grey, size: 16),
+          : Icon(Icons.music_note, color: scheme.onSurfaceVariant, size: 16),
     );
   }
 
-  Widget _buildTrailing(BuildContext context) {
+  Widget _buildTrailing(BuildContext context, ColorScheme scheme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -164,13 +166,13 @@ class DraggableTrackTile extends StatelessWidget {
               ),
             ),
             const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'remove',
               child: ListTile(
-                leading: Icon(Icons.remove, color: Colors.red),
+                leading: Icon(Icons.remove, color: scheme.error),
                 title: Text(
                   'Remove from Playlist',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: scheme.error),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),

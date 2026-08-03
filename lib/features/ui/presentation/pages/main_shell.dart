@@ -27,7 +27,11 @@ enum ShellMode {
 /// while the sidebar was in icon-only mode, leaving no way to reach Artists or
 /// Playlists.
 class ShellLayout extends InheritedWidget {
-  const ShellLayout({super.key, required this.mode, super.child = const SizedBox.shrink()});
+  const ShellLayout({
+    super.key,
+    required this.mode,
+    super.child = const SizedBox.shrink(),
+  });
 
   final ShellMode mode;
 
@@ -35,9 +39,8 @@ class ShellLayout extends InheritedWidget {
   Widget wrap(Widget child) => ShellLayout(mode: mode, child: child);
 
   /// The shell mode for [context], or null outside the shell.
-  static ShellMode? maybeOf(BuildContext context) => context
-      .dependOnInheritedWidgetOfExactType<ShellLayout>()
-      ?.mode;
+  static ShellMode? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ShellLayout>()?.mode;
 
   /// Whether the shell is showing a sidebar rather than the bottom bar.
   ///

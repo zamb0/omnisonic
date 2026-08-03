@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/server_management_view_model.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// Dialog for editing an existing server
 class ServerEditDialog extends StatefulWidget {
@@ -101,18 +102,21 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: OmnisonicColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue, width: 1),
+                    border: Border.all(color: OmnisonicColors.info, width: 1),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info, color: Colors.blue, size: 20),
+                      Icon(Icons.info, color: OmnisonicColors.info, size: 20),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'To change the password, delete and re-add the server.',
-                          style: TextStyle(color: Colors.blue, fontSize: 14),
+                          style: TextStyle(
+                            color: OmnisonicColors.info,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -194,7 +198,7 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update server: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: OmnisonicColors.error,
           ),
         );
       }

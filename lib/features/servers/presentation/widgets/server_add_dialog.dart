@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../viewmodels/server_management_view_model.dart';
 
 /// Dialog for adding a new Subsonic server
@@ -125,36 +126,11 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: OmnisonicColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue, width: 1),
+                    border: Border.all(color: OmnisonicColors.info, width: 1),
                   ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.blue, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Navidrome Setup Tips',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '• URL: https://your-server.com (no /rest)\n'
-                        '• Use your Navidrome username/password\n'
-                        '• Enable "Subsonic API" in Navidrome settings',
-                        style: TextStyle(color: Colors.blue, fontSize: 12),
-                      ),
-                    ],
-                  ),
+                  child: const _NavidromeTips(),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -186,11 +162,13 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: _testPassed
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.red.withValues(alpha: 0.1),
+                          ? OmnisonicColors.success.withValues(alpha: 0.1)
+                          : OmnisonicColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _testPassed ? Colors.green : Colors.red,
+                        color: _testPassed
+                            ? OmnisonicColors.success
+                            : OmnisonicColors.error,
                         width: 1,
                       ),
                     ),
@@ -198,7 +176,9 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                       children: [
                         Icon(
                           _testPassed ? Icons.check_circle : Icons.error,
-                          color: _testPassed ? Colors.green : Colors.red,
+                          color: _testPassed
+                              ? OmnisonicColors.success
+                              : OmnisonicColors.error,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -207,8 +187,8 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                             _testResult!,
                             style: TextStyle(
                               color: _testPassed
-                                  ? Colors.green[700]
-                                  : Colors.red[700],
+                                  ? OmnisonicColors.success
+                                  : OmnisonicColors.error,
                               fontSize: 14,
                             ),
                           ),
@@ -319,7 +299,7 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
-              backgroundColor: Colors.red,
+              backgroundColor: OmnisonicColors.error,
               duration: const Duration(seconds: 5),
             ),
           );
@@ -333,10 +313,45 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to add server: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: OmnisonicColors.error,
           ),
         );
       }
     }
+  }
+}
+
+/// Setup hints for Navidrome, the most common server people get wrong.
+class _NavidromeTips extends StatelessWidget {
+  const _NavidromeTips();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.info, color: OmnisonicColors.info, size: 20),
+            const SizedBox(width: OmnisonicSpacing.sm),
+            Text(
+              'Navidrome Setup Tips',
+              style: OmnisonicTypography.sectionTitleSmall.copyWith(
+                color: OmnisonicColors.info,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        Text(
+          '• URL: https://your-server.com (no /rest)\n'
+          '• Use your Navidrome username/password\n'
+          '• Enable "Subsonic API" in Navidrome settings',
+          style: OmnisonicTypography.metadata.copyWith(
+            color: OmnisonicColors.info,
+          ),
+        ),
+      ],
+    );
   }
 }

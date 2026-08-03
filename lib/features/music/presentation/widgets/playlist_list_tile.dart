@@ -24,13 +24,15 @@ class PlaylistListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: GlassSurface(
         borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         padding: EdgeInsets.zero,
         child: ListTile(
-          leading: _buildPlaylistArt(),
+          leading: _buildPlaylistArt(scheme),
           title: Text(
             playlist.name,
             style: const TextStyle(fontWeight: FontWeight.w500),
@@ -48,9 +50,9 @@ class PlaylistListTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   playlist.description!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -61,13 +63,13 @@ class PlaylistListTile extends StatelessWidget {
                   Icon(
                     playlist.isPublic ? Icons.public : Icons.lock,
                     size: 12,
-                    color: Colors.grey[600],
+                    color: scheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     playlist.isPublic ? 'Public' : 'Private',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: scheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),
@@ -75,7 +77,7 @@ class PlaylistListTile extends StatelessWidget {
                   Text(
                     _formatDate(playlist.updatedAt),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: scheme.onSurfaceVariant,
                       fontSize: 11,
                     ),
                   ),
@@ -103,11 +105,11 @@ class PlaylistListTile extends StatelessWidget {
                 ),
               ),
               const PopupMenuDivider(),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title: Text('Delete', style: TextStyle(color: Colors.red)),
+                  leading: Icon(Icons.delete, color: scheme.error),
+                  title: Text('Delete', style: TextStyle(color: scheme.error)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -120,13 +122,13 @@ class PlaylistListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaylistArt() {
+  Widget _buildPlaylistArt(ColorScheme scheme) {
     return Container(
       width: 56,
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
-        color: Colors.grey[300],
+        color: scheme.surfaceContainerHighest,
       ),
       child: playlist.coverArtUrl != null
           ? ClipRRect(
@@ -144,24 +146,24 @@ class PlaylistListTile extends StatelessWidget {
                 fadeInDuration: const Duration(milliseconds: 120),
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
                     Icons.playlist_play,
-                    color: Colors.grey,
+                    color: scheme.onSurfaceVariant,
                     size: 24,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
                     Icons.playlist_play,
-                    color: Colors.grey,
+                    color: scheme.onSurfaceVariant,
                     size: 24,
                   ),
                 ),
               ),
             )
-          : const Icon(Icons.playlist_play, color: Colors.grey, size: 24),
+          : Icon(Icons.playlist_play, color: scheme.onSurfaceVariant, size: 24),
     );
   }
 

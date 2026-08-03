@@ -280,7 +280,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             padding: const EdgeInsets.all(32),
             child: Column(
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load tracks',
@@ -305,14 +309,18 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     }
 
     if (_tracks.isEmpty) {
-      return const SliverToBoxAdapter(
+      return SliverToBoxAdapter(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(32),
+            padding: const EdgeInsets.all(OmnisonicSpacing.xxl),
             child: Column(
               children: [
-                Icon(Icons.music_note_outlined, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(
+                  Icons.music_note_outlined,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: OmnisonicSpacing.md),
                 Text(
                   'No tracks found',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -1001,8 +1009,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return 'Higher quality on ${serverNames[best.serverId] ?? best.serverId}';
   }
 
-  String _serverNameFor(String serverId) =>
-      _serverNames[serverId] ?? serverId;
+  String _serverNameFor(String serverId) => _serverNames[serverId] ?? serverId;
 
   Widget _buildSourcePanel(BuildContext context, ColorScheme scheme) {
     final serverViewModel = context.read<ServerManagementViewModel>();

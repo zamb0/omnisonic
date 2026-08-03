@@ -44,13 +44,25 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  static const int _randomTrackCount = 12;
+
   List<Track> _randomTracksFrom(List<Track> allTracks) {
-    if (_randomTracks == null ||
-        _randomTracksSourceLength != allTracks.length) {
-      final shuffled = List<Track>.from(allTracks)..shuffle(Random());
-      _randomTracks = shuffled.take(12).toList();
-      _randomTracksSourceLength = allTracks.length;
+    if (_randomTracks != null &&
+        _randomTracksSourceLength == allTracks.length) {
+      return _randomTracks!;
     }
+
+    // Picking distinct indices rather than copying and shuffling the whole
+    // library for twelve rows.
+    final random = Random();
+    final picked = <int>{};
+    final wanted = min(_randomTrackCount, allTracks.length);
+    while (picked.length < wanted) {
+      picked.add(random.nextInt(allTracks.length));
+    }
+
+    _randomTracks = [for (final index in picked) allTracks[index]];
+    _randomTracksSourceLength = allTracks.length;
     return _randomTracks!;
   }
 

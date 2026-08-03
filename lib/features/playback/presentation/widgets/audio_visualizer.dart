@@ -284,7 +284,9 @@ class CircularVisualizerPainter extends CustomPainter {
       final endX = center.dx + math.cos(angle) * (radius + barHeight);
       final endY = center.dy + math.sin(angle) * (radius + barHeight);
 
-      paint.color = color.withValues(alpha: 0.3 + (barAnimations[i].value * 0.7));
+      paint.color = color.withValues(
+        alpha: 0.3 + (barAnimations[i].value * 0.7),
+      );
 
       canvas.drawLine(
         Offset(startX, startY),

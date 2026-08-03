@@ -24,9 +24,7 @@ class DeduplicationEngine {
     // Normalized metadata is reused across every comparison a track takes
     // part in, instead of being recomputed (four strings, four regexes) on
     // each one.
-    final normalized = [
-      for (final track in tracks) _NormalizedTrack.of(track),
-    ];
+    final normalized = [for (final track in tracks) _NormalizedTrack.of(track)];
 
     // Candidate index buckets, keyed by duration / tolerance. Two tracks
     // within the tolerance are always in the same or an adjacent bucket.

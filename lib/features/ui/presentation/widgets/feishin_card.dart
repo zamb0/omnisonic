@@ -204,11 +204,11 @@ class _FeishinCardState extends State<FeishinCard> {
 
     if (widget.imageUrl == null) return placeholder;
 
-    final sizedUrl = widget.imageUrl!.withCoverArtSize(400);
+    final art = SubsonicCoverArt.of(widget.imageUrl!, 400);
 
     return CachedNetworkImage(
-      imageUrl: sizedUrl,
-      cacheKey: sizedUrl.subsonicCacheKey,
+      imageUrl: art.url,
+      cacheKey: art.cacheKey,
       cacheManager: OmnisonicImageCacheManager.instance,
       fit: BoxFit.cover,
       memCacheWidth: 400,

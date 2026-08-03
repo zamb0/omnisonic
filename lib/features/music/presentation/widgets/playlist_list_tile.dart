@@ -132,10 +132,11 @@ class PlaylistListTile extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: CachedNetworkImage(
-                imageUrl: playlist.coverArtUrl!.withCoverArtSize(112),
-                cacheKey: playlist.coverArtUrl!
-                    .withCoverArtSize(112)
-                    .subsonicCacheKey,
+                imageUrl: SubsonicCoverArt.of(playlist.coverArtUrl!, 112).url,
+                cacheKey: SubsonicCoverArt.of(
+                  playlist.coverArtUrl!,
+                  112,
+                ).cacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 112,

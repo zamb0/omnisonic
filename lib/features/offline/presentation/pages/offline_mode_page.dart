@@ -496,8 +496,7 @@ class _OfflineModePageState extends State<OfflineModePage>
           children: [
             PlaylistCard(
               playlist: playlist,
-              onTap: () =>
-                  context.push('/playlist-detail?id=${playlist.id}'),
+              onTap: () => context.push('/playlist-detail?id=${playlist.id}'),
             ),
             const Positioned(
               top: 8,

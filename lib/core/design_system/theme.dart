@@ -247,7 +247,8 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.lightColorScheme.primary,
         unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
@@ -264,7 +265,8 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.lightColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(
@@ -528,7 +530,8 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.darkColorScheme.primary,
         unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
@@ -545,7 +548,8 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.darkColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(

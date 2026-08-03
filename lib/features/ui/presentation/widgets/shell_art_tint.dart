@@ -36,20 +36,35 @@ class _ShellArtTintState extends State<ShellArtTint> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<PlaybackViewModel, MusicLibraryViewModel>(
-      builder: (context, playback, library, child) {
-        final source =
-            playback.currentTrack?.coverArtUrl ??
-            (library.recentlyPlayedAlbums.isNotEmpty
-                ? library.recentlyPlayedAlbums.first.coverArtUrl
-                : (library.recentlyAddedAlbums.isNotEmpty
-                      ? library.recentlyAddedAlbums.first.coverArtUrl
-                      : null));
-        _updateTint(source);
+    // Selecting only the cover art URLs, not the whole view models: this
+    // widget wraps every pane in the window and repaints three gradients, and
+    // PlaybackViewModel notifies several times a second while playing.
+    final playingArt = context.select<PlaybackViewModel, String?>(
+      (playback) => playback.currentTrack?.coverArtUrl,
+    );
+    final libraryArt = context.select<MusicLibraryViewModel, String?>((
+      library,
+    ) {
+      if (library.recentlyPlayedAlbums.isNotEmpty) {
+        return library.recentlyPlayedAlbums.first.coverArtUrl;
+      }
+      if (library.recentlyAddedAlbums.isNotEmpty) {
+        return library.recentlyAddedAlbums.first.coverArtUrl;
+      }
+      return null;
+    });
 
-        return AnimatedTintSwitcher(seed: _tint, child: child);
-      },
-      child: widget.child,
+    // Palette extraction is a side effect, so it waits until after this frame
+    // rather than running inside build.
+    final tintSource = playingArt ?? libraryArt;
+    if (tintSource != _tintSourceUrl) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _updateTint(tintSource);
+      });
+    }
+
+    return RepaintBoundary(
+      child: AnimatedTintSwitcher(seed: _tint, child: widget.child),
     );
   }
 }

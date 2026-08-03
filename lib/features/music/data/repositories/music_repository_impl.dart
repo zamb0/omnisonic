@@ -377,9 +377,9 @@ class MusicRepositoryImpl implements MusicRepository {
         servers.map((server) => _albumListTracks(server, type, limit)),
       );
 
-      return ResultHelper.success([
-        for (final tracks in perServer) ...tracks,
-      ].take(limit).toList());
+      return ResultHelper.success(
+        [for (final tracks in perServer) ...tracks].take(limit).toList(),
+      );
     } catch (e) {
       AppLog.warn('Error getting $type tracks: $e');
       return ResultHelper.failure(
@@ -415,9 +415,11 @@ class MusicRepositoryImpl implements MusicRepository {
       final tracks = <Track>[];
       final wanted = albums.take(_albumListExpansion).toList();
 
-      for (var start = 0;
-          start < wanted.length;
-          start += _albumFetchConcurrency) {
+      for (
+        var start = 0;
+        start < wanted.length;
+        start += _albumFetchConcurrency
+      ) {
         final batch = wanted.skip(start).take(_albumFetchConcurrency);
         final batchTracks = await Future.wait(
           batch.map((album) => _albumSongs(server, password, album.id)),
@@ -549,7 +551,10 @@ class MusicRepositoryImpl implements MusicRepository {
   @override
   Future<Result<List<Album>>> getStarredAlbums() async {
     final starred = await _getStarredContent();
-    return starred.fold(ResultHelper.failure, (c) => ResultHelper.success(c.albums));
+    return starred.fold(
+      ResultHelper.failure,
+      (c) => ResultHelper.success(c.albums),
+    );
   }
 
   @override
@@ -564,7 +569,10 @@ class MusicRepositoryImpl implements MusicRepository {
   @override
   Future<Result<List<Track>>> getStarredTracks() async {
     final starred = await _getStarredContent();
-    return starred.fold(ResultHelper.failure, (c) => ResultHelper.success(c.tracks));
+    return starred.fold(
+      ResultHelper.failure,
+      (c) => ResultHelper.success(c.tracks),
+    );
   }
 
   /// Returns the starred content of every reachable server.
@@ -1056,7 +1064,11 @@ class MusicRepositoryImpl implements MusicRepository {
       final tracks = <Track>[];
 
       // Fetch tracks for every album, a few requests at a time.
-      for (var start = 0; start < albums.length; start += _albumFetchConcurrency) {
+      for (
+        var start = 0;
+        start < albums.length;
+        start += _albumFetchConcurrency
+      ) {
         final batch = albums.skip(start).take(_albumFetchConcurrency);
 
         final batchTracks = await Future.wait(

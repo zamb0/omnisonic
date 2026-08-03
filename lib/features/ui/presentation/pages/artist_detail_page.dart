@@ -401,11 +401,20 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         child: ClipOval(
           child: widget.artist.imageUrl != null
               ? CachedNetworkImage(
-                  imageUrl: widget.artist.imageUrl!,
-                  cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
+                  imageUrl: SubsonicCoverArt.of(
+                    widget.artist.imageUrl!,
+                    512,
+                  ).url,
+                  cacheKey: SubsonicCoverArt.of(
+                    widget.artist.imageUrl!,
+                    512,
+                  ).cacheKey,
+                  // This was the one image in the app without the shared cache
+                  // manager, so artist art bypassed the 30-day disk cache.
+                  cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
-                  memCacheWidth: 600,
-                  memCacheHeight: 600,
+                  memCacheWidth: 512,
+                  memCacheHeight: 512,
                   placeholder: (context, url) => Container(
                     color: scheme.surfaceContainerHighest,
                     child: Icon(

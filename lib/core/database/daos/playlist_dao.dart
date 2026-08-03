@@ -50,10 +50,9 @@ class PlaylistDao extends DatabaseAccessor<AppDatabase>
 
     // One query for every playlist's tracks instead of one query per
     // playlist, which is what the loop over _getPlaylistTrackIds cost.
-    final entries =
-        await (select(playlistTracksTable)
-              ..orderBy([(tbl) => OrderingTerm(expression: tbl.position)]))
-            .get();
+    final entries = await (select(
+      playlistTracksTable,
+    )..orderBy([(tbl) => OrderingTerm(expression: tbl.position)])).get();
 
     final trackIdsByPlaylist = <String, List<String>>{};
     for (final entry in entries) {
@@ -64,7 +63,10 @@ class PlaylistDao extends DatabaseAccessor<AppDatabase>
 
     return [
       for (final playlistData in playlistsData)
-        _fromData(playlistData, trackIdsByPlaylist[playlistData.id] ?? const []),
+        _fromData(
+          playlistData,
+          trackIdsByPlaylist[playlistData.id] ?? const [],
+        ),
     ];
   }
 

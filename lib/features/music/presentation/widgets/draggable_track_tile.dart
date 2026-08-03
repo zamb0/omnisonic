@@ -97,10 +97,8 @@ class DraggableTrackTile extends StatelessWidget {
           ? ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: CachedNetworkImage(
-                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                cacheKey: track.coverArtUrl!
-                    .withCoverArtSize(128)
-                    .subsonicCacheKey,
+                imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
+                cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 128,

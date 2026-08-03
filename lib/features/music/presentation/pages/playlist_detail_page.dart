@@ -116,10 +116,14 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   fit: StackFit.expand,
                   children: [
                     CachedNetworkImage(
-                      imageUrl: playlist.coverArtUrl!.withCoverArtSize(600),
-                      cacheKey: playlist.coverArtUrl!
-                          .withCoverArtSize(600)
-                          .subsonicCacheKey,
+                      imageUrl: SubsonicCoverArt.of(
+                        playlist.coverArtUrl!,
+                        600,
+                      ).url,
+                      cacheKey: SubsonicCoverArt.of(
+                        playlist.coverArtUrl!,
+                        600,
+                      ).cacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 600,

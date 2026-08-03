@@ -676,7 +676,6 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
-
 }
 
 /// "Download" row for the track options sheet: downloads the track for
@@ -718,7 +717,9 @@ class _DownloadTrackTile extends StatelessWidget {
           SnackBar(
             content: Text(
               error ??
-                  (isDownloaded ? 'Download removed' : 'Downloaded for offline'),
+                  (isDownloaded
+                      ? 'Download removed'
+                      : 'Downloaded for offline'),
             ),
           ),
         );

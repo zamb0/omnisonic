@@ -276,15 +276,19 @@ class _HomePageState extends State<HomePage> {
                         height: 62,
                         child: track.coverArtUrl != null
                             ? CachedNetworkImage(
-                                imageUrl: track.coverArtUrl!.withCoverArtSize(
+                                imageUrl: SubsonicCoverArt.of(
+                                  track.coverArtUrl!,
                                   128,
-                                ),
-                                cacheKey: track.coverArtUrl!
-                                    .withCoverArtSize(128)
-                                    .subsonicCacheKey,
+                                ).url,
+                                cacheKey: SubsonicCoverArt.of(
+                                  track.coverArtUrl!,
+                                  128,
+                                ).cacheKey,
                                 cacheManager:
                                     OmnisonicImageCacheManager.instance,
                                 fit: BoxFit.cover,
+                                memCacheWidth: 128,
+                                memCacheHeight: 128,
                               )
                             : _buildPlaceholderArt(),
                       ),
@@ -428,11 +432,17 @@ class _HomePageState extends State<HomePage> {
                       height: 44,
                       child: track.coverArtUrl != null
                           ? CachedNetworkImage(
-                              imageUrl: track.coverArtUrl!.withCoverArtSize(88),
-                              cacheKey: track.coverArtUrl!
-                                  .withCoverArtSize(88)
-                                  .subsonicCacheKey,
+                              imageUrl: SubsonicCoverArt.of(
+                                track.coverArtUrl!,
+                                88,
+                              ).url,
+                              cacheKey: SubsonicCoverArt.of(
+                                track.coverArtUrl!,
+                                88,
+                              ).cacheKey,
                               cacheManager: OmnisonicImageCacheManager.instance,
+                              memCacheWidth: 88,
+                              memCacheHeight: 88,
                               fit: BoxFit.cover,
                             )
                           : _buildPlaceholderArt(),
@@ -654,12 +664,14 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(14),
                         child: album.coverArtUrl != null
                             ? CachedNetworkImage(
-                                imageUrl: album.coverArtUrl!.withCoverArtSize(
+                                imageUrl: SubsonicCoverArt.of(
+                                  album.coverArtUrl!,
                                   320,
-                                ),
-                                cacheKey: album.coverArtUrl!
-                                    .withCoverArtSize(320)
-                                    .subsonicCacheKey,
+                                ).url,
+                                cacheKey: SubsonicCoverArt.of(
+                                  album.coverArtUrl!,
+                                  320,
+                                ).cacheKey,
                                 cacheManager:
                                     OmnisonicImageCacheManager.instance,
                                 fit: BoxFit.cover,

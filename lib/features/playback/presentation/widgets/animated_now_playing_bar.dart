@@ -215,11 +215,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             borderRadius: BorderRadius.circular(4),
                             child: track.coverArtUrl != null
                                 ? CachedNetworkImage(
-                                    imageUrl: track.coverArtUrl!
-                                        .withCoverArtSize(128),
-                                    cacheKey: track.coverArtUrl!
-                                        .withCoverArtSize(128)
-                                        .subsonicCacheKey,
+                                    imageUrl: SubsonicCoverArt.of(
+                                      track.coverArtUrl!,
+                                      128,
+                                    ).url,
+                                    cacheKey: SubsonicCoverArt.of(
+                                      track.coverArtUrl!,
+                                      128,
+                                    ).cacheKey,
                                     cacheManager:
                                         OmnisonicImageCacheManager.instance,
                                     fit: BoxFit.cover,
@@ -466,10 +469,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     borderRadius: BorderRadius.circular(14),
                     child: track.coverArtUrl != null
                         ? CachedNetworkImage(
-                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                            cacheKey: track.coverArtUrl!
-                                .withCoverArtSize(128)
-                                .subsonicCacheKey,
+                            imageUrl: SubsonicCoverArt.of(
+                              track.coverArtUrl!,
+                              128,
+                            ).url,
+                            cacheKey: SubsonicCoverArt.of(
+                              track.coverArtUrl!,
+                              128,
+                            ).cacheKey,
                             cacheManager: OmnisonicImageCacheManager.instance,
                             fit: BoxFit.cover,
                             memCacheWidth: 116,

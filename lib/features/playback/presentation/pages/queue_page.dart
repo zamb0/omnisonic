@@ -122,11 +122,17 @@ class QueuePage extends StatelessWidget {
               height: 52,
               child: track.coverArtUrl != null
                   ? CachedNetworkImage(
-                      imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                      cacheKey: track.coverArtUrl!
-                          .withCoverArtSize(128)
-                          .subsonicCacheKey,
+                      imageUrl: SubsonicCoverArt.of(
+                        track.coverArtUrl!,
+                        128,
+                      ).url,
+                      cacheKey: SubsonicCoverArt.of(
+                        track.coverArtUrl!,
+                        128,
+                      ).cacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
+                      memCacheWidth: 128,
+                      memCacheHeight: 128,
                       fit: BoxFit.cover,
                     )
                   : Container(
@@ -271,11 +277,17 @@ class _QueueRow extends StatelessWidget {
                   height: 44,
                   child: track.coverArtUrl != null
                       ? CachedNetworkImage(
-                          imageUrl: track.coverArtUrl!.withCoverArtSize(88),
-                          cacheKey: track.coverArtUrl!
-                              .withCoverArtSize(88)
-                              .subsonicCacheKey,
+                          imageUrl: SubsonicCoverArt.of(
+                            track.coverArtUrl!,
+                            88,
+                          ).url,
+                          cacheKey: SubsonicCoverArt.of(
+                            track.coverArtUrl!,
+                            88,
+                          ).cacheKey,
                           cacheManager: OmnisonicImageCacheManager.instance,
+                          memCacheWidth: 88,
+                          memCacheHeight: 88,
                           fit: BoxFit.cover,
                         )
                       : Container(

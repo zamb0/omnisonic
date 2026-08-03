@@ -478,7 +478,9 @@ class LocalMusicDataSource {
         // Artists and albums first: tracks reference them.
         if (artists != null) {
           await dao.upsertArtists(artists);
-          await dao.deleteStaleArtists(serverId, {for (final a in artists) a.id});
+          await dao.deleteStaleArtists(serverId, {
+            for (final a in artists) a.id,
+          });
         }
         if (albums != null) {
           await dao.upsertAlbums(albums);

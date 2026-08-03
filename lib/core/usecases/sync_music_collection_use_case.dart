@@ -74,7 +74,9 @@ class SyncMusicCollectionUseCase
       // The repository rebuilds and publishes the unified collection at the
       // end of a sync, so read that instead of materialising the whole library
       // into Dart lists a second time.
-      final unifiedCollection = await _musicRepository.observeCollection().first;
+      final unifiedCollection = await _musicRepository
+          .observeCollection()
+          .first;
 
       return Right(unifiedCollection);
     } catch (e) {

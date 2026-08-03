@@ -379,10 +379,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               aspectRatio: 1,
               child: track.coverArtUrl != null
                   ? CachedNetworkImage(
-                      imageUrl: track.coverArtUrl!.withCoverArtSize(800),
-                      cacheKey: track.coverArtUrl!
-                          .withCoverArtSize(800)
-                          .subsonicCacheKey,
+                      imageUrl: SubsonicCoverArt.of(
+                        track.coverArtUrl!,
+                        800,
+                      ).url,
+                      cacheKey: SubsonicCoverArt.of(
+                        track.coverArtUrl!,
+                        800,
+                      ).cacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 800,
@@ -884,10 +888,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     borderRadius: BorderRadius.circular(8),
                     child: track.coverArtUrl != null
                         ? CachedNetworkImage(
-                            imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                            cacheKey: track.coverArtUrl!
-                                .withCoverArtSize(128)
-                                .subsonicCacheKey,
+                            imageUrl: SubsonicCoverArt.of(
+                              track.coverArtUrl!,
+                              128,
+                            ).url,
+                            cacheKey: SubsonicCoverArt.of(
+                              track.coverArtUrl!,
+                              128,
+                            ).cacheKey,
                             cacheManager: OmnisonicImageCacheManager.instance,
                             fit: BoxFit.cover,
                             memCacheWidth: 80,

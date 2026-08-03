@@ -866,10 +866,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           borderRadius: borderRadius,
           child: _album.coverArtUrl != null
               ? CachedNetworkImage(
-                  imageUrl: _album.coverArtUrl!.withCoverArtSize(800),
-                  cacheKey: _album.coverArtUrl!
-                      .withCoverArtSize(800)
-                      .subsonicCacheKey,
+                  imageUrl: SubsonicCoverArt.of(_album.coverArtUrl!, 800).url,
+                  cacheKey: SubsonicCoverArt.of(
+                    _album.coverArtUrl!,
+                    800,
+                  ).cacheKey,
                   cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
                   memCacheWidth: 800,

@@ -71,59 +71,10 @@ class SyncMusicCollectionUseCase
         }
       }
 
-      // Get the updated unified collection
-      final tracksResult = await _musicRepository.getAllTracks();
-      if (tracksResult.isFailure) {
-        return Left(
-          DataFailure(
-            'Failed to get tracks after sync: ${tracksResult.failureOrNull}',
-          ),
-        );
-      }
-
-      final albumsResult = await _musicRepository.getAllAlbums();
-      if (albumsResult.isFailure) {
-        return Left(
-          DataFailure(
-            'Failed to get albums after sync: ${albumsResult.failureOrNull}',
-          ),
-        );
-      }
-
-      final artistsResult = await _musicRepository.getAllArtists();
-      if (artistsResult.isFailure) {
-        return Left(
-          DataFailure(
-            'Failed to get artists after sync: ${artistsResult.failureOrNull}',
-          ),
-        );
-      }
-
-      final duplicateGroupsResult = await _musicRepository.getDuplicateGroups();
-      if (duplicateGroupsResult.isFailure) {
-        return Left(
-          DataFailure(
-            'Failed to get duplicate groups after sync: ${duplicateGroupsResult.failureOrNull}',
-          ),
-        );
-      }
-
-      // Convert duplicate groups from Map<String, List<Track>> to Map<String, List<String>>
-      final duplicateGroups = duplicateGroupsResult.valueOrNull!;
-      final duplicateGroupIds = <String, List<String>>{};
-      for (final entry in duplicateGroups.entries) {
-        duplicateGroupIds[entry.key] = entry.value
-            .map((track) => track.id)
-            .toList();
-      }
-
-      final unifiedCollection = UnifiedCollection(
-        tracks: tracksResult.valueOrNull!,
-        albums: albumsResult.valueOrNull!,
-        artists: artistsResult.valueOrNull!,
-        duplicateGroups: duplicateGroupIds,
-        lastUpdated: DateTime.now(),
-      );
+      // The repository rebuilds and publishes the unified collection at the
+      // end of a sync, so read that instead of materialising the whole library
+      // into Dart lists a second time.
+      final unifiedCollection = await _musicRepository.observeCollection().first;
 
       return Right(unifiedCollection);
     } catch (e) {

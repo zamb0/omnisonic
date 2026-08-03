@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/errors.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
@@ -239,98 +240,88 @@ class MusicLibraryViewModel extends ChangeNotifier {
   /// Loads smart collections (recently played, recently added, most played)
   Future<void> _loadSmartCollections() async {
     try {
-      // Load recently played tracks
-      final recentlyPlayedResult = await _musicRepository.getRecentlyPlayed();
-      recentlyPlayedResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load recently played: ${failure.message}'),
-        (tracks) => _recentlyPlayed = tracks,
-      );
+      // These are ten independent repository calls, most of which fan out to
+      // every server; awaiting them one after another made the home feed wait
+      // for the slowest chain of round-trips.
+      final results = await Future.wait([
+        _musicRepository.getRecentlyPlayed(),
+        _musicRepository.getRecentlyAdded(),
+        _musicRepository.getMostPlayed(),
+        _musicRepository.getRecentlyAddedAlbums(),
+        _musicRepository.getRecentlyPlayedAlbums(),
+        _musicRepository.getMostPlayedAlbums(),
+        _musicRepository.getStarredAlbums(),
+        _musicRepository.getStarredArtists(),
+        _musicRepository.getStarredTracks(),
+        _musicRepository.getGenres(),
+      ]);
 
-      // Load recently added tracks
-      final recentlyAddedResult = await _musicRepository.getRecentlyAdded();
-      recentlyAddedResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load recently added: ${failure.message}'),
-        (tracks) => _recentlyAdded = tracks,
-      );
+      void take<T>(int index, String label, void Function(T value) assign) {
+        (results[index] as Result<T>).fold(
+          (failure) => AppLog.warn('Failed to load $label: ${failure.message}'),
+          assign,
+        );
+      }
 
-      // Load most played tracks
-      final mostPlayedResult = await _musicRepository.getMostPlayed();
-      mostPlayedResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load most played: ${failure.message}'),
-        (tracks) => _mostPlayed = tracks,
+      take<List<Track>>(0, 'recently played', (v) => _recentlyPlayed = v);
+      take<List<Track>>(1, 'recently added', (v) => _recentlyAdded = v);
+      take<List<Track>>(2, 'most played', (v) => _mostPlayed = v);
+      take<List<Album>>(
+        3,
+        'recently added albums',
+        (v) => _recentlyAddedAlbums = v,
       );
-
-      // Load recently added albums
-      final recentlyAddedAlbumsResult = await _musicRepository
-          .getRecentlyAddedAlbums();
-      recentlyAddedAlbumsResult.fold(
-        (failure) => AppLog.warn(
-          'Failed to load recently added albums: ${failure.message}',
-        ),
-        (albums) => _recentlyAddedAlbums = albums,
+      take<List<Album>>(
+        4,
+        'recently played albums',
+        (v) => _recentlyPlayedAlbums = v,
       );
-
-      // Load recently played albums
-      final recentlyPlayedAlbumsResult = await _musicRepository
-          .getRecentlyPlayedAlbums();
-      recentlyPlayedAlbumsResult.fold(
-        (failure) => AppLog.warn(
-          'Failed to load recently played albums: ${failure.message}',
-        ),
-        (albums) => _recentlyPlayedAlbums = albums,
-      );
-
-      // Load most played albums
-      final mostPlayedAlbumsResult = await _musicRepository
-          .getMostPlayedAlbums();
-      mostPlayedAlbumsResult.fold(
-        (failure) => AppLog.warn(
-          'Failed to load most played albums: ${failure.message}',
-        ),
-        (albums) => _mostPlayedAlbums = albums,
-      );
-
-      // Load starred albums
-      final starredAlbumsResult = await _musicRepository.getStarredAlbums();
-      starredAlbumsResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load starred albums: ${failure.message}'),
-        (albums) {
-          _starredAlbums = albums;
-          _invalidateAlbumsCache();
-        },
-      );
-
-      // Load starred artists
-      final starredArtistsResult = await _musicRepository.getStarredArtists();
-      starredArtistsResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load starred artists: ${failure.message}'),
-        (artists) => _starredArtists = artists,
-      );
-
-      // Load starred tracks
-      final starredTracksResult = await _musicRepository.getStarredTracks();
-      starredTracksResult.fold(
-        (failure) =>
-            AppLog.warn('Failed to load starred tracks: ${failure.message}'),
-        (tracks) => _starredTracks = tracks,
-      );
-
-      // Load genres
-      final genresResult = await _musicRepository.getGenres();
-      genresResult.fold(
-        (failure) => AppLog.warn('Failed to load genres: ${failure.message}'),
-        (genres) => _genres = genres,
-      );
+      take<List<Album>>(5, 'most played albums', (v) => _mostPlayedAlbums = v);
+      take<List<Album>>(6, 'starred albums', (v) {
+        _starredAlbums = v;
+        _invalidateAlbumsCache();
+      });
+      take<List<Artist>>(7, 'starred artists', (v) => _starredArtists = v);
+      take<List<Track>>(8, 'starred tracks', (v) => _starredTracks = v);
+      take<List<Genre>>(9, 'genres', (v) => _genres = v);
 
       notifyListeners();
     } catch (e) {
       AppLog.warn('Error loading smart collections: $e');
     }
+  }
+
+  /// Reloads just the starred albums, artists and tracks.
+  ///
+  /// All three come from a single `getStarred2` response per server, so this
+  /// is one round-trip rather than the ten of [_loadSmartCollections].
+  Future<void> _reloadStarredCollections() async {
+    final results = await Future.wait([
+      _musicRepository.getStarredAlbums(),
+      _musicRepository.getStarredArtists(),
+      _musicRepository.getStarredTracks(),
+    ]);
+
+    (results[0] as Result<List<Album>>).fold(
+      (failure) =>
+          AppLog.warn('Failed to load starred albums: ${failure.message}'),
+      (albums) {
+        _starredAlbums = albums;
+        _invalidateAlbumsCache();
+      },
+    );
+    (results[1] as Result<List<Artist>>).fold(
+      (failure) =>
+          AppLog.warn('Failed to load starred artists: ${failure.message}'),
+      (artists) => _starredArtists = artists,
+    );
+    (results[2] as Result<List<Track>>).fold(
+      (failure) =>
+          AppLog.warn('Failed to load starred tracks: ${failure.message}'),
+      (tracks) => _starredTracks = tracks,
+    );
+
+    notifyListeners();
   }
 
   /// Refreshes smart collections
@@ -573,8 +564,9 @@ class MusicLibraryViewModel extends ChangeNotifier {
       final result = await _musicRepository.starAlbum(album.id);
 
       if (result.isRight()) {
-        // Refresh starred albums list from server to sync state
-        await _loadSmartCollections();
+        // Only the starred lists can have changed — reloading all ten smart
+        // collections here meant one star tap re-ran the whole home feed.
+        await _reloadStarredCollections();
         AppLog.info('Successfully starred album: ${album.title}');
       } else {
         // Revert optimistic update on failure
@@ -606,8 +598,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
       final result = await _musicRepository.unstarAlbum(album.id);
 
       if (result.isRight()) {
-        // Refresh starred albums list from server to sync state
-        await _loadSmartCollections();
+        await _reloadStarredCollections();
         AppLog.info('Successfully unstarred album: ${album.title}');
       } else {
         // Revert optimistic update on failure

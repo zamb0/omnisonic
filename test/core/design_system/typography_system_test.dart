@@ -132,7 +132,8 @@ void main() {
         expect(
           weights,
           contains(style.fontWeight),
-          reason: '$name asks for ${style.fontWeight} in ${style.fontFamily}, '
+          reason:
+              '$name asks for ${style.fontWeight} in ${style.fontFamily}, '
               'which is not bundled in pubspec.yaml',
         );
       });
@@ -166,7 +167,8 @@ void main() {
         expect(
           await measure(family),
           isNot(fallback),
-          reason: '$family is not loading — check its assets/fonts/ entries '
+          reason:
+              '$family is not loading — check its assets/fonts/ entries '
               'in pubspec.yaml and test/flutter_test_config.dart',
         );
       }

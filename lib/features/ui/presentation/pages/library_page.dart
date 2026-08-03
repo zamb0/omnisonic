@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
-import '../../../music/presentation/viewmodels/playlist_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 import '../models/library_tab.dart';
@@ -189,8 +188,6 @@ class _LibraryPageState extends State<LibraryPage> {
         return _buildAlbumsTab();
       case LibraryTab.artists:
         return _buildArtistsTab();
-      case LibraryTab.playlists:
-        return _buildPlaylistsTab();
     }
   }
 
@@ -411,91 +408,6 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  Widget _buildPlaylistsTab() {
-    return Consumer<PlaylistViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return _buildLoadingGrid();
-        }
-
-        final playlists = viewModel.playlists;
-        if (playlists.isEmpty) {
-          return EmptyState(
-            icon: Icons.playlist_play,
-            title: 'No Playlists',
-            subtitle: 'Create your first playlist to organize your music',
-            action: ElevatedButton.icon(
-              onPressed: () => context.go('/playlist-management'),
-              icon: const Icon(Icons.add),
-              label: const Text('Create Playlist'),
-            ),
-          );
-        }
-
-        final sortOption = _sortState.getOption(LibraryTab.playlists);
-        final sortedPlaylists = LibrarySortService.sortPlaylists(
-          playlists,
-          sortOption,
-        );
-
-        return RefreshIndicator(
-          onRefresh: viewModel.refreshPlaylists,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.playlist_play,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${sortedPlaylists.length} playlist${sortedPlaylists.length != 1 ? 's' : ''}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: () => context.go('/playlist-management'),
-                      icon: const Icon(Icons.settings),
-                      label: const Text('Manage'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ResponsiveGridView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  minItemWidth: 160,
-                  spacing: 20,
-                  childAspectRatio: 0.72,
-                  itemCount: sortedPlaylists.length,
-                  itemBuilder: (context, index) {
-                    final playlist = sortedPlaylists[index];
-                    return PlaylistCard(
-                      playlist: playlist,
-                      onTap: () => _onPlaylistTapped(playlist),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Same geometry as the real content grids (minItemWidth/padding/aspect
-  // ratio) so the shimmer collapses into the final layout instead of a
-  // visible jump when the two-column skeleton gives way to up to six.
   Widget _buildLoadingGrid({double minItemWidth = 160}) {
     return ResponsiveGridView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -626,10 +538,6 @@ class _LibraryPageState extends State<LibraryPage> {
   void _onArtistTapped(Artist artist) {
     // Navigate to artist detail page
     context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
-  }
-
-  void _onPlaylistTapped(Playlist playlist) {
-    context.go(AppRouter.playlistDetailLocation(playlist.id));
   }
 
   Future<void> _syncLibrary() async {

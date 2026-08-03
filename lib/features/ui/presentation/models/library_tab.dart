@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Enum representing the different tabs in the library
+/// The sections of the library.
+///
+/// Playlists used to be a third tab here as well as a top-level destination
+/// with its own page. Two lists of the same thing, one of which had a
+/// "Manage" button leading to the other — so the tab is gone and
+/// [AppRouter.playlistManagement] is the only place playlists live.
 enum LibraryTab {
   albums('Albums', Icons.album),
-  artists('Artists', Icons.person),
-  playlists('Playlists', Icons.playlist_play);
+  artists('Artists', Icons.person);
 
   const LibraryTab(this.label, this.icon);
 

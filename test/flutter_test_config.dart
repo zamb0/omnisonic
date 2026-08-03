@@ -31,8 +31,8 @@ Future<void> _loadAppFonts() async {
     // Fonts the engine ships are listed with a "packages/" prefix; the
     // family name has to keep that prefix or lookups miss.
     final loader = FontLoader(family);
-    for (final font in (entry['fonts'] as List<dynamic>)
-        .cast<Map<String, dynamic>>()) {
+    for (final font
+        in (entry['fonts'] as List<dynamic>).cast<Map<String, dynamic>>()) {
       loader.addFont(rootBundle.load(font['asset'] as String));
     }
     await loader.load();

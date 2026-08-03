@@ -83,15 +83,19 @@ void main() {
 
     await database.serverDao.insertServer(server, 'password');
 
-    when(serverRepository.getServerById('server1'))
-        .thenAnswer((_) async => ResultHelper.success(server));
-    when(serverRepository.updateLastSync(any, any))
-        .thenAnswer((_) async => ResultHelper.success(null));
-    when(connectionService.getServerPassword('server1'))
-        .thenAnswer((_) async => ResultHelper.success('password'));
+    when(
+      serverRepository.getServerById('server1'),
+    ).thenAnswer((_) async => ResultHelper.success(server));
+    when(
+      serverRepository.updateLastSync(any, any),
+    ).thenAnswer((_) async => ResultHelper.success(null));
+    when(
+      connectionService.getServerPassword('server1'),
+    ).thenAnswer((_) async => ResultHelper.success('password'));
 
-    when(apiClient.getArtists(any, any))
-        .thenAnswer((_) async => ok(ArtistsResponse(index: const [])));
+    when(
+      apiClient.getArtists(any, any),
+    ).thenAnswer((_) async => ok(ArtistsResponse(index: const [])));
     when(apiClient.getStreamUrl(any, any, any)).thenReturn('http://stream');
     when(apiClient.getCoverArtUrl(any, any, any)).thenReturn('http://cover');
   });

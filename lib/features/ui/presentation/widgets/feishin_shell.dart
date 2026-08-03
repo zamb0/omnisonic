@@ -5,9 +5,11 @@ import 'package:provider/provider.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/routing/destinations.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../models/library_tab.dart';
+import '../widgets/account_menu.dart';
 import '../widgets/desktop_top_bar.dart';
 import '../widgets/server_dot.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
@@ -97,6 +99,15 @@ class FeishinShell extends StatelessWidget {
               ),
             ),
           ),
+          // Pinned below the scroll area, and present in rail mode too. The
+          // only way to Settings on desktop used to be the top bar, which is
+          // hidden below 1024px — so at rail width there was no route to it
+          // at all.
+          const Divider(height: OmnisonicSpacing.lg),
+          Align(
+            alignment: extended ? Alignment.centerLeft : Alignment.center,
+            child: AccountButton(showLabel: extended),
+          ),
         ],
       ),
     );
@@ -139,36 +150,38 @@ class FeishinShell extends StatelessWidget {
     );
   }
 
+  /// The four primary destinations, with Library expanded into its own tabs.
+  ///
+  /// The sidebar has the vertical room to show Albums and Artists as their
+  /// own rows where the bottom bar has to collapse them into one Library
+  /// slot. The *set* of destinations still comes from [AppDestinations], so
+  /// the two shells cannot drift apart on what exists — only on how deeply
+  /// Library is unfolded.
   List<Widget> _buildNavItems(BuildContext context) {
     final location = GoRouterState.of(context).uri;
     final path = location.path;
-    final isLibrary =
-        path == AppRouter.library ||
-        path == AppRouter.albumDetail ||
-        path == AppRouter.artistDetail;
+    final library = context.watch<MusicLibraryViewModel>();
+
+    final libraryDestination = AppDestinations.primary.firstWhere(
+      (d) => d.route == AppRouter.library,
+    );
+    final isLibrary = libraryDestination.matches(path);
     final activeLibraryTab =
         LibraryTab.fromName(location.queryParameters['tab']) ??
         LibraryTab.albums;
 
-    final library = context.watch<MusicLibraryViewModel>();
+    Widget item(AppDestination destination) => _NavItem(
+      extended: extended,
+      icon: destination.icon,
+      activeIcon: destination.activeIcon,
+      label: destination.label,
+      selected: destination.matches(path),
+      onTap: () => context.go(destination.route),
+    );
 
     return [
-      _NavItem(
-        extended: extended,
-        icon: Icons.home_outlined,
-        activeIcon: Icons.home,
-        label: 'Home',
-        selected: path == AppRouter.home,
-        onTap: () => context.go(AppRouter.home),
-      ),
-      _NavItem(
-        extended: extended,
-        icon: Icons.search_outlined,
-        activeIcon: Icons.search,
-        label: 'Search',
-        selected: path == AppRouter.search,
-        onTap: () => context.go(AppRouter.search),
-      ),
+      item(AppDestinations.primary[0]), // Home
+      item(AppDestinations.primary[1]), // Search
       _NavItem(
         extended: extended,
         icon: Icons.album_outlined,
@@ -187,22 +200,7 @@ class FeishinShell extends StatelessWidget {
         selected: isLibrary && activeLibraryTab == LibraryTab.artists,
         onTap: () => _goToLibraryTab(context, LibraryTab.artists),
       ),
-      _NavItem(
-        extended: extended,
-        icon: Icons.playlist_play_outlined,
-        activeIcon: Icons.playlist_play,
-        label: 'Playlists',
-        selected: isLibrary && activeLibraryTab == LibraryTab.playlists,
-        onTap: () => _goToLibraryTab(context, LibraryTab.playlists),
-      ),
-      _NavItem(
-        extended: extended,
-        icon: Icons.star_outline,
-        activeIcon: Icons.star,
-        label: 'Starred',
-        selected: path == AppRouter.favorites,
-        onTap: () => context.go(AppRouter.favorites),
-      ),
+      item(AppDestinations.primary[3]), // Playlists
     ];
   }
 

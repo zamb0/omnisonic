@@ -378,11 +378,7 @@ class FakePlaybackViewModel extends ChangeNotifier
       queue: queue ?? [track],
       startIndex: startIndex ?? 0,
     ));
-    emitPlaying(
-      track,
-      queue: queue ?? [track],
-      currentIndex: startIndex ?? 0,
-    );
+    emitPlaying(track, queue: queue ?? [track], currentIndex: startIndex ?? 0);
   }
 
   @override

@@ -83,21 +83,25 @@ void main() {
         'server1',
         tracks: [track('t1'), track('t2')],
       );
-      await database.into(database.playlistsTable).insert(
-        PlaylistsTableCompanion.insert(
-          id: 'p1',
-          name: 'Mix',
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-        ),
-      );
-      await database.into(database.playlistTracksTable).insert(
-        PlaylistTracksTableCompanion.insert(
-          playlistId: 'p1',
-          trackId: 't1',
-          position: 0,
-        ),
-      );
+      await database
+          .into(database.playlistsTable)
+          .insert(
+            PlaylistsTableCompanion.insert(
+              id: 'p1',
+              name: 'Mix',
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          );
+      await database
+          .into(database.playlistTracksTable)
+          .insert(
+            PlaylistTracksTableCompanion.insert(
+              playlistId: 'p1',
+              trackId: 't1',
+              position: 0,
+            ),
+          );
 
       await dataSource.syncMusicData(
         'server1',

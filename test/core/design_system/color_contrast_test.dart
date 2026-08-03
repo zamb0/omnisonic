@@ -8,7 +8,9 @@ import 'package:omnisonic/core/design_system/colors.dart';
 double _relativeLuminance(Color color) {
   double channel(int value) {
     final v = value / 255.0;
-    return v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4) as double;
+    return v <= 0.03928
+        ? v / 12.92
+        : math.pow((v + 0.055) / 1.055, 2.4) as double;
   }
 
   return 0.2126 * channel((color.r * 255).round()) +

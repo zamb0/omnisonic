@@ -62,7 +62,12 @@ List<Track> buildLibrary(int count, {int seed = 7}) {
     'Digital Love',
   ];
   const artists = ['Radiohead', 'Tame Impala', 'Massive Attack', 'Queen'];
-  const albums = ['OK Computer', 'Currents', 'Mezzanine', 'A Night At The Opera'];
+  const albums = [
+    'OK Computer',
+    'Currents',
+    'Mezzanine',
+    'A Night At The Opera',
+  ];
 
   final tracks = <Track>[];
   for (var i = 0; i < count; i++) {
@@ -80,7 +85,8 @@ List<Track> buildLibrary(int count, {int seed = 7}) {
           duration: copyOf.duration + Duration(seconds: random.nextInt(9) - 4),
           serverId: 'server${i % 3}',
           streamUrl: 'http://example.com/$i',
-          quality: AudioQuality.values[random.nextInt(AudioQuality.values.length)],
+          quality:
+              AudioQuality.values[random.nextInt(AudioQuality.values.length)],
           lastModified: DateTime(2026),
         ),
       );
@@ -94,7 +100,8 @@ List<Track> buildLibrary(int count, {int seed = 7}) {
           duration: Duration(seconds: 90 + random.nextInt(300)),
           serverId: 'server${i % 3}',
           streamUrl: 'http://example.com/$i',
-          quality: AudioQuality.values[random.nextInt(AudioQuality.values.length)],
+          quality:
+              AudioQuality.values[random.nextInt(AudioQuality.values.length)],
           lastModified: DateTime(2026),
         ),
       );
@@ -108,47 +115,53 @@ void main() {
 
   setUp(() => engine = DeduplicationEngine());
 
-  test('duration bucketing produces the same groups as a full pairwise pass', () {
-    for (final seed in [1, 2, 3, 4, 5]) {
-      final tracks = buildLibrary(300, seed: seed);
+  test(
+    'duration bucketing produces the same groups as a full pairwise pass',
+    () {
+      for (final seed in [1, 2, 3, 4, 5]) {
+        final tracks = buildLibrary(300, seed: seed);
 
-      final actual = engine.detectDuplicates(tracks);
-      final expected = referenceDetectDuplicates(engine, tracks);
+        final actual = engine.detectDuplicates(tracks);
+        final expected = referenceDetectDuplicates(engine, tracks);
 
-      String describe(Map<String, List<Track>> groups) => groups.entries
-          .map((e) => '${e.key}: ${e.value.map((t) => t.id).join(",")}')
-          .join('\n');
+        String describe(Map<String, List<Track>> groups) => groups.entries
+            .map((e) => '${e.key}: ${e.value.map((t) => t.id).join(",")}')
+            .join('\n');
 
-      expect(describe(actual), describe(expected), reason: 'seed $seed');
-    }
-  });
+        expect(describe(actual), describe(expected), reason: 'seed $seed');
+      }
+    },
+  );
 
-  test('tracks further apart than the duration tolerance are not duplicates', () {
-    final base = Track(
-      id: 'a_1',
-      title: 'Teardrop',
-      artist: 'Massive Attack',
-      album: 'Mezzanine',
-      duration: const Duration(minutes: 5),
-      serverId: 'a',
-      streamUrl: 'http://example.com/1',
-      quality: AudioQuality.high,
-      lastModified: DateTime(2026),
-    );
-    final longEdit = Track(
-      id: 'b_1',
-      title: 'Teardrop',
-      artist: 'Massive Attack',
-      album: 'Mezzanine',
-      duration: const Duration(minutes: 9),
-      serverId: 'b',
-      streamUrl: 'http://example.com/2',
-      quality: AudioQuality.high,
-      lastModified: DateTime(2026),
-    );
+  test(
+    'tracks further apart than the duration tolerance are not duplicates',
+    () {
+      final base = Track(
+        id: 'a_1',
+        title: 'Teardrop',
+        artist: 'Massive Attack',
+        album: 'Mezzanine',
+        duration: const Duration(minutes: 5),
+        serverId: 'a',
+        streamUrl: 'http://example.com/1',
+        quality: AudioQuality.high,
+        lastModified: DateTime(2026),
+      );
+      final longEdit = Track(
+        id: 'b_1',
+        title: 'Teardrop',
+        artist: 'Massive Attack',
+        album: 'Mezzanine',
+        duration: const Duration(minutes: 9),
+        serverId: 'b',
+        streamUrl: 'http://example.com/2',
+        quality: AudioQuality.high,
+        lastModified: DateTime(2026),
+      );
 
-    expect(engine.detectDuplicates([base, longEdit]), isEmpty);
-  });
+      expect(engine.detectDuplicates([base, longEdit]), isEmpty);
+    },
+  );
 
   test('selectRepresentativeTrack does not reorder the caller list', () {
     final tracks = buildLibrary(6, seed: 11);

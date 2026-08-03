@@ -12,7 +12,6 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
-import '../../../../core/utils/animation_utils.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/library_stats_rail.dart';
 import '../widgets/server_dot.dart';
@@ -136,15 +135,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            // Servers/Downloads/Settings are secondary navigation: the
-            // mockup only exposes them via the desktop sidebar, so mobile
-            // needs a stand-in entry point rather than three bottom-bar
-            // slots it doesn't have room for.
-            IconButton(
-              icon: const Icon(Icons.more_horiz),
-              tooltip: 'More',
-              onPressed: () => _showMoreMenu(context),
-            ),
           ],
         ),
       ),
@@ -195,68 +185,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         );
-      },
-    );
-  }
-
-  /// Glass bottom sheet standing in for the secondary-nav destinations the
-  /// mockup only exposes via the desktop sidebar (Starred, Servers, Downloads,
-  /// Settings) — mobile has no room for them in the 4-slot bottom bar.
-  void _showMoreMenu(BuildContext context) {
-    AnimationUtils.showCustomBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildMoreMenuItem(
-                sheetContext,
-                icon: Icons.star_outline,
-                label: 'Starred',
-                route: AppRouter.favorites,
-              ),
-              _buildMoreMenuItem(
-                sheetContext,
-                icon: Icons.dns_outlined,
-                label: 'Servers',
-                route: AppRouter.servers,
-              ),
-              _buildMoreMenuItem(
-                sheetContext,
-                icon: Icons.download_outlined,
-                label: 'Downloads',
-                route: AppRouter.downloads,
-              ),
-              _buildMoreMenuItem(
-                sheetContext,
-                icon: Icons.settings_outlined,
-                label: 'Settings',
-                route: AppRouter.settings,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMoreMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String route,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      onTap: () {
-        Navigator.of(context).pop();
-        GoRouter.of(context).push(route);
       },
     );
   }

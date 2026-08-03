@@ -38,31 +38,36 @@ void main() {
     repository = MockMusicRepository();
     useCase = SearchMusicUseCase(repository);
 
-    when(repository.searchAlbums(any)).thenAnswer(
-      (_) async => ResultHelper.success([]),
-    );
-    when(repository.searchArtists(any)).thenAnswer(
-      (_) async => ResultHelper.success([]),
-    );
+    when(
+      repository.searchAlbums(any),
+    ).thenAnswer((_) async => ResultHelper.success([]));
+    when(
+      repository.searchArtists(any),
+    ).thenAnswer((_) async => ResultHelper.success([]));
   });
 
-  test('returns empty results for a blank query without hitting the repository', () async {
-    final result = await useCase(const SearchMusicParams(query: '   '));
+  test(
+    'returns empty results for a blank query without hitting the repository',
+    () async {
+      final result = await useCase(const SearchMusicParams(query: '   '));
 
-    expect(result.isRight(), isTrue);
-    verifyNever(repository.searchTracks(any));
-  });
+      expect(result.isRight(), isTrue);
+      verifyNever(repository.searchTracks(any));
+    },
+  );
 
   test('searches the local library even with no server reachable', () async {
     // The use case used to bail out with a ServerFailure whenever
     // getOnlineServers came back empty, which broke search offline.
-    when(repository.searchTracks('rock')).thenAnswer(
-      (_) async => ResultHelper.success([track('t1')]),
-    );
+    when(
+      repository.searchTracks('rock'),
+    ).thenAnswer((_) async => ResultHelper.success([track('t1')]));
 
     final result = await useCase(const SearchMusicParams(query: 'rock'));
 
-    final results = result.getOrElse(() => throw StateError('expected results'));
+    final results = result.getOrElse(
+      () => throw StateError('expected results'),
+    );
     expect(results.tracks.map((t) => t.id), ['t1']);
   });
 
@@ -87,22 +92,25 @@ void main() {
       ),
     );
 
-    final results = result.getOrElse(() => throw StateError('expected results'));
+    final results = result.getOrElse(
+      () => throw StateError('expected results'),
+    );
     expect(results.tracks.map((t) => t.id), ['keep']);
   });
 
   test('caps each result type at maxResults', () async {
     when(repository.searchTracks('rock')).thenAnswer(
-      (_) async => ResultHelper.success([
-        for (var i = 0; i < 10; i++) track('t$i'),
-      ]),
+      (_) async =>
+          ResultHelper.success([for (var i = 0; i < 10; i++) track('t$i')]),
     );
 
     final result = await useCase(
       const SearchMusicParams(query: 'rock', maxResults: 3),
     );
 
-    final results = result.getOrElse(() => throw StateError('expected results'));
+    final results = result.getOrElse(
+      () => throw StateError('expected results'),
+    );
     expect(results.tracks, hasLength(3));
     expect(results.totalResults, 3);
   });

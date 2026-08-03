@@ -57,9 +57,7 @@ void main() {
     location: location,
     size: size,
     viewModels: populatedModels(),
-    routes: testShellRoutes(
-      builders: {location: (context, state) => page},
-    ),
+    routes: testShellRoutes(builders: {location: (context, state) => page}),
   );
 
   testWidgets('home at phone width (bottom bar)', (tester) async {

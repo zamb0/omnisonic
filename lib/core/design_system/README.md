@@ -71,9 +71,9 @@ ResponsiveLayout(
 ## Color System
 
 ### Primary Colors
-- **Primary Purple**: `#6366F1` — main brand color
-- **Primary Blue**: `#3B82F6` — secondary brand color
-- **Primary Teal**: `#06B6D4` — accent color
+- **Primary Purple**: `#7C7CFF` — main brand color
+- **Primary Blue**: `#5A67D8` — secondary brand color
+- **Primary Teal**: `#4DD0E1` — accent color
 
 ### Semantic Colors
 - **Success**: `#10B981`
@@ -91,15 +91,21 @@ The light color scheme uses darkened `*Light` variants of the brand colors (`pri
 
 ## Typography
 
-- **Inter**: primary font — body text, labels, UI elements
-- **Poppins**: display font — headings and titles
+- **Manrope**: primary font — body text, labels, UI elements
+- **Gabarito**: display font — headings, titles, nav and button labels
+- **JetBrains Mono**: technical font — durations, bitrates, counts, server ids
 
-Both are loaded via `google_fonts` (no bundled font assets required).
+All three are bundled as assets under `assets/fonts/` and declared in the
+`fonts:` section of `pubspec.yaml`. They are not fetched at runtime: golden
+tests need deterministic metrics, and a first launch shouldn't need the
+network to draw text. Only the weights the type ramp asks for are shipped;
+`typography_system_test.dart` fails if a style requests a weight that isn't
+bundled.
 
 ### Music-Specific Styles
-- **Track Title**: 16px, Medium, Inter
-- **Artist Name**: 14px, Regular, Inter
-- **Album Title**: 14px, Medium, Inter
+- **Track Title**: 16px, Medium, Manrope
+- **Artist Name**: 14px, Regular, Manrope
+- **Album Title**: 14px, Medium, Manrope
 
 ## Spacing System
 
@@ -142,7 +148,7 @@ flutter test test/core/design_system/
 ```
 lib/core/design_system/
 ├── colors.dart                     # Color palette and schemes
-├── typography.dart                 # Text styles and fonts (google_fonts)
+├── typography.dart                 # Text styles and bundled font families
 ├── spacing.dart                    # Spacing, grid, touch targets
 ├── icons.dart                      # Icon system and sizes
 ├── theme.dart                      # ThemeData assembly (light/dark)

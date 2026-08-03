@@ -17,36 +17,21 @@ void main() {
       expect(OmnisonicColors.info, const Color(0xFF3B82F6));
     });
 
-    testWidgets('Typography system has all required styles', (tester) async {
-      // OmnisonicTypography's getters build a GoogleFonts style, which kicks
-      // off a background asset/network lookup the first time each family is
-      // used; pumping a trivial widget first routes that through Flutter's
-      // normal error handling instead of a stray uncaught error.
-      await tester.pumpWidget(
-        MaterialApp(home: Builder(builder: (context) => const Text('x'))),
-      );
-
-      // Test display styles. google_fonts suffixes the family with the
-      // resolved weight (e.g. "Gabarito_700"), so match the base name.
-      expect(
-        OmnisonicTypography.displayLarge.fontFamily,
-        startsWith('Gabarito'),
-      );
+    test('Typography system has all required styles', () {
+      // Test display styles
+      expect(OmnisonicTypography.displayLarge.fontFamily, 'Gabarito');
       expect(OmnisonicTypography.displayLarge.fontSize, 57);
       expect(OmnisonicTypography.displayLarge.fontWeight, FontWeight.w700);
 
       // Test body styles
-      expect(OmnisonicTypography.bodyLarge.fontFamily, startsWith('Manrope'));
+      expect(OmnisonicTypography.bodyLarge.fontFamily, 'Manrope');
       expect(OmnisonicTypography.bodyLarge.fontSize, 16);
       expect(OmnisonicTypography.bodyLarge.fontWeight, FontWeight.w400);
 
       // Test music-specific styles
-      expect(OmnisonicTypography.trackTitle.fontFamily, startsWith('Manrope'));
-      expect(
-        OmnisonicTypography.artistName.fontFamily,
-        startsWith('Manrope'),
-      );
-      expect(OmnisonicTypography.albumTitle.fontFamily, startsWith('Manrope'));
+      expect(OmnisonicTypography.trackTitle.fontFamily, 'Manrope');
+      expect(OmnisonicTypography.artistName.fontFamily, 'Manrope');
+      expect(OmnisonicTypography.albumTitle.fontFamily, 'Manrope');
     });
 
     test('Spacing system follows 8px grid', () {

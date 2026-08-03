@@ -11,7 +11,7 @@ import '../../domain/usecases/manage_offline_mode_use_case.dart';
 import '../../domain/services/offline_content_filter.dart';
 
 /// View model for offline mode functionality
-@injectable
+@lazySingleton
 class OfflineModeViewModel extends ChangeNotifier {
   OfflineModeViewModel({
     required OfflineModeService offlineModeService,

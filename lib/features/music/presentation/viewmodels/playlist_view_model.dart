@@ -13,7 +13,7 @@ import '../../../../core/usecases/usecases.dart';
 /// - Track management within playlists
 /// - Playlist search and filtering
 /// - Import/export functionality
-@injectable
+@lazySingleton
 class PlaylistViewModel extends ChangeNotifier {
   PlaylistViewModel(this._playlistRepository, this._managePlaylistUseCase) {
     _initialize();

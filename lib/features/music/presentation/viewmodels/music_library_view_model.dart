@@ -14,7 +14,7 @@ import '../../../../core/utils/app_log.dart';
 /// - Smart collections (recently played, recently added)
 /// - Collection filtering and search
 /// - Sync status and progress
-@injectable
+@lazySingleton
 class MusicLibraryViewModel extends ChangeNotifier {
   MusicLibraryViewModel(
     this._musicRepository,

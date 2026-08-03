@@ -19,7 +19,7 @@ import '../../data/datasources/adaptive_streaming_service.dart';
 /// - Queue management and navigation
 /// - Playback controls (play, pause, seek, etc.)
 /// - Volume and repeat/shuffle settings
-@injectable
+@lazySingleton
 class PlaybackViewModel extends ChangeNotifier {
   PlaybackViewModel(
     this._playbackRepository,
@@ -229,13 +229,30 @@ class PlaybackViewModel extends ChangeNotifier {
     return quality;
   }
 
+  /// How far the platform position has to diverge from the interpolated one
+  /// before it is worth telling the UI about it out of band.
+  static const Duration _positionJumpThreshold = Duration(milliseconds: 750);
+
   void _subscribeToPosition() {
     _positionSubscription = _playbackRepository.observePosition().listen(
       (position) {
+        // The ticker below is what drives the UI while playing; this stream
+        // only re-anchors it. Notifying here as well doubled the rebuild rate
+        // of every widget watching this view model.
+        final drift =
+            (position.inMilliseconds - _playbackState.position.inMilliseconds)
+                .abs();
+
         _playbackState = _playbackState.copyWith(position: position);
         _lastObservedPosition = position;
         _lastPositionUpdate = DateTime.now();
-        notifyListeners();
+
+        // A seek, a track change or playback being paused still needs to reach
+        // the UI immediately, since the ticker is idle then.
+        if (!_playbackState.isPlaying ||
+            drift >= _positionJumpThreshold.inMilliseconds) {
+          notifyListeners();
+        }
       },
       onError: (error) {
         AppLog.warn('Position stream error: $error');

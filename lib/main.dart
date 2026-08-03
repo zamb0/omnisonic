@@ -117,24 +117,26 @@ class _OmnisonicAppState extends State<OmnisonicApp>
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // ViewModels
-        ChangeNotifierProvider<MusicLibraryViewModel>(
-          create: (_) => getIt<MusicLibraryViewModel>(),
+        // ViewModels are lazy singletons in getIt, which owns their lifetime —
+        // hence .value rather than create, so the provider never disposes an
+        // instance getIt will keep handing out.
+        ChangeNotifierProvider<MusicLibraryViewModel>.value(
+          value: getIt<MusicLibraryViewModel>(),
         ),
-        ChangeNotifierProvider<PlaybackViewModel>(
-          create: (_) => getIt<PlaybackViewModel>(),
+        ChangeNotifierProvider<PlaybackViewModel>.value(
+          value: getIt<PlaybackViewModel>(),
         ),
-        ChangeNotifierProvider<ServerManagementViewModel>(
-          create: (_) => getIt<ServerManagementViewModel>(),
+        ChangeNotifierProvider<ServerManagementViewModel>.value(
+          value: getIt<ServerManagementViewModel>(),
         ),
-        ChangeNotifierProvider<PlaylistViewModel>(
-          create: (_) => getIt<PlaylistViewModel>(),
+        ChangeNotifierProvider<PlaylistViewModel>.value(
+          value: getIt<PlaylistViewModel>(),
         ),
-        ChangeNotifierProvider<LyricsViewModel>(
-          create: (_) => getIt<LyricsViewModel>(),
+        ChangeNotifierProvider<LyricsViewModel>.value(
+          value: getIt<LyricsViewModel>(),
         ),
-        ChangeNotifierProvider<OfflineModeViewModel>(
-          create: (_) => getIt<OfflineModeViewModel>(),
+        ChangeNotifierProvider<OfflineModeViewModel>.value(
+          value: getIt<OfflineModeViewModel>(),
         ),
         ChangeNotifierProvider<ThemeModeController>.value(
           value: ThemeModeController.instance,

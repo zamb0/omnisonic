@@ -196,7 +196,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i902.OfflineContentFilter>(
       () => appModule.offlineContentFilter(gh<_i763.OfflineRepository>()),
     );
-    gh.factory<_i359.LyricsViewModel>(
+    gh.lazySingleton<_i359.LyricsViewModel>(
       () => _i359.LyricsViewModel(gh<_i607.LyricsRepository>()),
     );
     gh.lazySingleton<_i253.ServerStatusMonitor>(
@@ -209,7 +209,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i253.ServerStatusMonitor>(),
       ),
     );
-    gh.factory<_i989.PlaybackTrackingService>(
+    gh.lazySingleton<_i989.PlaybackTrackingService>(
       () => _i989.PlaybackTrackingService(
         gh<_i79.SubsonicApiClient>(),
         gh<_i296.ServerRepository>(),
@@ -247,7 +247,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i902.OfflineContentFilter>(),
       ),
     );
-    gh.factory<_i942.OfflineModeViewModel>(
+    gh.lazySingleton<_i942.OfflineModeViewModel>(
       () => _i942.OfflineModeViewModel(
         offlineModeService: gh<_i120.OfflineModeService>(),
         manageOfflineModeUseCase: gh<_i840.ManageOfflineModeUseCase>(),
@@ -266,7 +266,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
       ),
     );
-    gh.factory<_i984.PlaybackViewModel>(
+    gh.lazySingleton<_i984.PlaybackViewModel>(
       () => _i984.PlaybackViewModel(
         gh<_i331.PlaybackRepository>(),
         gh<_i503.PlayTrackUseCase>(),
@@ -277,13 +277,13 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i350.AppDatabase>(),
       ),
     );
-    gh.factory<_i693.PlaylistViewModel>(
+    gh.lazySingleton<_i693.PlaylistViewModel>(
       () => _i693.PlaylistViewModel(
         gh<_i331.PlaylistRepository>(),
         gh<_i503.ManagePlaylistUseCase>(),
       ),
     );
-    gh.factory<_i780.MusicLibraryViewModel>(
+    gh.lazySingleton<_i780.MusicLibraryViewModel>(
       () => _i780.MusicLibraryViewModel(
         gh<_i331.MusicRepository>(),
         gh<_i503.SyncMusicCollectionUseCase>(),
@@ -293,7 +293,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i106.SearchBloc>(
       () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
     );
-    gh.factory<_i502.ServerManagementViewModel>(
+    gh.lazySingleton<_i502.ServerManagementViewModel>(
       () => _i502.ServerManagementViewModel(
         gh<_i331.ServerRepository>(),
         gh<_i503.SyncMusicCollectionUseCase>(),

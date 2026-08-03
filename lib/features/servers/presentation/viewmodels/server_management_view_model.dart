@@ -14,7 +14,7 @@ import '../../../../core/utils/app_log.dart';
 /// - Adding, updating, and removing servers
 /// - Connection testing and validation
 /// - Server credentials management
-@injectable
+@lazySingleton
 class ServerManagementViewModel extends ChangeNotifier {
   ServerManagementViewModel(
     this._serverRepository,

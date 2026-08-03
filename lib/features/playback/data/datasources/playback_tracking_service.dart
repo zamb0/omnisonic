@@ -8,7 +8,7 @@ import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/utils/app_log.dart';
 
 /// Service for tracking playback and saving play queue state
-@injectable
+@lazySingleton
 class PlaybackTrackingService {
   PlaybackTrackingService(this._apiClient, this._serverRepository);
 

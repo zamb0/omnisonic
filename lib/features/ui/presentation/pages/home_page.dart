@@ -20,7 +20,14 @@ import 'main_shell.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.random});
+
+  /// Source of randomness for the "Random Tracks" sample.
+  ///
+  /// Left null in the app so every launch samples differently. Tests pass a
+  /// seeded [Random] so the section renders the same rows every run —
+  /// without it a golden of this page can never match twice.
+  final Random? random;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -55,7 +62,7 @@ class _HomePageState extends State<HomePage> {
 
     // Picking distinct indices rather than copying and shuffling the whole
     // library for twelve rows.
-    final random = Random();
+    final random = widget.random ?? Random();
     final picked = <int>{};
     final wanted = min(_randomTrackCount, allTracks.length);
     while (picked.length < wanted) {

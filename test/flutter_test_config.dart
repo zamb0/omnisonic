@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,43 +7,33 @@ import 'package:flutter_test/flutter_test.dart';
 /// Runs once before every test file in this package.
 ///
 /// `flutter test` renders all text with a placeholder font unless the real
-/// typefaces are registered explicitly — even though they are bundled in
-/// `pubspec.yaml`. Without this, goldens lock in fake metrics and any test
-/// that measures text is meaningless. Registering here rather than in a
-/// `setUpAll` keeps it out of every individual test file.
+/// typefaces are registered explicitly — including MaterialIcons, which is
+/// why untouched goldens show icons as empty boxes. Without this, goldens
+/// lock in fake metrics and any test that measures text is meaningless.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
   await _loadAppFonts();
   await testMain();
 }
 
-/// Family name -> bundled asset paths. Must stay in sync with the `fonts:`
-/// section of `pubspec.yaml`.
-const _fontAssets = <String, List<String>>{
-  'Manrope': [
-    'assets/fonts/Manrope-400.ttf',
-    'assets/fonts/Manrope-500.ttf',
-    'assets/fonts/Manrope-600.ttf',
-    'assets/fonts/Manrope-700.ttf',
-  ],
-  'Gabarito': [
-    'assets/fonts/Gabarito-500.ttf',
-    'assets/fonts/Gabarito-600.ttf',
-    'assets/fonts/Gabarito-700.ttf',
-    'assets/fonts/Gabarito-800.ttf',
-  ],
-  'JetBrains Mono': [
-    'assets/fonts/JetBrainsMono-400.ttf',
-    'assets/fonts/JetBrainsMono-500.ttf',
-    'assets/fonts/JetBrainsMono-600.ttf',
-  ],
-};
-
+/// Registers every font in the build's `FontManifest.json`.
+///
+/// Reading the manifest rather than a hard-coded list means the bundled
+/// families in `pubspec.yaml` and the framework's own MaterialIcons are both
+/// covered, and adding a weight to the pubspec needs no change here.
 Future<void> _loadAppFonts() async {
-  for (final entry in _fontAssets.entries) {
-    final loader = FontLoader(entry.key);
-    for (final asset in entry.value) {
-      loader.addFont(rootBundle.load(asset));
+  final manifest =
+      json.decode(await rootBundle.loadString('FontManifest.json'))
+          as List<dynamic>;
+
+  for (final entry in manifest.cast<Map<String, dynamic>>()) {
+    final family = entry['family'] as String;
+    // Fonts the engine ships are listed with a "packages/" prefix; the
+    // family name has to keep that prefix or lookups miss.
+    final loader = FontLoader(family);
+    for (final font in (entry['fonts'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()) {
+      loader.addFont(rootBundle.load(font['asset'] as String));
     }
     await loader.load();
   }

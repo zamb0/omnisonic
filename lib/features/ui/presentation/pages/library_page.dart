@@ -12,7 +12,6 @@ import '../models/library_sort_state.dart';
 import '../models/sort_option.dart';
 import '../services/library_sort_service.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/utils/debouncer.dart';
 import 'main_shell.dart';
@@ -142,10 +141,10 @@ class _LibraryPageState extends State<LibraryPage> {
       body: AnimatedSwitcher(
         duration: AnimationUtils.adjustedDuration(
           context,
-          AnimationConstants.quickAnimation,
+          AnimationManager.quickDuration,
         ),
-        switchInCurve: AnimationConstants.smoothCurve,
-        switchOutCurve: AnimationConstants.smoothCurve,
+        switchInCurve: AnimationManager.standardCurve,
+        switchOutCurve: AnimationManager.standardCurve,
         transitionBuilder: (child, animation) {
           return FadeTransition(opacity: animation, child: child);
         },

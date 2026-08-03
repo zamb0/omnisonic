@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/design_system/design_system.dart';
 
 /// A consistent loading indicator widget
@@ -57,13 +56,13 @@ class _ShimmerCardState extends State<ShimmerCard>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: AnimationConstants.loadingAnimation,
+      duration: AnimationManager.loadingDuration,
       vsync: this,
     );
     _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: AnimationConstants.loadingCurve,
+        curve: AnimationManager.loadingCurve,
       ),
     );
   }

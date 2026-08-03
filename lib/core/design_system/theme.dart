@@ -4,14 +4,12 @@ import 'colors.dart';
 import 'typography.dart';
 import 'spacing.dart';
 import 'icons.dart';
-import 'animation_manager.dart';
-import 'platform_theme_extensions.dart';
 
 /// Main theme system for Omnisonic UI Enhancement
 class OmnisonicTheme {
   /// Light theme configuration
   static ThemeData get lightTheme {
-    final baseTheme = ThemeData(
+    return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: OmnisonicColors.lightColorScheme,
@@ -282,19 +280,13 @@ class OmnisonicTheme {
       ),
 
       // Extensions
-      extensions: const [
-        OmnisonicColorExtension.light,
-        OmnisonicAnimationExtension(),
-      ],
+      extensions: const [OmnisonicColorExtension.light],
     );
-
-    // Add platform-specific extensions
-    return addPlatformExtensions(baseTheme);
   }
 
   /// Dark theme configuration
   static ThemeData get darkTheme {
-    final baseTheme = ThemeData(
+    return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: OmnisonicColors.darkColorScheme,
@@ -565,14 +557,8 @@ class OmnisonicTheme {
       ),
 
       // Extensions
-      extensions: const [
-        OmnisonicColorExtension.dark,
-        OmnisonicAnimationExtension(),
-      ],
+      extensions: const [OmnisonicColorExtension.dark],
     );
-
-    // Add platform-specific extensions
-    return addPlatformExtensions(baseTheme);
   }
 }
 
@@ -581,11 +567,6 @@ extension OmnisonicThemeExtension on BuildContext {
   OmnisonicColorExtension get omnisonicColors {
     return Theme.of(this).extension<OmnisonicColorExtension>() ??
         OmnisonicColorExtension.light;
-  }
-
-  OmnisonicAnimationExtension get omnisonicAnimations {
-    return Theme.of(this).extension<OmnisonicAnimationExtension>() ??
-        const OmnisonicAnimationExtension();
   }
 
   ColorScheme get colorScheme => Theme.of(this).colorScheme;
@@ -630,12 +611,4 @@ extension OmnisonicThemeExtension on BuildContext {
   LinearGradient get progressBarGradient =>
       omnisonicColors.progressBarGradient ??
       OmnisonicColors.progressBarGradient;
-
-  // Animation getters
-  Duration get fastAnimationDuration => omnisonicAnimations.fastDuration;
-  Duration get normalAnimationDuration => omnisonicAnimations.normalDuration;
-  Duration get slowAnimationDuration => omnisonicAnimations.slowDuration;
-  Curve get standardAnimationCurve => omnisonicAnimations.standardCurve;
-  Curve get fastAnimationCurve => omnisonicAnimations.fastCurve;
-  Curve get slowAnimationCurve => omnisonicAnimations.slowCurve;
 }

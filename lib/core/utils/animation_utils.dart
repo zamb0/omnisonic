@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../constants/animation_constants.dart';
+
+import '../design_system/animation_manager.dart';
 
 /// Utility class for creating consistent animations throughout the app
 class AnimationUtils {
@@ -25,7 +26,7 @@ class AnimationUtils {
           ).animate(
             CurvedAnimation(
               parent: animation,
-              curve: AnimationConstants.playerCurve,
+              curve: AnimationManager.standardCurve,
             ),
           ),
       child: child,
@@ -47,7 +48,7 @@ class AnimationUtils {
           ).animate(
             CurvedAnimation(
               parent: animation,
-              curve: AnimationConstants.bottomSheetCurve,
+              curve: AnimationManager.sheetCurve,
             ),
           ),
       child: child,
@@ -64,7 +65,7 @@ class AnimationUtils {
     return FadeTransition(
       opacity: CurvedAnimation(
         parent: animation,
-        curve: AnimationConstants.dialogCurve,
+        curve: AnimationManager.dialogCurve,
       ),
       child: child,
     );
@@ -87,7 +88,7 @@ class AnimationUtils {
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       transitionAnimationController: AnimationController(
-        duration: AnimationConstants.standardAnimation,
+        duration: AnimationManager.normalDuration,
         vsync: Navigator.of(context),
       ),
       shape: const RoundedRectangleBorder(
@@ -109,7 +110,7 @@ class AnimationUtils {
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       barrierColor: Colors.black54,
       transitionBuilder: fadeTransition,
-      transitionDuration: AnimationConstants.quickAnimation,
+      transitionDuration: AnimationManager.quickDuration,
     );
   }
 }

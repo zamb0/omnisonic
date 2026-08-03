@@ -133,9 +133,18 @@ The app shell (`MainShell`) and the now-playing bar both switch on the same 768p
 ### Color Contrast
 - All color combinations meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text) — enforced by `color_contrast_test.dart`.
 
-## Platform Theme Extensions
+## Motion
 
-`platform_theme_extensions.dart` + `platform_optimizations.dart` + `platform_animations.dart` add per-platform touch target size, border radius, page-transition builder and haptics, applied automatically by `OmnisonicTheme` via `addPlatformExtensions`.
+`animation_manager.dart` holds every duration and curve the app uses:
+`fast` (150ms) / `quick` (200ms) / `normal` (300ms) / `slow` (500ms) /
+`loading` (1500ms), plus a curve per role (`standard`, `fast`, `slow`,
+`dialog`, `sheet`, `loading`). These are values only — anything that has to
+*decide* (reduced motion, sheet vs dialog presentation) lives in
+`core/utils/animation_utils.dart` and reads from here.
+
+There used to be three overlapping sets of these under different names, so
+the same transition was 200ms or 300ms depending on which file the author
+reached for. A per-platform set also existed and was read by nothing.
 
 ## Testing
 
@@ -152,11 +161,11 @@ lib/core/design_system/
 ├── spacing.dart                    # Spacing, grid, touch targets
 ├── icons.dart                      # Icon system and sizes
 ├── theme.dart                      # ThemeData assembly (light/dark)
-├── animation_manager.dart          # Standard durations/curves + ThemeExtension
-├── responsive_layout.dart          # Breakpoints, ResponsiveLayout, ScreenSizeDetector
-├── platform_theme_extensions.dart  # Per-platform ThemeExtension
-├── platform_optimizations.dart     # Per-platform touch/haptics/scroll physics
-├── platform_animations.dart        # Per-platform page transitions
+├── animation_manager.dart          # Durations and curves
+├── responsive_layout.dart          # Breakpoints and ResponsiveLayout
+├── glass_surface.dart              # Blur/saturate glass panes
+├── art_tint_background.dart        # Cover-art tint wash
+├── theme_mode_controller.dart      # Persisted light/dark/system choice
 ├── design_system.dart              # Barrel export
 └── README.md                       # This documentation
 ```

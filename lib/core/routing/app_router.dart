@@ -1,8 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
+import '../design_system/design_system.dart';
+
 import '../../core/entities/entities.dart';
-import '../../core/constants/animation_constants.dart';
 import '../../core/utils/animation_utils.dart';
 import '../../features/ui/presentation/pages/home_page.dart';
 import '../../features/ui/presentation/pages/library_page.dart';
@@ -251,7 +252,7 @@ class AppRouter {
   }) {
     final duration = AnimationUtils.adjustedDuration(
       context,
-      AnimationConstants.quickAnimation,
+      AnimationManager.quickDuration,
     );
     return CustomTransitionPage<void>(
       key: state.pageKey,
@@ -262,7 +263,7 @@ class AppRouter {
         return FadeTransition(
           opacity: CurvedAnimation(
             parent: animation,
-            curve: AnimationConstants.smoothCurve,
+            curve: AnimationManager.standardCurve,
           ),
           child: child,
         );

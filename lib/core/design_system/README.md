@@ -58,6 +58,10 @@ Padding(
 Icon(OmnisonicIcons.shuffle, size: OmnisonicIconSizes.md)
 ```
 
+Always `OmnisonicIcons`, never `Icons.*` directly — the token file is the
+only thing keeping one shape language across the app. Sizes come from the
+ladder, not from a literal.
+
 ### Responsive layout
 
 ```dart
@@ -116,12 +120,18 @@ bundled.
 ## Responsive Design
 
 Breakpoints live in `ResponsiveBreakpoints` (`responsive_layout.dart`):
+`mobile` 480, `tablet` 768, `desktop` 1024, `largeDesktop` 1440.
 
-- **Mobile**: < 768px
-- **Tablet**: 768px – 1024px
-- **Desktop**: > 1024px
+`MainShell` switches chrome at 768 (bottom bar → 72px rail) and 1024 (rail →
+234px sidebar), and publishes the result through `ShellLayout`.
 
-The app shell (`MainShell`) and the now-playing bar both switch on the same 768px threshold, so the compact mobile UI and the sidebar shell always appear together.
+**Pages inside the shell should ask `ShellLayout`, not `MediaQuery`.** The
+content column is narrower than the window by the width of the sidebar, so
+the two disagree at exactly the widths that matter — that disagreement once
+hid the library's tab bar on a 1000px window and left two tabs unreachable.
+
+`ResponsiveLayout` and `ResponsiveGridView` both measure their own
+constraints for the same reason.
 
 ## Accessibility
 
@@ -132,6 +142,33 @@ The app shell (`MainShell`) and the now-playing bar both switch on the same 768p
 
 ### Color Contrast
 - All color combinations meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text) — enforced by `color_contrast_test.dart`.
+
+### Dynamic Type (`OmnisonicTextScale`)
+
+Content scales without limit. The shell's own chrome — nav labels, the rail,
+the transport bar — stops at `chromeMax` (1.3x) via `clampChrome`: it is
+fixed furniture with nowhere to reflow, and past that it takes the screen
+away from the content the user enlarged the text to read.
+
+Boxes that are part artwork and part text use `boxExtent`, which grows only
+the text half; scaling the whole height would enlarge the artwork too and
+push the row off screen.
+
+`text_scale_test.dart` pumps every major screen at 1.0 / 1.3 / 2.0 across two
+widths and asserts nothing throws.
+
+### Reduced Motion
+
+Durations go through `AnimationUtils.adjustedDuration`, which returns
+`Duration.zero` when the platform asks for reduced motion. Looping animations
+— the shimmer sweep, the glass sheen, the audio visualizer — park at a static
+frame instead of running at zero duration forever.
+
+### State Vocabulary
+
+Loading, empty and error are `state_views.dart`, not per-screen inventions.
+`ErrorStateView` takes a **required** `onRetry`, so an error the user cannot
+act on is not expressible. `screen_states_test.dart` holds every screen to it.
 
 ## Motion
 

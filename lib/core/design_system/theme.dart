@@ -279,8 +279,6 @@ class OmnisonicTheme {
         ),
       ),
 
-      // Extensions
-      extensions: const [OmnisonicColorExtension.light],
     );
   }
 
@@ -556,59 +554,6 @@ class OmnisonicTheme {
         ),
       ),
 
-      // Extensions
-      extensions: const [OmnisonicColorExtension.dark],
     );
   }
-}
-
-/// Extension to easily access Omnisonic color extension from context
-extension OmnisonicThemeExtension on BuildContext {
-  OmnisonicColorExtension get omnisonicColors {
-    return Theme.of(this).extension<OmnisonicColorExtension>() ??
-        OmnisonicColorExtension.light;
-  }
-
-  ColorScheme get colorScheme => Theme.of(this).colorScheme;
-  TextTheme get textTheme => Theme.of(this).textTheme;
-
-  // Music-specific color getters
-  Color get playingIndicatorColor =>
-      omnisonicColors.playingIndicator ?? OmnisonicColors.playingIndicator;
-  Color get pausedIndicatorColor =>
-      omnisonicColors.pausedIndicator ?? OmnisonicColors.pausedIndicator;
-  Color get queueIndicatorColor =>
-      omnisonicColors.queueIndicator ?? OmnisonicColors.queueIndicator;
-  Color get favoriteIndicatorColor =>
-      omnisonicColors.favoriteIndicator ?? OmnisonicColors.favoriteIndicator;
-
-  // Gradient getters
-  LinearGradient get primaryGradient =>
-      omnisonicColors.primaryGradient ?? OmnisonicColors.primaryGradient;
-  LinearGradient get accentGradient =>
-      omnisonicColors.accentGradient ?? OmnisonicColors.accentGradient;
-  LinearGradient get heroGradient =>
-      omnisonicColors.heroGradient ?? OmnisonicColors.heroGradient;
-  LinearGradient get subtleGradient =>
-      omnisonicColors.subtleGradient ?? OmnisonicColors.subtleGradient;
-  LinearGradient get primaryAnimatedGradient =>
-      omnisonicColors.primaryAnimatedGradient ??
-      OmnisonicColors.primaryAnimatedGradient;
-  LinearGradient get accentAnimatedGradient =>
-      omnisonicColors.accentAnimatedGradient ??
-      OmnisonicColors.accentAnimatedGradient;
-  RadialGradient get cardDepthGradient =>
-      omnisonicColors.cardDepthGradient ?? OmnisonicColors.cardDepthGradient;
-  LinearGradient get shimmerGradient =>
-      omnisonicColors.shimmerGradient ?? OmnisonicColors.shimmerGradient;
-  LinearGradient get glassMorphismGradient =>
-      omnisonicColors.glassMorphismGradient ??
-      OmnisonicColors.glassMorphismLight;
-  LinearGradient get nowPlayingGradient =>
-      omnisonicColors.nowPlayingGradient ?? OmnisonicColors.nowPlayingGradient;
-  LinearGradient get albumArtOverlay =>
-      omnisonicColors.albumArtOverlay ?? OmnisonicColors.albumArtOverlay;
-  LinearGradient get progressBarGradient =>
-      omnisonicColors.progressBarGradient ??
-      OmnisonicColors.progressBarGradient;
 }

@@ -1,59 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// A responsive grid widget that adapts to screen size.
+/// A grid that fits as many [minItemWidth]-wide columns as the available
+/// width allows, and builds its children lazily.
 ///
-/// Built on [Wrap], which lays out every child eagerly — there is no
-/// virtualization. Only use this for small, bounded collections (a settings
-/// page, a handful of chips); for scrollable collections that can grow large
-/// use [ResponsiveGridView] instead.
-class ResponsiveGrid extends StatelessWidget {
-  final List<Widget> children;
-  final double minItemWidth;
-  final double spacing;
-  final EdgeInsets? padding;
-
-  const ResponsiveGrid({
-    super.key,
-    required this.children,
-    this.minItemWidth = 160.0,
-    this.spacing = 16.0,
-    this.padding,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth =
-            constraints.maxWidth - (padding?.horizontal ?? 0);
-        final crossAxisCount = (availableWidth / (minItemWidth + spacing))
-            .floor()
-            .clamp(1, 6);
-        final itemWidth =
-            (availableWidth - (spacing * (crossAxisCount - 1))) /
-            crossAxisCount;
-
-        return Padding(
-          padding: padding ?? EdgeInsets.zero,
-          child: Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: children.map((child) {
-              return SizedBox(width: itemWidth, child: child);
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// A responsive grid view for scrollable content.
-///
-/// Takes [itemCount] + [itemBuilder] rather than a pre-built [List<Widget>]
-/// so the underlying [GridView.builder] only ever instantiates the cards
-/// that are actually laid out, instead of the caller materializing every
-/// item up front on each rebuild.
+/// Column count is derived from the constraints rather than from a
+/// breakpoint, so the same grid works in the full window, in the narrower
+/// content column beside the sidebar, and inside a tab.
 class ResponsiveGridView extends StatelessWidget {
   final int itemCount;
   final IndexedWidgetBuilder itemBuilder;

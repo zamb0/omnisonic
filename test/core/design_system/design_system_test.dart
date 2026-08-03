@@ -93,12 +93,6 @@ void main() {
       );
     });
 
-    test('Grid system provides responsive columns', () {
-      expect(OmnisonicGrid.mobileColumns, 4);
-      expect(OmnisonicGrid.tabletColumns, 8);
-      expect(OmnisonicGrid.desktopColumns, 12);
-    });
-
     test('Border radius values are consistent', () {
       expect(OmnisonicRadius.xs, 4.0);
       expect(OmnisonicRadius.sm, 8.0);

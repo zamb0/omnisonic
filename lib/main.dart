@@ -20,6 +20,7 @@ import 'features/offline/presentation/viewmodels/offline_mode_view_model.dart';
 
 // BLoCs
 import 'features/music/presentation/bloc/search_bloc.dart';
+import 'core/routing/app_shortcuts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -153,6 +154,10 @@ class _OmnisonicAppState extends State<OmnisonicApp>
             darkTheme: OmnisonicTheme.darkTheme,
             themeMode: themeModeController.themeMode,
             routerConfig: AppRouter.router,
+            builder: (context, child) => AppShortcuts(
+              playback: () => getIt<PlaybackViewModel>(),
+              child: child ?? const SizedBox.shrink(),
+            ),
           );
         },
       ),

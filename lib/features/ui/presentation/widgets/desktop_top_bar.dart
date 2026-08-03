@@ -32,14 +32,18 @@ class DesktopTopBar extends StatelessWidget {
           const Spacer(),
           Consumer<MusicLibraryViewModel>(
             builder: (context, viewModel, child) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Text(
-                  viewModel.isSyncing
-                      ? 'syncing…'
-                      : 'last sync ${_relativeTime(viewModel.lastUpdated)}',
-                  style: OmnisonicTypography.technical.copyWith(
-                    color: scheme.onSurfaceVariant,
+              return Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    viewModel.isSyncing
+                        ? 'syncing…'
+                        : 'last sync ${_relativeTime(viewModel.lastUpdated)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmnisonicTypography.technical.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               );

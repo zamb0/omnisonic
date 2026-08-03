@@ -14,6 +14,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/constants/animation_constants.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/utils/debouncer.dart';
+import 'main_shell.dart';
 import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/animation_utils.dart';
 
@@ -100,9 +101,12 @@ class _LibraryPageState extends State<LibraryPage> {
     final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
     final activeTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
     // The sidebar shell already exposes one entry per tab; the TabBar is the
-    // only way into Artists and Playlists when there is no sidebar.
-    final showTabBar =
-        MediaQuery.of(context).size.width < ResponsiveBreakpoints.tablet;
+    // only way into Artists and Playlists when there is no sidebar. Asking the
+    // shell rather than MediaQuery, because the shell decides from its own
+    // constraints — on a 1000px window it shows the icon-only rail while the
+    // screen still reads as tablet-wide, which used to hide the TabBar and
+    // leave both tabs unreachable.
+    final showTabBar = !ShellLayout.hasSidebar(context);
 
     return Scaffold(
       appBar: AppBar(

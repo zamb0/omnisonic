@@ -16,6 +16,7 @@ import '../../../../core/utils/animation_utils.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/library_stats_rail.dart';
 import '../widgets/server_dot.dart';
+import 'main_shell.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -505,8 +506,7 @@ class _HomePageState extends State<HomePage> {
   /// hierarchy in the type, not in decoration beside it.
   Widget _buildSectionHeader(String title, {String? meta}) {
     final scheme = Theme.of(context).colorScheme;
-    final wide =
-        MediaQuery.of(context).size.width >= ResponsiveBreakpoints.tablet;
+    final wide = ShellLayout.hasSidebar(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),

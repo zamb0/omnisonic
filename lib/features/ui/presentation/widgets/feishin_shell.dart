@@ -80,20 +80,23 @@ class FeishinShell extends StatelessWidget {
         children: [
           _buildBrand(context),
           const SizedBox(height: 18),
-          // Scrolls instead of overflowing on short windows — the SERVERS
-          // section and health card below are pinned outside this so they
-          // stay visible regardless of nav-item count.
+          // Everything below the brand scrolls. The nav items alone used to
+          // scroll while the SERVERS list and the health card were pinned
+          // outside it, which overflows a short window as soon as enough
+          // servers are configured — that list has no upper bound.
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: _buildNavItems(context),
+                children: [
+                  ..._buildNavItems(context),
+                  _buildServersSection(context),
+                  const SizedBox(height: 12),
+                  _buildLibraryHealthCard(context),
+                ],
               ),
             ),
           ),
-          _buildServersSection(context),
-          const SizedBox(height: 12),
-          _buildLibraryHealthCard(context),
         ],
       ),
     );
@@ -406,14 +409,17 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
             borderRadius: BorderRadius.circular(4),
             child: SizedBox(
               height: 6,
+              // Flex values are clamped to at least 1: an empty library makes
+              // every share 0, and a Row whose children all have flex 0 has
+              // nothing to distribute its width to.
               child: Row(
                 children: [
                   Expanded(
-                    flex: (losslessShare * 1000).round(),
+                    flex: (losslessShare * 1000).round().clamp(1, 1000),
                     child: ColoredBox(color: scheme.onSurface),
                   ),
                   Expanded(
-                    flex: (highShare * 1000).round(),
+                    flex: (highShare * 1000).round().clamp(1, 1000),
                     child: ColoredBox(
                       color: scheme.onSurface.withValues(alpha: 0.45),
                     ),
@@ -421,7 +427,7 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
                   Expanded(
                     flex: ((1 - losslessShare - highShare) * 1000)
                         .round()
-                        .clamp(0, 1000),
+                        .clamp(1, 1000),
                     child: ColoredBox(
                       color: scheme.onSurface.withValues(alpha: 0.1),
                     ),

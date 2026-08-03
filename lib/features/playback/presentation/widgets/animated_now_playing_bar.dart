@@ -11,6 +11,7 @@ import '../../../../core/services/cover_palette_service.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
+import '../../../ui/presentation/pages/main_shell.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
 
 /// Feishin-style now-playing bar at the bottom of the screen
@@ -111,10 +112,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Same threshold the shell uses to switch between the bottom bar and the
-    // sidebar, so the compact bar and the phone shell always appear together.
-    final isMobile = screenWidth < ResponsiveBreakpoints.tablet;
+    // Asking the shell which chrome it picked, rather than re-deriving it from
+    // the screen width: this bar sits inside a column narrowed by the sidebar,
+    // so the two answers disagree around the breakpoints.
+    final isMobile = !ShellLayout.hasSidebar(context);
 
     return Consumer<PlaybackViewModel>(
       builder: (context, vm, child) {

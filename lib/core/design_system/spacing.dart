@@ -178,6 +178,14 @@ class OmnisonicRadius {
   static const double full = 9999.0;
 
   // Component-specific radius
+  /// Cover art corner used across cards, the now-playing bar and detail
+  /// headers. Deliberately off the 4px scale — it is the redesign's art
+  /// radius, and rounding it to 12 or 16 visibly changes the artwork.
+  static const double art = 14.0;
+
+  /// Nav pill / glass button corner in the sidebar chrome.
+  static const double pill = 13.0;
+
   static const double card = md; // 12px
   static const double button = sm; // 8px
   static const double input = sm; // 8px
@@ -193,6 +201,32 @@ class OmnisonicRadius {
 }
 
 /// Elevation constants for consistent shadows
+/// Drop shadows for cover art.
+///
+/// The redesign lifts artwork off the background with a wide, offset shadow
+/// rather than a Material elevation; these were hand-copied at each call site.
+class OmnisonicShadows {
+  /// Lift for a full-size cover: grid cards, detail headers.
+  static const List<BoxShadow> art = [
+    BoxShadow(
+      color: Color(0x80000000),
+      blurRadius: 24,
+      spreadRadius: -14,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Softer lift for a small cover in a row.
+  static const List<BoxShadow> artCompact = [
+    BoxShadow(
+      color: Color(0x80000000),
+      blurRadius: 20,
+      spreadRadius: -6,
+      offset: Offset(0, 8),
+    ),
+  ];
+}
+
 class OmnisonicElevation {
   static const double none = 0.0;
   static const double xs = 1.0;

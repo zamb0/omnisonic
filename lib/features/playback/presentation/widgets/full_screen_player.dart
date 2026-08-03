@@ -363,7 +363,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         child: Container(
           constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
             color: scheme.surfaceContainerHighest,
             boxShadow: [
               BoxShadow(
@@ -374,7 +374,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
             child: AspectRatio(
               aspectRatio: 1,
               child: track.coverArtUrl != null
@@ -881,11 +881,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                     color: OmnisonicColors.glassDark(1),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                     child: track.coverArtUrl != null
                         ? CachedNetworkImage(
                             imageUrl: SubsonicCoverArt.of(

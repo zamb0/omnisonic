@@ -406,7 +406,7 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
           ),
           const SizedBox(height: 7),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
             child: SizedBox(
               height: 6,
               // Flex values are clamped to at least 1: an empty library makes
@@ -523,10 +523,10 @@ class _NavItem extends StatelessWidget {
         button: true,
         child: Material(
           color: selected ? scheme.onSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.pill),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.pill),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
               child: Row(

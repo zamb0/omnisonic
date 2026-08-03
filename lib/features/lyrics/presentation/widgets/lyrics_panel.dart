@@ -124,7 +124,7 @@ class _LyricsControls extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

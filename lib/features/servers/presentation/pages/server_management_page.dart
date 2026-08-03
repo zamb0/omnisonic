@@ -344,7 +344,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: OmnisonicColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             ),
             child: Text(
               '${viewModel.onlineServerCount} online',
@@ -361,7 +361,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: OmnisonicColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.md),
               ),
               child: Text(
                 '${viewModel.offlineServerCount} offline',
@@ -474,7 +474,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -500,7 +500,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: (color ?? scheme.onSurfaceVariant).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Text(
         '$label: $value',

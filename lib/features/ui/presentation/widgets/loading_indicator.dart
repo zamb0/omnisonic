@@ -99,7 +99,7 @@ class _ShimmerCardState extends State<ShimmerCard>
           width: widget.width ?? 160,
           height: widget.height ?? 200,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,

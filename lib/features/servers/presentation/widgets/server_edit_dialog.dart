@@ -103,7 +103,7 @@ class _ServerEditDialogState extends State<ServerEditDialog> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: OmnisonicColors.info.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                     border: Border.all(color: OmnisonicColors.info, width: 1),
                   ),
                   child: const Row(

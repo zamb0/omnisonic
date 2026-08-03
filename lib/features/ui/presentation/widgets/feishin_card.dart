@@ -64,24 +64,17 @@ class _FeishinCardState extends State<FeishinCard> {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: isCircle
-                          ? BorderRadius.circular(999)
-                          : BorderRadius.circular(14),
+                          ? BorderRadius.circular(OmnisonicRadius.full)
+                          : BorderRadius.circular(OmnisonicRadius.art),
                       // `0 12px 24px -14px` from the design's cover-art spec:
                       // enough lift that the art floats over the tinted
                       // backdrop without casting a visible grey box.
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 24,
-                          spreadRadius: -14,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
+                      boxShadow: OmnisonicShadows.art,
                     ),
                     child: ClipRRect(
                       borderRadius: isCircle
-                          ? BorderRadius.circular(999)
-                          : BorderRadius.circular(14),
+                          ? BorderRadius.circular(OmnisonicRadius.full)
+                          : BorderRadius.circular(OmnisonicRadius.art),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [

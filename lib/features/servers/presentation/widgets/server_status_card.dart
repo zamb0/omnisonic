@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// A card widget for displaying server status statistics
 class ServerStatusCard extends StatelessWidget {
@@ -30,7 +31,7 @@ class ServerStatusCard extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                   ),
                   child: Icon(icon, color: color, size: 20),
                 ),

@@ -219,7 +219,7 @@ class _TopArtists extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
                   child: LinearProgressIndicator(
                     value: top == 0 ? 0 : entry.value / top,
                     minHeight: 5,

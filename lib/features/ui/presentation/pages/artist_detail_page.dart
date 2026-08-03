@@ -363,7 +363,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             border: Border.all(color: scheme.outlineVariant),
           ),
           child: Column(
@@ -460,7 +460,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(

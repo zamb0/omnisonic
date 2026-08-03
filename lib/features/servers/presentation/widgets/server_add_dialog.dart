@@ -127,7 +127,7 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: OmnisonicColors.info.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                     border: Border.all(color: OmnisonicColors.info, width: 1),
                   ),
                   child: const _NavidromeTips(),
@@ -164,7 +164,7 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
                       color: _testPassed
                           ? OmnisonicColors.success.withValues(alpha: 0.1)
                           : OmnisonicColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
                       border: Border.all(
                         color: _testPassed
                             ? OmnisonicColors.success

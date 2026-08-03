@@ -873,7 +873,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     ColorScheme scheme,
     double size,
   ) {
-    final borderRadius = BorderRadius.circular(14);
+    final borderRadius = BorderRadius.circular(OmnisonicRadius.art);
     return Hero(
       tag: 'album-${widget.album.id}',
       child: Container(
@@ -1131,7 +1131,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(

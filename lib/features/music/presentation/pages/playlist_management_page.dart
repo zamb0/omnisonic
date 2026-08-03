@@ -104,7 +104,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                     )
                   : null,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
               ),
             ),
             onChanged: (value) {

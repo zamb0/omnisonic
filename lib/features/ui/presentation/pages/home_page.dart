@@ -271,10 +271,10 @@ class _HomePageState extends State<HomePage> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
             child: GlassSurface(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: InkWell(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
                 onTap: () => context.read<PlaybackViewModel>().playTrack(
                   track,
                   queue: recent,
@@ -283,7 +283,7 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.art),
                       child: SizedBox(
                         width: 62,
                         height: 62,
@@ -361,14 +361,7 @@ class _HomePageState extends State<HomePage> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: scheme.onSurface,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 20,
-                            spreadRadius: -6,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                        boxShadow: OmnisonicShadows.artCompact,
                       ),
                       child: Icon(
                         Icons.play_arrow,
@@ -661,19 +654,16 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(
+                          OmnisonicRadius.art,
+                        ),
                         color: scheme.surfaceContainerHighest,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 24,
-                            spreadRadius: -14,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
+                        boxShadow: OmnisonicShadows.art,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(
+                          OmnisonicRadius.art,
+                        ),
                         child: album.coverArtUrl != null
                             ? CachedNetworkImage(
                                 imageUrl: SubsonicCoverArt.of(
@@ -796,7 +786,7 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.md),
                     color: Colors.black.withValues(alpha: 0.6),
                   ),
                   child: Center(

@@ -144,12 +144,12 @@ class TrackTile extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
         color: scheme.surfaceContainerHighest,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
               child: CachedNetworkImage(
                 imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
                 cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,

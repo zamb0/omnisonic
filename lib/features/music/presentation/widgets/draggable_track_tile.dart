@@ -32,7 +32,7 @@ class DraggableTrackTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         color: Theme.of(context).cardColor,
       ),
       child: ListTile(
@@ -92,12 +92,12 @@ class DraggableTrackTile extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
         color: scheme.surfaceContainerHighest,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
               child: CachedNetworkImage(
                 imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
                 cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,

@@ -182,7 +182,7 @@ class ServerListTile extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         color: _getStatusColor(server.status).withValues(alpha: 0.1),
       ),
       child: Icon(Icons.dns, color: _getStatusColor(server.status), size: 24),
@@ -198,7 +198,7 @@ class ServerListTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

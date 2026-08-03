@@ -209,11 +209,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(
+                              OmnisonicRadius.xs,
+                            ),
                             color: scheme.surfaceContainerHighest,
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(
+                              OmnisonicRadius.xs,
+                            ),
                             child: track.coverArtUrl != null
                                 ? CachedNetworkImage(
                                     imageUrl: SubsonicCoverArt.of(
@@ -455,7 +459,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.art),
                     color: scheme.surfaceContainerHighest,
                     boxShadow: [
                       BoxShadow(
@@ -467,7 +471,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.art),
                     child: track.coverArtUrl != null
                         ? CachedNetworkImage(
                             imageUrl: SubsonicCoverArt.of(

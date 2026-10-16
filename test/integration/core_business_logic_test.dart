@@ -19,8 +19,6 @@ void main() {
     late GetIt getIt;
     late ServerRepository serverRepository;
     late MusicRepository musicRepository;
-    late PlaylistRepository playlistRepository;
-    late PlaybackRepository playbackRepository;
     late SyncMusicCollectionUseCase syncUseCase;
     late SearchMusicUseCase searchUseCase;
     late ManagePlaylistUseCase playlistUseCase;
@@ -32,8 +30,6 @@ void main() {
 
       serverRepository = getIt<ServerRepository>();
       musicRepository = getIt<MusicRepository>();
-      playlistRepository = getIt<PlaylistRepository>();
-      playbackRepository = getIt<PlaybackRepository>();
       syncUseCase = getIt<SyncMusicCollectionUseCase>();
       searchUseCase = getIt<SearchMusicUseCase>();
       playlistUseCase = getIt<ManagePlaylistUseCase>();

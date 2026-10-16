@@ -24,9 +24,6 @@ class ServerConnectionService {
   static const String _passwordPrefix = 'server_password_';
   static const Duration _connectionTestInterval = Duration(minutes: 5);
 
-  // Persistent storage fallback for development
-  static const String _fallbackStorageKey = 'omnisonic_server_passwords';
-
   ServerConnectionService({
     SubsonicApiClient? apiClient,
     FlutterSecureStorage? secureStorage,

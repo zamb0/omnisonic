@@ -140,13 +140,9 @@ abstract class AppModule {
   ServerRepositoryImpl serverRepository(
     LocalServerDataSource localDataSource,
     ServerConnectionService connectionService,
-    ServerStatusMonitor statusMonitor,
-    ServerValidator validator,
   ) => ServerRepositoryImpl(
     localDataSource: localDataSource,
     connectionService: connectionService,
-    statusMonitor: statusMonitor,
-    validator: validator,
   );
 
   @LazySingleton(as: MusicRepository)

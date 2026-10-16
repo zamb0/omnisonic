@@ -174,8 +174,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => appModule.serverRepository(
         gh<_i618.LocalServerDataSource>(),
         gh<_i632.ServerConnectionService>(),
-        gh<_i253.ServerStatusMonitor>(),
-        gh<_i569.ServerValidator>(),
       ),
     );
     gh.factory<_i989.PlaybackTrackingService>(
@@ -197,6 +195,19 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i759.SourceSelectionService>(),
       ),
     );
+    gh.factory<_i896.PlayTrackUseCase>(
+      () => _i896.PlayTrackUseCase(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
+    gh.factory<_i725.PlaybackBloc>(
+      () => _i725.PlaybackBloc(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i503.PlayTrackUseCase>(),
+      ),
+    );
     gh.factory<_i631.ManagePlaylistUseCase>(
       () => _i631.ManagePlaylistUseCase(
         gh<_i331.PlaylistRepository>(),
@@ -215,23 +226,21 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
       ),
     );
+    gh.factory<_i984.PlaybackViewModel>(
+      () => _i984.PlaybackViewModel(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i503.PlayTrackUseCase>(),
+        gh<_i989.PlaybackTrackingService>(),
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i331.ServerRepository>(),
+        gh<_i1002.AdaptiveStreamingService>(),
+        gh<_i350.AppDatabase>(),
+      ),
+    );
     gh.factory<_i409.SyncBloc>(
       () => _i409.SyncBloc(
         gh<_i503.SyncMusicCollectionUseCase>(),
         gh<_i331.ServerRepository>(),
-      ),
-    );
-    gh.factory<_i896.PlayTrackUseCase>(
-      () => _i896.PlayTrackUseCase(
-        gh<_i331.PlaybackRepository>(),
-        gh<_i331.MusicRepository>(),
-        gh<_i331.ServerRepository>(),
-      ),
-    );
-    gh.factory<_i725.PlaybackBloc>(
-      () => _i725.PlaybackBloc(
-        gh<_i331.PlaybackRepository>(),
-        gh<_i503.PlayTrackUseCase>(),
       ),
     );
     gh.factory<_i693.PlaylistViewModel>(
@@ -254,17 +263,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i502.ServerManagementViewModel(
         gh<_i331.ServerRepository>(),
         gh<_i503.SyncMusicCollectionUseCase>(),
-      ),
-    );
-    gh.factory<_i984.PlaybackViewModel>(
-      () => _i984.PlaybackViewModel(
-        gh<_i331.PlaybackRepository>(),
-        gh<_i503.PlayTrackUseCase>(),
-        gh<_i989.PlaybackTrackingService>(),
-        gh<_i79.SubsonicApiClient>(),
-        gh<_i331.ServerRepository>(),
-        gh<_i1002.AdaptiveStreamingService>(),
-        gh<_i350.AppDatabase>(),
       ),
     );
     return this;

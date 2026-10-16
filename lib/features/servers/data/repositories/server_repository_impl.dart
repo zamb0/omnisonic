@@ -6,25 +6,17 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/server_repository.dart';
 import '../../../../core/database/data_sources/local_server_data_source.dart';
 import '../../../../core/services/server_connection_service.dart';
-import '../../../../core/services/server_status_monitor.dart';
-import '../../../../core/utils/server_validator.dart';
 
 /// Implementation of ServerRepository that manages server CRUD operations and monitoring
 class ServerRepositoryImpl implements ServerRepository {
   final LocalServerDataSource _localDataSource;
   final ServerConnectionService _connectionService;
-  final ServerStatusMonitor _statusMonitor;
-  final ServerValidator _validator;
 
   ServerRepositoryImpl({
     required LocalServerDataSource localDataSource,
     required ServerConnectionService connectionService,
-    required ServerStatusMonitor statusMonitor,
-    required ServerValidator validator,
   }) : _localDataSource = localDataSource,
-       _connectionService = connectionService,
-       _statusMonitor = statusMonitor,
-       _validator = validator;
+       _connectionService = connectionService;
 
   @override
   Future<Result<void>> addServer(MusicServer server) async {
@@ -398,32 +390,6 @@ class ServerRepositoryImpl implements ServerRepository {
     }
   }
 
-  /// Starts monitoring all servers
-  Future<Result<void>> startMonitoringAllServers() async {
-    try {
-      final serversResult = await getAllServers();
-      if (serversResult.isFailure) {
-        return ResultHelper.failure(serversResult.failureOrNull!);
-      }
-
-      final servers = serversResult.valueOrNull!;
-      for (final server in servers) {
-        // _statusMonitor.startMonitoring(server.id);
-      }
-
-      return ResultHelper.success(null);
-    } catch (e) {
-      return ResultHelper.failure(
-        UnknownFailure('Failed to start monitoring: $e'),
-      );
-    }
-  }
-
-  /// Stops monitoring all servers
-  void stopMonitoringAllServers() {
-    // _statusMonitor.stopAllMonitoring();
-  }
-
   /// Validates server configuration
   Result<void> _validateServerConfig(MusicServer server) {
     if (server.url.isEmpty) {
@@ -475,7 +441,6 @@ class ServerRepositoryImpl implements ServerRepository {
 
   /// Disposes resources
   void dispose() {
-    stopMonitoringAllServers();
     _connectionService.dispose();
   }
 }

@@ -626,8 +626,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   void _syncAllServers(BuildContext context) {
-    final viewModel = context.read<ServerManagementViewModel>();
-
     // Show confirmation dialog
     showDialog(
       context: context,

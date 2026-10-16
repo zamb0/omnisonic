@@ -37,7 +37,7 @@ class SubsonicResponse<T> {
 }
 
 /// Subsonic response data container
-@JsonSerializable(genericArgumentFactories: true)
+@JsonSerializable(genericArgumentFactories: true, createFactory: false)
 class SubsonicResponseData<T> {
   final String status;
   final String version;

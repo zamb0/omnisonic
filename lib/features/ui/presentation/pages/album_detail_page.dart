@@ -50,13 +50,6 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       // and fetches from server if not found locally
       final albumTracks = await musicRepository.getAlbumTracks(_album.id);
 
-      // Sort tracks by track number if available
-      albumTracks.sort((a, b) {
-        final aTrackNum = a.trackNumber ?? 0;
-        final bTrackNum = b.trackNumber ?? 0;
-        return aTrackNum.compareTo(bTrackNum);
-      });
-
       setState(() {
         _tracks = albumTracks;
         _isLoading = false;

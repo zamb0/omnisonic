@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -63,35 +64,16 @@ class AppDatabase extends _$AppDatabase {
           // Migration for version 4: indexes on every foreign key and on the
           // columns the cache eviction queries order by.
           //
-          // The music tables are dropped and recreated rather than indexed in
-          // place: enabling foreign keys (see beforeOpen) would otherwise trip
-          // over rows orphaned while the pragma was off. Servers are kept, so
-          // the app re-syncs its library once on first launch after the update
-          // and the user does not have to re-enter any credentials.
-          await m.deleteTable(cacheEntriesTable.actualTableName);
-          await m.deleteTable(duplicateGroupMembersTable.actualTableName);
-          await m.deleteTable(duplicateGroupsTable.actualTableName);
-          await m.deleteTable(playlistTracksTable.actualTableName);
-          await m.deleteTable(playlistsTable.actualTableName);
-          await m.deleteTable(tracksTable.actualTableName);
-          await m.deleteTable(albumsTable.actualTableName);
-          await m.deleteTable(artistsTable.actualTableName);
-
-          await m.createTable(artistsTable);
-          await m.createTable(albumsTable);
-          await m.createTable(tracksTable);
-          await m.createTable(playlistsTable);
-          await m.createTable(playlistTracksTable);
-          await m.createTable(duplicateGroupsTable);
-          await m.createTable(duplicateGroupMembersTable);
-          await m.createTable(cacheEntriesTable);
+          // Foreign keys are enforced from this version on (see beforeOpen),
+          // so rows orphaned while the pragma was off are removed first.
+          // Dropping the tables instead would also throw away the user's
+          // playlists and the cache rows of their downloads, leaving the
+          // downloaded files on disk with nothing pointing at them.
+          await deleteForeignKeyOrphans();
 
           for (final index in allSchemaEntities.whereType<Index>()) {
             await m.create(index);
           }
-
-          // Clear the last sync marker so the next launch performs a full sync.
-          await customStatement('UPDATE servers_table SET last_sync = NULL');
         }
       },
       beforeOpen: (details) async {
@@ -99,6 +81,47 @@ class AppDatabase extends _$AppDatabase {
         // every onDelete: cascade declared in tables.dart.
         await customStatement('PRAGMA foreign_keys = ON');
       },
+    );
+  }
+
+  /// Deletes every row whose foreign key points at a row that no longer
+  /// exists, parents before children so each pass sees the final parent set.
+  ///
+  /// Such rows could pile up while `PRAGMA foreign_keys` was off; with it on,
+  /// they would make otherwise valid writes to those tables fail.
+  @visibleForTesting
+  Future<void> deleteForeignKeyOrphans() async {
+    final servers = serversTable.actualTableName;
+    final tracks = tracksTable.actualTableName;
+    final playlists = playlistsTable.actualTableName;
+    final groups = duplicateGroupsTable.actualTableName;
+
+    for (final table in [
+      tracksTable.actualTableName,
+      albumsTable.actualTableName,
+      artistsTable.actualTableName,
+    ]) {
+      await customStatement(
+        'DELETE FROM $table WHERE server_id NOT IN (SELECT id FROM $servers)',
+      );
+    }
+    await customStatement(
+      'DELETE FROM ${playlistTracksTable.actualTableName} '
+      'WHERE playlist_id NOT IN (SELECT id FROM $playlists) '
+      'OR track_id NOT IN (SELECT id FROM $tracks)',
+    );
+    await customStatement(
+      'DELETE FROM $groups '
+      'WHERE representative_track_id NOT IN (SELECT id FROM $tracks)',
+    );
+    await customStatement(
+      'DELETE FROM ${duplicateGroupMembersTable.actualTableName} '
+      'WHERE group_id NOT IN (SELECT id FROM $groups) '
+      'OR track_id NOT IN (SELECT id FROM $tracks)',
+    );
+    await customStatement(
+      'DELETE FROM ${cacheEntriesTable.actualTableName} '
+      'WHERE track_id NOT IN (SELECT id FROM $tracks)',
     );
   }
 

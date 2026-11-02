@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/track.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import 'server_dot.dart';
+import '../../../../core/utils/formatters.dart';
+import 'cover_art.dart';
 
 /// A reusable tile widget for displaying track information
 class TrackTile extends StatelessWidget {
@@ -119,7 +119,7 @@ class TrackTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            _formatDuration(track.duration),
+            formatDuration(track.duration),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               // Equal-width digits, so durations line up down the list.
@@ -140,46 +140,8 @@ class TrackTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAlbumArt(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
-        color: scheme.surfaceContainerHighest,
-      ),
-      child: track.coverArtUrl != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
-              child: CachedNetworkImage(
-                imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
-                cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,
-                cacheManager: OmnisonicImageCacheManager.instance,
-                fit: BoxFit.cover,
-                memCacheWidth: 128,
-                memCacheHeight: 128,
-                fadeInDuration: const Duration(milliseconds: 120),
-                useOldImageOnUrlChange: true,
-                placeholder: (context, url) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.musicNote,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.musicNote,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            )
-          : Icon(OmnisonicIcons.musicNote, color: scheme.onSurfaceVariant),
-    );
-  }
+  Widget _buildAlbumArt(BuildContext context) =>
+      CoverArt(url: track.coverArtUrl, size: 48);
 
   Widget _buildTrackNumber(BuildContext context) {
     return Container(
@@ -193,11 +155,5 @@ class TrackTile extends StatelessWidget {
         ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }

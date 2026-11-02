@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/routing/app_router.dart';
 
 import '../../../../core/entities/entities.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
@@ -169,20 +167,20 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
       padding: const EdgeInsets.all(16),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
-          final rawCount = (constraints.crossAxisExtent / 180).floor();
-          final crossAxisCount = rawCount < 2
-              ? 2
-              : (rawCount > 6 ? 6 : rawCount);
+          final width = constraints.crossAxisExtent;
+          final columns = MediaGridPreset.columnsFor(width);
+          final cell = MediaGridPreset.cellWidth(width, columns);
           return SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.78,
+              crossAxisCount: columns,
+              crossAxisSpacing: MediaGridPreset.spacing,
+              mainAxisSpacing: MediaGridPreset.spacing,
+              mainAxisExtent: AlbumCard.extentFor(context, cell),
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final album = _albums[index];
               return AlbumCard(
+                key: ValueKey(album.id),
                 album: album,
                 onTap: () => _onAlbumTapped(album),
               );
@@ -373,47 +371,11 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: ClipOval(
-          child: widget.artist.imageUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: SubsonicCoverArt.of(
-                    widget.artist.imageUrl!,
-                    512,
-                  ).url,
-                  cacheKey: SubsonicCoverArt.of(
-                    widget.artist.imageUrl!,
-                    512,
-                  ).cacheKey,
-                  // This was the one image in the app without the shared cache
-                  // manager, so artist art bypassed the 30-day disk cache.
-                  cacheManager: OmnisonicImageCacheManager.instance,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 512,
-                  memCacheHeight: 512,
-                  placeholder: (context, url) => Container(
-                    color: scheme.surfaceContainerHighest,
-                    child: Icon(
-                      OmnisonicIcons.person,
-                      size: size * 0.45,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: scheme.surfaceContainerHighest,
-                    child: Icon(
-                      OmnisonicIcons.person,
-                      size: size * 0.45,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              : Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.person,
-                    size: size * 0.45,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
+          child: CoverArt(
+            url: widget.artist.imageUrl,
+            shape: CoverArtShape.circle,
+            fallbackIcon: OmnisonicIcons.person,
+          ),
         ),
       ),
     );
@@ -449,19 +411,9 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     );
   }
 
-  String _getServerName(BuildContext context) {
-    try {
-      final serverViewModel = context.read<ServerManagementViewModel>();
-      final server = serverViewModel.servers.firstWhere(
-        (s) => s.id == widget.artist.serverId,
-        orElse: () => throw Exception('Server not found'),
-      );
-      return server.name;
-    } catch (e) {
-      // Fallback to serverId if server not found
-      return widget.artist.serverId;
-    }
-  }
+  String _getServerName(BuildContext context) => context
+      .read<ServerManagementViewModel>()
+      .serverNameFor(widget.artist.serverId);
 
   Future<void> _playArtist() => _playArtistTracks(shuffle: false);
 

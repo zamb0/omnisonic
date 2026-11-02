@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/cover_palette_service.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../ui/presentation/pages/main_shell.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
 ///
@@ -106,12 +106,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   void dispose() {
     _slideController.dispose();
     super.dispose();
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -258,31 +252,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                               borderRadius: BorderRadius.circular(
                                 OmnisonicRadius.xs,
                               ),
-                              child: track.coverArtUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: SubsonicCoverArt.of(
-                                        track.coverArtUrl!,
-                                        128,
-                                      ).url,
-                                      cacheKey: SubsonicCoverArt.of(
-                                        track.coverArtUrl!,
-                                        128,
-                                      ).cacheKey,
-                                      cacheManager:
-                                          OmnisonicImageCacheManager.instance,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 88,
-                                      memCacheHeight: 88,
-                                      fadeInDuration: const Duration(
-                                        milliseconds: 120,
-                                      ),
-                                      useOldImageOnUrlChange: true,
-                                      placeholder: (context, url) =>
-                                          _buildFallbackArtwork(),
-                                      errorWidget: (context, url, error) =>
-                                          _buildFallbackArtwork(),
-                                    )
-                                  : _buildFallbackArtwork(),
+                              child: CoverArt(
+                                url: track.coverArtUrl,
+                                radius: 0,
+                              ),
                             ),
                           ),
                         ),
@@ -527,28 +500,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-                    child: track.coverArtUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).url,
-                            cacheKey: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).cacheKey,
-                            cacheManager: OmnisonicImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 116,
-                            memCacheHeight: 116,
-                            fadeInDuration: const Duration(milliseconds: 120),
-                            useOldImageOnUrlChange: true,
-                            placeholder: (context, url) =>
-                                _buildFallbackArtwork(),
-                            errorWidget: (context, url, error) =>
-                                _buildFallbackArtwork(),
-                          )
-                        : _buildFallbackArtwork(),
+                    child: CoverArt(url: track.coverArtUrl, radius: 0),
                   ),
                 ),
               ),
@@ -693,7 +645,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               // Expanded slider.
               Flexible(
                 child: Text(
-                  _formatDuration(
+                  formatDuration(
                     _draggingProgress == null
                         ? position
                         : duration * _draggingProgress!,
@@ -713,7 +665,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ),
                   child: Slider(
                     value: _draggingProgress ?? progress.clamp(0.0, 1.0),
-                    label: _formatDuration(
+                    label: formatDuration(
                       duration * (_draggingProgress ?? progress),
                     ),
                     onChanged: (value) {
@@ -729,7 +681,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  _formatDuration(duration),
+                  formatDuration(duration),
                   overflow: TextOverflow.clip,
                   softWrap: false,
                   style: timeStyle,
@@ -1002,17 +954,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     } else {
       vm.setVolume(_volumeBeforeMute);
     }
-  }
-
-  Widget _buildFallbackArtwork() {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Icon(
-        OmnisonicIcons.musicNote,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        size: OmnisonicIconSizes.md,
-      ),
-    );
   }
 }
 

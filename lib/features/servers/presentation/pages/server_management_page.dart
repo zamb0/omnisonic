@@ -10,6 +10,7 @@ import '../widgets/server_edit_dialog.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/server_status_card.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Enhanced server management page for adding, configuring, and monitoring Subsonic servers
 class ServerManagementPage extends StatefulWidget {
@@ -370,7 +371,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             if (server.lastSync != null) ...[
               const SizedBox(height: 8),
               Text(
-                'Last sync: ${_formatDateTime(server.lastSync!)}',
+                'Last sync: ${formatRelativeTime(server.lastSync!)}',
                 style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
               ),
             ],
@@ -483,9 +484,12 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               _buildDetailRow('API Version', server.apiVersion!),
             if (server.serverVersion != null)
               _buildDetailRow('Server Version', server.serverVersion!),
-            _buildDetailRow('Created', _formatDateTime(server.createdAt)),
+            _buildDetailRow('Created', formatRelativeTime(server.createdAt)),
             if (server.lastSync != null)
-              _buildDetailRow('Last Sync', _formatDateTime(server.lastSync!)),
+              _buildDetailRow(
+                'Last Sync',
+                formatRelativeTime(server.lastSync!),
+              ),
           ],
         ),
         actions: [
@@ -658,22 +662,5 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     // Trigger sync for all servers
     final viewModel = context.read<ServerManagementViewModel>();
     viewModel.syncAllServers();
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 }

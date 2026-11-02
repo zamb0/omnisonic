@@ -297,12 +297,16 @@ class ServerManagementViewModel extends ChangeNotifier {
 
   /// Gets a server by ID
   MusicServer? getServerById(String serverId) {
-    try {
-      return _servers.firstWhere((server) => server.id == serverId);
-    } catch (e) {
-      return null;
+    for (final server in _servers) {
+      if (server.id == serverId) return server;
     }
+    return null;
   }
+
+  /// The display name of [serverId], or the id itself when the server is
+  /// unknown (removed, or not loaded yet).
+  String serverNameFor(String serverId) =>
+      getServerById(serverId)?.name ?? serverId;
 
   /// Checks if a server is currently loading
   bool isServerLoading(String serverId) {

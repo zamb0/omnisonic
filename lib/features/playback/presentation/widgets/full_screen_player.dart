@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/utils/animation_utils.dart';
 
@@ -10,13 +9,13 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/services/cover_palette_service.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
 import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -76,12 +75,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     } else {
       context.go(AppRouter.home);
     }
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -404,28 +397,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            800,
-                          ).url,
-                          cacheKey: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            800,
-                          ).cacheKey,
-                          cacheManager: OmnisonicImageCacheManager.instance,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 800,
-                          memCacheHeight: 800,
-                          fadeInDuration: const Duration(milliseconds: 120),
-                          useOldImageOnUrlChange: true,
-                          placeholder: (context, url) =>
-                              _buildFallbackArtwork(context),
-                          errorWidget: (context, url, error) =>
-                              _buildFallbackArtwork(context),
-                        )
-                      : _buildFallbackArtwork(context),
+                  child: CoverArt(url: track.coverArtUrl, radius: 0),
                 ),
               ),
             ),
@@ -455,18 +427,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           }
         },
         child: child,
-      ),
-    );
-  }
-
-  Widget _buildFallbackArtwork(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      color: scheme.surfaceContainerHighest,
-      child: Icon(
-        OmnisonicIcons.musicNote,
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-        size: OmnisonicIconSizes.xxxl,
       ),
     );
   }
@@ -533,13 +493,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _formatDuration(elapsed),
+              formatDuration(elapsed),
               style: OmnisonicTypography.duration.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             Text(
-              _formatDuration(duration),
+              formatDuration(duration),
               style: OmnisonicTypography.duration.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -984,28 +944,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    child: track.coverArtUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).url,
-                            cacheKey: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).cacheKey,
-                            cacheManager: OmnisonicImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 80,
-                            memCacheHeight: 80,
-                            fadeInDuration: const Duration(milliseconds: 120),
-                            useOldImageOnUrlChange: true,
-                          )
-                        : Icon(
-                            OmnisonicIcons.musicNote,
-                            color: scheme.onSurfaceVariant,
-                            size: OmnisonicIconSizes.smd,
-                          ),
+                    child: CoverArt(url: track.coverArtUrl, radius: 0),
                   ),
                 ),
                 title: Text(

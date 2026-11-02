@@ -477,6 +477,18 @@ class FakeServerManagementViewModel extends ChangeNotifier
   bool isServerLoading(String serverId) => false;
 
   @override
+  MusicServer? getServerById(String serverId) {
+    for (final server in _servers) {
+      if (server.id == serverId) return server;
+    }
+    return null;
+  }
+
+  @override
+  String serverNameFor(String serverId) =>
+      getServerById(serverId)?.name ?? serverId;
+
+  @override
   Future<bool> refreshServers() async => true;
 
   @override

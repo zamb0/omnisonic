@@ -29,8 +29,6 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   // 3 columns fit comfortably down to ~360px-wide phones; wider layouts
   // (tablet/desktop sidebar shell) scale up from here same as before.
-  static const double _albumGridMinItemWidth = 80;
-  static const double _albumGridSpacing = 12;
 
   late LibrarySortState _sortState;
   late TextEditingController _searchController;
@@ -194,7 +192,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
       builder: (context, viewModel, serverViewModel, child) {
         if (viewModel.isLoading) {
-          return _buildLoadingGrid(minItemWidth: _albumGridMinItemWidth);
+          return const LoadingStateView(kind: SkeletonKind.grid);
         }
 
         // A sync failure used to surface only as a SnackBar, which is gone
@@ -251,43 +249,28 @@ class _LibraryPageState extends State<LibraryPage> {
                           child: const Text('Clear Filters'),
                         ),
                       )
-                    : ResponsiveGridView(
+                    : ResponsiveGridView.media(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 16,
                         ),
-                        minItemWidth: _albumGridMinItemWidth,
-                        spacing: _albumGridSpacing,
-                        childAspectRatio: 0.72,
+                        meta: true,
                         itemCount: displayedAlbums.length,
                         itemBuilder: (context, index) {
                           final album = displayedAlbums[index];
                           final isStarred = viewModel.isAlbumStarred(album);
                           final sources =
                               _albumSourceServerIdsCache[album.id] ?? const [];
-                          return Stack(
+                          return AlbumCard(
                             key: ValueKey(album.id),
-                            children: [
-                              AlbumCard(
-                                album: album,
-                                onTap: () => _onAlbumTapped(album),
-                                onStar: !isStarred
-                                    ? () => viewModel.starAlbum(album)
-                                    : null,
-                                onUnstar: isStarred
-                                    ? () => viewModel.unstarAlbum(album)
-                                    : null,
-                                isStarred: isStarred,
-                                showArtist: true,
-                                showMeta: true,
-                              ),
-                              if (sources.length > 1)
-                                Positioned(
-                                  right: 6,
-                                  top: 6,
-                                  child: ServerDotStack(serverIds: sources),
-                                ),
-                            ],
+                            album: album,
+                            onTap: () => _onAlbumTapped(album),
+                            onStar: () => viewModel.starAlbum(album),
+                            onUnstar: () => viewModel.unstarAlbum(album),
+                            isStarred: isStarred,
+                            sourceServerIds: sources.length > 1
+                                ? sources
+                                : null,
                           );
                         },
                       ),
@@ -375,7 +358,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Consumer<MusicLibraryViewModel>(
       builder: (context, viewModel, child) {
         if (viewModel.isLoading) {
-          return _buildLoadingGrid();
+          return const LoadingStateView(kind: SkeletonKind.grid);
         }
 
         final error = viewModel.errorMessage;
@@ -405,11 +388,10 @@ class _LibraryPageState extends State<LibraryPage> {
 
         return RefreshIndicator(
           onRefresh: () => viewModel.syncCollection(),
-          child: ResponsiveGridView(
+          child: ResponsiveGridView.media(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            minItemWidth: 150,
-            spacing: 20,
-            childAspectRatio: 0.72,
+            subtitle: false,
+            meta: true,
             itemCount: sortedArtists.length,
             itemBuilder: (context, index) {
               final artist = sortedArtists[index];
@@ -422,17 +404,6 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildLoadingGrid({double minItemWidth = 160}) {
-    return ResponsiveGridView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      minItemWidth: minItemWidth,
-      spacing: 20,
-      childAspectRatio: 0.72,
-      itemCount: 8,
-      itemBuilder: (context, index) => SkeletonCard(width: minItemWidth),
     );
   }
 

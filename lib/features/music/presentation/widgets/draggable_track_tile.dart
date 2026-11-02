@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import 'add_to_playlist_sheet.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
 
 /// A draggable track tile for playlist reordering
 class DraggableTrackTile extends StatelessWidget {
@@ -87,58 +87,15 @@ class DraggableTrackTile extends StatelessWidget {
     );
   }
 
-  Widget _buildAlbumArt(ColorScheme scheme) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
-        color: scheme.surfaceContainerHighest,
-      ),
-      child: track.coverArtUrl != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
-              child: CachedNetworkImage(
-                imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
-                cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,
-                cacheManager: OmnisonicImageCacheManager.instance,
-                fit: BoxFit.cover,
-                memCacheWidth: 128,
-                memCacheHeight: 128,
-                fadeInDuration: const Duration(milliseconds: 120),
-                useOldImageOnUrlChange: true,
-                placeholder: (context, url) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.musicNote,
-                    color: scheme.onSurfaceVariant,
-                    size: OmnisonicIconSizes.sm,
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.musicNote,
-                    color: scheme.onSurfaceVariant,
-                    size: OmnisonicIconSizes.sm,
-                  ),
-                ),
-              ),
-            )
-          : Icon(
-              OmnisonicIcons.musicNote,
-              color: scheme.onSurfaceVariant,
-              size: 16,
-            ),
-    );
-  }
+  Widget _buildAlbumArt(ColorScheme scheme) =>
+      CoverArt(url: track.coverArtUrl, size: 40);
 
   Widget _buildTrailing(BuildContext context, ColorScheme scheme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          _formatDuration(track.duration),
+          formatDuration(track.duration),
           // Equal-width digits, so durations line up down the list.
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             fontFeatures: const [FontFeature.tabularFigures()],
@@ -209,11 +166,5 @@ class DraggableTrackTile extends StatelessWidget {
         onRemove?.call();
         break;
     }
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }

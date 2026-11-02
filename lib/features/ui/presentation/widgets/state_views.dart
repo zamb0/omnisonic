@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import 'empty_state.dart';
+import 'media_card.dart';
+import 'responsive_grid.dart';
 
 /// The four states every screen in the app can be in.
 ///
@@ -64,16 +66,30 @@ class LoadingStateView extends StatelessWidget {
         );
       case SkeletonKind.grid:
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.lg),
-          sliver: SliverGrid.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 180,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-              childAspectRatio: 0.72,
-            ),
-            itemCount: itemCount ?? 8,
-            itemBuilder: (context, index) => const SkeletonCard(),
+          padding: const EdgeInsets.symmetric(
+            horizontal: OmnisonicSpacing.lg,
+            vertical: OmnisonicSpacing.md,
+          ),
+          sliver: SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.crossAxisExtent;
+              final columns = MediaGridPreset.columnsFor(width);
+              final cell = MediaGridPreset.cellWidth(width, columns);
+              return SliverGrid.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: MediaGridPreset.spacing,
+                  mainAxisSpacing: MediaGridPreset.spacing,
+                  mainAxisExtent: MediaCard.extentFor(
+                    context,
+                    cell,
+                    meta: true,
+                  ),
+                ),
+                itemCount: itemCount ?? 8,
+                itemBuilder: (context, index) => const SkeletonCard(),
+              );
+            },
           ),
         );
       case SkeletonKind.carousel:
@@ -313,29 +329,33 @@ class SkeletonText extends StatelessWidget {
 
 /// Artwork square over a title and a subtitle — the shape of a card.
 class SkeletonCard extends StatelessWidget {
-  const SkeletonCard({super.key, this.width = 160});
+  const SkeletonCard({super.key, this.width});
 
-  final double width;
+  /// Fixed width, for carousels. Null fills the grid cell.
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SkeletonBox(
-            width: width,
-            height: width,
-            borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-          ),
-          const SizedBox(height: OmnisonicSpacing.sm),
-          SkeletonText(width: width * 0.7),
-          const SizedBox(height: OmnisonicSpacing.xs),
-          SkeletonText(width: width * 0.45, height: 10),
-        ],
-      ),
+    Widget card(double w) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SkeletonBox(
+          width: w,
+          height: w,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.art),
+        ),
+        const SizedBox(height: OmnisonicSpacing.sm),
+        SkeletonText(width: w * 0.7),
+        const SizedBox(height: OmnisonicSpacing.xs),
+        SkeletonText(width: w * 0.45, height: 10),
+      ],
+    );
+
+    final fixed = width;
+    if (fixed != null) return SizedBox(width: fixed, child: card(fixed));
+    return LayoutBuilder(
+      builder: (context, constraints) => card(constraints.maxWidth),
     );
   }
 }
@@ -393,29 +413,17 @@ class _SkeletonGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Deliberately the same geometry as the real grid, so the content does
-    // not shift when it replaces this.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const minItemWidth = 160.0;
-        const spacing = 20.0;
-        final crossAxisCount = (constraints.maxWidth / (minItemWidth + spacing))
-            .floor()
-            .clamp(1, 6);
-
-        return GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.lg),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-            childAspectRatio: 0.72,
-          ),
-          itemCount: itemCount,
-          itemBuilder: (context, index) => const SkeletonCard(),
-        );
-      },
+    // The real grid's own geometry, so the content does not shift when it
+    // replaces this.
+    return ResponsiveGridView.media(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.lg,
+        vertical: OmnisonicSpacing.md,
+      ),
+      meta: true,
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const SkeletonCard(),
     );
   }
 }
@@ -436,7 +444,7 @@ class _SkeletonCarousel extends StatelessWidget {
         itemCount: itemCount,
         itemBuilder: (context, index) => const Padding(
           padding: EdgeInsets.only(right: 14),
-          child: SkeletonCard(),
+          child: SkeletonCard(width: 160),
         ),
       ),
     );

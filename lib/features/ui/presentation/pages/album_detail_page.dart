@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/routing/app_router.dart';
 
@@ -10,13 +9,13 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/animation_utils.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Album detail page showing tracks with enhanced functionality
 class AlbumDetailPage extends StatefulWidget {
@@ -348,6 +347,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       SliverPersistentHeader(
         pinned: true,
         delegate: _TrackTableHeaderDelegate(
+          extent: _TrackTableHeaderDelegate.extentFor(context),
           child: _buildTrackTableHeaderRow(context),
         ),
       ),
@@ -487,7 +487,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             SizedBox(
               width: 48,
               child: Text(
-                _formatDuration(track.duration),
+                formatDuration(track.duration),
                 textAlign: TextAlign.right,
                 style: OmnisonicTypography.metadata.copyWith(
                   color: scheme.onSurfaceVariant,
@@ -765,7 +765,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               _buildMetadataChip(
                 context,
                 OmnisonicIcons.accessTime,
-                _formatTotalDuration(_tracks),
+                formatTotalDuration(
+                  _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
+                ),
               ),
             _buildMetadataChip(
               context,
@@ -838,48 +840,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         ),
         child: ClipRRect(
           borderRadius: borderRadius,
-          child: _album.coverArtUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: SubsonicCoverArt.of(_album.coverArtUrl!, 800).url,
-                  cacheKey: SubsonicCoverArt.of(
-                    _album.coverArtUrl!,
-                    800,
-                  ).cacheKey,
-                  cacheManager: OmnisonicImageCacheManager.instance,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 800,
-                  memCacheHeight: 800,
-                  fadeInDuration: const Duration(milliseconds: 120),
-                  useOldImageOnUrlChange: true,
-                  placeholder: (context, url) => Container(
-                    color: scheme.surfaceContainerHighest,
-                    child: Icon(
-                      OmnisonicIcons.album,
-                      size: size * 0.5,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => coverArtErrorWidget(
-                    Container(
-                      color: scheme.surfaceContainerHighest,
-                      child: Icon(
-                        OmnisonicIcons.album,
-                        size: size * 0.5,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    url,
-                    error,
-                  ),
-                )
-              : Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.album,
-                    size: size * 0.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
+          child: CoverArt(
+            url: _album.coverArtUrl,
+            radius: 0,
+            fallbackIcon: OmnisonicIcons.album,
+          ),
         ),
       ),
     );
@@ -1143,51 +1108,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return input.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
   }
 
-  String _formatTotalDuration(List<Track> tracks) {
-    final totalSeconds = tracks.fold<int>(
-      0,
-      (sum, track) => sum + track.duration.inSeconds,
-    );
+  String _getServerNameForAlbum(BuildContext context, Album album) =>
+      context.read<ServerManagementViewModel>().serverNameFor(album.serverId);
 
-    final duration = Duration(seconds: totalSeconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
-  }
-
-  String _getServerNameForAlbum(BuildContext context, Album album) {
-    try {
-      final serverViewModel = context.read<ServerManagementViewModel>();
-      final server = serverViewModel.servers.firstWhere(
-        (s) => s.id == album.serverId,
-        orElse: () => throw Exception('Server not found'),
-      );
-      return server.name;
-    } catch (e) {
-      // Fallback to serverId if server not found
-      return album.serverId;
-    }
-  }
-
-  String _getTrackServerName(Track track) {
-    try {
-      final serverViewModel = context.read<ServerManagementViewModel>();
-      final serverId = IdGenerator.extractServerId(track.id);
-      final server = serverViewModel.servers.firstWhere(
-        (s) => s.id == serverId,
-        orElse: () => throw Exception('Server not found'),
-      );
-      return server.name;
-    } catch (e) {
-      // Fallback to serverId if server not found
-      return IdGenerator.extractServerId(track.id);
-    }
-  }
+  String _getTrackServerName(Track track) => context
+      .read<ServerManagementViewModel>()
+      .serverNameFor(IdGenerator.extractServerId(track.id));
 
   void _playAlbum() {
     if (_tracks.isEmpty) {
@@ -1321,7 +1247,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           children: [
             _buildInfoRow('Artist', track.artist),
             _buildInfoRow('Album', track.album),
-            _buildInfoRow('Duration', _formatDuration(track.duration)),
+            _buildInfoRow('Duration', formatDuration(track.duration)),
             if (track.year != null)
               _buildInfoRow('Year', track.year.toString()),
             if (track.genre != null) _buildInfoRow('Genre', track.genre!),
@@ -1359,39 +1285,38 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       ),
     );
   }
-
-  String _formatDuration(Duration? duration) {
-    if (duration == null) return 'Unknown';
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
 }
 
 /// Pins the desktop track table's column labels above the rows.
 class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
-  const _TrackTableHeaderDelegate({required this.child});
+  const _TrackTableHeaderDelegate({required this.child, required this.extent});
 
   final Widget child;
 
-  /// The label row is a fixed two-line block: one row of overline text plus
-  /// a divider.
-  static const double _extent = 33;
+  /// One row of overline labels, its padding and a divider, measured at the
+  /// current text scale — a fixed 33px clipped the labels at large text.
+  final double extent;
+
+  /// The header's height for the current text scale.
+  static double extentFor(BuildContext context) =>
+      // 2 × 8px padding + 1px divider are fixed; the label line (11px at a
+      // 1.6 line height, plus rounding slack) scales.
+      17 + OmnisonicTextScale.textExtent(context, 19);
 
   @override
-  double get minExtent => _extent;
+  double get minExtent => extent;
 
   @override
-  double get maxExtent => _extent;
+  double get maxExtent => extent;
 
   @override
   Widget build(
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => SizedBox(height: _extent, child: child);
+  ) => SizedBox(height: extent, child: child);
 
   @override
   bool shouldRebuild(_TrackTableHeaderDelegate oldDelegate) =>
-      oldDelegate.child != child;
+      oldDelegate.child != child || oldDelegate.extent != extent;
 }

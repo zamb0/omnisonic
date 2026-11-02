@@ -55,6 +55,8 @@ class OmnisonicIcons {
   static const IconData queueMusicOutline = Icons.queue_music_outlined;
   static const IconData playlistPlay = Icons.playlist_play_rounded;
   static const IconData playlistAdd = Icons.playlist_add_rounded;
+  static const IconData playNext = Icons.queue_play_next_rounded;
+  static const IconData addToQueue = Icons.add_to_queue_rounded;
   static const IconData playlistRemove = Icons.playlist_remove_rounded;
   static const IconData star = Icons.star_rounded;
   static const IconData starOutline = Icons.star_outline;

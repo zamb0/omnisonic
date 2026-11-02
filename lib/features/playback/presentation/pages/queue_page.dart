@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../ui/presentation/widgets/widgets.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../../core/utils/haptics.dart';
 
@@ -160,28 +158,7 @@ class QueuePage extends StatelessWidget {
             child: SizedBox(
               width: 52,
               height: 52,
-              child: track.coverArtUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        128,
-                      ).url,
-                      cacheKey: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        128,
-                      ).cacheKey,
-                      cacheManager: OmnisonicImageCacheManager.instance,
-                      memCacheWidth: 128,
-                      memCacheHeight: 128,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      color: scheme.surfaceContainerHighest,
-                      child: Icon(
-                        OmnisonicIcons.musicNote,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
+              child: CoverArt(url: track.coverArtUrl, radius: 0),
             ),
           ),
           const SizedBox(width: OmnisonicSpacing.md),
@@ -321,29 +298,7 @@ class _QueueRow extends StatelessWidget {
                 child: SizedBox(
                   width: 44,
                   height: 44,
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            88,
-                          ).url,
-                          cacheKey: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            88,
-                          ).cacheKey,
-                          cacheManager: OmnisonicImageCacheManager.instance,
-                          memCacheWidth: 88,
-                          memCacheHeight: 88,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(
-                          color: scheme.surfaceContainerHighest,
-                          child: Icon(
-                            OmnisonicIcons.musicNote,
-                            color: scheme.onSurfaceVariant,
-                            size: OmnisonicIconSizes.smd,
-                          ),
-                        ),
+                  child: CoverArt(url: track.coverArtUrl, radius: 0),
                 ),
               ),
             ],

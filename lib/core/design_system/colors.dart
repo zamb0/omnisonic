@@ -266,6 +266,27 @@ class OmnisonicColors {
   static const Color queueIndicator = Color(0xFF8B5CF6);
   static const Color favoriteIndicator = Color(0xFFEC4899);
 
+  // Scrims and the colours that sit on them. Artwork can be any colour, so
+  // anything drawn over it goes on a dark scrim and uses the on-scrim
+  // colours, in both themes.
+
+  /// Behind controls over artwork — the card hover overlay.
+  static const Color scrim = Color(0x8C000000);
+
+  /// Under text over artwork — the bottom of a hero image.
+  static const Color scrimStrong = Color(0xB3000000);
+
+  /// Text and icons on a [scrim].
+  static const Color onScrim = Color(0xFFFFFFFF);
+
+  /// Secondary text and icons on a [scrim].
+  static const Color onScrimMuted = Color(0xCCFFFFFF);
+
+  /// Text on a [warning] or [success] fill. White on those was 2.1:1 and
+  /// 2.5:1; these dark tones clear 7:1.
+  static const Color onWarning = Color(0xFF241500);
+  static const Color onSuccess = Color(0xFF00210F);
+
   // Status colors with opacity variants
   static const Color successLight = Color(0xFFD1FAE5);
   static const Color warningLight = Color(0xFFFEF3C7);

@@ -2,8 +2,9 @@
 export 'track_tile.dart';
 export 'album_card.dart';
 export 'artist_card.dart';
-export 'playlist_card.dart';
-export 'feishin_card.dart';
+export 'media_card.dart';
+export 'media_actions.dart';
+export 'cover_art.dart';
 export 'server_dot.dart';
 
 // Layout Components

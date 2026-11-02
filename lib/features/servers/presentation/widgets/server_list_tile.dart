@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// A list tile widget for displaying server information
 class ServerListTile extends StatelessWidget {
@@ -75,7 +76,7 @@ class ServerListTile extends StatelessWidget {
           if (server.lastSync != null) ...[
             const SizedBox(height: 2),
             Text(
-              'Last sync: ${_formatDateTime(server.lastSync!)}',
+              'Last sync: ${formatRelativeTime(server.lastSync!)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: OmnisonicColors.neutralGray600,
                 fontSize: 11,
@@ -155,7 +156,7 @@ class ServerListTile extends StatelessWidget {
             context,
             OmnisonicIcons.syncOutline,
             server.lastSync != null
-                ? _formatDateTime(server.lastSync!)
+                ? formatRelativeTime(server.lastSync!)
                 : 'never synced',
           ),
         ],
@@ -291,23 +292,6 @@ class ServerListTile extends StatelessWidget {
       case 'delete':
         onDelete?.call();
         break;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
     }
   }
 }

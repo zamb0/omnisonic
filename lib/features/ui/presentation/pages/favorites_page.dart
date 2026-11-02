@@ -91,14 +91,12 @@ class _FavoritesPageState extends State<FavoritesPage>
             title: 'No Starred Albums',
             subtitle: 'Star your favorite albums to see them here',
           ),
-          builder: (context) => ResponsiveGridView(
+          builder: (context) => ResponsiveGridView.media(
             padding: const EdgeInsets.symmetric(
               horizontal: OmnisonicSpacing.lg,
               vertical: OmnisonicSpacing.md,
             ),
-            minItemWidth: 160,
-            spacing: 20,
-            childAspectRatio: 0.72,
+            meta: true,
             itemCount: starredAlbums.length,
             itemBuilder: (context, index) {
               final album = starredAlbums[index];
@@ -107,10 +105,9 @@ class _FavoritesPageState extends State<FavoritesPage>
                 key: ValueKey(album.id),
                 album: album,
                 onTap: () => _onAlbumTapped(album),
-                onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
+                onStar: () => viewModel.starAlbum(album),
+                onUnstar: () => viewModel.unstarAlbum(album),
                 isStarred: isStarred,
-                showArtist: true,
-                showMeta: true,
               );
             },
           ),
@@ -135,14 +132,13 @@ class _FavoritesPageState extends State<FavoritesPage>
             title: 'No Starred Artists',
             subtitle: 'Star your favorite artists to see them here',
           ),
-          builder: (context) => ResponsiveGridView(
+          builder: (context) => ResponsiveGridView.media(
             padding: const EdgeInsets.symmetric(
               horizontal: OmnisonicSpacing.lg,
               vertical: OmnisonicSpacing.md,
             ),
-            minItemWidth: 150,
-            spacing: 20,
-            childAspectRatio: 0.72,
+            subtitle: false,
+            meta: true,
             itemCount: starredArtists.length,
             itemBuilder: (context, index) {
               final artist = starredArtists[index];

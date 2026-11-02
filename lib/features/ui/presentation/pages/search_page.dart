@@ -613,7 +613,7 @@ class _SearchPageState extends State<SearchPage> {
             // text half grows with the user's text size — scaling the whole
             // height would enlarge the artwork too and push the row off
             // screen.
-            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 56),
+            height: AlbumCard.extentFor(context, 160),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
@@ -628,20 +628,11 @@ class _SearchPageState extends State<SearchPage> {
                 return Padding(
                   key: ValueKey(album.id),
                   padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
-                  child: Stack(
-                    children: [
-                      AlbumCard(
-                        album: album,
-                        width: 160,
-                        onTap: () => _onAlbumTapped(album),
-                      ),
-                      if (sources.length > 1)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: ServerDotStack(serverIds: sources),
-                        ),
-                    ],
+                  child: AlbumCard(
+                    album: album,
+                    width: 160,
+                    onTap: () => _onAlbumTapped(album),
+                    sourceServerIds: sources.length > 1 ? sources : null,
                   ),
                 );
               },
@@ -669,7 +660,12 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 40),
+            height: MediaCard.extentFor(
+              context,
+              140,
+              subtitle: false,
+              meta: true,
+            ),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(

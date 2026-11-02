@@ -256,10 +256,13 @@ class OmnisonicTypography {
   );
 
   /// All-caps mono label above a group — "SERVERS", "THIS WEEK".
+  ///
+  /// 11px is the floor for any text in the app: below it, the all-caps mono
+  /// labels were unreadable on the glass at reduced alpha.
   static TextStyle get eyebrow => _mono(
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: semiBold,
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
     height: 1.4,
   );
 
@@ -284,12 +287,27 @@ class OmnisonicTypography {
   );
 
   /// Inline technical string — bitrate, server id, count, timestamp.
-  static TextStyle get technical => _mono(
-    fontSize: 10.5,
-    fontWeight: semiBold,
-    letterSpacing: 0,
-    height: 1.3,
-  );
+  /// Informative text, so it sits on the 12px floor.
+  static TextStyle get technical =>
+      _mono(fontSize: 12, fontWeight: semiBold, letterSpacing: 0, height: 1.3);
+
+  // Media cards
+  //
+  // Cards used literal 12.5/11/9.5px sizes, each page its own. These are the
+  // three lines of every album/artist/playlist card, with informative text
+  // on the 12px floor.
+
+  /// First line of a media card — the album or artist name.
+  static TextStyle get cardTitle =>
+      _manrope(fontSize: 13, fontWeight: bold, letterSpacing: 0, height: 1.3);
+
+  /// Second line of a media card — the artist under an album.
+  static TextStyle get cardSubtitle =>
+      _manrope(fontSize: 12, fontWeight: medium, letterSpacing: 0, height: 1.3);
+
+  /// Third, technical line of a media card — year, track count, server.
+  static TextStyle get cardMeta =>
+      _mono(fontSize: 11, fontWeight: regular, letterSpacing: 0, height: 1.3);
 
   // Button typography
   static TextStyle get buttonLarge => _manrope(
@@ -322,9 +340,9 @@ class OmnisonicTypography {
   );
 
   static TextStyle get overline => _manrope(
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: medium,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
     height: 1.6,
   );
 

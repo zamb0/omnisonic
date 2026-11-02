@@ -11,6 +11,7 @@ import '../viewmodels/offline_mode_view_model.dart';
 import '../widgets/offline_indicator.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Page for managing offline mode and viewing offline content
 class OfflineModePage extends StatefulWidget {
@@ -370,29 +371,15 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.8,
+      meta: true,
       itemCount: albums.length,
       itemBuilder: (context, index) {
         final album = albums[index];
-        return Stack(
-          children: [
-            AlbumCard(
-              album: album,
-              onTap: () => context.push(
-                AppRouter.albumDetailLocation(album.id),
-                extra: album,
-              ),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return AlbumCard(
+          album: album,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
         );
       },
     );
@@ -409,29 +396,16 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.9,
+      subtitle: false,
+      meta: true,
       itemCount: artists.length,
       itemBuilder: (context, index) {
         final artist = artists[index];
-        return Stack(
-          children: [
-            ArtistCard(
-              artist: artist,
-              onTap: () => context.push(
-                AppRouter.artistDetailLocation(artist.id),
-                extra: artist,
-              ),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return ArtistCard(
+          artist: artist,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
         );
       },
     );
@@ -448,27 +422,23 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.8,
+      meta: true,
       itemCount: playlists.length,
       itemBuilder: (context, index) {
         final playlist = playlists[index];
-        return Stack(
-          children: [
-            PlaylistCard(
-              playlist: playlist,
-              onTap: () =>
-                  context.push(AppRouter.playlistDetailLocation(playlist.id)),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return MediaCard(
+          title: playlist.name,
+          subtitle: playlist.description?.isNotEmpty == true
+              ? playlist.description
+              : null,
+          meta: pluralize(playlist.trackCount, 'track'),
+          imageUrl: playlist.coverArtUrl,
+          fallbackIcon: OmnisonicIcons.playlistPlay,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
+          onTap: () =>
+              context.push(AppRouter.playlistDetailLocation(playlist.id)),
         );
       },
     );

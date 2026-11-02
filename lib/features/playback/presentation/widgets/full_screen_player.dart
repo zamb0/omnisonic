@@ -10,12 +10,12 @@ import '../../../../core/entities/entities.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
-import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
 import '../pages/player_page.dart';
 import 'transport_controls.dart';
+import 'package:flutter/services.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -98,44 +98,65 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           // the dark scheme.
           child: Builder(
             builder: (context) {
-              return Scaffold(
-                backgroundColor: darkScheme.surface,
-                body: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, -0.4),
-                      radius: 1.3,
-                      colors: [
-                        tint.withValues(alpha: 0.55),
-                        darkScheme.surface,
-                      ],
+              // Esc closes the player, like any modal on desktop.
+              return CallbackShortcuts(
+                bindings: {
+                  const SingleActivator(LogicalKeyboardKey.escape):
+                      _closePlayer,
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: AnimatedSlide(
+                    offset: Offset(
+                      0,
+                      _dismissDragExtent /
+                          MediaQuery.sizeOf(context).height.clamp(1, 1e9),
                     ),
-                  ),
-                  child: SafeArea(
-                    child: ResponsiveLayout(
-                      mobile: _buildMobileLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
-                      ),
-                      tablet: _buildDesktopLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
-                      ),
-                      desktop: _buildDesktopLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
+                    duration: _dismissDragExtent == 0
+                        ? AnimationUtils.adjustedDuration(
+                            context,
+                            AnimationManager.fastDuration,
+                          )
+                        : Duration.zero,
+                    child: Scaffold(
+                      backgroundColor: darkScheme.surface,
+                      body: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(0, -0.4),
+                            radius: 1.3,
+                            colors: [
+                              tint.withValues(alpha: 0.55),
+                              darkScheme.surface,
+                            ],
+                          ),
+                        ),
+                        child: SafeArea(
+                          // Two columns from the shell's tablet breakpoint (768),
+                          // not ResponsiveLayout's 480: between the two, the side
+                          // panel was 85–200px wide and its tabs overflowed.
+                          child: LayoutBuilder(
+                            builder: (context, constraints) =>
+                                constraints.maxWidth >=
+                                    ResponsiveBreakpoints.tablet
+                                ? _buildDesktopLayout(
+                                    context,
+                                    currentTrack,
+                                    playbackViewModel,
+                                    position,
+                                    duration,
+                                    progress,
+                                  )
+                                : _buildMobileLayout(
+                                    context,
+                                    currentTrack,
+                                    playbackViewModel,
+                                    position,
+                                    duration,
+                                    progress,
+                                  ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -264,23 +285,34 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
   /// Applied to the header and the artwork, and deliberately not to the
   /// content between them: the seek bar, lyrics panel and queue list all
   /// want the vertical drag for themselves.
+  /// Wraps [child] — the header — in the swipe-down-to-dismiss gesture.
+  ///
+  /// Only the header: on the artwork, inside the page's scroll view, it
+  /// blocked vertical scrolling, and a downward swipe after scrolling closed
+  /// the player. The whole player now follows the finger, so the gesture is
+  /// visible before it commits.
   Widget _dismissible({required Widget child}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: (details) {
-        final delta = details.primaryDelta;
-        if (delta != null && delta > 0) {
-          _dismissDragExtent += delta;
-        }
+        final delta = details.primaryDelta ?? 0;
+        setState(
+          () => _dismissDragExtent = (_dismissDragExtent + delta).clamp(
+            0.0,
+            double.infinity,
+          ),
+        );
       },
       onVerticalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
-        if (_dismissDragExtent > 80 || velocity > 600) {
+        if (_dismissDragExtent > 120 || velocity > 700) {
           Haptics.impact();
           _closePlayer();
+        } else {
+          setState(() => _dismissDragExtent = 0);
         }
-        _dismissDragExtent = 0;
       },
+      onVerticalDragCancel: () => setState(() => _dismissDragExtent = 0),
       child: child,
     );
   }
@@ -353,30 +385,28 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
 
   Widget _buildArtwork(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
-    return _dismissible(
-      child: _artworkSwipe(
-        child: Center(
-          child: Hero(
-            tag: 'now-playing-artwork-${track.id}',
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-                color: scheme.surfaceContainerHighest,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: CoverArt(url: track.coverArtUrl, radius: 0),
+    return _artworkSwipe(
+      child: Center(
+        child: Hero(
+          tag: 'now-playing-artwork-${track.id}',
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              color: scheme.surfaceContainerHighest,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
                 ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: CoverArt(url: track.coverArtUrl, radius: 0),
               ),
             ),
           ),
@@ -495,6 +525,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ),
           child: Slider(
             value: activeValue,
+            // Read as a time, not as "37%".
+            semanticFormatterCallback: (value) =>
+                '${formatDuration(duration * value)} of '
+                '${formatDuration(duration)}',
             onChanged: (value) {
               setState(() {
                 _isDraggingSeek = true;
@@ -723,25 +757,30 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<NowPlayingPanel>(
-            segments: const [
-              ButtonSegment(value: NowPlayingPanel.queue, label: Text('Queue')),
-              ButtonSegment(
-                value: NowPlayingPanel.lyrics,
-                label: Text('Lyrics'),
-              ),
-              ButtonSegment(
-                value: NowPlayingPanel.visualizer,
-                label: Text('Visualizer'),
-              ),
-            ],
-            selected: {_panel},
-            onSelectionChanged: (value) {
-              if (onPanelChanged != null) {
-                onPanelChanged(value.first);
-              } else {
-                setState(() => _panel = value.first);
-              }
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Icons alone where the labels would not fit.
+              final iconsOnly = constraints.maxWidth < 220;
+              return SegmentedButton<NowPlayingPanel>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final panel in NowPlayingPanel.values)
+                    ButtonSegment(
+                      value: panel,
+                      icon: Icon(panel.icon),
+                      tooltip: iconsOnly ? panel.label : null,
+                      label: iconsOnly ? null : Text(panel.label),
+                    ),
+                ],
+                selected: {_panel},
+                onSelectionChanged: (value) {
+                  if (onPanelChanged != null) {
+                    onPanelChanged(value.first);
+                  } else {
+                    setState(() => _panel = value.first);
+                  }
+                },
+              );
             },
           ),
           const SizedBox(height: OmnisonicSpacing.md),
@@ -773,8 +812,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         return _buildQueuePanel(context, playbackViewModel);
       case NowPlayingPanel.lyrics:
         return _buildLyricsPanel(context, playbackViewModel);
-      case NowPlayingPanel.visualizer:
-        return _buildVisualizerPanel(context, playbackViewModel);
     }
   }
 
@@ -909,27 +946,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       position: playbackViewModel.position,
     );
   }
-
-  Widget _buildVisualizerPanel(
-    BuildContext context,
-    PlaybackViewModel playbackViewModel,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: AudioVisualizer(
-        isPlaying: playbackViewModel.isPlaying,
-        type: AudioVisualizerType.equalizer,
-        height: 120,
-        color: scheme.primary,
-      ),
-    );
-  }
 }
 
+/// The panels beside (or, on phones, below) the player.
+///
+/// There used to be a third, "Visualizer": a random animation with no
+/// connection to the audio, presented as a feature. It is gone.
 enum NowPlayingPanel {
   queue('Queue', OmnisonicIcons.queueMusic),
-  lyrics('Lyrics', OmnisonicIcons.lyrics),
-  visualizer('Visualizer', OmnisonicIcons.graphicEq);
+  lyrics('Lyrics', OmnisonicIcons.lyrics);
 
   const NowPlayingPanel(this.label, this.icon);
 

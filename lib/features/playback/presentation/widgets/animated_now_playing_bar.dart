@@ -32,6 +32,8 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin, ArtTintMixin {
+  bool _hoveringSeek = false;
+  bool _hoveringVolume = false;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
@@ -157,9 +159,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     // Below this width four 44px targets plus artwork leave the title unreadable.
     final showFavorite = MediaQuery.of(context).size.width >= 380;
 
-    // The whole bar is tappable, so it needs to announce itself as one
-    // control rather than as an unlabelled region containing others — a
-    // screen reader otherwise reads "0", the progress indicator's value.
+    // The whole bar is tappable, so it announces itself as one control
+    // rather than as an unlabelled region — a screen reader otherwise reads
+    // "0", the progress indicator's value. The track info inside used to be
+    // a second button with the same label, so the bar was announced twice;
+    // it is now plain, excluded text.
     return Semantics(
       button: true,
       label:
@@ -242,11 +246,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         const SizedBox(width: 10),
                         // Title + Artist
                         Expanded(
-                          child: Semantics(
-                            button: true,
-                            onTap: widget.onTap,
-                            label: _nowPlayingLabel(track),
-                            excludeSemantics: true,
+                          child: ExcludeSemantics(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -318,10 +318,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           SizedBox(
                             width: 18,
                             height: 16,
-                            // AudioVisualizer's equalizer bars assume a ~300px
-                            // wide layout (fixed bar-width formula), so at
-                            // this icon size it overflows badly — a small
-                            // dedicated widget instead.
+                            // A small equalizer sized for an icon slot.
                             child: Center(
                               child: _MiniEqualizer(
                                 isPlaying: vm.isPlaying,
@@ -584,24 +581,31 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: SliderTheme(
-                  data: _hairlineSliderTheme(
-                    context,
-                    activeColor: tint,
-                    inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
-                  ),
-                  child: Slider(
-                    value: _draggingProgress ?? progress.clamp(0.0, 1.0),
-                    label: formatDuration(
-                      duration * (_draggingProgress ?? progress),
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _hoveringSeek = true),
+                  onExit: (_) => setState(() => _hoveringSeek = false),
+                  child: SliderTheme(
+                    data: _hairlineSliderTheme(
+                      context,
+                      activeColor: tint,
+                      inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
+                      active: _hoveringSeek || _draggingProgress != null,
                     ),
-                    onChanged: (value) {
-                      setState(() => _draggingProgress = value);
-                    },
-                    onChangeEnd: (value) {
-                      setState(() => _draggingProgress = null);
-                      vm.seekToProgress(value);
-                    },
+                    child: Slider(
+                      value: _draggingProgress ?? progress.clamp(0.0, 1.0),
+                      // Read as a time, not as "37%". (A `label` was set here
+                      // too; without divisions a Slider never shows it.)
+                      semanticFormatterCallback: (value) =>
+                          '${formatDuration(duration * value)} of '
+                          '${formatDuration(duration)}',
+                      onChanged: (value) {
+                        setState(() => _draggingProgress = value);
+                      },
+                      onChangeEnd: (value) {
+                        setState(() => _draggingProgress = null);
+                        vm.seekToProgress(value);
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -624,21 +628,28 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   /// Thumbless 4px track — the redesign treats progress and volume as
   /// hairlines, not as Material sliders. The thumb is sized to zero rather
   /// than removed so [Slider]'s drag handling and semantics stay intact.
+  /// 4px hairline track. The thumb only appears while the pointer is over
+  /// the slider or dragging it — at rest it is a line, as the redesign
+  /// wants, but it was a line with no affordance at all and a ~20px hit
+  /// area. The overlay keeps the hit area at 28px either way.
   SliderThemeData _hairlineSliderTheme(
     BuildContext context, {
     required Color activeColor,
     required Color inactiveColor,
+    bool active = false,
   }) {
+    final radius = active ? 6.0 : 0.0;
     return SliderTheme.of(context).copyWith(
       trackHeight: 4,
       trackShape: const RoundedRectSliderTrackShape(),
-      thumbShape: const RoundSliderThumbShape(
-        enabledThumbRadius: 0,
-        disabledThumbRadius: 0,
+      thumbShape: RoundSliderThumbShape(
+        enabledThumbRadius: radius,
+        disabledThumbRadius: radius,
         pressedElevation: 0,
         elevation: 0,
       ),
-      overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+      overlayColor: activeColor.withValues(alpha: 0.12),
       activeTrackColor: activeColor,
       inactiveTrackColor: inactiveColor,
       thumbColor: activeColor,
@@ -720,18 +731,24 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 if (showVolumeSlider)
                   SizedBox(
                     width: 70,
-                    child: SliderTheme(
-                      data: _hairlineSliderTheme(
-                        context,
-                        activeColor: scheme.onSurface,
-                        inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
-                      ),
-                      child: Slider(
-                        value: volume,
-                        label: '${(volume * 100).round()}%',
-                        semanticFormatterCallback: (value) =>
-                            'Volume ${(value * 100).round()}%',
-                        onChanged: (value) => vm.setVolume(value),
+                    child: MouseRegion(
+                      onEnter: (_) => setState(() => _hoveringVolume = true),
+                      onExit: (_) => setState(() => _hoveringVolume = false),
+                      child: SliderTheme(
+                        data: _hairlineSliderTheme(
+                          context,
+                          activeColor: scheme.onSurface,
+                          inactiveColor: scheme.onSurface.withValues(
+                            alpha: 0.14,
+                          ),
+                          active: _hoveringVolume,
+                        ),
+                        child: Slider(
+                          value: volume,
+                          semanticFormatterCallback: (value) =>
+                              'Volume ${(value * 100).round()}%',
+                          onChanged: (value) => vm.setVolume(value),
+                        ),
                       ),
                     ),
                   ),
@@ -847,7 +864,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
 }
 
 /// Tiny 3-bar equalizer indicator, sized for an icon-sized slot next to the
-/// play/pause button (unlike [AudioVisualizer]'s equalizer mode, which
+/// play/pause button (unlike a full-width equalizer, which
 /// assumes a much wider layout).
 class _MiniEqualizer extends StatefulWidget {
   const _MiniEqualizer({required this.isPlaying, required this.color});
@@ -874,12 +891,28 @@ class _MiniEqualizerState extends State<_MiniEqualizer>
         vsync: this,
       ),
     );
-    if (widget.isPlaying) _start();
+  }
+
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // An endless loop is exactly what "reduce motion" asks to stop; the bars
+    // then hold still at mid height.
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    widget.isPlaying ? _start() : _stop();
   }
 
   void _start() {
+    if (_reduceMotion) {
+      for (final controller in _controllers) {
+        controller.value = 0.5;
+      }
+      return;
+    }
     for (final controller in _controllers) {
-      controller.repeat(reverse: true);
+      if (!controller.isAnimating) controller.repeat(reverse: true);
     }
   }
 

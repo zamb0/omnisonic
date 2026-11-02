@@ -76,106 +76,109 @@ class _LyricsPanelState extends State<LyricsPanel> {
   }
 }
 
+/// Follow inline; source, search, override and timing offset in an
+/// overflow menu. As a Wrap of six controls they took two or three rows of
+/// a phone-height sheet before the first line of lyrics.
 class _LyricsControls extends StatelessWidget {
   const _LyricsControls({required this.viewModel, required this.track});
 
   final LyricsViewModel viewModel;
   final Track track;
 
+  String _sourceLabel(LyricsSource? source) => switch (source) {
+    null => 'Automatic',
+    LyricsSource.lrclib => 'LRCLIB',
+    LyricsSource.lyricsOvh => 'lyrics.ovh',
+  };
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final hasSynced = viewModel.lyrics?.isSynced ?? false;
+    final offset = viewModel.offsetMs;
 
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: OmnisonicSpacing.sm,
-      runSpacing: OmnisonicSpacing.sm,
+    Widget check(bool on) => on
+        ? Icon(OmnisonicIcons.check, color: scheme.primary)
+        : const SizedBox(width: 24);
+
+    return Row(
       children: [
-        _SourceDropdown(
-          value: viewModel.preferredSource,
-          onChanged: viewModel.setPreferredSource,
-        ),
-        FilledButton.tonalIcon(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => LyricsSearchSheet(track: track),
-            );
-          },
-          icon: const Icon(OmnisonicIcons.search),
-          label: const Text('Search'),
-        ),
-        if (viewModel.override != null)
-          OutlinedButton.icon(
-            onPressed: viewModel.clearOverride,
-            icon: const Icon(OmnisonicIcons.refresh),
-            label: const Text('Auto'),
-          ),
         if (hasSynced)
           FilterChip(
             label: const Text('Follow'),
             selected: viewModel.follow,
             onSelected: viewModel.setFollow,
           ),
-        if (hasSynced)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.sm,
-              vertical: OmnisonicSpacing.xs,
+        if (hasSynced && offset != 0) ...[
+          const SizedBox(width: OmnisonicSpacing.sm),
+          Text(
+            '${offset > 0 ? '+' : ''}$offset ms',
+            style: OmnisonicTypography.metadata.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(OmnisonicIcons.remove),
-                  onPressed: () => viewModel.adjustOffset(-250),
-                  tooltip: 'Offset -250ms',
-                ),
-                Text('${viewModel.offsetMs} ms'),
-                IconButton(
-                  icon: const Icon(OmnisonicIcons.add),
-                  onPressed: () => viewModel.adjustOffset(250),
-                  tooltip: 'Offset +250ms',
-                ),
-                TextButton(
-                  onPressed: viewModel.resetOffset,
-                  child: const Text('Reset'),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _SourceDropdown extends StatelessWidget {
-  const _SourceDropdown({required this.value, required this.onChanged});
-
-  final LyricsSource? value;
-  final ValueChanged<LyricsSource?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<LyricsSource?>(
-        value: value,
-        items: const [
-          DropdownMenuItem(value: null, child: Text('Auto')),
-          DropdownMenuItem(value: LyricsSource.lrclib, child: Text('LRCLIB')),
-          DropdownMenuItem(
-            value: LyricsSource.lyricsOvh,
-            child: Text('lyrics.ovh'),
           ),
         ],
-        onChanged: onChanged,
-      ),
+        const Spacer(),
+        IconButton(
+          icon: const Icon(OmnisonicIcons.search),
+          tooltip: 'Find other lyrics',
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            showDragHandle: true,
+            builder: (_) => LyricsSearchSheet(track: track),
+          ),
+        ),
+        MenuAnchor(
+          builder: (context, controller, child) => IconButton(
+            icon: const Icon(OmnisonicIcons.moreVert),
+            tooltip: 'Lyrics options',
+            onPressed: () =>
+                controller.isOpen ? controller.close() : controller.open(),
+          ),
+          menuChildren: [
+            for (final source in <LyricsSource?>[
+              null,
+              LyricsSource.lrclib,
+              LyricsSource.lyricsOvh,
+            ])
+              MenuItemButton(
+                leadingIcon: check(viewModel.preferredSource == source),
+                onPressed: () => viewModel.setPreferredSource(source),
+                child: Text('Source: ${_sourceLabel(source)}'),
+              ),
+            if (viewModel.override != null) ...[
+              const Divider(height: 1),
+              MenuItemButton(
+                leadingIcon: const Icon(OmnisonicIcons.refresh),
+                onPressed: viewModel.clearOverride,
+                child: const Text('Back to automatic lyrics'),
+              ),
+            ],
+            if (hasSynced) ...[
+              const Divider(height: 1),
+              MenuItemButton(
+                leadingIcon: const Icon(OmnisonicIcons.remove),
+                closeOnActivate: false,
+                onPressed: () => viewModel.adjustOffset(-250),
+                child: const Text('Show lines earlier (−250 ms)'),
+              ),
+              MenuItemButton(
+                leadingIcon: const Icon(OmnisonicIcons.add),
+                closeOnActivate: false,
+                onPressed: () => viewModel.adjustOffset(250),
+                child: const Text('Show lines later (+250 ms)'),
+              ),
+              if (offset != 0)
+                MenuItemButton(
+                  leadingIcon: const SizedBox(width: 24),
+                  onPressed: viewModel.resetOffset,
+                  child: Text('Reset timing ($offset ms)'),
+                ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }

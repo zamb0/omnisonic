@@ -49,12 +49,9 @@ void main() {
   });
 
   testWidgets('opening on a panel shows it straight away', (tester) async {
-    await pumpPlayer(tester, initialPanel: NowPlayingPanel.visualizer);
+    await pumpPlayer(tester, initialPanel: NowPlayingPanel.queue);
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(BottomSheet), findsOneWidget);
-
-    // Let the visualizer's staggered start-up timers run out.
-    await tester.pump(const Duration(seconds: 5));
   });
 }

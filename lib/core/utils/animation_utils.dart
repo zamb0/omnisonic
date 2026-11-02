@@ -88,9 +88,14 @@ class AnimationUtils {
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      transitionAnimationController: AnimationController(
-        duration: AnimationManager.normalDuration,
-        vsync: Navigator.of(context),
+      // An AnimationController created here was never disposed — one leaked
+      // per sheet — and its fixed duration ignored reduced motion.
+      sheetAnimationStyle: AnimationStyle(
+        duration: adjustedDuration(context, AnimationManager.normalDuration),
+        reverseDuration: adjustedDuration(
+          context,
+          AnimationManager.quickDuration,
+        ),
       ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(

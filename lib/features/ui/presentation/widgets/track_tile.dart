@@ -122,6 +122,8 @@ class TrackTile extends StatelessWidget {
             _formatDuration(track.duration),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
+              // Equal-width digits, so durations line up down the list.
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           if (onMorePressed != null) ...[

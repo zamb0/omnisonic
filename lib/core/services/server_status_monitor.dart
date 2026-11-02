@@ -25,6 +25,12 @@ class ServerStatusMonitor {
   final Map<String, int> _consecutiveFailures = {};
   final Map<String, Timer> _monitoringTimers = {};
 
+  /// One number per monitoring session. A check or timer callback that
+  /// outlives a stop (and maybe a restart) of its server sees a different
+  /// generation and gives up, instead of starting a second schedule.
+  final Map<String, int> _generations = {};
+  int _nextGeneration = 0;
+
   final _statusUpdates = StreamController<MusicServer>.broadcast();
   final _random = Random();
 
@@ -42,9 +48,12 @@ class ServerStatusMonitor {
 
     if (alreadyMonitored) return;
 
+    final generation = ++_nextGeneration;
+    _generations[server.id] = generation;
+
     // Check straight away, then settle into the periodic schedule.
-    unawaited(_checkServerStatus(server.id));
-    _scheduleNextCheck(server.id);
+    unawaited(_checkServerStatus(server.id, generation));
+    _scheduleNextCheck(server.id, generation);
   }
 
   /// Starts monitoring a server's connection status, returning the updates
@@ -57,6 +66,7 @@ class ServerStatusMonitor {
   /// Stops monitoring a server.
   void stopMonitoring(String serverId) {
     _monitoringTimers.remove(serverId)?.cancel();
+    _generations.remove(serverId);
     _monitoredServers.remove(serverId);
     _latestStatuses.remove(serverId);
     _consecutiveFailures.remove(serverId);
@@ -64,7 +74,7 @@ class ServerStatusMonitor {
 
   /// Stops monitoring every server.
   void stopAllMonitoring() {
-    for (final serverId in _monitoringTimers.keys.toList()) {
+    for (final serverId in _monitoredServers.keys.toList()) {
       stopMonitoring(serverId);
     }
   }
@@ -110,7 +120,7 @@ class ServerStatusMonitor {
   /// Servers that keep failing are backed off exponentially up to
   /// [_maxInterval], and every delay carries up to 20% jitter so N servers do
   /// not wake up in lockstep.
-  void _scheduleNextCheck(String serverId) {
+  void _scheduleNextCheck(String serverId, int generation) {
     final failures = _consecutiveFailures[serverId] ?? 0;
     final backoffFactor = 1 << min(failures, 3);
     var delayMs = _monitorInterval.inMilliseconds * backoffFactor;
@@ -120,19 +130,23 @@ class ServerStatusMonitor {
     _monitoringTimers[serverId] = Timer(
       Duration(milliseconds: delayMs),
       () async {
-        await _checkServerStatus(serverId);
-        // Only reschedule if monitoring wasn't stopped in the meantime.
-        if (_monitoredServers.containsKey(serverId)) {
-          _scheduleNextCheck(serverId);
+        await _checkServerStatus(serverId, generation);
+        // Only reschedule if this monitoring session is still the live one.
+        if (_generations[serverId] == generation) {
+          _scheduleNextCheck(serverId, generation);
         }
       },
     );
   }
 
   /// Checks a server's status and emits the update.
-  Future<void> _checkServerStatus(String serverId) async {
+  Future<void> _checkServerStatus(String serverId, int generation) async {
     final server = _monitoredServers[serverId];
-    if (server == null || _statusUpdates.isClosed) return;
+    if (server == null ||
+        _generations[serverId] != generation ||
+        _statusUpdates.isClosed) {
+      return;
+    }
 
     MusicServer updated;
     try {
@@ -145,8 +159,15 @@ class ServerStatusMonitor {
     }
 
     // Monitoring may have been stopped while the request was in flight.
-    if (!_monitoredServers.containsKey(serverId) || _statusUpdates.isClosed) {
+    if (_generations[serverId] != generation || _statusUpdates.isClosed) {
       return;
+    }
+
+    // The server was edited while the request was in flight: this result
+    // describes the old URL or credentials, and storing `updated` would put
+    // them back. Test the current record instead.
+    if (!identical(_monitoredServers[serverId], server)) {
+      return _checkServerStatus(serverId, generation);
     }
 
     _monitoredServers[serverId] = updated;

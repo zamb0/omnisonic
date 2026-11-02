@@ -13,6 +13,7 @@ import 'features/playback/data/datasources/playback_tracking_service.dart';
 // ViewModels
 import 'features/music/presentation/viewmodels/music_library_view_model.dart';
 import 'features/playback/presentation/viewmodels/playback_view_model.dart';
+import 'features/playback/presentation/widgets/playback_error_listener.dart';
 import 'features/servers/presentation/viewmodels/server_management_view_model.dart';
 import 'features/music/presentation/viewmodels/playlist_view_model.dart';
 import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
@@ -156,7 +157,10 @@ class _OmnisonicAppState extends State<OmnisonicApp>
             routerConfig: AppRouter.router,
             builder: (context, child) => AppShortcuts(
               playback: () => getIt<PlaybackViewModel>(),
-              child: child ?? const SizedBox.shrink(),
+              child: PlaybackErrorListener(
+                playback: () => getIt<PlaybackViewModel>(),
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           );
         },

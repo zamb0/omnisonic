@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// ViewModel for managing playlist operations and state
 ///
@@ -30,6 +31,7 @@ class PlaylistViewModel extends ChangeNotifier {
   List<Track> _selectedPlaylistTracks = [];
   List<Playlist> _searchResults = [];
   bool _isLoading = false;
+  bool _isLoadingTracks = false;
   bool _isOperating = false;
   String? _errorMessage;
   String _searchQuery = '';
@@ -44,6 +46,9 @@ class PlaylistViewModel extends ChangeNotifier {
   List<Track> get selectedPlaylistTracks => _selectedPlaylistTracks;
   List<Playlist> get searchResults => _searchResults;
   bool get isLoading => _isLoading;
+
+  /// Whether the selected playlist's tracks are still being fetched.
+  bool get isLoadingTracks => _isLoadingTracks;
   bool get isOperating => _isOperating;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
@@ -468,44 +473,65 @@ class PlaylistViewModel extends ChangeNotifier {
     }
   }
 
-  /// Selects a playlist and loads its tracks
+  /// Selects a playlist and loads its tracks.
+  ///
+  /// Completes once the tracks are in, and notifies again at that point —
+  /// the detail page used to render "No tracks" because the only notify
+  /// happened before the tracks had loaded.
   Future<void> selectPlaylist(String playlistId) async {
+    if (_selectedPlaylist?.id != playlistId) {
+      _selectedPlaylistTracks = [];
+    }
+    _isLoadingTracks = true;
+    notifyListeners();
+
     final result = await _playlistRepository.getPlaylistById(playlistId);
+    Playlist? playlist;
     result.fold(
       (failure) => _setError('Failed to load playlist: ${failure.message}'),
-      (playlist) {
-        _selectedPlaylist = playlist;
-        if (playlist != null) {
-          _loadSelectedPlaylistTracks();
-        } else {
-          _selectedPlaylistTracks = [];
-        }
-        notifyListeners();
-      },
+      (found) => playlist = found,
     );
+    _selectedPlaylist = playlist;
+    if (playlist == null) {
+      _selectedPlaylistTracks = [];
+      _isLoadingTracks = false;
+      notifyListeners();
+      return;
+    }
+    await _loadSelectedPlaylistTracks();
   }
 
   /// Clears the selected playlist
   void clearSelectedPlaylist() {
     _selectedPlaylist = null;
     _selectedPlaylistTracks = [];
+    _isLoadingTracks = false;
     notifyListeners();
   }
 
   Future<void> _loadSelectedPlaylistTracks() async {
-    if (_selectedPlaylist == null) return;
+    final playlistId = _selectedPlaylist?.id;
+    if (playlistId == null) return;
 
+    _isLoadingTracks = true;
+    notifyListeners();
     try {
-      final result = await _playlistRepository.getPlaylistTracks(
-        _selectedPlaylist!.id,
-      );
+      final result = await _playlistRepository.getPlaylistTracks(playlistId);
+      // A different playlist may have been opened while this was in flight.
+      if (_selectedPlaylist?.id != playlistId) return;
       result.fold(
         (failure) =>
             _setError('Failed to load playlist tracks: ${failure.message}'),
         (tracks) => _selectedPlaylistTracks = tracks,
       );
     } catch (e) {
-      _setError('Unexpected error loading playlist tracks: $e');
+      AppLog.error('Failed to load playlist tracks: $e');
+      _setError("Couldn't load this playlist's tracks");
+    } finally {
+      if (_selectedPlaylist?.id == playlistId) {
+        _isLoadingTracks = false;
+        notifyListeners();
+      }
     }
   }
 

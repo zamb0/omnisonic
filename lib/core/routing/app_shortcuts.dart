@@ -13,7 +13,9 @@ import 'app_router.dart';
 /// target here, so the affordance is now real rather than removed.
 ///
 /// Everything is suppressed while a text field has focus, so typing "k" into
-/// the search box does not seek, pause, or navigate.
+/// the search box does not seek, pause, or navigate. Space and the arrows
+/// also yield to any focused control (button, checkbox, slider), which needs
+/// those keys for itself.
 class AppShortcuts extends StatelessWidget {
   const AppShortcuts({super.key, required this.child, required this.playback});
 
@@ -50,9 +52,11 @@ class AppShortcuts extends StatelessWidget {
                 GoRouter.of(context).go(AppRouter.search),
           ),
           _TogglePlayback: _GuardedAction<_TogglePlayback>(
+            yieldToControls: true,
             onInvoke: (context, [intent]) => playback().togglePlayPause(),
           ),
           _Seek: _GuardedAction<_Seek>(
+            yieldToControls: true,
             onInvoke: (context, [intent]) {
               final vm = playback();
               if (!vm.hasCurrentTrack) return;
@@ -66,6 +70,7 @@ class AppShortcuts extends StatelessWidget {
             },
           ),
           _Skip: _GuardedAction<_Skip>(
+            yieldToControls: true,
             onInvoke: (context, [intent]) {
               final vm = playback();
               (intent as _Skip).back ? vm.skipToPrevious() : vm.skipToNext();
@@ -82,19 +87,35 @@ class AppShortcuts extends StatelessWidget {
 ///
 /// Without this, Space would pause playback mid-word and `/` would navigate
 /// away from whatever the user was typing.
+///
+/// With [yieldToControls], the action also stands aside while any control
+/// has keyboard focus: Space has to press the focused button or tick the
+/// focused checkbox, and the arrows have to move focus, not seek. A disabled
+/// action lets the key fall through to the framework's own shortcuts.
 class _GuardedAction<T extends Intent> extends ContextAction<T> {
-  _GuardedAction({required this.onInvoke});
+  _GuardedAction({required this.onInvoke, this.yieldToControls = false});
 
   final void Function(BuildContext context, [Intent? intent]) onInvoke;
+  final bool yieldToControls;
+
+  bool get _blocked => _editing || (yieldToControls && _controlFocused);
 
   @override
-  bool isEnabled(T intent, [BuildContext? context]) => !_editing;
+  bool isEnabled(T intent, [BuildContext? context]) => !_blocked;
 
   @override
   Object? invoke(T intent, [BuildContext? context]) {
-    if (context == null || _editing) return null;
+    if (context == null || _blocked) return null;
     onInvoke(context, intent);
     return null;
+  }
+
+  /// Whether a single control, rather than a whole route or the app, holds
+  /// focus. With nothing in particular focused, the primary focus is a
+  /// scope node.
+  static bool get _controlFocused {
+    final focus = FocusManager.instance.primaryFocus;
+    return focus != null && focus is! FocusScopeNode;
   }
 
   static bool get _editing {

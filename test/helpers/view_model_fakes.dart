@@ -411,6 +411,9 @@ class FakePlaybackViewModel extends ChangeNotifier
   Future<void> toggleFavorite(Track track) async {}
 
   @override
+  bool isFavoritePending(String trackId) => false;
+
+  @override
   void clearError() {}
 }
 
@@ -536,6 +539,8 @@ class FakePlaylistViewModel extends ChangeNotifier
   List<Playlist> get searchResults => const [];
   @override
   bool get isLoading => _isLoading;
+  @override
+  bool get isLoadingTracks => false;
   @override
   bool get isOperating => false;
   @override

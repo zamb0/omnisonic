@@ -63,39 +63,44 @@ class _FeishinCardState extends State<FeishinCard> {
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image area - expands to fill available width
-            Expanded(
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: AnimatedScale(
-                  scale: _isHovering ? 1.03 : 1.0,
-                  duration: AnimationUtils.adjustedDuration(
-                    context,
-                    AnimationManager.fastDuration,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // In a grid cell the image takes whatever height the text leaves.
+            // In a Wrap or a scroll view there is no height to share, and an
+            // Expanded there asserts — the image is then just a square.
+            final bounded = constraints.hasBoundedHeight;
+            final image = AspectRatio(
+              aspectRatio: 1,
+              child: AnimatedScale(
+                scale: _isHovering ? 1.03 : 1.0,
+                duration: AnimationUtils.adjustedDuration(
+                  context,
+                  AnimationManager.fastDuration,
+                ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: isCircle
+                        ? BorderRadius.circular(OmnisonicRadius.full)
+                        : BorderRadius.circular(OmnisonicRadius.art),
+                    // `0 12px 24px -14px` from the design's cover-art spec:
+                    // enough lift that the art floats over the tinted
+                    // backdrop without casting a visible grey box.
+                    boxShadow: OmnisonicShadows.art,
                   ),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: isCircle
-                          ? BorderRadius.circular(OmnisonicRadius.full)
-                          : BorderRadius.circular(OmnisonicRadius.art),
-                      // `0 12px 24px -14px` from the design's cover-art spec:
-                      // enough lift that the art floats over the tinted
-                      // backdrop without casting a visible grey box.
-                      boxShadow: OmnisonicShadows.art,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: isCircle
-                          ? BorderRadius.circular(OmnisonicRadius.full)
-                          : BorderRadius.circular(OmnisonicRadius.art),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildImage(context, scheme),
-                          // Hover overlay with play and star buttons
-                          AnimatedOpacity(
+                  child: ClipRRect(
+                    borderRadius: isCircle
+                        ? BorderRadius.circular(OmnisonicRadius.full)
+                        : BorderRadius.circular(OmnisonicRadius.art),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildImage(context, scheme),
+                        // Hover overlay with play and star buttons. A
+                        // transparent overlay still takes taps, so on touch
+                        // it would star the album from an invisible button.
+                        IgnorePointer(
+                          ignoring: !_isHovering,
+                          child: AnimatedOpacity(
                             opacity: _isHovering ? 1.0 : 0.0,
                             duration: AnimationUtils.adjustedDuration(
                               context,
@@ -152,56 +157,65 @@ class _FeishinCardState extends State<FeishinCard> {
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-            // Text area below the image
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: OmnisonicTypography.bodySmall.copyWith(
-                      fontSize: 12.5,
-                      fontWeight: OmnisonicTypography.bold,
-                      color: scheme.onSurface,
-                    ),
-                    maxLines: widget.titleMaxLines,
-                    overflow: TextOverflow.ellipsis,
+            );
+            return Column(
+              mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (bounded) Expanded(child: image) else image,
+                // Text area below the image
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: OmnisonicTypography.bodySmall.copyWith(
+                          fontSize: 12.5,
+                          fontWeight: OmnisonicTypography.bold,
+                          color: scheme.onSurface,
+                        ),
+                        maxLines: widget.titleMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (widget.subtitle != null)
+                        Text(
+                          widget.subtitle!,
+                          style: OmnisonicTypography.bodySmall.copyWith(
+                            fontSize: 11,
+                            fontWeight: OmnisonicTypography.medium,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (widget.meta != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.meta!,
+                          style: OmnisonicTypography.technical.copyWith(
+                            fontSize: 9.5,
+                            color: scheme.onSurfaceVariant.withValues(
+                              alpha: 0.8,
+                            ),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
-                  if (widget.subtitle != null)
-                    Text(
-                      widget.subtitle!,
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        fontSize: 11,
-                        fontWeight: OmnisonicTypography.medium,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (widget.meta != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.meta!,
-                      style: OmnisonicTypography.technical.copyWith(
-                        fontSize: 9.5,
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -353,10 +353,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     final isStarred = track?.isStarred ?? false;
 
                     return IconButton(
-                      onPressed: track != null
-                          ? () {
-                              viewModel.toggleFavorite(track);
-                            }
+                      onPressed:
+                          track != null &&
+                              !viewModel.isFavoritePending(track.id)
+                          ? () => viewModel.toggleFavorite(track)
                           : null,
                       icon: Icon(
                         isStarred
@@ -715,10 +715,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             final isStarred = track?.isStarred ?? false;
 
             return IconButton(
-              onPressed: track != null
-                  ? () {
-                      viewModel.toggleFavorite(track);
-                    }
+              onPressed: track != null && !viewModel.isFavoritePending(track.id)
+                  ? () => viewModel.toggleFavorite(track)
                   : null,
               icon: Icon(
                 isStarred
@@ -952,7 +950,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       );
     }
 
-    final previewCount = queue.length.clamp(0, _queuePreviewCount);
+    // The current track and what plays after it — not the head of the
+    // queue, which is mostly tracks that have already played.
+    final start = currentIndex.clamp(0, queue.length - 1);
+    final previewCount = (queue.length - start).clamp(0, _queuePreviewCount);
 
     return Column(
       children: [
@@ -960,7 +961,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           child: ListView.separated(
             itemCount: previewCount,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
+            itemBuilder: (context, i) {
+              final index = start + i;
               final track = queue[index];
               final isCurrent = index == currentIndex;
 

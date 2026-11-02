@@ -334,6 +334,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
   }
 
   void _navigateToPlaylistDetail(BuildContext context, Playlist playlist) {
-    context.go(AppRouter.playlistDetailLocation(playlist.id));
+    context.push(AppRouter.playlistDetailLocation(playlist.id));
   }
 }

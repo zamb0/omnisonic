@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -281,6 +283,13 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   Widget _buildTrackList(Playlist playlist, PlaylistViewModel viewModel) {
     final tracks = viewModel.selectedPlaylistTracks;
 
+    if (tracks.isEmpty && viewModel.isLoadingTracks) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     if (tracks.isEmpty) {
       return SliverFillRemaining(
         child: Center(
@@ -432,7 +441,15 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               Navigator.of(dialogContext).pop();
               final success = await viewModel.deletePlaylist(playlist.id);
               if (success && mounted) {
-                Navigator.of(context).pop(); // Go back to previous screen
+                // Opened from a deep link there is nothing to pop back to,
+                // and popping the shell's only page would leave the user
+                // looking at the playlist they just deleted.
+                final router = GoRouter.of(context);
+                if (router.canPop()) {
+                  router.pop();
+                } else {
+                  router.go(AppRouter.playlistManagement);
+                }
                 messenger.showSnackBar(
                   SnackBar(content: Text('Deleted "${playlist.name}"')),
                 );

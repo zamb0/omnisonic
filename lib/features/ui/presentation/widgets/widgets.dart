@@ -16,6 +16,7 @@ export 'shell_art_tint.dart';
 // State Components
 export 'empty_state.dart';
 export 'state_views.dart';
+export 'feedback.dart';
 
 // Sort Components
 export 'sort_options_sheet.dart';

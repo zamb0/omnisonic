@@ -329,7 +329,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         if (showFavorite) ...[
                           Consumer<PlaybackViewModel>(
                             builder: (context, vm, child) {
-                              final isStarred = track.isStarred;
+                              // Read the live track: the one captured above
+                              // predates the optimistic flip.
+                              final live = vm.currentTrack ?? track;
+                              final isStarred = live.isStarred;
+                              final pending = vm.isFavoritePending(live.id);
                               return _iconBtn(
                                 isStarred
                                     ? OmnisonicIcons.favorite
@@ -338,10 +342,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 isStarred
                                     ? OmnisonicColors.favoriteIndicator
                                     : scheme.onSurface.withValues(alpha: 0.7),
-                                () {
-                                  Haptics.success();
-                                  vm.toggleFavorite(track);
-                                },
+                                pending
+                                    ? null
+                                    : () {
+                                        Haptics.success();
+                                        vm.toggleFavorite(live);
+                                      },
                                 label: isStarred
                                     ? 'Remove from favorites'
                                     : 'Add to favorites',
@@ -802,7 +808,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               isStarred
                   ? OmnisonicColors.favoriteIndicator
                   : scheme.onSurfaceVariant,
-              track != null ? () => vm.toggleFavorite(track) : null,
+              track != null && !vm.isFavoritePending(track.id)
+                  ? () => vm.toggleFavorite(track)
+                  : null,
               label: isStarred ? 'Remove from favorites' : 'Add to favorites',
               toggled: isStarred,
             );

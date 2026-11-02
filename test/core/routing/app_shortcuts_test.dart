@@ -24,6 +24,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     bool withTextField = false,
+    Widget? body,
   }) async {
     // The field belongs inside a route, not in MaterialApp's builder: an
     // EditableText needs the Navigator's Overlay above it.
@@ -33,9 +34,11 @@ void main() {
         GoRoute(
           path: AppRouter.home,
           builder: (context, state) => Scaffold(
-            body: withTextField
-                ? const SizedBox(width: 200, child: TextField())
-                : const Text('home'),
+            body:
+                body ??
+                (withTextField
+                    ? const SizedBox(width: 200, child: TextField())
+                    : const Text('home')),
           ),
         ),
         GoRoute(
@@ -157,5 +160,51 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(playback.position, Duration.zero);
+  });
+
+  testWidgets('space presses a focused button instead of toggling playback', (
+    tester,
+  ) async {
+    playback.emitPlaying(testTrack(), isPlaying: true);
+    var pressed = 0;
+    final focus = FocusNode();
+    addTearDown(focus.dispose);
+    await pumpApp(
+      tester,
+      body: TextButton(
+        focusNode: focus,
+        onPressed: () => pressed++,
+        child: const Text('Press'),
+      ),
+    );
+
+    focus.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+
+    expect(pressed, 1);
+    expect(playback.isPlaying, isTrue);
+  });
+
+  testWidgets('arrows leave a focused control alone', (tester) async {
+    playback.emitPlaying(testTrack(), position: const Duration(seconds: 30));
+    final focus = FocusNode();
+    addTearDown(focus.dispose);
+    await pumpApp(
+      tester,
+      body: TextButton(
+        focusNode: focus,
+        onPressed: () {},
+        child: const Text('Press'),
+      ),
+    );
+
+    focus.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(playback.position, const Duration(seconds: 30));
   });
 }

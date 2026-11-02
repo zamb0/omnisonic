@@ -223,17 +223,21 @@ class MusicRepositoryImpl implements MusicRepository {
           (server) => _syncFromServer(server.id, updateCollection: false),
         ),
       );
-      final syncResults = <Result<void>>[...results];
+      final failures = results.where((r) => r.isFailure).toList();
 
-      // Check if any sync failed
-      final failures = syncResults.where((r) => r.isFailure).toList();
-      if (failures.isNotEmpty) {
-        // Return first failure, but log others
-        return ResultHelper.failure(failures.first.failureOrNull!);
+      // Servers that did sync have already written to the database, so the
+      // collection is rebuilt even when another server failed; otherwise their
+      // changes stay invisible until the next fully successful sync.
+      if (results.isEmpty || failures.length < results.length) {
+        await _updateUnifiedCollection();
       }
 
-      // Update unified collection after successful sync
-      await _updateUnifiedCollection();
+      if (failures.isNotEmpty) {
+        for (final failure in failures.skip(1)) {
+          AppLog.warn('Server sync failed: ${failure.failureOrNull?.message}');
+        }
+        return ResultHelper.failure(failures.first.failureOrNull!);
+      }
 
       return ResultHelper.success(null);
     } catch (e) {
@@ -323,6 +327,10 @@ class MusicRepositoryImpl implements MusicRepository {
       }
 
       AppLog.info('Database sync completed successfully');
+
+      // The library changed, so duplicate groups computed before the sync can
+      // reference tracks that no longer exist.
+      _invalidateDuplicateGroups();
 
       // Update server last sync time
       await _serverRepository.updateLastSync(serverId, DateTime.now());
@@ -1147,6 +1155,11 @@ class MusicRepositoryImpl implements MusicRepository {
       // Log error but don't throw - this is for reactive updates
       AppLog.warn('Error updating unified collection: $e');
     }
+  }
+
+  /// Forces the next [getDuplicateGroups] call to recompute.
+  void _invalidateDuplicateGroups() {
+    _lastDeduplicationUpdate = null;
   }
 
   /// Updates duplicate groups cache using similarity algorithm

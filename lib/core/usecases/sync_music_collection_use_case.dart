@@ -24,6 +24,8 @@ class SyncMusicCollectionUseCase
   final MusicRepository _musicRepository;
   final ServerRepository _serverRepository;
 
+  static const Duration _collectionTimeout = Duration(seconds: 30);
+
   @override
   Future<Either<Failure, UnifiedCollection>> call(
     SyncMusicCollectionParams params,
@@ -74,9 +76,13 @@ class SyncMusicCollectionUseCase
       // The repository rebuilds and publishes the unified collection at the
       // end of a sync, so read that instead of materialising the whole library
       // into Dart lists a second time.
+      //
+      // Bounded, because a collection that was never published (e.g. its
+      // database read failed) would otherwise leave the sync pending forever.
       final unifiedCollection = await _musicRepository
           .observeCollection()
-          .first;
+          .first
+          .timeout(_collectionTimeout);
 
       return Right(unifiedCollection);
     } catch (e) {

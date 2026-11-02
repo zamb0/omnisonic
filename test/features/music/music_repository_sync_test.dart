@@ -169,6 +169,43 @@ void main() {
     expect(offsets, containsAll(<int>[0, 500, 1000]));
   });
 
+  test('publishes what synced even when another server failed', () async {
+    stubAlbums(total: 3);
+    final broken = MusicServer(
+      id: 'server2',
+      name: 'Broken',
+      url: 'http://broken.example.com',
+      username: 'user',
+      status: ServerStatus.online,
+      createdAt: DateTime(2026),
+    );
+    when(
+      serverRepository.getOnlineServers(),
+    ).thenAnswer((_) async => ResultHelper.success([server, broken]));
+    when(
+      serverRepository.getServerById('server2'),
+    ).thenAnswer((_) async => ResultHelper.success(broken));
+    when(
+      connectionService.getServerPassword('server2'),
+    ).thenAnswer((_) async => ResultHelper.success('password'));
+    when(
+      apiClient.getArtists(
+        argThat(predicate<MusicServer>((s) => s.id == 'server2')),
+        any,
+      ),
+    ).thenThrow(Exception('unreachable'));
+
+    // Subscribe first, so the value read below can only be the one the sync
+    // itself published.
+    final collection = repository.observeCollection();
+    await collection.first;
+
+    final result = await repository.syncFromServers();
+
+    expect(result.isFailure, isTrue);
+    expect((await collection.first).tracks, hasLength(3));
+  });
+
   group('starring an album', () {
     final pong = ok(const PingResponse());
 

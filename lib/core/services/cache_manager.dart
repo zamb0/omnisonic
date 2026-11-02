@@ -39,24 +39,17 @@ class CacheManager {
       int pinnedFileCount = 0;
       int validFiles = 0;
 
-      // One stat call per entry, issued together rather than awaited one at a
-      // time — these stats are recomputed after every download, pin and
-      // removal.
-      final existence = await Future.wait(
-        entries.map((entry) => File(entry.filePath).exists()),
-      );
+      for (final entry in entries) {
+        final file = File(entry.filePath);
+        if (await file.exists()) {
+          totalSize += entry.fileSize;
+          fileCount++;
+          validFiles++;
 
-      for (var i = 0; i < entries.length; i++) {
-        if (!existence[i]) continue;
-
-        final entry = entries[i];
-        totalSize += entry.fileSize;
-        fileCount++;
-        validFiles++;
-
-        if (entry.isPinned) {
-          pinnedSize += entry.fileSize;
-          pinnedFileCount++;
+          if (entry.isPinned) {
+            pinnedSize += entry.fileSize;
+            pinnedFileCount++;
+          }
         }
       }
 
@@ -140,11 +133,6 @@ class CacheManager {
     int? targetFreeSpace,
   }) async {
     try {
-      final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure) {
-        return ResultHelper.failure(statsResult.failureOrNull!);
-      }
-
       // Calculate target free space if not provided
       targetFreeSpace ??= (maxCacheSize * 0.3).round(); // Free up 30%
 
@@ -187,30 +175,23 @@ class CacheManager {
     List<CacheEntry> entries,
   ) async {
     try {
-      // Stat every entry at once rather than walking the cache serially.
-      final sizes = await Future.wait(
-        entries.map((entry) async {
-          final file = File(entry.filePath);
-          return await file.exists() ? await file.length() : null;
-        }),
-      );
-
       final invalidEntries = <String>[];
-      for (var i = 0; i < entries.length; i++) {
-        final entry = entries[i];
-        final actualSize = sizes[i];
 
-        if (actualSize == null) {
+      for (final entry in entries) {
+        final file = File(entry.filePath);
+
+        if (!await file.exists()) {
           invalidEntries.add(entry.trackId);
           continue;
         }
 
         // Check file size matches
+        final actualSize = await file.length();
         if (actualSize != entry.fileSize) {
           invalidEntries.add(entry.trackId);
           // Delete corrupted file
           try {
-            await File(entry.filePath).delete();
+            await file.delete();
           } catch (e) {
             // Ignore deletion errors
           }

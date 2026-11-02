@@ -25,19 +25,6 @@ Map<String, dynamic> _$SubsonicResponseToJson<T>(
   ),
 };
 
-SubsonicResponseData<T> _$SubsonicResponseDataFromJson<T>(
-  Map<String, dynamic> json,
-  T Function(Object? json) fromJsonT,
-) => SubsonicResponseData<T>(
-  status: json['status'] as String,
-  version: json['version'] as String,
-  type: json['type'] as String?,
-  serverVersion: json['serverVersion'] as String?,
-  error: json['error'] == null
-      ? null
-      : SubsonicError.fromJson(json['error'] as Map<String, dynamic>),
-);
-
 Map<String, dynamic> _$SubsonicResponseDataToJson<T>(
   SubsonicResponseData<T> instance,
   Object? Function(T value) toJsonT,

@@ -142,9 +142,14 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
   }
 
   Future<List<Track>> getTracksByAlbumId(String albumId) async {
-    final data = await (select(
-      tracksTable,
-    )..where((tbl) => tbl.albumId.equals(albumId))).get();
+    final data =
+        await (select(tracksTable)
+              ..where((tbl) => tbl.albumId.equals(albumId))
+              ..orderBy([
+                (tbl) => OrderingTerm.asc(tbl.discNumber),
+                (tbl) => OrderingTerm.asc(tbl.trackNumber),
+              ]))
+            .get();
     return data.map(_trackFromData).toList();
   }
 

@@ -11,6 +11,8 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/utils/animation_utils.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../widgets/widgets.dart';
 import 'main_shell.dart';
@@ -787,44 +789,104 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () => context.push(
-          AppRouter.albumDetailLocation(widget.album.id),
-          extra: widget.album,
-        ),
+      // InkWell rather than GestureDetector, for press feedback on touch.
+      // Touch has no hover, so the overlay's actions are offered on long
+      // press (and right-click) as a sheet instead.
+      child: InkWell(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+        onTap: () => _openAlbum(context),
+        onLongPress: () => _showActions(context),
+        onSecondaryTap: () => _showActions(context),
         child: Stack(
           children: [
             widget.child,
-            if (_isHovered)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-                    color: Colors.black.withValues(alpha: 0.6),
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !_isHovered,
+                child: AnimatedOpacity(
+                  opacity: _isHovered ? 1 : 0,
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    AnimationManager.fastDuration,
                   ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _HoverButton(
-                          icon: OmnisonicIcons.shuffle,
-                          onPressed: () => _shuffleAlbum(context),
-                        ),
-                        const SizedBox(width: 8),
-                        _HoverButton(
-                          icon: OmnisonicIcons.playArrow,
-                          onPressed: () => _playAlbum(context),
-                          isPrimary: true,
-                        ),
-                      ],
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+                      color: Colors.black.withValues(alpha: 0.6),
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _HoverButton(
+                            icon: OmnisonicIcons.shuffle,
+                            onPressed: () => _shuffleAlbum(context),
+                          ),
+                          const SizedBox(width: 8),
+                          _HoverButton(
+                            icon: OmnisonicIcons.playArrow,
+                            onPressed: () => _playAlbum(context),
+                            isPrimary: true,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openAlbum(BuildContext context) => context.push(
+    AppRouter.albumDetailLocation(widget.album.id),
+    extra: widget.album,
+  );
+
+  Future<void> _showActions(BuildContext context) async {
+    Haptics.selection();
+    final action = await showModalBottomSheet<_AlbumAction>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(
+                widget.album.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                widget.album.artist,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final action in _AlbumAction.values)
+              ListTile(
+                leading: Icon(action.icon),
+                title: Text(action.label),
+                onTap: () => Navigator.pop(sheetContext, action),
               ),
           ],
         ),
       ),
     );
+    if (action == null || !context.mounted) return;
+
+    switch (action) {
+      case _AlbumAction.play:
+        _playAlbum(context);
+      case _AlbumAction.shuffle:
+        _shuffleAlbum(context);
+      case _AlbumAction.open:
+        _openAlbum(context);
+    }
   }
 
   void _playAlbum(BuildContext context) {
@@ -847,6 +909,18 @@ class _HoverAlbumCardState extends State<_HoverAlbumCard> {
       }
     });
   }
+}
+
+/// What the album card offers on long press, mirroring its hover overlay.
+enum _AlbumAction {
+  play('Play', OmnisonicIcons.playArrow),
+  shuffle('Shuffle', OmnisonicIcons.shuffle),
+  open('Go to album', OmnisonicIcons.album);
+
+  const _AlbumAction(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
 }
 
 /// Hover button widget

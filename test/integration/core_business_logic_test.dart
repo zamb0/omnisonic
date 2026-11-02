@@ -6,6 +6,8 @@ import 'package:omnisonic/core/errors/result.dart';
 import 'package:omnisonic/core/usecases/usecases.dart';
 import 'package:omnisonic/core/repositories/repositories.dart';
 
+import '../helpers/test_platform_channels.dart';
+
 /// End-to-end integration test for core business logic
 ///
 /// This test verifies that all core functionality works together:
@@ -15,12 +17,14 @@ import 'package:omnisonic/core/repositories/repositories.dart';
 /// - Playlist management operations
 /// - Audio playback with source selection
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(setUpTestPlatformChannels);
+
   group('Core Business Logic Integration', () {
     late GetIt getIt;
     late ServerRepository serverRepository;
     late MusicRepository musicRepository;
-    late PlaylistRepository playlistRepository;
-    late PlaybackRepository playbackRepository;
     late SyncMusicCollectionUseCase syncUseCase;
     late SearchMusicUseCase searchUseCase;
     late ManagePlaylistUseCase playlistUseCase;
@@ -32,8 +36,6 @@ void main() {
 
       serverRepository = getIt<ServerRepository>();
       musicRepository = getIt<MusicRepository>();
-      playlistRepository = getIt<PlaylistRepository>();
-      playbackRepository = getIt<PlaybackRepository>();
       syncUseCase = getIt<SyncMusicCollectionUseCase>();
       searchUseCase = getIt<SearchMusicUseCase>();
       playlistUseCase = getIt<ManagePlaylistUseCase>();
@@ -156,6 +158,21 @@ void main() {
     });
 
     test('should handle search with filters correctly', () async {
+      // Search reads the local library, but the filters are per-server, so
+      // this test provides a server of its own rather than depending on
+      // whatever the previous test left behind.
+      final searchServer = MusicServer(
+        id: 'search-test-server',
+        name: 'Search Test Server',
+        url: 'https://demo.subsonic.org',
+        username: 'guest',
+        status: ServerStatus.online,
+        createdAt: DateTime.now(),
+        lastSync: DateTime.now(),
+      );
+      await serverRepository.addServer(searchServer);
+      addTearDown(() => serverRepository.removeServer(searchServer.id));
+
       // Test search with various filters
       final searchParams = SearchMusicParams(
         query: 'rock',

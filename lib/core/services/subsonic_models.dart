@@ -37,7 +37,7 @@ class SubsonicResponse<T> {
 }
 
 /// Subsonic response data container
-@JsonSerializable(genericArgumentFactories: true)
+@JsonSerializable(genericArgumentFactories: true, createFactory: false)
 class SubsonicResponseData<T> {
   final String status;
   final String version;
@@ -124,6 +124,10 @@ class PingResponse {
 /// Albums list response
 @JsonSerializable()
 class AlbumsResponse {
+  /// Servers omit this key entirely when a page has no albums — which is how
+  /// the paging loop finds the end of the list — so it defaults to empty
+  /// rather than failing the cast.
+  @JsonKey(defaultValue: <SubsonicAlbum>[])
   final List<SubsonicAlbum> album;
 
   const AlbumsResponse({required this.album});
@@ -167,6 +171,9 @@ class AlbumResponse {
   @JsonKey(fromJson: _parseIntFromDynamic)
   final int? year;
   final String? genre;
+
+  /// Albums with no songs come back without this key.
+  @JsonKey(defaultValue: <SubsonicSong>[])
   final List<SubsonicSong> song;
 
   const AlbumResponse({

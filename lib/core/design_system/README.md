@@ -1,30 +1,16 @@
 # Omnisonic Design System
 
-A comprehensive design system for the Omnisonic music streaming client, providing consistent colors, typography, spacing, and components across all platforms.
-
-## Overview
-
-The Omnisonic Design System implements a modern, accessible, and responsive design language that enhances the music listening experience. It follows Material Design 3 principles while adding custom elements specific to music applications.
-
-## Features
-
-- **🎨 Comprehensive Color Palette**: Light and dark themes with music-specific colors
-- **📝 Typography System**: Inter and Poppins fonts with responsive scaling
-- **📏 8px Grid System**: Consistent spacing and layout across all screen sizes
-- **🎵 Music-Specific Components**: Specialized UI elements for music applications
-- **♿ Accessibility Compliant**: WCAG 2.1 AA standards with proper touch targets
-- **📱 Responsive Design**: Adaptive layouts for mobile, tablet, and desktop
-- **🎭 Theme Management**: Seamless switching between light, dark, and system themes
+Colors, typography, spacing, icons and responsive layout helpers for the Omnisonic music streaming client, wired into `OmnisonicTheme` and used by `MaterialApp` in `lib/main.dart`.
 
 ## Quick Start
 
-### Import the Design System
+### Import
 
 ```dart
 import 'package:omnisonic/core/design_system/design_system.dart';
 ```
 
-### Apply Themes
+### Apply the theme
 
 ```dart
 MaterialApp(
@@ -35,261 +21,190 @@ MaterialApp(
 )
 ```
 
-### Use Colors
+### Colors
 
 ```dart
-// Access theme colors
 Container(
-  color: context.colorScheme.primary,
-  child: Text(
-    'Hello World',
-    style: TextStyle(color: context.colorScheme.onPrimary),
-  ),
-)
-
-// Use custom music colors
-Icon(
-  Icons.play_arrow,
-  color: context.playingIndicatorColor,
-)
-
-// Apply gradients
-Container(
-  decoration: BoxDecoration(
-    gradient: context.primaryGradient,
-  ),
+  decoration: BoxDecoration(gradient: OmnisonicColors.primaryGradient),
+  child: Text('Hello', style: TextStyle(color: OmnisonicColors.favoriteIndicator)),
 )
 ```
 
 ### Typography
 
 ```dart
-// Use predefined text styles
-Text('Album Title', style: context.textTheme.trackTitle)
-Text('Artist Name', style: context.textTheme.artistName)
-Text('Duration', style: context.textTheme.duration)
-
-// Use Material Design text styles
-Text('Heading', style: context.textTheme.headlineMedium)
-Text('Body text', style: context.textTheme.bodyLarge)
+Text('Album Title', style: OmnisonicTypography.trackTitle)
+Text('Artist Name', style: OmnisonicTypography.artistName)
 ```
 
-### Spacing and Layout
+### Spacing
 
 ```dart
-// Use consistent spacing
 Padding(
-  padding: OmnisonicInsets.allMd, // 16px all sides
+  padding: const EdgeInsets.all(OmnisonicSpacing.md), // 16px
   child: Column(
     children: [
       Text('Title'),
-      SizedBox(height: OmnisonicSpacing.sm), // 8px
+      const SizedBox(height: OmnisonicSpacing.sm), // 8px
       Text('Subtitle'),
     ],
   ),
 )
-
-// Responsive spacing
-Padding(
-  padding: OmnisonicSpacing.screenPaddingFor(context),
-  child: content,
-)
 ```
 
-### Icons and Assets
+### Icons
 
 ```dart
-// Use consistent icons
-OmnisonicIconWidget.play()
-OmnisonicIconWidget.favorite(filled: true)
-OmnisonicIconWidget(OmnisonicIcons.shuffle)
+Icon(OmnisonicIcons.shuffle, size: OmnisonicIconSizes.md)
+```
 
-// Display album artwork with fallback
-context.albumArtwork(
-  imageUrl: album.artworkUrl,
-  width: 120,
-  height: 120,
+Always `OmnisonicIcons`, never `Icons.*` directly — the token file is the
+only thing keeping one shape language across the app. Sizes come from the
+ladder, not from a literal.
+
+### Responsive layout
+
+```dart
+ResponsiveLayout(
+  mobile: MobileView(),
+  tablet: TabletView(),
+  desktop: DesktopView(),
 )
 ```
 
 ## Color System
 
 ### Primary Colors
-- **Primary Purple**: `#6366F1` - Main brand color
-- **Primary Blue**: `#3B82F6` - Secondary brand color  
-- **Primary Teal**: `#06B6D4` - Accent color
+- **Primary Purple**: `#7C7CFF` — main brand color
+- **Primary Blue**: `#5A67D8` — secondary brand color
+- **Primary Teal**: `#4DD0E1` — accent color
 
 ### Semantic Colors
-- **Success**: `#10B981` - Success states
-- **Warning**: `#F59E0B` - Warning states
-- **Error**: `#EF4444` - Error states
-- **Info**: `#3B82F6` - Information states
+- **Success**: `#10B981`
+- **Warning**: `#F59E0B`
+- **Error**: `#EF4444`
+- **Info**: `#3B82F6`
 
 ### Music-Specific Colors
-- **Playing Indicator**: `#1DB954` - Currently playing tracks
-- **Paused Indicator**: `#F59E0B` - Paused tracks
-- **Queue Indicator**: `#8B5CF6` - Queued tracks
-- **Favorite Indicator**: `#EC4899` - Favorited items
+- **Playing Indicator**: `#1DB954`
+- **Paused Indicator**: `#F59E0B`
+- **Queue Indicator**: `#8B5CF6`
+- **Favorite Indicator**: `#EC4899`
 
-### Gradients
-- **Primary Gradient**: Purple to Blue
-- **Accent Gradient**: Blue to Teal
-- **Hero Gradient**: Purple to Violet to Pink
-- **Subtle Gradient**: Light surface variations
+The light color scheme uses darkened `*Light` variants of the brand colors (`primaryLight`, `secondaryLight`, `tertiaryLight`) so white foreground text on them clears WCAG AA — see `color_contrast_test.dart`.
 
 ## Typography
 
-### Font Families
-- **Inter**: Primary font for body text, labels, and UI elements
-- **Poppins**: Display font for headings and titles
-- **Fallback**: Roboto (Android), San Francisco (iOS), System default (Desktop)
+- **Manrope**: primary font — body text, labels, UI elements
+- **Gabarito**: display font — headings, titles, nav and button labels
+- **JetBrains Mono**: technical font — durations, bitrates, counts, server ids
 
-### Text Styles
-- **Display Large**: 57px, Bold, Poppins - Hero headings
-- **Headline Medium**: 28px, SemiBold, Poppins - Section headings
-- **Title Large**: 22px, Medium, Inter - Card titles
-- **Body Large**: 16px, Regular, Inter - Main body text
-- **Label Medium**: 12px, Medium, Inter - Labels and captions
+All three are bundled as assets under `assets/fonts/` and declared in the
+`fonts:` section of `pubspec.yaml`. They are not fetched at runtime: golden
+tests need deterministic metrics, and a first launch shouldn't need the
+network to draw text. Only the weights the type ramp asks for are shipped;
+`typography_system_test.dart` fails if a style requests a weight that isn't
+bundled.
 
 ### Music-Specific Styles
-- **Track Title**: 16px, Medium, Inter - Song titles
-- **Artist Name**: 14px, Regular, Inter - Artist names
-- **Album Title**: 14px, Medium, Inter - Album names
-- **Duration**: 12px, Regular, Inter - Time displays
+- **Track Title**: 16px, Medium, Manrope
+- **Artist Name**: 14px, Regular, Manrope
+- **Album Title**: 14px, Medium, Manrope
 
 ## Spacing System
 
-Based on an 8px grid system for consistent spacing:
+8px grid, via `OmnisonicSpacing`:
 
-- **XS**: 4px - Minimal spacing
-- **SM**: 8px - Small spacing
-- **MD**: 16px - Medium spacing (most common)
-- **LG**: 24px - Large spacing
-- **XL**: 32px - Extra large spacing
-
-### Component Spacing
-- **Card Padding**: 16px
-- **List Item Padding**: 16px
-- **Button Padding**: 16px horizontal, 16px vertical
-- **Screen Padding**: 16px (responsive)
+- **XS**: 4px, **SM**: 8px, **MD**: 16px (most common), **LG**: 24px, **XL**: 32px
 
 ## Responsive Design
 
-### Breakpoints
-- **Mobile**: < 600px (4 columns)
-- **Tablet**: 600px - 1200px (8 columns)
-- **Desktop**: > 1200px (12 columns)
+Breakpoints live in `ResponsiveBreakpoints` (`responsive_layout.dart`):
+`mobile` 480, `tablet` 768, `desktop` 1024, `largeDesktop` 1440.
 
-### Grid System
-- **Mobile Margin**: 16px
-- **Tablet Margin**: 24px
-- **Desktop Margin**: 32px
+`MainShell` switches chrome at 768 (bottom bar → 72px rail) and 1024 (rail →
+234px sidebar), and publishes the result through `ShellLayout`.
+
+**Pages inside the shell should ask `ShellLayout`, not `MediaQuery`.** The
+content column is narrower than the window by the width of the sidebar, so
+the two disagree at exactly the widths that matter — that disagreement once
+hid the library's tab bar on a 1000px window and left two tabs unreachable.
+
+`ResponsiveLayout` and `ResponsiveGridView` both measure their own
+constraints for the same reason.
 
 ## Accessibility
 
-### Touch Targets
-- **Minimum**: 44px - WCAG compliance
-- **Comfortable**: 48px - Recommended size
-- **Large**: 56px - Primary actions
+### Touch Targets (`OmnisonicTouchTargets`)
+- **Minimum**: 44px — WCAG compliance
+- **Comfortable**: 48px
+- **Large**: 56px
 
 ### Color Contrast
-- All color combinations meet WCAG 2.1 AA standards
-- Minimum contrast ratio of 4.5:1 for normal text
-- Minimum contrast ratio of 3:1 for large text
+- All color combinations meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text) — enforced by `color_contrast_test.dart`.
 
-## Theme Management
+### Dynamic Type (`OmnisonicTextScale`)
 
-```dart
-// Create theme manager
-final themeManager = OmnisonicThemeManager();
+Content scales without limit. The shell's own chrome — nav labels, the rail,
+the transport bar — stops at `chromeMax` (1.3x) via `clampChrome`: it is
+fixed furniture with nowhere to reflow, and past that it takes the screen
+away from the content the user enlarged the text to read.
 
-// Switch themes
-themeManager.setLightTheme();
-themeManager.setDarkTheme();
-themeManager.setSystemTheme();
-themeManager.toggleTheme();
+Boxes that are part artwork and part text use `boxExtent`, which grows only
+the text half; scaling the whole height would enlarge the artwork too and
+push the row off screen.
 
-// Check current theme
-bool isDark = themeManager.isDark(context);
-String themeName = themeManager.themeModeName;
-```
+`text_scale_test.dart` pumps every major screen at 1.0 / 1.3 / 2.0 across two
+widths and asserts nothing throws.
 
-## Asset Management
+### Reduced Motion
 
-### Placeholder Images
-```dart
-// Album artwork placeholder
-OmnisonicAssetManager.albumPlaceholder(width: 120, height: 120)
+Durations go through `AnimationUtils.adjustedDuration`, which returns
+`Duration.zero` when the platform asks for reduced motion. Looping animations
+— the shimmer sweep, the glass sheen, the audio visualizer — park at a static
+frame instead of running at zero duration forever.
 
-// Artist image placeholder
-OmnisonicAssetManager.artistPlaceholder(width: 120, height: 120)
+### State Vocabulary
 
-// Playlist image placeholder
-OmnisonicAssetManager.playlistPlaceholder(width: 120, height: 120)
-```
+Loading, empty and error are `state_views.dart`, not per-screen inventions.
+`ErrorStateView` takes a **required** `onRetry`, so an error the user cannot
+act on is not expressible. `screen_states_test.dart` holds every screen to it.
 
-### Network Images with Fallbacks
-```dart
-// Automatic fallback to placeholder
-context.albumArtwork(
-  imageUrl: 'https://example.com/album.jpg',
-  width: 120,
-  height: 120,
-)
-```
+## Motion
 
-## Installation
+`animation_manager.dart` holds every duration and curve the app uses:
+`fast` (150ms) / `quick` (200ms) / `normal` (300ms) / `slow` (500ms) /
+`loading` (1500ms), plus a curve per role (`standard`, `fast`, `slow`,
+`dialog`, `sheet`, `loading`). These are values only — anything that has to
+*decide* (reduced motion, sheet vs dialog presentation) lives in
+`core/utils/animation_utils.dart` and reads from here.
 
-### 1. Add Font Files (Optional)
-Download and add font files to `assets/fonts/`:
-- Inter: Regular, Medium, SemiBold, Bold
-- Poppins: Regular, Medium, SemiBold, Bold
-
-### 2. Update pubspec.yaml
-Uncomment the font and asset sections in `pubspec.yaml` after adding font files.
-
-### 3. Import and Use
-```dart
-import 'package:omnisonic/core/design_system/design_system.dart';
-```
-
-## Examples
-
-See `example_integration.dart` for a comprehensive example showing all design system components in action.
+There used to be three overlapping sets of these under different names, so
+the same transition was 200ms or 300ms depending on which file the author
+reached for. A per-platform set also existed and was read by nothing.
 
 ## Testing
 
-Run the design system tests:
 ```bash
-flutter test test/core/design_system/design_system_test.dart
+flutter test test/core/design_system/
 ```
-
-## Contributing
-
-When adding new components or modifying existing ones:
-
-1. Follow the established naming conventions
-2. Maintain consistency with the 8px grid system
-3. Ensure accessibility compliance
-4. Add appropriate tests
-5. Update documentation
 
 ## File Structure
 
 ```
 lib/core/design_system/
-├── colors.dart           # Color palette and schemes
-├── typography.dart       # Text styles and fonts
-├── spacing.dart          # Spacing, grid, and layout
-├── icons.dart           # Icon system and sizes
-├── theme.dart           # Theme configuration
-├── theme_manager.dart   # Theme switching logic
-├── asset_manager.dart   # Asset and image management
-├── design_system.dart   # Main export file
-├── example_integration.dart # Usage examples
-└── README.md           # This documentation
+├── colors.dart                     # Color palette and schemes
+├── typography.dart                 # Text styles and bundled font families
+├── spacing.dart                    # Spacing, grid, touch targets
+├── icons.dart                      # Icon system and sizes
+├── theme.dart                      # ThemeData assembly (light/dark)
+├── animation_manager.dart          # Durations and curves
+├── responsive_layout.dart          # Breakpoints and ResponsiveLayout
+├── glass_surface.dart              # Blur/saturate glass panes
+├── art_tint_background.dart        # Cover-art tint wash
+├── theme_mode_controller.dart      # Persisted light/dark/system choice
+├── design_system.dart              # Barrel export
+└── README.md                       # This documentation
 ```
 
-## License
-
-This design system is part of the Omnisonic project and follows the same license terms.
+Every file here has a real consumer — anything without one gets deleted rather than kept "for later" (see issue A5 in the UX/UI audit).

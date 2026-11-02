@@ -6,9 +6,9 @@ void main() {
   group('Design System Tests', () {
     test('Color palette has all required colors', () {
       // Test primary colors
-      expect(OmnisonicColors.primaryPurple, const Color(0xFF6366F1));
-      expect(OmnisonicColors.primaryBlue, const Color(0xFF3B82F6));
-      expect(OmnisonicColors.primaryTeal, const Color(0xFF06B6D4));
+      expect(OmnisonicColors.primaryPurple, const Color(0xFF7C7CFF));
+      expect(OmnisonicColors.primaryBlue, const Color(0xFF5A67D8));
+      expect(OmnisonicColors.primaryTeal, const Color(0xFF4DD0E1));
 
       // Test semantic colors
       expect(OmnisonicColors.success, const Color(0xFF10B981));
@@ -19,19 +19,19 @@ void main() {
 
     test('Typography system has all required styles', () {
       // Test display styles
-      expect(OmnisonicTypography.displayLarge.fontFamily, 'Poppins');
+      expect(OmnisonicTypography.displayLarge.fontFamily, 'Gabarito');
       expect(OmnisonicTypography.displayLarge.fontSize, 57);
       expect(OmnisonicTypography.displayLarge.fontWeight, FontWeight.w700);
 
       // Test body styles
-      expect(OmnisonicTypography.bodyLarge.fontFamily, 'Inter');
+      expect(OmnisonicTypography.bodyLarge.fontFamily, 'Manrope');
       expect(OmnisonicTypography.bodyLarge.fontSize, 16);
       expect(OmnisonicTypography.bodyLarge.fontWeight, FontWeight.w400);
 
       // Test music-specific styles
-      expect(OmnisonicTypography.trackTitle.fontFamily, 'Inter');
-      expect(OmnisonicTypography.artistName.fontFamily, 'Inter');
-      expect(OmnisonicTypography.albumTitle.fontFamily, 'Inter');
+      expect(OmnisonicTypography.trackTitle.fontFamily, 'Manrope');
+      expect(OmnisonicTypography.artistName.fontFamily, 'Manrope');
+      expect(OmnisonicTypography.albumTitle.fontFamily, 'Manrope');
     });
 
     test('Spacing system follows 8px grid', () {
@@ -55,28 +55,6 @@ void main() {
       expect(OmnisonicTouchTargets.minimum, 44.0);
       expect(OmnisonicTouchTargets.comfortable, 48.0);
       expect(OmnisonicTouchTargets.large, 56.0);
-    });
-
-    test('Theme manager handles theme switching', () {
-      final themeManager = OmnisonicThemeManager();
-
-      // Test initial state
-      expect(themeManager.themeMode, ThemeMode.system);
-      expect(themeManager.themeModeName, 'System');
-
-      // Test switching to light theme
-      themeManager.setLightTheme();
-      expect(themeManager.themeMode, ThemeMode.light);
-      expect(themeManager.themeModeName, 'Light');
-
-      // Test switching to dark theme
-      themeManager.setDarkTheme();
-      expect(themeManager.themeMode, ThemeMode.dark);
-      expect(themeManager.themeModeName, 'Dark');
-
-      // Test toggle functionality
-      themeManager.toggleTheme();
-      expect(themeManager.themeMode, ThemeMode.light);
     });
 
     test('Color schemes are properly configured', () {
@@ -113,12 +91,6 @@ void main() {
         OmnisonicColors.accentGradient.colors[1],
         OmnisonicColors.primaryTeal,
       );
-    });
-
-    test('Grid system provides responsive columns', () {
-      expect(OmnisonicGrid.mobileColumns, 4);
-      expect(OmnisonicGrid.tabletColumns, 8);
-      expect(OmnisonicGrid.desktopColumns, 12);
     });
 
     test('Border radius values are consistent', () {

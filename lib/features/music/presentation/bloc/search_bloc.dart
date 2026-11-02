@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// BLoC for managing real-time search functionality
 ///
@@ -26,9 +28,47 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchHistoryAdded>(_onSearchHistoryAdded);
     on<SearchHistoryCleared>(_onSearchHistoryCleared);
     on<SearchSuggestionSelected>(_onSearchSuggestionSelected);
+    on<_SearchHistoryRestored>(_onSearchHistoryRestored);
+
+    _restoreHistory();
   }
 
   final SearchMusicUseCase _searchMusicUseCase;
+
+  static const _historyPrefsKey = 'omnisonic_search_history';
+  static const _maxHistory = 20;
+
+  /// Loads the history saved by a previous session. It used to live only in
+  /// memory, so every restart emptied the "Recent searches" list.
+  Future<void> _restoreHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getStringList(_historyPrefsKey);
+      if (saved != null && saved.isNotEmpty && !isClosed) {
+        add(_SearchHistoryRestored(saved));
+      }
+    } catch (e) {
+      AppLog.warn('Failed to restore search history: $e');
+    }
+  }
+
+  Future<void> _saveHistory(List<String> history) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_historyPrefsKey, history);
+    } catch (e) {
+      AppLog.warn('Failed to save search history: $e');
+    }
+  }
+
+  void _onSearchHistoryRestored(
+    _SearchHistoryRestored event,
+    Emitter<SearchState> emit,
+  ) {
+    // Searches made before the restore finished come first.
+    final merged = <String>{...state.searchHistory, ...event.history};
+    emit(state.copyWith(searchHistory: merged.take(_maxHistory).toList()));
+  }
 
   // Debounce transformer for search queries
   EventTransformer<T> _debounceTransformer<T>() {
@@ -136,12 +176,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     // Add to the beginning
     updatedHistory.insert(0, event.query);
 
-    // Keep only the last 20 searches
-    if (updatedHistory.length > 20) {
-      updatedHistory.removeRange(20, updatedHistory.length);
+    // Keep only the most recent searches
+    if (updatedHistory.length > _maxHistory) {
+      updatedHistory.removeRange(_maxHistory, updatedHistory.length);
     }
 
     emit(state.copyWith(searchHistory: updatedHistory));
+    _saveHistory(updatedHistory);
   }
 
   void _onSearchHistoryCleared(
@@ -149,6 +190,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) {
     emit(state.copyWith(searchHistory: const []));
+    _saveHistory(const []);
   }
 
   void _onSearchSuggestionSelected(
@@ -210,6 +252,16 @@ class SearchSuggestionSelected extends SearchEvent {
 
   @override
   List<Object?> get props => [suggestion];
+}
+
+/// The history saved by a previous session, loaded at startup.
+class _SearchHistoryRestored extends SearchEvent {
+  const _SearchHistoryRestored(this.history);
+
+  final List<String> history;
+
+  @override
+  List<Object?> get props => [history];
 }
 
 // State

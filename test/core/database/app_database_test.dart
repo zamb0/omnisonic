@@ -4,6 +4,7 @@ import 'package:omnisonic/core/entities/music_server.dart';
 import 'package:omnisonic/core/entities/server_status.dart';
 import 'package:omnisonic/core/entities/track.dart';
 import 'package:omnisonic/core/entities/audio_quality.dart';
+import 'package:omnisonic/core/entities/cache_entry.dart';
 import 'package:drift/native.dart';
 
 void main() {
@@ -45,6 +46,19 @@ void main() {
     });
 
     test('should insert and retrieve track', () async {
+      // Tracks reference a server, and foreign keys are enforced.
+      await database.serverDao.insertServer(
+        MusicServer(
+          id: 'server1',
+          name: 'Test Server',
+          url: 'http://example.com',
+          username: 'testuser',
+          status: ServerStatus.online,
+          createdAt: DateTime.now(),
+        ),
+        'password123',
+      );
+
       final track = Track(
         id: 'track1',
         title: 'Test Song',
@@ -70,6 +84,45 @@ void main() {
       expect(retrievedTrack.album, track.album);
       expect(retrievedTrack.serverId, track.serverId);
       expect(retrievedTrack.quality, track.quality);
+    });
+
+    test('orders album tracks by disc then track number', () async {
+      Track t(String id, int disc, int no) => Track(
+        id: id,
+        title: id,
+        artist: 'A',
+        album: 'Album',
+        albumId: 'album1',
+        duration: const Duration(minutes: 3),
+        serverId: 'server1',
+        streamUrl: 'http://example.com/$id',
+        quality: AudioQuality.high,
+        lastModified: DateTime.now(),
+        discNumber: disc,
+        trackNumber: no,
+      );
+      // Tracks reference a server, and foreign keys are enforced.
+      await database.serverDao.insertServer(
+        MusicServer(
+          id: 'server1',
+          name: 'Test Server',
+          url: 'http://example.com',
+          username: 'testuser',
+          status: ServerStatus.online,
+          createdAt: DateTime.now(),
+        ),
+        'password123',
+      );
+      await database.musicDao.insertTracks([
+        t('d2t1', 2, 1),
+        t('d1t2', 1, 2),
+        t('d2t2', 2, 2),
+        t('d1t1', 1, 1),
+      ]);
+
+      final tracks = await database.musicDao.getTracksByAlbumId('album1');
+
+      expect(tracks.map((t) => t.id), ['d1t1', 'd1t2', 'd2t1', 'd2t2']);
     });
 
     test('should handle multiple servers', () async {
@@ -125,6 +178,63 @@ void main() {
       // Verify update
       final retrievedServer = await database.serverDao.getServerById('server1');
       expect(retrievedServer!.status, ServerStatus.offline);
+    });
+  });
+
+  group('deleteForeignKeyOrphans', () {
+    late AppDatabase database;
+
+    setUp(() => database = AppDatabase.forTesting(NativeDatabase.memory()));
+    tearDown(() => database.close());
+
+    Track track(String id, String serverId) => Track(
+      id: id,
+      title: 'Song $id',
+      artist: 'Artist',
+      album: 'Album',
+      duration: const Duration(minutes: 3),
+      serverId: serverId,
+      streamUrl: 'http://example.com/$id',
+      quality: AudioQuality.high,
+      lastModified: DateTime(2026),
+    );
+
+    CacheEntry cached(String trackId) => CacheEntry(
+      trackId: trackId,
+      filePath: '/cache/$trackId.mp3',
+      fileSize: 1,
+      cachedAt: DateTime(2026),
+      lastAccessed: DateTime(2026),
+      isComplete: true,
+    );
+
+    test('drops orphans but keeps live rows and their downloads', () async {
+      await database.serverDao.insertServer(
+        MusicServer(
+          id: 'live',
+          name: 'Live',
+          url: 'http://example.com',
+          username: 'user',
+          status: ServerStatus.online,
+          createdAt: DateTime(2026),
+        ),
+        'password',
+      );
+      await database.musicDao.insertTrack(track('kept', 'live'));
+      await database.cacheDao.insertCacheEntry(cached('kept'));
+
+      // Rows written while foreign keys were not enforced.
+      await database.customStatement('PRAGMA foreign_keys = OFF');
+      await database.musicDao.insertTrack(track('orphan', 'gone'));
+      await database.cacheDao.insertCacheEntry(cached('orphan'));
+      await database.customStatement('PRAGMA foreign_keys = ON');
+
+      await database.deleteForeignKeyOrphans();
+
+      expect(await database.musicDao.getTrackById('kept'), isNotNull);
+      expect(await database.musicDao.getTrackById('orphan'), isNull);
+      expect(await database.cacheDao.getCacheEntryByTrackId('kept'), isNotNull);
+      expect(await database.cacheDao.getCacheEntryByTrackId('orphan'), isNull);
     });
   });
 }

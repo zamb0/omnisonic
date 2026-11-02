@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Shared cache manager for album/artist artwork
@@ -20,6 +17,41 @@ class OmnisonicImageCacheManager {
 Widget coverArtErrorWidget(Widget placeholder, String url, Object error) {
   debugPrint('Cover art load failed: $url -> $error');
   return placeholder;
+}
+
+/// A cover art URL sized for a particular slot, together with its cache key.
+///
+/// Both are derived with `Uri.parse` + `Uri.replace`, and every
+/// `CachedNetworkImage` in the app used to recompute them inline in `build` —
+/// four parses per image widget per rebuild, at the rate the now-playing bar
+/// rebuilds. [SubsonicCoverArt.of] memoizes them per (url, size).
+class SubsonicCoverArt {
+  const SubsonicCoverArt({required this.url, required this.cacheKey});
+
+  final String url;
+  final String cacheKey;
+
+  static final Map<String, SubsonicCoverArt> _cache = {};
+
+  /// Maximum number of memoized entries, so a long scroll cannot grow this
+  /// without bound.
+  static const int _maxEntries = 512;
+
+  static SubsonicCoverArt of(String url, int size) {
+    final key = '$size|$url';
+    final cached = _cache[key];
+    if (cached != null) return cached;
+
+    final sized = url.withCoverArtSize(size);
+    final art = SubsonicCoverArt(
+      url: sized,
+      cacheKey: SubsonicImageCache.getCacheKey(sized),
+    );
+
+    if (_cache.length >= _maxEntries) _cache.clear();
+    _cache[key] = art;
+    return art;
+  }
 }
 
 /// Helper functions for Subsonic image caching

@@ -141,8 +141,9 @@ class LocalCacheDataSource {
     try {
       // Get all cache entries to find file paths
       final entries = await _database.cacheDao.getAllCacheEntries();
+      final wanted = trackIds.toSet();
       final entriesToDelete = entries.where(
-        (entry) => trackIds.contains(entry.trackId),
+        (entry) => wanted.contains(entry.trackId),
       );
 
       // Delete physical files

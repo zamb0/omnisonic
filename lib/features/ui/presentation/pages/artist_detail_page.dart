@@ -3,13 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/routing/app_router.dart';
+
 import '../../../../core/entities/entities.dart';
-import '../../../../core/utils/id_generator.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// Artist detail page showing albums with enhanced functionality
 class ArtistDetailPage extends StatefulWidget {
@@ -39,21 +41,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     });
 
     try {
-      final musicRepository = context.read<MusicLibraryViewModel>();
-      // Extract the original Subsonic ID for API calls
-      final originalArtistId = IdGenerator.extractSubsonicId(widget.artist.id);
-
-      // For now, we'll filter albums from the main collection
-      // TODO: Implement proper getArtistAlbums method in view model
-      final allAlbums = musicRepository.albums;
-      final artistAlbums = allAlbums.where((album) {
-        final albumArtistId = album.artistId != null
-            ? IdGenerator.extractSubsonicId(album.artistId!)
-            : null;
-        // Match by artist ID or artist name
-        return albumArtistId == originalArtistId ||
-            album.artist.toLowerCase() == widget.artist.name.toLowerCase();
-      }).toList();
+      final library = context.read<MusicLibraryViewModel>();
+      final artistAlbums = await library.getArtistAlbums(widget.artist.id);
 
       // Sort albums by year (newest first), then by title
       artistAlbums.sort((a, b) {
@@ -68,11 +57,13 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         return a.title.compareTo(b.title);
       });
 
+      if (!mounted) return;
       setState(() {
         _albums = artistAlbums;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load albums: $e';
         _isLoading = false;
@@ -82,131 +73,94 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/library');
-              }
-            },
-          ),
-          title: Text(
-            widget.artist.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          actions: [
-            if (_albums.isNotEmpty)
-              IconButton(
-                tooltip: 'Play All',
-                icon: const Icon(Icons.play_arrow),
-                onPressed: _playArtist,
+    // Same reason as the album page: a bare CustomScrollView leaves SnackBars
+    // and the AppBar without a Scaffold to sit in.
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _loadAlbums,
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              leading: IconButton(
+                icon: const Icon(OmnisonicIcons.arrowBack),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/library');
+                  }
+                },
               ),
-            if (_albums.isNotEmpty)
-              IconButton(
-                tooltip: 'Shuffle',
-                icon: const Icon(Icons.shuffle),
-                onPressed: _shuffleArtist,
+              title: Text(
+                widget.artist.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-          ],
-        ),
-        SliverToBoxAdapter(child: _buildArtistHeader(context)),
-
-        // Albums section header
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Albums',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
+              actions: [
                 if (_albums.isNotEmpty)
                   IconButton(
-                    onPressed: _loadAlbums,
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh',
+                    tooltip: 'Play All',
+                    icon: const Icon(OmnisonicIcons.playArrow),
+                    onPressed: _playArtist,
+                  ),
+                if (_albums.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Shuffle',
+                    icon: const Icon(OmnisonicIcons.shuffle),
+                    onPressed: _shuffleArtist,
                   ),
               ],
             ),
-          ),
-        ),
+            SliverToBoxAdapter(child: _buildArtistHeader(context)),
 
-        // Albums content
-        _buildAlbumsContent(),
-      ],
+            // Albums section header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Albums',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Albums content
+            _buildAlbumsContent(),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildAlbumsContent() {
     if (_isLoading) {
-      return const SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(),
-          ),
-        ),
-      );
+      return LoadingStateView.sliver(kind: SkeletonKind.grid, itemCount: 6);
     }
 
-    if (_errorMessage != null) {
-      return SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load albums',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _errorMessage!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _loadAlbums,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
+    final error = _errorMessage;
+    if (error != null) {
+      return ErrorStateView.sliver(
+        title: 'Failed to load albums',
+        message: error,
+        onRetry: _loadAlbums,
       );
     }
 
     if (_albums.isEmpty) {
       return const SliverToBoxAdapter(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              children: [
-                Icon(Icons.album_outlined, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(
-                  'No albums found',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
+        child: EmptyState(
+          icon: OmnisonicIcons.albumOutline,
+          title: 'No albums found',
+          subtitle:
+              'None of the connected servers have albums by this '
+              'artist.',
         ),
       );
     }
@@ -288,12 +242,20 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           children: [
             _buildMetadataChip(
               context,
-              Icons.album,
+              OmnisonicIcons.album,
               '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
             ),
-            _buildMetadataChip(context, Icons.dns, _getServerName(context)),
+            _buildMetadataChip(
+              context,
+              OmnisonicIcons.dns,
+              _getServerName(context),
+            ),
             if (widget.artist.musicBrainzId != null)
-              _buildMetadataChip(context, Icons.fingerprint, 'MusicBrainz'),
+              _buildMetadataChip(
+                context,
+                OmnisonicIcons.fingerprint,
+                'MusicBrainz',
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -318,7 +280,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             children: [
               ElevatedButton.icon(
                 onPressed: _playArtist,
-                icon: const Icon(Icons.play_arrow),
+                icon: const Icon(OmnisonicIcons.playArrow),
                 label: const Text('Play All'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -330,7 +292,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
               const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: _shuffleArtist,
-                icon: const Icon(Icons.shuffle),
+                icon: const Icon(OmnisonicIcons.shuffle),
                 label: const Text('Shuffle'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -366,7 +328,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             border: Border.all(color: scheme.outlineVariant),
           ),
           child: Column(
@@ -407,38 +369,47 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: scheme.surfaceVariant,
+          color: scheme.surfaceContainerHighest,
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: ClipOval(
           child: widget.artist.imageUrl != null
               ? CachedNetworkImage(
-                  imageUrl: widget.artist.imageUrl!,
-                  cacheKey: widget.artist.imageUrl!.subsonicCacheKey,
+                  imageUrl: SubsonicCoverArt.of(
+                    widget.artist.imageUrl!,
+                    512,
+                  ).url,
+                  cacheKey: SubsonicCoverArt.of(
+                    widget.artist.imageUrl!,
+                    512,
+                  ).cacheKey,
+                  // This was the one image in the app without the shared cache
+                  // manager, so artist art bypassed the 30-day disk cache.
+                  cacheManager: OmnisonicImageCacheManager.instance,
                   fit: BoxFit.cover,
-                  memCacheWidth: 600,
-                  memCacheHeight: 600,
+                  memCacheWidth: 512,
+                  memCacheHeight: 512,
                   placeholder: (context, url) => Container(
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     child: Icon(
-                      Icons.person,
+                      OmnisonicIcons.person,
                       size: size * 0.45,
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: scheme.surfaceVariant,
+                    color: scheme.surfaceContainerHighest,
                     child: Icon(
-                      Icons.person,
+                      OmnisonicIcons.person,
                       size: size * 0.45,
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
                 )
               : Container(
-                  color: scheme.surfaceVariant,
+                  color: scheme.surfaceContainerHighest,
                   child: Icon(
-                    Icons.person,
+                    OmnisonicIcons.person,
                     size: size * 0.45,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -454,13 +425,17 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: OmnisonicIconSizes.sm,
+            color: scheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
@@ -488,110 +463,50 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     }
   }
 
-  void _playArtist() {
+  Future<void> _playArtist() => _playArtistTracks(shuffle: false);
+
+  Future<void> _shuffleArtist() => _playArtistTracks(shuffle: true);
+
+  /// Loads the artist's tracks from the repository and starts playback.
+  ///
+  /// The tracks used to be reconstructed by scanning the whole in-memory
+  /// collection and matching album titles; the repository resolves them by
+  /// artist ID instead, falling back to the artist's albums when a server
+  /// does not tag songs with one.
+  Future<void> _playArtistTracks({required bool shuffle}) async {
     if (_albums.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No albums to play')));
-      return;
-    }
-
-    // Get all tracks from all albums
-    final musicRepository = context.read<MusicLibraryViewModel>();
-    final allTracks = musicRepository.tracks;
-    final artistTracks = <Track>[];
-
-    for (final album in _albums) {
-      final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
-      final albumTracks = allTracks.where((track) {
-        // Match by albumId if available
-        if (track.albumId != null && track.albumId!.isNotEmpty) {
-          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
-          if (trackAlbumId == originalAlbumId) {
-            return true;
-          }
-        }
-
-        // Fallback: match by album name and server ID
-        return track.album.toLowerCase() == album.title.toLowerCase() &&
-            track.serverId == album.serverId;
-      }).toList();
-      artistTracks.addAll(albumTracks);
-    }
-
-    if (artistTracks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tracks found for this artist')),
-      );
-      return;
-    }
-
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(
-      artistTracks.first,
-      queue: artistTracks,
-      startIndex: 0,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Playing ${widget.artist.name} (${artistTracks.length} tracks)',
+        SnackBar(
+          content: Text(shuffle ? 'No albums to shuffle' : 'No albums to play'),
         ),
-      ),
-    );
-  }
-
-  void _shuffleArtist() {
-    if (_albums.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No albums to shuffle')));
+      );
       return;
     }
 
-    // Get all tracks from all albums
-    final musicRepository = context.read<MusicLibraryViewModel>();
-    final allTracks = musicRepository.tracks;
-    final artistTracks = <Track>[];
+    final library = context.read<MusicLibraryViewModel>();
+    final playbackViewModel = context.read<PlaybackViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    for (final album in _albums) {
-      final originalAlbumId = IdGenerator.extractSubsonicId(album.id);
-      final albumTracks = allTracks.where((track) {
-        // Match by albumId if available
-        if (track.albumId != null && track.albumId!.isNotEmpty) {
-          final trackAlbumId = IdGenerator.extractSubsonicId(track.albumId!);
-          if (trackAlbumId == originalAlbumId) {
-            return true;
-          }
-        }
-
-        // Fallback: match by album name and server ID
-        return track.album.toLowerCase() == album.title.toLowerCase() &&
-            track.serverId == album.serverId;
-      }).toList();
-      artistTracks.addAll(albumTracks);
-    }
+    final artistTracks = await library.getArtistTracks(widget.artist.id);
+    if (!mounted) return;
 
     if (artistTracks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(content: Text('No tracks found for this artist')),
       );
       return;
     }
 
-    final shuffledTracks = List<Track>.from(artistTracks)..shuffle();
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(
-      shuffledTracks.first,
-      queue: shuffledTracks,
-      startIndex: 0,
-    );
+    final queue = shuffle
+        ? (List<Track>.from(artistTracks)..shuffle())
+        : artistTracks;
+    playbackViewModel.playTrack(queue.first, queue: queue, startIndex: 0);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Shuffling ${widget.artist.name} (${artistTracks.length} tracks)',
+          '${shuffle ? 'Shuffling' : 'Playing'} ${widget.artist.name} '
+          '(${queue.length} tracks)',
         ),
       ),
     );
@@ -599,6 +514,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
 
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
-    context.push('/album-detail', extra: album);
+    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 }

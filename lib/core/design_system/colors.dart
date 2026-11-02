@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../entities/server_status.dart';
+
 /// Comprehensive color palette system for Omnisonic UI Enhancement
 class OmnisonicColors {
   // Primary Brand Colors
@@ -52,11 +54,11 @@ class OmnisonicColors {
   static const Color neutralGray900 = Color(0xFF111827);
   static const Color neutralBlack = Color(0xFF000000);
 
-  // Surface Colors - Light Mode
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color cardLight = Color(0xFFF6F6F6);
-  static const Color backgroundLight = Color(0xFFF5F5F5);
-  static const Color onSurfaceLight = Color(0xFF1E1E1E);
+  // Surface Colors - Light Mode (warm greige, liquid-glass redesign)
+  static const Color surfaceLight = Color(0xFFEFEDEA);
+  static const Color cardLight = Color(0xFFEFEDEA);
+  static const Color backgroundLight = Color(0xFFE8E6E2);
+  static const Color onSurfaceLight = Color(0xFF141414);
   static const Color onBackgroundLight = Color(0xFF141414);
 
   // Container Colors - Light Mode
@@ -69,12 +71,12 @@ class OmnisonicColors {
   static const Color errorContainerLight = Color(0xFFFEE2E2);
   static const Color onErrorContainerLight = Color(0xFF7F1D1D);
 
-  // Surface Colors - Dark Mode
-  static const Color surfaceDark = Color(0xFF1F1F21);
-  static const Color cardDark = Color(0xFF181818);
-  static const Color backgroundDark = Color(0xFF141414);
-  static const Color onSurfaceDark = Color(0xFFC9C9C9);
-  static const Color onBackgroundDark = Color(0xFFE6E6E6);
+  // Surface Colors - Dark Mode (near-black, liquid-glass redesign)
+  static const Color surfaceDark = Color(0xFF0D0E10);
+  static const Color cardDark = Color(0xFF0D0E10);
+  static const Color backgroundDark = Color(0xFF0C0D0F);
+  static const Color onSurfaceDark = Color(0xFFF4F2EF);
+  static const Color onBackgroundDark = Color(0xFFF4F2EF);
 
   // Container Colors - Dark Mode
   static const Color primaryContainerDark = Color(0xFF2A2A46);
@@ -211,11 +213,9 @@ class OmnisonicColors {
     onError: neutralWhite,
     errorContainer: errorContainerLight,
     onErrorContainer: onErrorContainerLight,
-    background: backgroundLight,
-    onBackground: onBackgroundLight,
     surface: surfaceLight,
     onSurface: onSurfaceLight,
-    surfaceVariant: neutralGray100,
+    surfaceContainerHighest: neutralGray100,
     onSurfaceVariant: neutralGray600,
     outline: neutralGray300,
     outlineVariant: neutralGray200,
@@ -246,11 +246,9 @@ class OmnisonicColors {
     onError: Color(0xFF3A0A0A),
     errorContainer: errorContainerDark,
     onErrorContainer: onErrorContainerDark,
-    background: backgroundDark,
-    onBackground: onBackgroundDark,
     surface: surfaceDark,
     onSurface: onSurfaceDark,
-    surfaceVariant: cardDark,
+    surfaceContainerHighest: cardDark,
     onSurfaceVariant: Color(0xFF9A9A9A),
     outline: Color(0xFF2B2B2B),
     outlineVariant: Color(0xFF3B3B3B),
@@ -278,200 +276,75 @@ class OmnisonicColors {
   static const Color warningDark = Color(0xFF78350F);
   static const Color errorDark = Color(0xFF7F1D1D);
   static const Color infoDark = Color(0xFF1E3A8A);
-}
 
-/// Extension for custom colors in theme
-class OmnisonicColorExtension extends ThemeExtension<OmnisonicColorExtension> {
-  final Color? playingIndicator;
-  final Color? pausedIndicator;
-  final Color? queueIndicator;
-  final Color? favoriteIndicator;
-  final LinearGradient? primaryGradient;
-  final LinearGradient? accentGradient;
-  final LinearGradient? heroGradient;
-  final LinearGradient? subtleGradient;
-  final LinearGradient? primaryAnimatedGradient;
-  final LinearGradient? accentAnimatedGradient;
-  final RadialGradient? cardDepthGradient;
-  final LinearGradient? shimmerGradient;
-  final LinearGradient? glassMorphismGradient;
-  final LinearGradient? nowPlayingGradient;
-  final LinearGradient? albumArtOverlay;
-  final LinearGradient? progressBarGradient;
+  // ---------------------------------------------------------------------
+  // Liquid-glass surfaces
+  // ---------------------------------------------------------------------
 
-  const OmnisonicColorExtension({
-    this.playingIndicator,
-    this.pausedIndicator,
-    this.queueIndicator,
-    this.favoriteIndicator,
-    this.primaryGradient,
-    this.accentGradient,
-    this.heroGradient,
-    this.subtleGradient,
-    this.primaryAnimatedGradient,
-    this.accentAnimatedGradient,
-    this.cardDepthGradient,
-    this.shimmerGradient,
-    this.glassMorphismGradient,
-    this.nowPlayingGradient,
-    this.albumArtOverlay,
-    this.progressBarGradient,
-  });
+  /// White-overlay alpha stops for light-mode glass surfaces, from most
+  /// transparent (subtle chrome) to most opaque (modal-like panels).
+  static const List<double> glassAlphasLight = [0.40, 0.55, 0.70, 0.85];
 
-  static const OmnisonicColorExtension light = OmnisonicColorExtension(
-    playingIndicator: OmnisonicColors.playingIndicator,
-    pausedIndicator: OmnisonicColors.pausedIndicator,
-    queueIndicator: OmnisonicColors.queueIndicator,
-    favoriteIndicator: OmnisonicColors.favoriteIndicator,
-    primaryGradient: OmnisonicColors.primaryGradient,
-    accentGradient: OmnisonicColors.accentGradient,
-    heroGradient: OmnisonicColors.heroGradient,
-    subtleGradient: OmnisonicColors.subtleGradient,
-    primaryAnimatedGradient: OmnisonicColors.primaryAnimatedGradient,
-    accentAnimatedGradient: OmnisonicColors.accentAnimatedGradient,
-    cardDepthGradient: OmnisonicColors.cardDepthGradient,
-    shimmerGradient: OmnisonicColors.shimmerGradient,
-    glassMorphismGradient: OmnisonicColors.glassMorphismLight,
-    nowPlayingGradient: OmnisonicColors.nowPlayingGradient,
-    albumArtOverlay: OmnisonicColors.albumArtOverlay,
-    progressBarGradient: OmnisonicColors.progressBarGradient,
-  );
+  /// White-overlay alpha stops for dark-mode glass surfaces. Far fainter
+  /// than the light stack since it sits on a near-black base.
+  static const List<double> glassAlphasDark = [0.05, 0.09, 0.13, 0.18];
 
-  static const OmnisonicColorExtension dark = OmnisonicColorExtension(
-    playingIndicator: OmnisonicColors.playingIndicator,
-    pausedIndicator: OmnisonicColors.pausedIndicator,
-    queueIndicator: OmnisonicColors.queueIndicator,
-    favoriteIndicator: OmnisonicColors.favoriteIndicator,
-    primaryGradient: OmnisonicColors.primaryGradient,
-    accentGradient: OmnisonicColors.accentGradient,
-    heroGradient: OmnisonicColors.heroGradient,
-    subtleGradient: OmnisonicColors.darkSubtleGradient,
-    primaryAnimatedGradient: OmnisonicColors.primaryAnimatedGradient,
-    accentAnimatedGradient: OmnisonicColors.accentAnimatedGradient,
-    cardDepthGradient: OmnisonicColors.darkCardDepthGradient,
-    shimmerGradient: OmnisonicColors.darkShimmerGradient,
-    glassMorphismGradient: OmnisonicColors.glassMorphismDark,
-    nowPlayingGradient: OmnisonicColors.nowPlayingGradient,
-    albumArtOverlay: OmnisonicColors.albumArtOverlay,
-    progressBarGradient: OmnisonicColors.progressBarGradient,
-  );
+  static Color glassLight(int stop) =>
+      Colors.white.withValues(alpha: glassAlphasLight[stop]);
 
-  @override
-  ThemeExtension<OmnisonicColorExtension> copyWith({
-    Color? playingIndicator,
-    Color? pausedIndicator,
-    Color? queueIndicator,
-    Color? favoriteIndicator,
-    LinearGradient? primaryGradient,
-    LinearGradient? accentGradient,
-    LinearGradient? heroGradient,
-    LinearGradient? subtleGradient,
-    LinearGradient? primaryAnimatedGradient,
-    LinearGradient? accentAnimatedGradient,
-    RadialGradient? cardDepthGradient,
-    LinearGradient? shimmerGradient,
-    LinearGradient? glassMorphismGradient,
-    LinearGradient? nowPlayingGradient,
-    LinearGradient? albumArtOverlay,
-    LinearGradient? progressBarGradient,
-  }) {
-    return OmnisonicColorExtension(
-      playingIndicator: playingIndicator ?? this.playingIndicator,
-      pausedIndicator: pausedIndicator ?? this.pausedIndicator,
-      queueIndicator: queueIndicator ?? this.queueIndicator,
-      favoriteIndicator: favoriteIndicator ?? this.favoriteIndicator,
-      primaryGradient: primaryGradient ?? this.primaryGradient,
-      accentGradient: accentGradient ?? this.accentGradient,
-      heroGradient: heroGradient ?? this.heroGradient,
-      subtleGradient: subtleGradient ?? this.subtleGradient,
-      primaryAnimatedGradient:
-          primaryAnimatedGradient ?? this.primaryAnimatedGradient,
-      accentAnimatedGradient:
-          accentAnimatedGradient ?? this.accentAnimatedGradient,
-      cardDepthGradient: cardDepthGradient ?? this.cardDepthGradient,
-      shimmerGradient: shimmerGradient ?? this.shimmerGradient,
-      glassMorphismGradient:
-          glassMorphismGradient ?? this.glassMorphismGradient,
-      nowPlayingGradient: nowPlayingGradient ?? this.nowPlayingGradient,
-      albumArtOverlay: albumArtOverlay ?? this.albumArtOverlay,
-      progressBarGradient: progressBarGradient ?? this.progressBarGradient,
-    );
+  static Color glassDark(int stop) =>
+      Colors.white.withValues(alpha: glassAlphasDark[stop]);
+
+  // ---------------------------------------------------------------------
+  // Per-server accent hues
+  // ---------------------------------------------------------------------
+
+  /// Precomputed sRGB stand-ins for an oklch(.68 .16 H) sweep (H = 0..330 in
+  /// 30° steps), used to give each source server a stable, distinguishable
+  /// accent dot without a runtime oklch->sRGB conversion.
+  static const List<Color> serverHueSwatches = [
+    Color(0xFFD86464), // H 0
+    Color(0xFFD89E64), // H 30
+    Color(0xFFD8D864), // H 60
+    Color(0xFF9ED864), // H 90
+    Color(0xFF64D864), // H 120
+    Color(0xFF64D89E), // H 150
+    Color(0xFF64D8D8), // H 180
+    Color(0xFF649ED8), // H 210
+    Color(0xFF6464D8), // H 240
+    Color(0xFF9E64D8), // H 270
+    Color(0xFFD864D8), // H 300
+    Color(0xFFD8649E), // H 330
+  ];
+
+  /// Deterministic accent color for a server ID, used to tag which source
+  /// server a track/album came from in the aggregated view. Hashes
+  /// `serverId`'s code units directly (rather than `String.hashCode`, which
+  /// is not guaranteed stable across platforms/isolates) so the same server
+  /// always gets the same dot everywhere.
+  static Color serverColorFor(String serverId) {
+    var hash = 0;
+    for (final unit in serverId.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    return serverHueSwatches[hash % serverHueSwatches.length];
   }
 
-  @override
-  ThemeExtension<OmnisonicColorExtension> lerp(
-    ThemeExtension<OmnisonicColorExtension>? other,
-    double t,
-  ) {
-    if (other is! OmnisonicColorExtension) {
-      return this;
+  /// Palette colour for a server's connection state, so status chips do not
+  /// each pick their own `Colors.green` / `Colors.red`.
+  static Color statusColorFor(ServerStatus status) {
+    switch (status) {
+      case ServerStatus.online:
+        return success;
+      case ServerStatus.offline:
+      case ServerStatus.error:
+        return error;
+      case ServerStatus.connecting:
+        return warning;
+      case ServerStatus.authenticating:
+        return info;
+      case ServerStatus.syncing:
+        return primaryPurple;
     }
-
-    return OmnisonicColorExtension(
-      playingIndicator: Color.lerp(playingIndicator, other.playingIndicator, t),
-      pausedIndicator: Color.lerp(pausedIndicator, other.pausedIndicator, t),
-      queueIndicator: Color.lerp(queueIndicator, other.queueIndicator, t),
-      favoriteIndicator: Color.lerp(
-        favoriteIndicator,
-        other.favoriteIndicator,
-        t,
-      ),
-      primaryGradient: LinearGradient.lerp(
-        primaryGradient,
-        other.primaryGradient,
-        t,
-      ),
-      accentGradient: LinearGradient.lerp(
-        accentGradient,
-        other.accentGradient,
-        t,
-      ),
-      heroGradient: LinearGradient.lerp(heroGradient, other.heroGradient, t),
-      subtleGradient: LinearGradient.lerp(
-        subtleGradient,
-        other.subtleGradient,
-        t,
-      ),
-      primaryAnimatedGradient: LinearGradient.lerp(
-        primaryAnimatedGradient,
-        other.primaryAnimatedGradient,
-        t,
-      ),
-      accentAnimatedGradient: LinearGradient.lerp(
-        accentAnimatedGradient,
-        other.accentAnimatedGradient,
-        t,
-      ),
-      cardDepthGradient: RadialGradient.lerp(
-        cardDepthGradient,
-        other.cardDepthGradient,
-        t,
-      ),
-      shimmerGradient: LinearGradient.lerp(
-        shimmerGradient,
-        other.shimmerGradient,
-        t,
-      ),
-      glassMorphismGradient: LinearGradient.lerp(
-        glassMorphismGradient,
-        other.glassMorphismGradient,
-        t,
-      ),
-      nowPlayingGradient: LinearGradient.lerp(
-        nowPlayingGradient,
-        other.nowPlayingGradient,
-        t,
-      ),
-      albumArtOverlay: LinearGradient.lerp(
-        albumArtOverlay,
-        other.albumArtOverlay,
-        t,
-      ),
-      progressBarGradient: LinearGradient.lerp(
-        progressBarGradient,
-        other.progressBarGradient,
-        t,
-      ),
-    );
   }
 }

@@ -12,43 +12,40 @@ abstract class AppException implements Exception {
 
 /// Network-related exceptions
 class NetworkException extends AppException {
-  const NetworkException(String message, [String? code]) : super(message, code);
+  const NetworkException(super.message, [super.code]);
 }
 
 /// Server-related exceptions
 class ServerException extends AppException {
-  const ServerException(String message, [String? code]) : super(message, code);
+  const ServerException(super.message, [super.code]);
 }
 
 /// Cache-related exceptions
 class CacheException extends AppException {
-  const CacheException(String message, [String? code]) : super(message, code);
+  const CacheException(super.message, [super.code]);
 }
 
 /// Authentication-related exceptions
 class AuthenticationException extends AppException {
-  const AuthenticationException(String message, [String? code])
-    : super(message, code);
+  const AuthenticationException(super.message, [super.code]);
 }
 
 /// Subsonic API specific exceptions
 class SubsonicApiException extends ServerException {
-  const SubsonicApiException(String message, [String? code])
-    : super(message, code);
+  const SubsonicApiException(super.message, [super.code]);
 }
 
 /// Database-related exceptions
 class DatabaseException extends AppException {
-  const DatabaseException(String message, [String? code])
-    : super(message, code);
+  const DatabaseException(super.message, [super.code]);
 }
 
 /// Audio playback exceptions
 class AudioException extends AppException {
-  const AudioException(String message, [String? code]) : super(message, code);
+  const AudioException(super.message, [super.code]);
 }
 
 /// Unknown/unexpected exceptions
 class UnknownException extends AppException {
-  const UnknownException(String message, [String? code]) : super(message, code);
+  const UnknownException(super.message, [super.code]);
 }

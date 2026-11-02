@@ -59,6 +59,7 @@ dependencies:
   # Image Caching
   cached_network_image: ^3.4.1
   flutter_cache_manager: ^3.4.1
+  palette_generator: ^0.3.3+7
 
 dev_dependencies:
   flutter_test:
@@ -90,33 +91,41 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Assets for the design system
-  # assets:
-  #   - assets/icons/
-  #   - assets/images/
-
-  # Custom fonts for the design system (commented out until font files are added)
-  # fonts:
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #         weight: 400
-  #       - asset: assets/fonts/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Inter-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Inter-Bold.ttf
-  #         weight: 700
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: assets/fonts/Poppins-Regular.ttf
-  #         weight: 400
-  #       - asset: assets/fonts/Poppins-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Poppins-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Poppins-Bold.ttf
-  #         weight: 700
+  # The three typefaces the design system uses (see typography.dart) are
+  # bundled rather than fetched at runtime: golden tests need deterministic
+  # metrics, and a first launch shouldn't depend on the network to render
+  # text. Only the weights the type ramp actually asks for are shipped —
+  # Flutter resolves any other requested weight to the nearest one here.
+  # All three are SIL Open Font License; see the OFL-*.txt files alongside.
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-400.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-500.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-600.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-700.ttf
+          weight: 700
+    - family: Gabarito
+      fonts:
+        - asset: assets/fonts/Gabarito-500.ttf
+          weight: 500
+        - asset: assets/fonts/Gabarito-600.ttf
+          weight: 600
+        - asset: assets/fonts/Gabarito-700.ttf
+          weight: 700
+        - asset: assets/fonts/Gabarito-800.ttf
+          weight: 800
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-400.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-500.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-600.ttf
+          weight: 600
 
 flutter_launcher_icons:
   android: true

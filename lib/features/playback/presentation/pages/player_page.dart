@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/playback_view_model.dart';
 import '../widgets/full_screen_player.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// Main player page that can be accessed from the now-playing bar
 class PlayerPage extends StatelessWidget {
-  const PlayerPage({super.key});
+  const PlayerPage({super.key, this.initialPanel});
+
+  final NowPlayingPanel? initialPanel;
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +22,18 @@ class PlayerPage extends StatelessWidget {
               backgroundColor: Colors.transparent,
               elevation: 0,
             ),
-            body: const Center(
+            body: Center(
               child: Text(
                 'No track playing',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
+                style: OmnisonicTypography.bodyLarge.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           );
         }
 
-        return const FullScreenPlayer();
+        return FullScreenPlayer(initialPanel: initialPanel);
       },
     );
   }

@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
-import '../constants/animation_constants.dart';
+
+import '../design_system/animation_manager.dart';
+import '../design_system/spacing.dart';
 
 /// Utility class for creating consistent animations throughout the app
 class AnimationUtils {
+  /// Respects the platform "reduce motion" accessibility setting: returns
+  /// [Duration.zero] when it's on, so callers snap to the end state instead
+  /// of silently ignoring the preference.
+  static Duration adjustedDuration(BuildContext context, Duration duration) {
+    return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
+  }
+
   /// Creates a slide down transition for player dismissal
   static Widget slideDownTransition(
     BuildContext context,
@@ -18,7 +27,7 @@ class AnimationUtils {
           ).animate(
             CurvedAnimation(
               parent: animation,
-              curve: AnimationConstants.playerCurve,
+              curve: AnimationManager.standardCurve,
             ),
           ),
       child: child,
@@ -40,7 +49,7 @@ class AnimationUtils {
           ).animate(
             CurvedAnimation(
               parent: animation,
-              curve: AnimationConstants.bottomSheetCurve,
+              curve: AnimationManager.sheetCurve,
             ),
           ),
       child: child,
@@ -57,7 +66,7 @@ class AnimationUtils {
     return FadeTransition(
       opacity: CurvedAnimation(
         parent: animation,
-        curve: AnimationConstants.dialogCurve,
+        curve: AnimationManager.dialogCurve,
       ),
       child: child,
     );
@@ -80,11 +89,13 @@ class AnimationUtils {
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       transitionAnimationController: AnimationController(
-        duration: AnimationConstants.standardAnimation,
+        duration: AnimationManager.normalDuration,
         vsync: Navigator.of(context),
       ),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OmnisonicRadius.lg),
+        ),
       ),
     );
   }
@@ -102,7 +113,7 @@ class AnimationUtils {
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       barrierColor: Colors.black54,
       transitionBuilder: fadeTransition,
-      transitionDuration: AnimationConstants.quickAnimation,
+      transitionDuration: AnimationManager.quickDuration,
     );
   }
 }

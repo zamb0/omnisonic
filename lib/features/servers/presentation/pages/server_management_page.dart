@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../viewmodels/server_management_view_model.dart';
 import '../widgets/server_add_dialog.dart';
 import '../widgets/server_edit_dialog.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/server_status_card.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
-import '../../../ui/presentation/widgets/empty_state.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Enhanced server management page for adding, configuring, and monitoring Subsonic servers
 class ServerManagementPage extends StatefulWidget {
@@ -21,6 +22,11 @@ class ServerManagementPage extends StatefulWidget {
 class _ServerManagementPageState extends State<ServerManagementPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  /// Round-trip time from the most recent "Test Connection" this session,
+  /// keyed by server ID. Not persisted or polled — only ever set by an
+  /// explicit user-triggered test.
+  final Map<String, Duration> _latencyByServerId = {};
 
   @override
   void initState() {
@@ -36,17 +42,19 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Server Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(OmnisonicIcons.add),
             onPressed: () => _showAddServerDialog(context),
             tooltip: 'Add Server',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(OmnisonicIcons.refresh),
             onPressed: () => _refreshServers(context),
             tooltip: 'Refresh',
           ),
@@ -63,7 +71,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 value: 'sync',
                 child: Row(
                   children: [
-                    Icon(Icons.sync),
+                    Icon(OmnisonicIcons.sync),
                     SizedBox(width: 8),
                     Text('Sync All Servers'),
                   ],
@@ -75,15 +83,18 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Servers', icon: Icon(Icons.dns)),
-            Tab(text: 'Status', icon: Icon(Icons.monitor_heart)),
+            Tab(text: 'Servers', icon: Icon(OmnisonicIcons.dns)),
+            Tab(text: 'Status', icon: Icon(OmnisonicIcons.monitorHeart)),
           ],
         ),
       ),
       body: Consumer<ServerManagementViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(
+              kind: SkeletonKind.list,
+              itemCount: 4,
+            );
           }
 
           if (viewModel.errorMessage != null) {
@@ -91,11 +102,15 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  Icon(
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
+                    color: scheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: OmnisonicTypography.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -125,44 +140,55 @@ class _ServerManagementPageState extends State<ServerManagementPage>
 
     if (servers.isEmpty) {
       return EmptyState(
-        icon: Icons.dns,
+        icon: OmnisonicIcons.dns,
         title: 'No Servers Connected',
         subtitle:
             'Add your first Subsonic server to get started with music streaming',
         action: ElevatedButton.icon(
           onPressed: () => _showAddServerDialog(context),
-          icon: const Icon(Icons.add),
+          icon: const Icon(OmnisonicIcons.add),
           label: const Text('Add Server'),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: viewModel.refreshServers,
-      child: Column(
-        children: [
-          _buildServerSummary(viewModel),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: servers.length,
-              itemBuilder: (context, index) {
-                final server = servers[index];
-                return ServerListTile(
-                  server: server,
-                  isLoading: viewModel.isServerLoading(server.id),
-                  onTap: () => _showServerDetails(context, server),
-                  onEdit: () => _showEditServerDialog(context, server),
-                  onTest: () =>
-                      _testServerConnection(context, server, viewModel),
-                  onDelete: () =>
-                      _showDeleteConfirmation(context, server, viewModel),
-                );
-              },
-            ),
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, libraryViewModel, child) {
+        final albumCounts = <String, int>{};
+        for (final album in libraryViewModel.albums) {
+          albumCounts[album.serverId] = (albumCounts[album.serverId] ?? 0) + 1;
+        }
+
+        return RefreshIndicator(
+          onRefresh: viewModel.refreshServers,
+          child: Column(
+            children: [
+              _buildServerSummary(viewModel),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: servers.length,
+                  itemBuilder: (context, index) {
+                    final server = servers[index];
+                    return ServerListTile(
+                      server: server,
+                      isLoading: viewModel.isServerLoading(server.id),
+                      albumCount: albumCounts[server.id],
+                      latency: _latencyByServerId[server.id],
+                      onTap: () => _showServerDetails(context, server),
+                      onEdit: () => _showEditServerDialog(context, server),
+                      onTest: () =>
+                          _testServerConnection(context, server, viewModel),
+                      onDelete: () =>
+                          _showDeleteConfirmation(context, server, viewModel),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -176,10 +202,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Server Statistics',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Server Statistics', style: OmnisonicTypography.sectionTitle),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -187,8 +210,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Total Servers',
                     count: stats['total']!,
-                    icon: Icons.dns,
-                    color: Colors.blue,
+                    icon: OmnisonicIcons.dns,
+                    color: OmnisonicColors.info,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -196,8 +219,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Online',
                     count: stats['online']!,
-                    icon: Icons.check_circle,
-                    color: Colors.green,
+                    icon: OmnisonicIcons.checkCircle,
+                    color: OmnisonicColors.success,
                   ),
                 ),
               ],
@@ -209,8 +232,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Offline',
                     count: stats['offline']!,
-                    icon: Icons.error,
-                    color: Colors.red,
+                    icon: OmnisonicIcons.error,
+                    color: OmnisonicColors.error,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -218,21 +241,18 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                   child: ServerStatusCard(
                     title: 'Connecting',
                     count: stats['connecting']!,
-                    icon: Icons.sync,
-                    color: Colors.orange,
+                    icon: OmnisonicIcons.sync,
+                    color: OmnisonicColors.warning,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            Text(
-              'Server Details',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Server Details', style: OmnisonicTypography.sectionTitle),
             const SizedBox(height: 16),
             if (viewModel.servers.isEmpty)
               const EmptyState(
-                icon: Icons.dns,
+                icon: OmnisonicIcons.dns,
                 title: 'No Servers',
                 subtitle: 'Add servers to see detailed status information',
               )
@@ -247,31 +267,32 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   Widget _buildServerSummary(ServerManagementViewModel viewModel) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(Icons.dns, color: Colors.grey[600]),
+          Icon(OmnisonicIcons.dns, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
           Text(
             '${viewModel.serverCount} server${viewModel.serverCount != 1 ? 's' : ''}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: OmnisonicColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             ),
             child: Text(
               '${viewModel.onlineServerCount} online',
               style: const TextStyle(
-                color: Colors.green,
+                color: OmnisonicColors.success,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -282,13 +303,13 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: OmnisonicColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.md),
               ),
               child: Text(
                 '${viewModel.offlineServerCount} offline',
                 style: const TextStyle(
-                  color: Colors.red,
+                  color: OmnisonicColors.error,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -298,7 +319,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           const Spacer(),
           ElevatedButton.icon(
             onPressed: () => _showAddServerDialog(context),
-            icon: const Icon(Icons.add, size: 16),
+            icon: const Icon(OmnisonicIcons.add, size: 16),
             label: const Text('Add'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -311,6 +332,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   Widget _buildServerStatusDetail(MusicServer server) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -335,7 +357,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             const SizedBox(height: 8),
             Text(
               server.url,
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
             ),
             const SizedBox(height: 12),
             Row(
@@ -349,7 +371,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               const SizedBox(height: 8),
               Text(
                 'Last sync: ${_formatDateTime(server.lastSync!)}',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
               ),
             ],
           ],
@@ -359,39 +381,34 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   Widget _buildStatusChip(ServerStatus status) {
-    Color color;
-    IconData icon;
-    String text;
+    // Colour comes from the palette; only the icon and label are per-status.
+    final color = OmnisonicColors.statusColorFor(status);
+    late final IconData icon;
+    late final String text;
 
     switch (status) {
       case ServerStatus.online:
-        color = Colors.green;
-        icon = Icons.check_circle;
+        icon = OmnisonicIcons.checkCircle;
         text = 'Online';
         break;
       case ServerStatus.offline:
-        color = Colors.red;
-        icon = Icons.error;
+        icon = OmnisonicIcons.error;
         text = 'Offline';
         break;
       case ServerStatus.connecting:
-        color = Colors.orange;
-        icon = Icons.sync;
+        icon = OmnisonicIcons.sync;
         text = 'Connecting';
         break;
       case ServerStatus.authenticating:
-        color = Colors.blue;
-        icon = Icons.lock;
+        icon = OmnisonicIcons.lock;
         text = 'Authenticating';
         break;
       case ServerStatus.syncing:
-        color = Colors.purple;
-        icon = Icons.sync_alt;
+        icon = OmnisonicIcons.syncAlt;
         text = 'Syncing';
         break;
       case ServerStatus.error:
-        color = Colors.red;
-        icon = Icons.warning;
+        icon = OmnisonicIcons.warning;
         text = 'Error';
         break;
     }
@@ -399,13 +416,13 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
           const SizedBox(width: 4),
           Text(
             text,
@@ -421,16 +438,17 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   }
 
   Widget _buildInfoChip(String label, String value, {Color? color}) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: (color ?? Colors.grey).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: (color ?? scheme.onSurfaceVariant).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Text(
         '$label: $value',
         style: TextStyle(
-          color: color ?? Colors.grey[700],
+          color: color ?? scheme.onSurfaceVariant,
           fontSize: 11,
           fontWeight: FontWeight.w500,
         ),
@@ -506,12 +524,16 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   ) async {
     final result = await viewModel.testConnection(server);
 
+    if (result != null && result.responseTime != null) {
+      setState(() => _latencyByServerId[server.id] = result.responseTime!);
+    }
+
     if (context.mounted) {
       if (result != null && result.isSuccessful) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Connection to ${server.name} successful'),
-            backgroundColor: Colors.green,
+            backgroundColor: OmnisonicColors.success,
           ),
         );
       } else {
@@ -520,7 +542,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             content: Text(
               'Connection to ${server.name} failed: ${result?.errorMessage ?? 'Unknown error'}',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: OmnisonicColors.error,
           ),
         );
       }
@@ -554,7 +576,9 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -562,16 +586,32 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     );
   }
 
-  void _refreshServers(BuildContext context) {
-    context.read<ServerManagementViewModel>().refreshServers();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Refreshing servers...')));
+  Future<void> _refreshServers(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Refreshing servers...')),
+    );
+
+    final success = await context
+        .read<ServerManagementViewModel>()
+        .refreshServers();
+    if (!context.mounted) return;
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(success ? 'Servers refreshed' : 'Refresh failed'),
+        action: success
+            ? null
+            : SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _refreshServers(context),
+              ),
+      ),
+    );
   }
 
   void _syncAllServers(BuildContext context) {
-    final viewModel = context.read<ServerManagementViewModel>();
-
     // Show confirmation dialog
     showDialog(
       context: context,

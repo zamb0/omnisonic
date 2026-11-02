@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../widgets/draggable_track_tile.dart';
 import '../widgets/playlist_edit_dialog.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Detailed view of a playlist with track management and drag-and-drop reordering
 class PlaylistDetailPage extends StatefulWidget {
@@ -37,49 +38,49 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       body: Consumer<PlaylistViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(kind: SkeletonKind.detailHeader);
           }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage!,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      viewModel.clearError();
-                      viewModel.selectPlaylist(widget.playlistId);
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+          final error = viewModel.errorMessage;
+          if (error != null) {
+            return ErrorStateView(
+              message: error,
+              onRetry: () => _reload(viewModel),
             );
           }
 
           final playlist = viewModel.selectedPlaylist;
           if (playlist == null) {
-            return const Center(child: Text('Playlist not found'));
+            return EmptyState(
+              icon: OmnisonicIcons.playlistPlay,
+              title: 'Playlist not found',
+              subtitle: 'It may have been deleted, or its server is offline.',
+              action: FilledButton.icon(
+                onPressed: () => _reload(viewModel),
+                icon: const Icon(OmnisonicIcons.refresh),
+                label: const Text('Try again'),
+              ),
+            );
           }
 
-          return CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(playlist, viewModel),
-              _buildPlaylistInfo(playlist),
-              _buildTrackList(playlist, viewModel),
-            ],
+          return RefreshIndicator(
+            onRefresh: () async => _reload(viewModel),
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(playlist, viewModel),
+                _buildPlaylistInfo(playlist),
+                _buildTrackList(playlist, viewModel),
+              ],
+            ),
           );
         },
       ),
     );
+  }
+
+  void _reload(PlaylistViewModel viewModel) {
+    viewModel.clearError();
+    viewModel.selectPlaylist(widget.playlistId);
   }
 
   Widget _buildSliverAppBar(Playlist playlist, PlaylistViewModel viewModel) {
@@ -107,7 +108,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               end: Alignment.bottomCenter,
               colors: [
                 Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.7),
+                Theme.of(context).primaryColor.withValues(alpha: 0.7),
               ],
             ),
           ),
@@ -116,10 +117,14 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   fit: StackFit.expand,
                   children: [
                     CachedNetworkImage(
-                      imageUrl: playlist.coverArtUrl!.withCoverArtSize(600),
-                      cacheKey: playlist.coverArtUrl!
-                          .withCoverArtSize(600)
-                          .subsonicCacheKey,
+                      imageUrl: SubsonicCoverArt.of(
+                        playlist.coverArtUrl!,
+                        600,
+                      ).url,
+                      cacheKey: SubsonicCoverArt.of(
+                        playlist.coverArtUrl!,
+                        600,
+                      ).cacheKey,
                       cacheManager: OmnisonicImageCacheManager.instance,
                       fit: BoxFit.cover,
                       memCacheWidth: 600,
@@ -134,7 +139,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withValues(alpha: 0.7),
                           ],
                         ),
                       ),
@@ -142,15 +147,17 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   ],
                 )
               : const Icon(
-                  Icons.playlist_play,
-                  size: 80,
+                  OmnisonicIcons.playlistPlay,
+                  size: OmnisonicIconSizes.xxxl,
                   color: Colors.white70,
                 ),
         ),
       ),
       actions: [
         IconButton(
-          icon: Icon(_isReorderMode ? Icons.check : Icons.reorder),
+          icon: Icon(
+            _isReorderMode ? OmnisonicIcons.check : OmnisonicIcons.reorder,
+          ),
           onPressed: () {
             setState(() {
               _isReorderMode = !_isReorderMode;
@@ -164,43 +171,30 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
             const PopupMenuItem(
               value: 'edit',
               child: ListTile(
-                leading: Icon(Icons.edit),
+                leading: Icon(OmnisonicIcons.edit),
                 title: Text('Edit Playlist'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'share',
-              child: ListTile(
-                leading: Icon(Icons.share),
-                title: Text('Share Playlist'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'export',
-              child: ListTile(
-                leading: Icon(Icons.download),
-                title: Text('Export Playlist'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             const PopupMenuItem(
               value: 'duplicate',
               child: ListTile(
-                leading: Icon(Icons.copy),
+                leading: Icon(OmnisonicIcons.copy),
                 title: Text('Duplicate'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
+                leading: Icon(
+                  OmnisonicIcons.delete,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 title: Text(
                   'Delete Playlist',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -226,29 +220,39 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                     children: [
                       Text(
                         '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: OmnisonicTypography.sectionTitleSmall,
                       ),
                       if (playlist.description?.isNotEmpty == true) ...[
                         const SizedBox(height: 4),
                         Text(
                           playlist.description!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: Colors.grey[600]),
+                          style: OmnisonicTypography.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(
-                            playlist.isPublic ? Icons.public : Icons.lock,
-                            size: 16,
-                            color: Colors.grey[600],
+                            playlist.isPublic
+                                ? OmnisonicIcons.public
+                                : OmnisonicIcons.lock,
+                            size: OmnisonicIconSizes.sm,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             playlist.isPublic ? 'Public' : 'Private',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
+                            style: OmnisonicTypography.metadata.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -261,7 +265,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                       onPressed: playlist.trackCount > 0
                           ? () => _playPlaylist(playbackViewModel)
                           : null,
-                      icon: const Icon(Icons.play_arrow),
+                      icon: const Icon(OmnisonicIcons.playArrow),
                       label: const Text('Play'),
                     );
                   },
@@ -283,16 +287,20 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.music_note, size: 64, color: Colors.grey[400]),
+              Icon(
+                OmnisonicIcons.musicNote,
+                size: OmnisonicIconSizes.xxxl,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(height: 16),
               Text(
                 'No tracks in this playlist',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: OmnisonicTypography.sectionTitle,
               ),
               const SizedBox(height: 8),
               Text(
                 'Add some tracks to get started',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: OmnisonicTypography.bodyMedium,
               ),
             ],
           ),
@@ -303,7 +311,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     if (_isReorderMode) {
       return SliverReorderableList(
         itemCount: tracks.length,
-        onReorder: (oldIndex, newIndex) =>
+        onReorderItem: (oldIndex, newIndex) =>
             _reorderTracks(oldIndex, newIndex, viewModel),
         itemBuilder: (context, index) {
           final track = tracks[index];
@@ -345,12 +353,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       case 'edit':
         _showEditDialog(playlist);
         break;
-      case 'share':
-        _sharePlaylist(playlist);
-        break;
-      case 'export':
-        _exportPlaylist(playlist);
-        break;
       case 'duplicate':
         _duplicatePlaylist(playlist, viewModel);
         break;
@@ -367,26 +369,12 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     );
   }
 
-  void _sharePlaylist(Playlist playlist) {
-    // TODO: Implement playlist sharing functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Playlist sharing coming soon!')),
-    );
-  }
-
-  void _exportPlaylist(Playlist playlist) {
-    // TODO: Implement playlist export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Playlist export coming soon!')),
-    );
-  }
-
   void _duplicatePlaylist(Playlist playlist, PlaylistViewModel viewModel) {
     final controller = TextEditingController(text: '${playlist.name} (Copy)');
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Duplicate Playlist'),
         content: TextField(
           controller: controller,
@@ -398,22 +386,23 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
               final newName = controller.text.trim();
               if (newName.isNotEmpty) {
-                Navigator.of(context).pop();
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.of(dialogContext).pop();
                 final success = await viewModel.duplicatePlaylist(
                   playlist.id,
                   newName,
                 );
                 if (success && mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Created "$newName"')));
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('Created "$newName"')),
+                  );
                 }
               }
             },
@@ -427,28 +416,31 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void _deletePlaylist(Playlist playlist, PlaylistViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Playlist'),
         content: Text(
           'Are you sure you want to delete "${playlist.name}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.of(dialogContext).pop();
               final success = await viewModel.deletePlaylist(playlist.id);
               if (success && mounted) {
                 Navigator.of(context).pop(); // Go back to previous screen
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text('Deleted "${playlist.name}"')),
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -457,10 +449,6 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   }
 
   void _reorderTracks(int oldIndex, int newIndex, PlaylistViewModel viewModel) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
     viewModel.moveTrackInPlaylist(widget.playlistId, oldIndex, newIndex);
   }
 
@@ -479,28 +467,31 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void _removeTrack(Track track, PlaylistViewModel viewModel) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Track'),
         content: Text('Remove "${track.title}" from this playlist?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.of(dialogContext).pop();
               final success = await viewModel.removeTrackFromPlaylist(
                 widget.playlistId,
                 track.id,
               );
               if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text('Removed "${track.title}"')),
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Remove'),
           ),
         ],

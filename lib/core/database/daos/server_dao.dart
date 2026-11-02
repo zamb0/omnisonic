@@ -61,6 +61,28 @@ class ServerDao extends DatabaseAccessor<AppDatabase> with _$ServerDaoMixin {
     return data != null ? _fromData(data) : null;
   }
 
+  /// Reads the encrypted password column, which the domain [MusicServer]
+  /// deliberately does not carry.
+  Future<String?> getEncryptedPassword(String serverId) async {
+    final row =
+        await (selectOnly(serversTable)
+              ..addColumns([serversTable.encryptedPassword])
+              ..where(serversTable.id.equals(serverId)))
+            .getSingleOrNull();
+    return row?.read(serversTable.encryptedPassword);
+  }
+
+  /// Writes the encrypted password column without touching the rest of the
+  /// server record.
+  Future<void> updateEncryptedPassword(
+    String serverId,
+    String encryptedPassword,
+  ) async {
+    await (update(serversTable)..where((tbl) => tbl.id.equals(serverId))).write(
+      ServersTableCompanion(encryptedPassword: Value(encryptedPassword)),
+    );
+  }
+
   Future<List<MusicServer>> getOnlineServers() async {
     final data = await (select(
       serversTable,

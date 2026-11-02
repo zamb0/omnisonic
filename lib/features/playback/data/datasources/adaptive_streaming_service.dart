@@ -38,9 +38,6 @@ class AdaptiveStreamingService {
   int _stableStreak = 0;
 
   // Adaptive streaming configuration
-  static const Duration _bandwidthTestInterval = Duration(
-    seconds: 30,
-  ); // Currently unused
   static const Duration _bufferMonitorInterval = Duration(seconds: 5);
   static const int _minBufferHealthPercent = 12; // Slightly more conservative
   static const int _goodBufferHealthPercent =

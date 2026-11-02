@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/design_system/spacing.dart';
+import '../../../../core/utils/animation_utils.dart';
+
 import '../../../../core/entities/entities.dart';
+import '../../../../core/design_system/design_system.dart';
 
 class SyncedLyricsView extends StatefulWidget {
   const SyncedLyricsView({
@@ -115,7 +117,10 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
           key: _getKeyForIndex(index),
           padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
           child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 180),
+            duration: AnimationUtils.adjustedDuration(
+              context,
+              AnimationManager.fastDuration,
+            ),
             style: (textStyle ?? const TextStyle()).copyWith(
               color: isActive
                   ? colorScheme.primary

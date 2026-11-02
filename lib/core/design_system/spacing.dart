@@ -88,84 +88,6 @@ class OmnisonicSpacing {
   }
 }
 
-/// Layout grid system for consistent spacing and alignment
-class OmnisonicGrid {
-  // Grid columns for different screen sizes
-  static const int mobileColumns = 4;
-  static const int tabletColumns = 8;
-  static const int desktopColumns = 12;
-
-  // Grid margins
-  static const double mobileMargin = 16.0;
-  static const double tabletMargin = 24.0;
-  static const double desktopMargin = 32.0;
-
-  // Grid gutters
-  static const double mobileGutter = 16.0;
-  static const double tabletGutter = 20.0;
-  static const double desktopGutter = 24.0;
-
-  /// Get number of columns for current screen size
-  static int columnsFor(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    if (screenWidth < 600) {
-      return mobileColumns;
-    } else if (screenWidth < 1200) {
-      return tabletColumns;
-    } else {
-      return desktopColumns;
-    }
-  }
-
-  /// Get margin for current screen size
-  static double marginFor(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    if (screenWidth < 600) {
-      return mobileMargin;
-    } else if (screenWidth < 1200) {
-      return tabletMargin;
-    } else {
-      return desktopMargin;
-    }
-  }
-
-  /// Get gutter for current screen size
-  static double gutterFor(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    if (screenWidth < 600) {
-      return mobileGutter;
-    } else if (screenWidth < 1200) {
-      return tabletGutter;
-    } else {
-      return desktopGutter;
-    }
-  }
-
-  /// Calculate column width for current screen
-  static double columnWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final margin = marginFor(context);
-    final gutter = gutterFor(context);
-    final columns = columnsFor(context);
-
-    final availableWidth = screenWidth - (2 * margin);
-    final totalGutterWidth = (columns - 1) * gutter;
-
-    return (availableWidth - totalGutterWidth) / columns;
-  }
-
-  /// Calculate width for spanning multiple columns
-  static double spanWidth(BuildContext context, int span) {
-    final columnWidth = OmnisonicGrid.columnWidth(context);
-    final gutter = gutterFor(context);
-
-    return (columnWidth * span) + (gutter * (span - 1));
-  }
-}
-
 /// Border radius constants for consistent rounded corners
 class OmnisonicRadius {
   static const double none = 0.0;
@@ -178,6 +100,20 @@ class OmnisonicRadius {
   static const double full = 9999.0;
 
   // Component-specific radius
+  /// Cover art corner used across cards, the now-playing bar and detail
+  /// headers. Deliberately off the 4px scale — it is the redesign's art
+  /// radius, and rounding it to 12 or 16 visibly changes the artwork.
+  static const double art = 14.0;
+
+  /// Nav pill / glass button corner in the sidebar chrome.
+  static const double pill = 13.0;
+
+  // Not tokenized on purpose: the 1-2px rounding on drag handles, seek
+  // handles, visualizer bars and status dots is half the element's own
+  // thickness, not a scale step. A shared token there would be a number
+  // that happens to coincide, and changing it would square off or fully
+  // round the shape rather than restyle it.
+
   static const double card = md; // 12px
   static const double button = sm; // 8px
   static const double input = sm; // 8px
@@ -193,6 +129,32 @@ class OmnisonicRadius {
 }
 
 /// Elevation constants for consistent shadows
+/// Drop shadows for cover art.
+///
+/// The redesign lifts artwork off the background with a wide, offset shadow
+/// rather than a Material elevation; these were hand-copied at each call site.
+class OmnisonicShadows {
+  /// Lift for a full-size cover: grid cards, detail headers.
+  static const List<BoxShadow> art = [
+    BoxShadow(
+      color: Color(0x80000000),
+      blurRadius: 24,
+      spreadRadius: -14,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Softer lift for a small cover in a row.
+  static const List<BoxShadow> artCompact = [
+    BoxShadow(
+      color: Color(0x80000000),
+      blurRadius: 20,
+      spreadRadius: -6,
+      offset: Offset(0, 8),
+    ),
+  ];
+}
+
 class OmnisonicElevation {
   static const double none = 0.0;
   static const double xs = 1.0;

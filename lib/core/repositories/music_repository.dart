@@ -18,6 +18,9 @@ abstract class MusicRepository {
   /// Gets albums for a specific artist
   Future<Result<List<Album>>> getArtistAlbums(String artistId);
 
+  /// Gets tracks for a specific artist
+  Future<Result<List<Track>>> getArtistTracks(String artistId);
+
   /// Searches for tracks across all servers
   Future<Result<List<Track>>> searchTracks(String query);
 

@@ -82,20 +82,24 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     try {
       // Get all content from music repository
       final tracksResult = await _musicRepository.getAllTracks();
-      if (tracksResult.isFailure)
+      if (tracksResult.isFailure) {
         return ResultHelper.failure(tracksResult.failureOrNull!);
+      }
 
       final albumsResult = await _musicRepository.getAllAlbums();
-      if (albumsResult.isFailure)
+      if (albumsResult.isFailure) {
         return ResultHelper.failure(albumsResult.failureOrNull!);
+      }
 
       final artistsResult = await _musicRepository.getAllArtists();
-      if (artistsResult.isFailure)
+      if (artistsResult.isFailure) {
         return ResultHelper.failure(artistsResult.failureOrNull!);
+      }
 
       final playlistsResult = await _playlistRepository.getAllPlaylists();
-      if (playlistsResult.isFailure)
+      if (playlistsResult.isFailure) {
         return ResultHelper.failure(UnknownFailure('Failed to get playlists'));
+      }
 
       final allTracks = tracksResult.valueOrNull!;
       final allAlbums = albumsResult.valueOrNull!;
@@ -106,18 +110,21 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
       final cachedTracksResult = await _contentFilter.filterCachedTracks(
         allTracks,
       );
-      if (cachedTracksResult.isFailure)
+      if (cachedTracksResult.isFailure) {
         return ResultHelper.failure(cachedTracksResult.failureOrNull!);
+      }
 
       final cachedAlbumsResult = await _contentFilter
           .filterAlbumsWithCachedTracks(allAlbums, allTracks);
-      if (cachedAlbumsResult.isFailure)
+      if (cachedAlbumsResult.isFailure) {
         return ResultHelper.failure(cachedAlbumsResult.failureOrNull!);
+      }
 
       final cachedArtistsResult = await _contentFilter
           .filterArtistsWithCachedTracks(allArtists, allTracks);
-      if (cachedArtistsResult.isFailure)
+      if (cachedArtistsResult.isFailure) {
         return ResultHelper.failure(cachedArtistsResult.failureOrNull!);
+      }
 
       // For playlists, we need to get playlist tracks first
       final playlistTracksMap = <String, List<Track>>{};
@@ -131,8 +138,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
 
       final cachedPlaylistsResult = await _contentFilter
           .filterPlaylistsWithCachedTracks(allPlaylists, playlistTracksMap);
-      if (cachedPlaylistsResult.isFailure)
+      if (cachedPlaylistsResult.isFailure) {
         return ResultHelper.failure(cachedPlaylistsResult.failureOrNull!);
+      }
 
       // Get cache statistics
       final statsResult = await _contentFilter.getCacheStatsForCollection(
@@ -140,8 +148,9 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
         allAlbums,
         allArtists,
       );
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final result = OfflineCollectionResult(
         tracks: cachedTracksResult.valueOrNull!,
@@ -163,13 +172,15 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
   Future<Result<Map<String, dynamic>>> _checkConnectivity() async {
     try {
       final connectivityResult = await _offlineModeService.checkConnectivity();
-      if (connectivityResult.isFailure)
+      if (connectivityResult.isFailure) {
         return ResultHelper.failure(connectivityResult.failureOrNull!);
+      }
 
       final currentConnectivityResult = await _offlineModeService
           .getCurrentConnectivity();
-      if (currentConnectivityResult.isFailure)
+      if (currentConnectivityResult.isFailure) {
         return ResultHelper.failure(currentConnectivityResult.failureOrNull!);
+      }
 
       final result = {
         'isOffline': connectivityResult.valueOrNull!,
@@ -205,13 +216,15 @@ class ManageOfflineModeUseCase implements UseCase<dynamic, OfflineModeParams> {
     try {
       // Get cache stats from offline repository
       final cacheStatsResult = await _offlineRepository.getCacheStats();
-      if (cacheStatsResult.isFailure)
+      if (cacheStatsResult.isFailure) {
         return ResultHelper.failure(cacheStatsResult.failureOrNull!);
+      }
 
       // Get collection stats
       final collectionResult = await _getOfflineCollection();
-      if (collectionResult.isFailure)
+      if (collectionResult.isFailure) {
         return ResultHelper.failure(collectionResult.failureOrNull!);
+      }
 
       final cacheStats = cacheStatsResult.valueOrNull!;
       final collection = collectionResult.valueOrNull!;

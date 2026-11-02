@@ -4180,6 +4180,62 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DuplicateGroupMembersTableTable(this);
   late final $CacheEntriesTableTable cacheEntriesTable =
       $CacheEntriesTableTable(this);
+  late final Index idxTracksServerId = Index(
+    'idx_tracks_server_id',
+    'CREATE INDEX idx_tracks_server_id ON tracks_table (server_id)',
+  );
+  late final Index idxTracksAlbumId = Index(
+    'idx_tracks_album_id',
+    'CREATE INDEX idx_tracks_album_id ON tracks_table (album_id)',
+  );
+  late final Index idxTracksArtistId = Index(
+    'idx_tracks_artist_id',
+    'CREATE INDEX idx_tracks_artist_id ON tracks_table (artist_id)',
+  );
+  late final Index idxTracksIsCached = Index(
+    'idx_tracks_is_cached',
+    'CREATE INDEX idx_tracks_is_cached ON tracks_table (is_cached)',
+  );
+  late final Index idxTracksIsStarred = Index(
+    'idx_tracks_is_starred',
+    'CREATE INDEX idx_tracks_is_starred ON tracks_table (is_starred)',
+  );
+  late final Index idxAlbumsServerId = Index(
+    'idx_albums_server_id',
+    'CREATE INDEX idx_albums_server_id ON albums_table (server_id)',
+  );
+  late final Index idxAlbumsArtistId = Index(
+    'idx_albums_artist_id',
+    'CREATE INDEX idx_albums_artist_id ON albums_table (artist_id)',
+  );
+  late final Index idxArtistsServerId = Index(
+    'idx_artists_server_id',
+    'CREATE INDEX idx_artists_server_id ON artists_table (server_id)',
+  );
+  late final Index idxPlaylistTracksTrackId = Index(
+    'idx_playlist_tracks_track_id',
+    'CREATE INDEX idx_playlist_tracks_track_id ON playlist_tracks_table (track_id)',
+  );
+  late final Index idxDuplicateGroupsRepresentativeTrackId = Index(
+    'idx_duplicate_groups_representative_track_id',
+    'CREATE INDEX idx_duplicate_groups_representative_track_id ON duplicate_groups_table (representative_track_id)',
+  );
+  late final Index idxDuplicateGroupMembersTrackId = Index(
+    'idx_duplicate_group_members_track_id',
+    'CREATE INDEX idx_duplicate_group_members_track_id ON duplicate_group_members_table (track_id)',
+  );
+  late final Index idxCacheEntriesLastAccessed = Index(
+    'idx_cache_entries_last_accessed',
+    'CREATE INDEX idx_cache_entries_last_accessed ON cache_entries_table (last_accessed)',
+  );
+  late final Index idxCacheEntriesIsPinned = Index(
+    'idx_cache_entries_is_pinned',
+    'CREATE INDEX idx_cache_entries_is_pinned ON cache_entries_table (is_pinned)',
+  );
+  late final Index idxCacheEntriesIsComplete = Index(
+    'idx_cache_entries_is_complete',
+    'CREATE INDEX idx_cache_entries_is_complete ON cache_entries_table (is_complete)',
+  );
   late final ServerDao serverDao = ServerDao(this as AppDatabase);
   late final MusicDao musicDao = MusicDao(this as AppDatabase);
   late final PlaylistDao playlistDao = PlaylistDao(this as AppDatabase);
@@ -4198,6 +4254,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     duplicateGroupsTable,
     duplicateGroupMembersTable,
     cacheEntriesTable,
+    idxTracksServerId,
+    idxTracksAlbumId,
+    idxTracksArtistId,
+    idxTracksIsCached,
+    idxTracksIsStarred,
+    idxAlbumsServerId,
+    idxAlbumsArtistId,
+    idxArtistsServerId,
+    idxPlaylistTracksTrackId,
+    idxDuplicateGroupsRepresentativeTrackId,
+    idxDuplicateGroupMembersTrackId,
+    idxCacheEntriesLastAccessed,
+    idxCacheEntriesIsPinned,
+    idxCacheEntriesIsComplete,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([

@@ -3,24 +3,29 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../database/app_database.dart';
+import '../database/daos/cache_dao.dart';
 import '../database/data_sources/local_music_data_source.dart';
 import '../database/data_sources/local_server_data_source.dart';
 import '../database/data_sources/local_playlist_data_source.dart';
+import '../database/data_sources/offline_local_data_source.dart';
 import '../services/subsonic_api_client.dart';
 import '../services/server_connection_service.dart';
 import '../services/server_status_monitor.dart';
 import '../services/deduplication_engine.dart';
 import '../services/source_selection_service.dart';
+import '../services/cache_manager.dart';
+import '../services/download_manager.dart';
+import '../services/offline_mode_service.dart';
 import '../utils/server_validator.dart';
 import '../repositories/music_repository.dart';
 import '../repositories/server_repository.dart';
 import '../repositories/playback_repository.dart';
-import '../repositories/playlist_repository.dart';
 import '../repositories/lyrics_repository.dart';
+import '../repositories/playlist_repository.dart';
+import '../repositories/offline_repository.dart';
 import '../../features/music/data/repositories/music_repository_impl.dart';
 import '../../features/servers/data/repositories/server_repository_impl.dart';
 import '../../features/playback/data/repositories/playback_repository_impl.dart';
-import '../../features/music/data/repositories/playlist_repository_impl.dart';
 import '../../features/playback/data/datasources/audio_player_data_source.dart';
 import '../../features/playback/data/datasources/audio_service_handler.dart';
 import '../../features/playback/data/datasources/audio_focus_manager.dart';
@@ -30,22 +35,13 @@ import '../../features/playback/data/datasources/playback_service.dart';
 import '../../features/lyrics/data/datasources/lyrics_cache_data_source.dart';
 import '../../features/lyrics/data/datasources/lyrics_remote_data_source.dart';
 import '../../features/lyrics/data/repositories/lyrics_repository_impl.dart';
-import '../usecases/sync_music_collection_use_case.dart';
-import '../usecases/search_music_use_case.dart';
-import '../usecases/play_track_use_case.dart';
-import '../usecases/manage_playlist_use_case.dart';
+import '../../features/offline/data/repositories/offline_repository_impl.dart';
+import '../../features/offline/domain/services/offline_content_filter.dart';
+import '../../features/offline/domain/usecases/manage_offline_mode_use_case.dart';
 
 // ViewModels
-import '../../features/music/presentation/viewmodels/music_library_view_model.dart';
-import '../../features/playback/presentation/viewmodels/playback_view_model.dart';
-import '../../features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
-import '../../features/servers/presentation/viewmodels/server_management_view_model.dart';
-import '../../features/music/presentation/viewmodels/playlist_view_model.dart';
 
 // BLoCs
-import '../../features/sync/presentation/bloc/sync_bloc.dart';
-import '../../features/music/presentation/bloc/search_bloc.dart';
-import '../../features/playback/presentation/bloc/playback_bloc.dart';
 
 @module
 abstract class AppModule {
@@ -155,12 +151,10 @@ abstract class AppModule {
     LocalServerDataSource localDataSource,
     ServerConnectionService connectionService,
     ServerStatusMonitor statusMonitor,
-    ServerValidator validator,
   ) => ServerRepositoryImpl(
     localDataSource: localDataSource,
     connectionService: connectionService,
     statusMonitor: statusMonitor,
-    validator: validator,
   );
 
   @LazySingleton(as: MusicRepository)
@@ -192,5 +186,53 @@ abstract class AppModule {
   ) => LyricsRepositoryImpl(
     remoteDataSource: remoteDataSource,
     cacheDataSource: cacheDataSource,
+  );
+
+  // Offline / downloads
+  @lazySingleton
+  CacheDao cacheDao(AppDatabase database) => CacheDao(database);
+
+  @lazySingleton
+  OfflineLocalDataSource offlineLocalDataSource(CacheDao cacheDao) =>
+      OfflineLocalDataSource(cacheDao: cacheDao);
+
+  @lazySingleton
+  CacheManager cacheManager() => CacheManager();
+
+  @lazySingleton
+  DownloadManager downloadManager(Dio dio) => DownloadManager(dio: dio);
+
+  @lazySingleton
+  OfflineModeService offlineModeService() => OfflineModeService();
+
+  @LazySingleton(as: OfflineRepository)
+  OfflineRepositoryImpl offlineRepository(
+    DownloadManager downloadManager,
+    CacheManager cacheManager,
+    OfflineLocalDataSource localDataSource,
+  ) => OfflineRepositoryImpl(
+    downloadManager: downloadManager,
+    cacheManager: cacheManager,
+    localDataSource: localDataSource,
+  );
+
+  @lazySingleton
+  OfflineContentFilter offlineContentFilter(
+    OfflineRepository offlineRepository,
+  ) => OfflineContentFilter(offlineRepository: offlineRepository);
+
+  @lazySingleton
+  ManageOfflineModeUseCase manageOfflineModeUseCase(
+    OfflineModeService offlineModeService,
+    MusicRepository musicRepository,
+    PlaylistRepository playlistRepository,
+    OfflineRepository offlineRepository,
+    OfflineContentFilter contentFilter,
+  ) => ManageOfflineModeUseCase(
+    offlineModeService: offlineModeService,
+    musicRepository: musicRepository,
+    playlistRepository: playlistRepository,
+    offlineRepository: offlineRepository,
+    contentFilter: contentFilter,
   );
 }

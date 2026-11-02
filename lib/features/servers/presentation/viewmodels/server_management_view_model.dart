@@ -14,7 +14,7 @@ import '../../../../core/utils/app_log.dart';
 /// - Adding, updating, and removing servers
 /// - Connection testing and validation
 /// - Server credentials management
-@injectable
+@lazySingleton
 class ServerManagementViewModel extends ChangeNotifier {
   ServerManagementViewModel(
     this._serverRepository,
@@ -34,7 +34,7 @@ class ServerManagementViewModel extends ChangeNotifier {
   bool _isTestingConnection = false;
   String? _errorMessage;
   ServerConnectionResult? _lastConnectionTest;
-  Map<String, bool> _serverLoadingStates = {};
+  final Map<String, bool> _serverLoadingStates = {};
 
   // Getters
   List<MusicServer> get servers => _servers;
@@ -59,6 +59,9 @@ class ServerManagementViewModel extends ChangeNotifier {
   void _initialize() {
     _subscribeToServers();
     _loadServers();
+    // Kicks off the periodic reachability checks; without them every server
+    // keeps whatever status it had when it was added.
+    _serverRepository.startMonitoringAllServers();
   }
 
   void _subscribeToServers() {
@@ -74,16 +77,20 @@ class ServerManagementViewModel extends ChangeNotifier {
     );
   }
 
-  Future<void> _loadServers() async {
+  Future<bool> _loadServers() async {
     _isLoading = true;
     _clearError();
     notifyListeners();
 
+    var success = false;
     try {
       final result = await _serverRepository.getAllServers();
       result.fold(
         (failure) => _setError('Failed to load servers: ${failure.message}'),
-        (servers) => _servers = servers,
+        (servers) {
+          _servers = servers;
+          success = true;
+        },
       );
     } catch (e) {
       _setError('Unexpected error loading servers: $e');
@@ -91,6 +98,7 @@ class ServerManagementViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+    return success;
   }
 
   /// Adds a new server
@@ -188,7 +196,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     try {
       final result = await _serverRepository.updateServer(server);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to update server: ${failure.message}');
         return false;
       }, (_) => true);
@@ -213,7 +221,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
       // Remove the server
       final result = await _serverRepository.removeServer(serverId);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to remove server: ${failure.message}');
         return false;
       }, (_) => true);
@@ -320,9 +328,10 @@ class ServerManagementViewModel extends ChangeNotifier {
     );
   }
 
-  /// Refreshes the server list
-  Future<void> refreshServers() async {
-    await _loadServers();
+  /// Refreshes the server list. Returns whether the refresh succeeded, so
+  /// callers can show a terminal success/error message with retry.
+  Future<bool> refreshServers() async {
+    return _loadServers();
   }
 
   /// Triggers automatic synchronization for a server (non-blocking)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 
 /// A list tile widget for displaying server information
@@ -11,6 +12,13 @@ class ServerListTile extends StatelessWidget {
   final VoidCallback? onTest;
   final VoidCallback? onDelete;
 
+  /// Albums synced from this server, or null if not computed yet.
+  final int? albumCount;
+
+  /// Round-trip time from the most recent connection test this session, or
+  /// null if the server hasn't been tested since the app launched.
+  final Duration? latency;
+
   const ServerListTile({
     super.key,
     required this.server,
@@ -19,91 +27,160 @@ class ServerListTile extends StatelessWidget {
     this.onEdit,
     this.onTest,
     this.onDelete,
+    this.albumCount,
+    this.latency,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: _buildLeading(),
-        title: Text(
-          server.name,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [_buildTile(context), _buildStatTrio(context)],
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                _buildStatusChip(server.status),
-                const SizedBox(width: 8),
-                Text(
-                  'User: ${server.username}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            if (server.lastSync != null) ...[
-              const SizedBox(height: 2),
+      ),
+    );
+  }
+
+  Widget _buildTile(BuildContext context) {
+    return ListTile(
+      leading: _buildLeading(),
+      title: Text(
+        server.name,
+        style: const TextStyle(fontWeight: FontWeight.w500),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              _buildStatusChip(server.status),
+              const SizedBox(width: 8),
               Text(
-                'Last sync: ${_formatDateTime(server.lastSync!)}',
+                'User: ${server.username}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 11,
+                  color: OmnisonicColors.neutralGray600,
                 ),
               ),
             ],
-          ],
-        ),
-        trailing: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuAction(value),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'test',
-                    child: ListTile(
-                      leading: Icon(Icons.wifi_protected_setup),
-                      title: Text('Test Connection'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Edit'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
+          ),
+          if (server.lastSync != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Last sync: ${_formatDateTime(server.lastSync!)}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: OmnisonicColors.neutralGray600,
+                fontSize: 11,
               ),
-        onTap: onTap,
-        isThreeLine: true,
+            ),
+          ],
+        ],
       ),
+      trailing: isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : PopupMenuButton<String>(
+              onSelected: (value) => _handleMenuAction(value),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'test',
+                  child: ListTile(
+                    leading: Icon(OmnisonicIcons.wifiProtectedSetup),
+                    title: Text('Test Connection'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: Icon(OmnisonicIcons.edit),
+                    title: Text('Edit'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(
+                      OmnisonicIcons.delete,
+                      color: OmnisonicColors.error,
+                    ),
+                    title: Text(
+                      'Delete',
+                      style: TextStyle(color: OmnisonicColors.error),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+      onTap: onTap,
+      isThreeLine: true,
+    );
+  }
+
+  /// Albums synced / last measured latency / last sync time. Latency is
+  /// only ever the result of an explicit "Test Connection" — it's not
+  /// continuously polled, so it reads "not tested" until the user runs one.
+  Widget _buildStatTrio(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          _buildStat(
+            context,
+            OmnisonicIcons.albumOutline,
+            albumCount != null ? '$albumCount albums' : '— albums',
+          ),
+          const SizedBox(width: 16),
+          _buildStat(
+            context,
+            OmnisonicIcons.speedOutline,
+            latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
+          ),
+          const SizedBox(width: 16),
+          _buildStat(
+            context,
+            OmnisonicIcons.syncOutline,
+            server.lastSync != null
+                ? _formatDateTime(server.lastSync!)
+                : 'never synced',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStat(BuildContext context, IconData icon, String label) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: OmnisonicIconSizes.inline,
+          color: scheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: OmnisonicTypography.metadata.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 
@@ -112,10 +189,14 @@ class ServerListTile extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: _getStatusColor(server.status).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+        color: _getStatusColor(server.status).withValues(alpha: 0.1),
       ),
-      child: Icon(Icons.dns, color: _getStatusColor(server.status), size: 24),
+      child: Icon(
+        OmnisonicIcons.dns,
+        color: _getStatusColor(server.status),
+        size: 24,
+      ),
     );
   }
 
@@ -127,13 +208,13 @@ class ServerListTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: color),
+          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
           const SizedBox(width: 4),
           Text(
             text,
@@ -151,34 +232,34 @@ class ServerListTile extends StatelessWidget {
   Color _getStatusColor(ServerStatus status) {
     switch (status) {
       case ServerStatus.online:
-        return Colors.green;
+        return OmnisonicColors.success;
       case ServerStatus.offline:
-        return Colors.red;
+        return OmnisonicColors.error;
       case ServerStatus.connecting:
-        return Colors.orange;
+        return OmnisonicColors.warning;
       case ServerStatus.authenticating:
-        return Colors.blue;
+        return OmnisonicColors.info;
       case ServerStatus.syncing:
-        return Colors.purple;
+        return OmnisonicColors.primaryPurple;
       case ServerStatus.error:
-        return Colors.red;
+        return OmnisonicColors.error;
     }
   }
 
   IconData _getStatusIcon(ServerStatus status) {
     switch (status) {
       case ServerStatus.online:
-        return Icons.check_circle;
+        return OmnisonicIcons.checkCircle;
       case ServerStatus.offline:
-        return Icons.error;
+        return OmnisonicIcons.error;
       case ServerStatus.connecting:
-        return Icons.sync;
+        return OmnisonicIcons.sync;
       case ServerStatus.authenticating:
-        return Icons.lock;
+        return OmnisonicIcons.lock;
       case ServerStatus.syncing:
-        return Icons.sync_alt;
+        return OmnisonicIcons.syncAlt;
       case ServerStatus.error:
-        return Icons.warning;
+        return OmnisonicIcons.warning;
     }
   }
 

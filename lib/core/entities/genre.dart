@@ -1,5 +1,3 @@
-import 'package:drift/drift.dart';
-
 /// Represents a music genre with its statistics
 class Genre {
   const Genre({

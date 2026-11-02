@@ -77,8 +77,9 @@ class CacheManager {
   Future<Result<bool>> needsCleanup(List<CacheEntry> entries) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final stats = statsResult.valueOrNull!;
       final usageRatio = stats.totalSize / maxCacheSize;
@@ -132,12 +133,6 @@ class CacheManager {
     int? targetFreeSpace,
   }) async {
     try {
-      final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
-        return ResultHelper.failure(statsResult.failureOrNull!);
-
-      final stats = statsResult.valueOrNull!;
-
       // Calculate target free space if not provided
       targetFreeSpace ??= (maxCacheSize * 0.3).round(); // Free up 30%
 
@@ -146,8 +141,9 @@ class CacheManager {
         entries,
         targetFreeSpace,
       );
-      if (evictionResult.isFailure)
+      if (evictionResult.isFailure) {
         return ResultHelper.failure(evictionResult.failureOrNull!);
+      }
 
       final toEvict = evictionResult.valueOrNull!;
       int freedSpace = 0;
@@ -217,8 +213,9 @@ class CacheManager {
   ) async {
     try {
       final statsResult = await getCacheStats(entries);
-      if (statsResult.isFailure)
+      if (statsResult.isFailure) {
         return ResultHelper.failure(statsResult.failureOrNull!);
+      }
 
       final stats = statsResult.valueOrNull!;
 
@@ -297,8 +294,6 @@ class CacheManager {
   /// Gets recommended cache size based on available storage
   static Future<Result<int>> getRecommendedCacheSize() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-
       // Use 10% of available space, max 5GB, min 500MB
       const minSize = 500 * 1024 * 1024; // 500MB
       const maxSize = 5 * 1024 * 1024 * 1024; // 5GB

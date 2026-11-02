@@ -176,16 +176,19 @@ class DownloadManager {
     final safeArtist = _sanitizeFilename(track.artist);
     final extension = _getFileExtension(track.streamUrl);
 
-    return '${track.id}_${safeArtist}_${safeTitle}$extension';
+    return '${track.id}_${safeArtist}_$safeTitle$extension';
   }
 
   /// Sanitizes a string for use in filenames
   String _sanitizeFilename(String input) {
-    return input
+    // Whitespace collapsing shrinks the string, so the length limit has to be
+    // applied to the sanitized value - not to `input`.
+    final sanitized = input
         .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
         .replaceAll(RegExp(r'\s+'), '_')
-        .toLowerCase()
-        .substring(0, input.length > 50 ? 50 : input.length);
+        .toLowerCase();
+
+    return sanitized.length > 50 ? sanitized.substring(0, 50) : sanitized;
   }
 
   /// Gets file extension from URL or defaults to .mp3

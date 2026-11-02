@@ -168,6 +168,20 @@ void main() {
     });
 
     test('should handle music metadata relationships', () async {
+      // Artists, albums and tracks reference a server, and foreign keys are
+      // enforced.
+      await database.serverDao.insertServer(
+        MusicServer(
+          id: 'server1',
+          name: 'Test Server',
+          url: 'http://example.com',
+          username: 'testuser',
+          status: ServerStatus.online,
+          createdAt: DateTime.now(),
+        ),
+        'password123',
+      );
+
       // Create related entities
       final artist = Artist(
         id: 'artist1',

@@ -246,33 +246,6 @@ class SourceSelectionService {
       // Log error but don't throw - this is for background updates
     }
   }
-
-  /// Prefers lossless formats over lossy formats
-  bool _isLosslessFormat(AudioQuality quality) {
-    return quality == AudioQuality.lossless || quality == AudioQuality.ultra;
-  }
-
-  /// Calculates quality preference score
-  double _calculateQualityPreference(
-    AudioQuality quality,
-    AudioQuality? preferredQuality,
-  ) {
-    if (preferredQuality == null) {
-      return _getQualityScore(quality);
-    }
-
-    // Bonus for matching preferred quality
-    if (quality == preferredQuality) {
-      return _getQualityScore(quality) + 10.0;
-    }
-
-    // Penalty for being far from preferred quality
-    final qualityDiff = (quality.qualityScore - preferredQuality.qualityScore)
-        .abs();
-    final penalty = qualityDiff * 2.0;
-
-    return (_getQualityScore(quality) - penalty).clamp(0.0, 60.0);
-  }
 }
 
 /// Exception thrown when no suitable source can be found

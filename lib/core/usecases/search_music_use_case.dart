@@ -16,10 +16,9 @@ import 'usecase.dart';
 /// - Returning comprehensive search results
 @injectable
 class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
-  const SearchMusicUseCase(this._musicRepository, this._serverRepository);
+  const SearchMusicUseCase(this._musicRepository);
 
   final MusicRepository _musicRepository;
-  final ServerRepository _serverRepository;
 
   @override
   Future<Either<Failure, SearchResults>> call(SearchMusicParams params) async {
@@ -28,21 +27,9 @@ class SearchMusicUseCase implements UseCase<SearchResults, SearchMusicParams> {
         return const Right(SearchResults.empty());
       }
 
-      // Check if we have online servers
-      final serversResult = await _serverRepository.getOnlineServers();
-      if (serversResult.isFailure) {
-        return Left(
-          ServerFailure(
-            'Failed to get online servers: ${serversResult.failureOrNull}',
-          ),
-        );
-      }
-
-      final onlineServers = serversResult.valueOrNull!;
-      if (onlineServers.isEmpty) {
-        return Left(ServerFailure('No online servers available for search'));
-      }
-
+      // Search runs against the synced local library, so it works whether or
+      // not a server is currently reachable — an unreachable server only
+      // means results cannot be streamed, not that they cannot be found.
       List<Track> tracks = [];
       List<Album> albums = [];
       List<Artist> artists = [];

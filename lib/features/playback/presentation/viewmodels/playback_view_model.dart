@@ -19,7 +19,7 @@ import '../../data/datasources/adaptive_streaming_service.dart';
 /// - Queue management and navigation
 /// - Playback controls (play, pause, seek, etc.)
 /// - Volume and repeat/shuffle settings
-@injectable
+@lazySingleton
 class PlaybackViewModel extends ChangeNotifier {
   PlaybackViewModel(
     this._playbackRepository,
@@ -45,6 +45,7 @@ class PlaybackViewModel extends ChangeNotifier {
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<List<Track>>? _queueSubscription;
   StreamSubscription<AudioQuality>? _qualitySubscription;
+  StreamSubscription<Track>? _scrobbleSubscription;
   Timer? _positionTicker;
   DateTime? _lastPositionUpdate;
   Duration _lastObservedPosition = Duration.zero;
@@ -67,6 +68,7 @@ class PlaybackViewModel extends ChangeNotifier {
   bool _isRestoring = false; // Flag to prevent auto-play during restoration
   AudioQuality _streamingQuality = AudioQuality.ultra;
   AudioQuality _maxStreamingQuality = AudioQuality.ultra;
+  bool _hasScrobbledCurrentTrack = false;
 
   // Getters
   PlaybackState get playbackState => _playbackState;
@@ -91,13 +93,18 @@ class PlaybackViewModel extends ChangeNotifier {
   int get queueLength => queue.length;
   bool get isRestoring => _isRestoring;
 
-  // TODO: Connect to AdaptiveStreamingService for real quality monitoring
+  /// The quality currently being streamed, as reported by
+  /// [AdaptiveStreamingService] and capped by the current track's own quality.
   AudioQuality get currentQuality => _streamingQuality;
   AudioQuality get maxQuality => _maxStreamingQuality;
   double get streamingQualityRatio {
     if (_maxStreamingQuality.qualityScore == 0) return 0;
     return _streamingQuality.qualityScore / _maxStreamingQuality.qualityScore;
   }
+
+  /// Whether the current track has already been registered as played
+  /// (scrobbled) with its server. Resets on every track change.
+  bool get hasScrobbledCurrentTrack => _hasScrobbledCurrentTrack;
 
   void _initialize() {
     try {
@@ -106,6 +113,7 @@ class PlaybackViewModel extends ChangeNotifier {
       _subscribeToPosition();
       _subscribeToQueue();
       _subscribeToQuality();
+      _subscribeToScrobbles();
       _loadCurrentState();
 
       // Restore queue as early as possible, with a delayed retry to
@@ -171,6 +179,7 @@ class PlaybackViewModel extends ChangeNotifier {
               );
               _trackingService.startTrackingTrack(state.currentTrack!);
               _previousTrack = state.currentTrack;
+              _hasScrobbledCurrentTrack = false;
 
               // Start periodic queue saving
               _trackingService.startPeriodicQueueSave(
@@ -189,12 +198,28 @@ class PlaybackViewModel extends ChangeNotifier {
   }
 
   void _subscribeToQuality() {
+    // Seed from the service so Settings shows the real quality before the
+    // first network condition change comes through.
+    _streamingQuality = _clampQuality(
+      _adaptiveStreamingService.currentRecommendedQuality,
+      _maxStreamingQuality,
+    );
+
     _qualitySubscription = _adaptiveStreamingService
         .observeRecommendedQuality()
         .listen((quality) {
           _streamingQuality = _clampQuality(quality, _maxStreamingQuality);
           notifyListeners();
         });
+  }
+
+  void _subscribeToScrobbles() {
+    _scrobbleSubscription = _trackingService.onScrobbled.listen((track) {
+      if (currentTrack?.id == track.id) {
+        _hasScrobbledCurrentTrack = true;
+        notifyListeners();
+      }
+    });
   }
 
   AudioQuality _clampQuality(AudioQuality quality, AudioQuality maxQuality) {
@@ -204,13 +229,30 @@ class PlaybackViewModel extends ChangeNotifier {
     return quality;
   }
 
+  /// How far the platform position has to diverge from the interpolated one
+  /// before it is worth telling the UI about it out of band.
+  static const Duration _positionJumpThreshold = Duration(milliseconds: 750);
+
   void _subscribeToPosition() {
     _positionSubscription = _playbackRepository.observePosition().listen(
       (position) {
+        // The ticker below is what drives the UI while playing; this stream
+        // only re-anchors it. Notifying here as well doubled the rebuild rate
+        // of every widget watching this view model.
+        final drift =
+            (position.inMilliseconds - _playbackState.position.inMilliseconds)
+                .abs();
+
         _playbackState = _playbackState.copyWith(position: position);
         _lastObservedPosition = position;
         _lastPositionUpdate = DateTime.now();
-        notifyListeners();
+
+        // A seek, a track change or playback being paused still needs to reach
+        // the UI immediately, since the ticker is idle then.
+        if (!_playbackState.isPlaying ||
+            drift >= _positionJumpThreshold.inMilliseconds) {
+          notifyListeners();
+        }
       },
       onError: (error) {
         AppLog.warn('Position stream error: $error');
@@ -523,6 +565,28 @@ class PlaybackViewModel extends ChangeNotifier {
     );
   }
 
+  /// Moves the item at absolute queue index [oldIndex] so it ends up at
+  /// absolute index [newIndex] **after removal** (i.e. `newIndex` is in the
+  /// same post-removal coordinate space `ReorderableListView.onReorderItem`
+  /// already hands back — no further -1 adjustment needed by the caller).
+  ///
+  /// Composed from [removeFromQueue] + [insertInQueue] rather than
+  /// `setQueue`, because `setQueue` reloads the track at its start index —
+  /// fine for replacing the whole queue, but it would restart whatever's
+  /// currently playing if used here. removeFromQueue/insertInQueue only
+  /// touch queue bookkeeping for indices past the current one, so reordering
+  /// the "up next" tail never interrupts playback.
+  Future<void> reorderQueueItem(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex || oldIndex < 0 || oldIndex >= queue.length) {
+      return;
+    }
+    final track = queue[oldIndex];
+    await removeFromQueue(oldIndex);
+    // Not clamped here: the data source bounds the index against the queue
+    // as it is after the removal, which is the only length that is right.
+    await insertInQueue(track, newIndex);
+  }
+
   /// Clears the entire queue
   Future<void> clearQueue() async {
     final result = await _playbackRepository.clearQueue();
@@ -770,6 +834,7 @@ class PlaybackViewModel extends ChangeNotifier {
     _positionSubscription?.cancel();
     _queueSubscription?.cancel();
     _qualitySubscription?.cancel();
+    _scrobbleSubscription?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

@@ -17,10 +17,9 @@ import 'usecase.dart';
 @injectable
 class ManagePlaylistUseCase
     implements UseCase<PlaylistOperationResult, ManagePlaylistParams> {
-  const ManagePlaylistUseCase(this._playlistRepository, this._musicRepository);
+  const ManagePlaylistUseCase(this._playlistRepository);
 
   final PlaylistRepository _playlistRepository;
-  final MusicRepository _musicRepository;
 
   @override
   Future<Either<Failure, PlaylistOperationResult>> call(
@@ -139,23 +138,9 @@ class ManagePlaylistUseCase
       );
     }
 
-    // Verify the track exists
-    final tracksResult = await _musicRepository.getAllTracks();
-    if (tracksResult.isFailure) {
-      return Left(
-        DataFailure(
-          'Failed to verify track existence: ${tracksResult.failureOrNull}',
-        ),
-      );
-    }
-
-    final trackExists = tracksResult.valueOrNull!.any(
-      (track) => track.id == params.trackId,
-    );
-    if (!trackExists) {
-      return Left(ValidationFailure('Track not found: ${params.trackId}'));
-    }
-
+    // PlaylistRepository.addTrackToPlaylist verifies the track exists by
+    // primary key; loading the whole library here just to repeat that check
+    // was the expensive half of adding one track to a playlist.
     final result = await _playlistRepository.addTrackToPlaylist(
       params.playlistId!,
       params.trackId!,

@@ -1,11 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get_it/get_it.dart';
 import 'package:omnisonic/core/entities/entities.dart';
 import 'package:omnisonic/core/errors/result.dart';
 import 'package:omnisonic/core/errors/failures.dart';
 import 'package:omnisonic/core/services/deduplication_engine.dart';
-import 'package:omnisonic/core/services/source_selection_service.dart';
-import 'package:omnisonic/core/repositories/repositories.dart';
 import 'package:omnisonic/core/usecases/usecases.dart';
 
 /// Simple integration test for core business logic without Flutter dependencies

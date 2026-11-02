@@ -4,18 +4,18 @@ import 'package:equatable/equatable.dart';
 import '../errors/failures.dart';
 
 /// Base use case class for all business logic operations
-abstract class UseCase<Type, Params> {
-  Future<Either<Failure, Type>> call(Params params);
+abstract class UseCase<T, P> {
+  Future<Either<Failure, T>> call(P params);
 }
 
 /// Use case for operations that don't require parameters
-abstract class NoParamsUseCase<Type> {
-  Future<Either<Failure, Type>> call();
+abstract class NoParamsUseCase<T> {
+  Future<Either<Failure, T>> call();
 }
 
 /// Use case for operations that return streams
-abstract class StreamUseCase<Type, Params> {
-  Stream<Either<Failure, Type>> call(Params params);
+abstract class StreamUseCase<T, P> {
+  Stream<Either<Failure, T>> call(P params);
 }
 
 /// Base class for use case parameters

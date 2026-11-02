@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,6 +6,7 @@ import 'core/di/injection_container.dart';
 import 'core/constants/app_constants.dart';
 import 'core/routing/app_router.dart';
 import 'core/design_system/theme.dart';
+import 'core/design_system/theme_mode_controller.dart';
 import 'features/playback/data/datasources/playback_service.dart';
 import 'features/playback/data/datasources/playback_tracking_service.dart';
 
@@ -16,11 +16,11 @@ import 'features/playback/presentation/viewmodels/playback_view_model.dart';
 import 'features/servers/presentation/viewmodels/server_management_view_model.dart';
 import 'features/music/presentation/viewmodels/playlist_view_model.dart';
 import 'features/lyrics/presentation/viewmodels/lyrics_view_model.dart';
+import 'features/offline/presentation/viewmodels/offline_mode_view_model.dart';
 
 // BLoCs
-import 'features/sync/presentation/bloc/sync_bloc.dart';
 import 'features/music/presentation/bloc/search_bloc.dart';
-import 'features/playback/presentation/bloc/playback_bloc.dart';
+import 'core/routing/app_shortcuts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,9 +93,7 @@ class _OmnisonicAppState extends State<OmnisonicApp>
 
   void _saveCurrentQueue() async {
     try {
-      if (_playbackViewModel == null) {
-        _playbackViewModel = getIt<PlaybackViewModel>();
-      }
+      _playbackViewModel ??= getIt<PlaybackViewModel>();
 
       if (_playbackViewModel!.hasQueue &&
           _playbackViewModel!.currentIndex >= 0) {
@@ -120,34 +118,48 @@ class _OmnisonicAppState extends State<OmnisonicApp>
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // ViewModels
-        ChangeNotifierProvider<MusicLibraryViewModel>(
-          create: (_) => getIt<MusicLibraryViewModel>(),
+        // ViewModels are lazy singletons in getIt, which owns their lifetime —
+        // hence .value rather than create, so the provider never disposes an
+        // instance getIt will keep handing out.
+        ChangeNotifierProvider<MusicLibraryViewModel>.value(
+          value: getIt<MusicLibraryViewModel>(),
         ),
-        ChangeNotifierProvider<PlaybackViewModel>(
-          create: (_) => getIt<PlaybackViewModel>(),
+        ChangeNotifierProvider<PlaybackViewModel>.value(
+          value: getIt<PlaybackViewModel>(),
         ),
-        ChangeNotifierProvider<ServerManagementViewModel>(
-          create: (_) => getIt<ServerManagementViewModel>(),
+        ChangeNotifierProvider<ServerManagementViewModel>.value(
+          value: getIt<ServerManagementViewModel>(),
         ),
-        ChangeNotifierProvider<PlaylistViewModel>(
-          create: (_) => getIt<PlaylistViewModel>(),
+        ChangeNotifierProvider<PlaylistViewModel>.value(
+          value: getIt<PlaylistViewModel>(),
         ),
-        ChangeNotifierProvider<LyricsViewModel>(
-          create: (_) => getIt<LyricsViewModel>(),
+        ChangeNotifierProvider<LyricsViewModel>.value(
+          value: getIt<LyricsViewModel>(),
+        ),
+        ChangeNotifierProvider<OfflineModeViewModel>.value(
+          value: getIt<OfflineModeViewModel>(),
+        ),
+        ChangeNotifierProvider<ThemeModeController>.value(
+          value: ThemeModeController.instance,
         ),
 
         // BLoCs
-        BlocProvider<SyncBloc>(create: (_) => getIt<SyncBloc>()),
         BlocProvider<SearchBloc>(create: (_) => getIt<SearchBloc>()),
-        BlocProvider<PlaybackBloc>(create: (_) => getIt<PlaybackBloc>()),
       ],
-      child: MaterialApp.router(
-        title: 'Omnisonic',
-        theme: OmnisonicTheme.lightTheme,
-        darkTheme: OmnisonicTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: AppRouter.router,
+      child: Consumer<ThemeModeController>(
+        builder: (context, themeModeController, child) {
+          return MaterialApp.router(
+            title: 'Omnisonic',
+            theme: OmnisonicTheme.lightTheme,
+            darkTheme: OmnisonicTheme.darkTheme,
+            themeMode: themeModeController.themeMode,
+            routerConfig: AppRouter.router,
+            builder: (context, child) => AppShortcuts(
+              playback: () => getIt<PlaybackViewModel>(),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          );
+        },
       ),
     );
   }

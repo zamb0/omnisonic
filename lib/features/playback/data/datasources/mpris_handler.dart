@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:dbus/dbus.dart';
 
-import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart'
     show PlaybackState;
 import '../../../../core/utils/app_log.dart';

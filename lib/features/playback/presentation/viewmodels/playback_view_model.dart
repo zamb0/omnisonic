@@ -582,7 +582,9 @@ class PlaybackViewModel extends ChangeNotifier {
     }
     final track = queue[oldIndex];
     await removeFromQueue(oldIndex);
-    await insertInQueue(track, newIndex.clamp(0, queue.length - 1));
+    // Not clamped here: the data source bounds the index against the queue
+    // as it is after the removal, which is the only length that is right.
+    await insertInQueue(track, newIndex);
   }
 
   /// Clears the entire queue

@@ -54,6 +54,9 @@ class OmnisonicTypography {
     fontWeight: fontWeight,
     letterSpacing: letterSpacing,
     height: height,
+    // Mono already has fixed-width digits; tnum keeps timers steady even if
+    // the bundled face is unavailable and a proportional fallback is used.
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   // Font weights

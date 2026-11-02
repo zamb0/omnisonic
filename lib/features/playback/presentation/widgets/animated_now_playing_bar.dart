@@ -32,6 +32,10 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin {
+  /// Material's disabled-content opacity. Lower reads as decoration rather
+  /// than as a control that is merely unavailable right now.
+  static const double _disabledAlpha = 0.38;
+
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
@@ -310,7 +314,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: scheme.onSurfaceVariant,
-                                        fontSize: 11,
+                                        fontSize: 12,
                                       ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -352,7 +356,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           22,
                           vm.hasPrevious
                               ? scheme.onSurface
-                              : scheme.onSurface.withValues(alpha: 0.3),
+                              : scheme.onSurface.withValues(
+                                  alpha: _disabledAlpha,
+                                ),
                           vm.hasPrevious ? () => vm.skipToPrevious() : null,
                           label: 'Previous track',
                         ),
@@ -381,7 +387,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           22,
                           vm.hasNext
                               ? scheme.onSurface
-                              : scheme.onSurface.withValues(alpha: 0.3),
+                              : scheme.onSurface.withValues(
+                                  alpha: _disabledAlpha,
+                                ),
                           vm.hasNext ? () => vm.skipToNext() : null,
                           label: 'Next track',
                         ),
@@ -577,7 +585,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmnisonicTypography.technical.copyWith(
-                              fontSize: 9.5,
+                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -603,7 +611,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
-      fontSize: 10,
+      fontSize: 12,
       color: scheme.onSurfaceVariant,
     );
 
@@ -636,7 +644,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   24,
                   vm.hasPrevious
                       ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: 0.3),
+                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
                   vm.hasPrevious ? () => vm.skipToPrevious() : null,
                   label: 'Previous track',
                 ),
@@ -649,7 +657,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   24,
                   vm.hasNext
                       ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: 0.3),
+                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
                   vm.hasNext ? () => vm.skipToNext() : null,
                   label: 'Next track',
                 ),
@@ -875,7 +883,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         child: Text(
           label,
           style: OmnisonicTypography.glassButton.copyWith(
-            fontSize: 11,
+            fontSize: 12,
             color: scheme.onSurfaceVariant,
           ),
         ),

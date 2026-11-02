@@ -104,6 +104,7 @@ class _FavoritesPageState extends State<FavoritesPage>
               final album = starredAlbums[index];
               final isStarred = viewModel.isAlbumStarred(album);
               return AlbumCard(
+                key: ValueKey(album.id),
                 album: album,
                 onTap: () => _onAlbumTapped(album),
                 onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
@@ -146,6 +147,7 @@ class _FavoritesPageState extends State<FavoritesPage>
             itemBuilder: (context, index) {
               final artist = starredArtists[index];
               return ArtistCard(
+                key: ValueKey(artist.id),
                 artist: artist,
                 onTap: () => _onArtistTapped(artist),
               );

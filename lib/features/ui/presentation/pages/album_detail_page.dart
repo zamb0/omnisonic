@@ -353,8 +353,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       ),
       SliverList.builder(
         itemCount: _tracks.length,
-        itemBuilder: (context, index) =>
-            _buildTrackTableRow(context, _tracks[index], index),
+        itemBuilder: (context, index) => KeyedSubtree(
+          key: ValueKey(_tracks[index].id),
+          child: _buildTrackTableRow(context, _tracks[index], index),
+        ),
       ),
     ];
   }

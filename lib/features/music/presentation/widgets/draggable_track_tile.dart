@@ -139,7 +139,10 @@ class DraggableTrackTile extends StatelessWidget {
       children: [
         Text(
           _formatDuration(track.duration),
-          style: Theme.of(context).textTheme.bodySmall,
+          // Equal-width digits, so durations line up down the list.
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
         const SizedBox(width: 8),
         PopupMenuButton<String>(

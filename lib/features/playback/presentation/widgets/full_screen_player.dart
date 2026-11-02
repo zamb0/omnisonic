@@ -46,10 +46,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   Color? _tintColor;
   String? _tintedCoverUrl;
 
+  /// Set when the player was opened on a specific panel; on the mobile
+  /// layout that panel lives in a sheet, which is opened after first build.
+  NowPlayingPanel? _pendingPanel;
+
   @override
   void initState() {
     super.initState();
     _panel = widget.initialPanel ?? NowPlayingPanel.queue;
+    _pendingPanel = widget.initialPanel;
   }
 
   void _updateTint(String? coverArtUrl) {
@@ -207,10 +212,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                 const SizedBox(height: OmnisonicSpacing.md),
                 _buildSourceInfoPanel(context, track, playbackViewModel),
                 const SizedBox(height: OmnisonicSpacing.lg),
-                SizedBox(
-                  height: 400,
-                  child: _buildPanel(context, playbackViewModel, compact: true),
-                ),
+                // The queue, lyrics and visualizer open in a sheet: embedded
+                // here, the lyrics list scrolled inside this scroll view and
+                // the two fought over every vertical drag.
+                _buildPanelLauncher(context),
               ],
             ),
           ),
@@ -791,10 +796,75 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
+  /// Mobile entry points to the panels that the desktop layout shows inline.
+  ///
+  /// A [Builder], because [ResponsiveLayout] is handed every layout eagerly:
+  /// only a builder that actually mounts knows the mobile layout is the one
+  /// on screen, and so may open the requested panel's sheet.
+  Widget _buildPanelLauncher(BuildContext context) {
+    return Builder(
+      builder: (context) {
+        final pending = _pendingPanel;
+        if (pending != null) {
+          _pendingPanel = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && context.mounted) _openPanelSheet(context, pending);
+          });
+        }
+        return _buildPanelLauncherRow(context);
+      },
+    );
+  }
+
+  Widget _buildPanelLauncherRow(BuildContext context) {
+    return Row(
+      children: [
+        for (final panel in NowPlayingPanel.values) ...[
+          if (panel != NowPlayingPanel.values.first)
+            const SizedBox(width: OmnisonicSpacing.sm),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _openPanelSheet(context, panel),
+              icon: Icon(panel.icon, size: OmnisonicIconSizes.smd),
+              label: Text(panel.label, maxLines: 1),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _openPanelSheet(BuildContext context, NowPlayingPanel panel) {
+    _panel = panel;
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.7,
+          child: Padding(
+            padding: const EdgeInsets.all(OmnisonicSpacing.sm),
+            child: _buildPanel(
+              sheetContext,
+              // Watched here: the sheet is its own route, so the player's
+              // rebuilds do not reach it.
+              sheetContext.watch<PlaybackViewModel>(),
+              compact: true,
+              onPanelChanged: (value) => setSheetState(() => _panel = value),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPanel(
     BuildContext context,
     PlaybackViewModel playbackViewModel, {
     bool compact = false,
+    ValueChanged<NowPlayingPanel>? onPanelChanged,
   }) {
     return GlassSurface(
       padding: EdgeInsets.all(
@@ -818,7 +888,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
             ],
             selected: {_panel},
             onSelectionChanged: (value) {
-              setState(() => _panel = value.first);
+              if (onPanelChanged != null) {
+                onPanelChanged(value.first);
+              } else {
+                setState(() => _panel = value.first);
+              }
             },
           ),
           const SizedBox(height: OmnisonicSpacing.md),
@@ -891,6 +965,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               final isCurrent = index == currentIndex;
 
               return ListTile(
+                // The same track can sit in the queue twice, so the position
+                // is part of the key, as on the queue page.
+                key: ValueKey('queue-${track.id}-$index'),
                 dense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 8,
@@ -1017,4 +1094,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   }
 }
 
-enum NowPlayingPanel { queue, lyrics, visualizer }
+enum NowPlayingPanel {
+  queue('Queue', OmnisonicIcons.queueMusic),
+  lyrics('Lyrics', OmnisonicIcons.lyrics),
+  visualizer('Visualizer', OmnisonicIcons.graphicEq);
+
+  const NowPlayingPanel(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}

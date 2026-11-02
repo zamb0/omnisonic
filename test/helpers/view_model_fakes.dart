@@ -75,7 +75,9 @@ class FakeMusicLibraryViewModel extends ChangeNotifier
       albums: albums,
       artists: artists,
       duplicateGroups: duplicateGroups,
-      lastUpdated: DateTime(2026, 1, 1),
+      // Relative to now: the shell renders it as "N d ago", so a fixed date
+      // made every golden that shows it fail a day after it was recorded.
+      lastUpdated: DateTime.now().subtract(const Duration(days: 3)),
     );
     _isLoading = false;
     _errorMessage = null;

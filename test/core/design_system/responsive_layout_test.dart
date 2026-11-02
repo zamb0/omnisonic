@@ -1,310 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/design_system/responsive_layout.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/responsive_grid.dart';
 
+/// This file used to cover LayoutConfiguration, ResponsiveValue and
+/// ScreenSizeDetector, none of which had a single caller in the app. Testing
+/// unused code proves only that it still compiles; those tests went when the
+/// classes did. What is left covers the two responsive pieces the app really
+/// renders through, at the boundaries where they change behaviour.
 void main() {
-  group('Responsive Layout System Tests', () {
-    testWidgets('ResponsiveBreakpoints correctly identifies screen types', (
-      tester,
-    ) async {
-      // Test mobile breakpoint
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(ResponsiveBreakpoints.isMobile(context), true);
-              expect(ResponsiveBreakpoints.isTablet(context), false);
-              expect(ResponsiveBreakpoints.isDesktop(context), false);
-              expect(
-                ResponsiveBreakpoints.getScreenType(context),
-                ScreenType.mobile,
-              );
-              return Container();
-            },
-          ),
+  /// Pumps [child] inside a box of exactly [width], so the assertions are
+  /// about the constraints the widget receives rather than the window.
+  Future<void> pumpAtWidth(
+    WidgetTester tester,
+    double width,
+    Widget child, {
+    double? windowWidth,
+  }) async {
+    // The window has to be at least as wide as the box, otherwise the box is
+    // clipped to it and the test silently measures the wrong width.
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = Size(windowWidth ?? width, 900);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(width: width, height: 800, child: child),
         ),
-      );
+      ),
+    );
+  }
 
-      // Test tablet breakpoint
-      await tester.binding.setSurfaceSize(const Size(600, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(ResponsiveBreakpoints.isMobile(context), false);
-              expect(ResponsiveBreakpoints.isTablet(context), true);
-              expect(ResponsiveBreakpoints.isDesktop(context), false);
-              expect(
-                ResponsiveBreakpoints.getScreenType(context),
-                ScreenType.tablet,
-              );
-              return Container();
-            },
-          ),
-        ),
-      );
-
-      // Test desktop breakpoint
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(ResponsiveBreakpoints.isMobile(context), false);
-              expect(ResponsiveBreakpoints.isTablet(context), false);
-              expect(ResponsiveBreakpoints.isDesktop(context), true);
-              expect(
-                ResponsiveBreakpoints.getScreenType(context),
-                ScreenType.desktop,
-              );
-              return Container();
-            },
-          ),
-        ),
-      );
-    });
-
-    testWidgets('ResponsiveLayout shows correct widget for screen size', (
-      tester,
-    ) async {
-      const mobileWidget = Text('Mobile');
-      const tabletWidget = Text('Tablet');
-      const desktopWidget = Text('Desktop');
-
-      // Test mobile layout
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ResponsiveLayout(
-            mobile: mobileWidget,
-            tablet: tabletWidget,
-            desktop: desktopWidget,
-          ),
-        ),
-      );
-      expect(find.text('Mobile'), findsOneWidget);
-      expect(find.text('Tablet'), findsNothing);
-      expect(find.text('Desktop'), findsNothing);
-
-      // Test tablet layout
-      await tester.binding.setSurfaceSize(const Size(600, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ResponsiveLayout(
-            mobile: mobileWidget,
-            tablet: tabletWidget,
-            desktop: desktopWidget,
-          ),
-        ),
-      );
-      expect(find.text('Mobile'), findsNothing);
-      expect(find.text('Tablet'), findsOneWidget);
-      expect(find.text('Desktop'), findsNothing);
-
-      // Test desktop layout
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ResponsiveLayout(
-            mobile: mobileWidget,
-            tablet: tabletWidget,
-            desktop: desktopWidget,
-          ),
-        ),
-      );
-      expect(find.text('Mobile'), findsNothing);
-      expect(find.text('Tablet'), findsNothing);
-      expect(find.text('Desktop'), findsOneWidget);
-    });
-
-    testWidgets(
-      'ResponsiveLayout falls back to mobile when other layouts not provided',
-      (tester) async {
-        const mobileWidget = Text('Mobile');
-
-        // Test tablet fallback to mobile
-        await tester.binding.setSurfaceSize(const Size(600, 800));
-        await tester.pumpWidget(
-          MaterialApp(home: ResponsiveLayout(mobile: mobileWidget)),
-        );
-        expect(find.text('Mobile'), findsOneWidget);
-
-        // Test desktop fallback to mobile
-        await tester.binding.setSurfaceSize(const Size(1200, 800));
-        await tester.pumpWidget(
-          MaterialApp(home: ResponsiveLayout(mobile: mobileWidget)),
-        );
-        expect(find.text('Mobile'), findsOneWidget);
-      },
+  group('ResponsiveLayout', () {
+    Widget layout() => const ResponsiveLayout(
+      mobile: Text('mobile'),
+      tablet: Text('tablet'),
+      desktop: Text('desktop'),
+      largeDesktop: Text('largeDesktop'),
     );
 
-    test(
-      'LayoutConfiguration provides correct values for different screen sizes',
-      () {
-        // Test mobile configuration
-        final mobileConfig = LayoutConfiguration.forScreenSize(400);
-        expect(mobileConfig.columnsPortrait, 2);
-        expect(mobileConfig.columnsLandscape, 3);
-        expect(mobileConfig.enableHoverEffects, false);
-        expect(mobileConfig.gridSpacing, 12);
+    // An off-by-one at a breakpoint stays invisible until someone resizes
+    // onto exactly that width, so both sides of each are checked.
+    final cases = <double, String>{
+      ResponsiveBreakpoints.mobile - 1: 'mobile',
+      ResponsiveBreakpoints.mobile: 'tablet',
+      ResponsiveBreakpoints.desktop - 1: 'tablet',
+      ResponsiveBreakpoints.desktop: 'desktop',
+      ResponsiveBreakpoints.largeDesktop - 1: 'desktop',
+      ResponsiveBreakpoints.largeDesktop: 'largeDesktop',
+    };
 
-        // Test tablet configuration
-        final tabletConfig = LayoutConfiguration.forScreenSize(600);
-        expect(tabletConfig.columnsPortrait, 4);
-        expect(tabletConfig.columnsLandscape, 6);
-        expect(tabletConfig.enableHoverEffects, true);
-        expect(tabletConfig.gridSpacing, 16);
-
-        // Test desktop configuration
-        final desktopConfig = LayoutConfiguration.forScreenSize(1200);
-        expect(desktopConfig.columnsPortrait, 6);
-        expect(desktopConfig.columnsLandscape, 8);
-        expect(desktopConfig.enableHoverEffects, true);
-        expect(desktopConfig.gridSpacing, 24);
-
-        // Test large desktop configuration
-        final largeDesktopConfig = LayoutConfiguration.forScreenSize(1500);
-        expect(largeDesktopConfig.columnsPortrait, 8);
-        expect(largeDesktopConfig.columnsLandscape, 10);
-        expect(largeDesktopConfig.gridSpacing, 32);
-      },
-    );
-
-    testWidgets('ResponsiveValue returns correct value for screen size', (
-      tester,
-    ) async {
-      const responsiveValue = ResponsiveValue<String>(
-        mobile: 'Mobile Value',
-        tablet: 'Tablet Value',
-        desktop: 'Desktop Value',
-        largeDesktop: 'Large Desktop Value',
-      );
-
-      // Test mobile value
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(responsiveValue.getValue(context), 'Mobile Value');
-              return Container();
-            },
-          ),
-        ),
-      );
-
-      // Test tablet value
-      await tester.binding.setSurfaceSize(const Size(600, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(responsiveValue.getValue(context), 'Tablet Value');
-              return Container();
-            },
-          ),
-        ),
-      );
-
-      // Test desktop value
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(responsiveValue.getValue(context), 'Desktop Value');
-              return Container();
-            },
-          ),
-        ),
-      );
-
-      // Test large desktop value
-      await tester.binding.setSurfaceSize(const Size(1500, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(responsiveValue.getValue(context), 'Large Desktop Value');
-              return Container();
-            },
-          ),
-        ),
-      );
+    cases.forEach((width, expected) {
+      testWidgets('at ${width}px shows $expected', (tester) async {
+        await pumpAtWidth(tester, width, layout());
+        expect(find.text(expected), findsOneWidget);
+      });
     });
 
-    testWidgets(
-      'ResponsiveValue falls back correctly when values not provided',
-      (tester) async {
-        const responsiveValue = ResponsiveValue<String>(mobile: 'Mobile Value');
+    testWidgets('falls back down the chain when a variant is missing', (
+      tester,
+    ) async {
+      await pumpAtWidth(
+        tester,
+        ResponsiveBreakpoints.largeDesktop,
+        const ResponsiveLayout(mobile: Text('mobile'), tablet: Text('tablet')),
+      );
 
-        // Test tablet fallback to mobile
-        await tester.binding.setSurfaceSize(const Size(600, 800));
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) {
-                expect(responsiveValue.getValue(context), 'Mobile Value');
-                return Container();
-              },
-            ),
-          ),
-        );
+      expect(find.text('tablet'), findsOneWidget);
+    });
 
-        // Test desktop fallback to mobile
-        await tester.binding.setSurfaceSize(const Size(1200, 800));
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) {
-                expect(responsiveValue.getValue(context), 'Mobile Value');
-                return Container();
-              },
-            ),
-          ),
-        );
-      },
-    );
+    testWidgets('measures its own constraints, not the window', (tester) async {
+      // The sidebar makes the content column narrower than the screen. A
+      // layout keyed off MediaQuery would answer "largeDesktop" here and
+      // blow out of a 400px column.
+      await pumpAtWidth(tester, 400, layout(), windowWidth: 1440);
+
+      expect(find.text('mobile'), findsOneWidget);
+    });
   });
 
-  group('Screen Size Detection Tests', () {
-    testWidgets('ScreenSizeDetector provides correct screen information', (
-      tester,
-    ) async {
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(ScreenSizeDetector.getScreenWidth(context), 400);
-              expect(ScreenSizeDetector.getScreenHeight(context), 800);
-              expect(
-                ScreenSizeDetector.getScreenSize(context),
-                const Size(400, 800),
-              );
-              expect(ScreenSizeDetector.isPortrait(context), true);
-              expect(ScreenSizeDetector.isLandscape(context), false);
-              return Container();
-            },
-          ),
+  group('ResponsiveGridView', () {
+    Future<int> columnsAt(WidgetTester tester, double width) async {
+      await pumpAtWidth(
+        tester,
+        width,
+        ResponsiveGridView(
+          itemCount: 24,
+          minItemWidth: 160,
+          spacing: 16,
+          itemBuilder: (context, index) => Text('item$index'),
         ),
       );
 
-      await tester.binding.setSurfaceSize(const Size(800, 400));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(ScreenSizeDetector.getScreenWidth(context), 800);
-              expect(ScreenSizeDetector.getScreenHeight(context), 400);
-              expect(ScreenSizeDetector.isPortrait(context), false);
-              expect(ScreenSizeDetector.isLandscape(context), true);
-              return Container();
-            },
-          ),
+      final grid = tester.widget<GridView>(find.byType(GridView));
+      final delegate =
+          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      return delegate.crossAxisCount;
+    }
+
+    testWidgets('fits as many columns as the width allows', (tester) async {
+      expect(await columnsAt(tester, 400), 2);
+      expect(await columnsAt(tester, 800), 4);
+    });
+
+    testWidgets('never drops below one column', (tester) async {
+      // Narrower than a single item: a zero column count throws inside the
+      // grid delegate rather than degrading.
+      expect(await columnsAt(tester, 100), 1);
+    });
+
+    testWidgets('caps at six columns', (tester) async {
+      // Uncapped, an ultrawide window would render album art at postage
+      // stamp size.
+      expect(await columnsAt(tester, 4000), 6);
+    });
+
+    testWidgets('builds lazily rather than eagerly', (tester) async {
+      await pumpAtWidth(
+        tester,
+        800,
+        ResponsiveGridView(
+          itemCount: 500,
+          minItemWidth: 160,
+          itemBuilder: (context, index) => Text('item$index'),
         ),
       );
+
+      expect(find.byType(Text).evaluate().length, lessThan(60));
     });
   });
 }

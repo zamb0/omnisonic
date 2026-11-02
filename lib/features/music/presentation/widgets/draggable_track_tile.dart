@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import 'add_to_playlist_sheet.dart';
 
 /// A draggable track tile for playlist reordering
 class DraggableTrackTile extends StatelessWidget {
@@ -23,16 +27,18 @@ class DraggableTrackTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         color: Theme.of(context).cardColor,
       ),
       child: ListTile(
         visualDensity: VisualDensity.compact,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-        leading: _buildLeading(),
+        leading: _buildLeading(scheme),
         title: Text(
           track.title,
           style: const TextStyle(fontWeight: FontWeight.w500),
@@ -44,20 +50,20 @@ class DraggableTrackTile extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: _buildTrailing(context),
+        trailing: _buildTrailing(context, scheme),
         onTap: onTap,
       ),
     );
   }
 
-  Widget _buildLeading() {
+  Widget _buildLeading(ColorScheme scheme) {
     if (showDragHandle) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.drag_handle, color: Colors.grey),
+          Icon(OmnisonicIcons.dragHandle, color: scheme.onSurfaceVariant),
           const SizedBox(width: 8),
-          _buildAlbumArt(),
+          _buildAlbumArt(scheme),
         ],
       );
     }
@@ -69,35 +75,32 @@ class DraggableTrackTile extends StatelessWidget {
           width: 24,
           child: Text(
             '${index + 1}',
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+            style: OmnisonicTypography.metadata.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(width: 8),
-        _buildAlbumArt(),
+        _buildAlbumArt(scheme),
       ],
     );
   }
 
-  Widget _buildAlbumArt() {
+  Widget _buildAlbumArt(ColorScheme scheme) {
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+        color: scheme.surfaceContainerHighest,
       ),
       child: track.coverArtUrl != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
               child: CachedNetworkImage(
-                imageUrl: track.coverArtUrl!.withCoverArtSize(128),
-                cacheKey: track.coverArtUrl!
-                    .withCoverArtSize(128)
-                    .subsonicCacheKey,
+                imageUrl: SubsonicCoverArt.of(track.coverArtUrl!, 128).url,
+                cacheKey: SubsonicCoverArt.of(track.coverArtUrl!, 128).cacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 128,
@@ -105,28 +108,32 @@ class DraggableTrackTile extends StatelessWidget {
                 fadeInDuration: const Duration(milliseconds: 120),
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.music_note,
-                    color: Colors.grey,
-                    size: 16,
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
+                    OmnisonicIcons.musicNote,
+                    color: scheme.onSurfaceVariant,
+                    size: OmnisonicIconSizes.sm,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.music_note,
-                    color: Colors.grey,
-                    size: 16,
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
+                    OmnisonicIcons.musicNote,
+                    color: scheme.onSurfaceVariant,
+                    size: OmnisonicIconSizes.sm,
                   ),
                 ),
               ),
             )
-          : const Icon(Icons.music_note, color: Colors.grey, size: 16),
+          : Icon(
+              OmnisonicIcons.musicNote,
+              color: scheme.onSurfaceVariant,
+              size: 16,
+            ),
     );
   }
 
-  Widget _buildTrailing(BuildContext context) {
+  Widget _buildTrailing(BuildContext context, ColorScheme scheme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -136,12 +143,12 @@ class DraggableTrackTile extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value),
+          onSelected: (value) => _handleMenuAction(context, value),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'play',
               child: ListTile(
-                leading: Icon(Icons.play_arrow),
+                leading: Icon(OmnisonicIcons.playArrow),
                 title: Text('Play'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -149,7 +156,7 @@ class DraggableTrackTile extends StatelessWidget {
             const PopupMenuItem(
               value: 'add_to_queue',
               child: ListTile(
-                leading: Icon(Icons.queue_music),
+                leading: Icon(OmnisonicIcons.queueMusic),
                 title: Text('Add to Queue'),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -157,40 +164,43 @@ class DraggableTrackTile extends StatelessWidget {
             const PopupMenuItem(
               value: 'add_to_playlist',
               child: ListTile(
-                leading: Icon(Icons.playlist_add),
+                leading: Icon(OmnisonicIcons.playlistAdd),
                 title: Text('Add to Playlist'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
             const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'remove',
               child: ListTile(
-                leading: Icon(Icons.remove, color: Colors.red),
+                leading: Icon(OmnisonicIcons.remove, color: scheme.error),
                 title: Text(
                   'Remove from Playlist',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: scheme.error),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
           ],
-          child: const Icon(Icons.more_vert),
+          child: const Icon(OmnisonicIcons.moreVert),
         ),
       ],
     );
   }
 
-  void _handleMenuAction(String action) {
+  void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'play':
         onTap?.call();
         break;
       case 'add_to_queue':
-        // TODO: Implement add to queue functionality
+        context.read<PlaybackViewModel>().addToQueue(track);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Added to queue')));
         break;
       case 'add_to_playlist':
-        // TODO: Implement add to playlist functionality
+        showAddToPlaylistSheet(context, track);
         break;
       case 'remove':
         onRemove?.call();

@@ -13,6 +13,8 @@ import 'package:omnisonic/core/errors/failures.dart';
 /// This test verifies that all core components are properly integrated
 /// and can work together without compilation errors.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Checkpoint Verification', () {
     late GetIt getIt;
 

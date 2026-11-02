@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 
@@ -23,114 +24,123 @@ class PlaylistListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        leading: _buildPlaylistArt(),
-        title: Text(
-          playlist.name,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (playlist.description?.isNotEmpty == true) ...[
-              const SizedBox(height: 2),
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          leading: _buildPlaylistArt(scheme),
+          title: Text(
+            playlist.name,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                playlist.description!,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-            ],
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  playlist.isPublic ? Icons.public : Icons.lock,
-                  size: 12,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
+              if (playlist.description?.isNotEmpty == true) ...[
+                const SizedBox(height: 2),
                 Text(
-                  playlist.isPublic ? 'Public' : 'Private',
+                  playlist.description!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 11,
+                    color: scheme.onSurfaceVariant,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _formatDate(playlist.updatedAt),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 11,
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    playlist.isPublic
+                        ? OmnisonicIcons.public
+                        : OmnisonicIcons.lock,
+                    size: OmnisonicIconSizes.xs,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    playlist.isPublic ? 'Public' : 'Private',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _formatDate(playlist.updatedAt),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) => _handleMenuAction(value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: ListTile(
+                  leading: Icon(OmnisonicIcons.edit),
+                  title: Text('Edit'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'duplicate',
+                child: ListTile(
+                  leading: Icon(OmnisonicIcons.copy),
+                  title: Text('Duplicate'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(OmnisonicIcons.delete, color: scheme.error),
+                  title: Text('Delete', style: TextStyle(color: scheme.error)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+          onTap: onTap,
+          isThreeLine: true,
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Edit'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'duplicate',
-              child: ListTile(
-                leading: Icon(Icons.copy),
-                title: Text('Duplicate'),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'delete',
-              child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Delete', style: TextStyle(color: Colors.red)),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
-        onTap: onTap,
-        isThreeLine: true,
       ),
     );
   }
 
-  Widget _buildPlaylistArt() {
+  Widget _buildPlaylistArt(ColorScheme scheme) {
     return Container(
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+        color: scheme.surfaceContainerHighest,
       ),
       child: playlist.coverArtUrl != null
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
               child: CachedNetworkImage(
-                imageUrl: playlist.coverArtUrl!.withCoverArtSize(112),
-                cacheKey: playlist.coverArtUrl!
-                    .withCoverArtSize(112)
-                    .subsonicCacheKey,
+                imageUrl: SubsonicCoverArt.of(playlist.coverArtUrl!, 112).url,
+                cacheKey: SubsonicCoverArt.of(
+                  playlist.coverArtUrl!,
+                  112,
+                ).cacheKey,
                 cacheManager: OmnisonicImageCacheManager.instance,
                 fit: BoxFit.cover,
                 memCacheWidth: 112,
@@ -138,24 +148,28 @@ class PlaylistListTile extends StatelessWidget {
                 fadeInDuration: const Duration(milliseconds: 120),
                 useOldImageOnUrlChange: true,
                 placeholder: (context, url) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.playlist_play,
-                    color: Colors.grey,
-                    size: 24,
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
+                    OmnisonicIcons.playlistPlay,
+                    color: scheme.onSurfaceVariant,
+                    size: OmnisonicIconSizes.md,
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.playlist_play,
-                    color: Colors.grey,
-                    size: 24,
+                  color: scheme.surfaceContainerHighest,
+                  child: Icon(
+                    OmnisonicIcons.playlistPlay,
+                    color: scheme.onSurfaceVariant,
+                    size: OmnisonicIconSizes.md,
                   ),
                 ),
               ),
             )
-          : const Icon(Icons.playlist_play, color: Colors.grey, size: 24),
+          : Icon(
+              OmnisonicIcons.playlistPlay,
+              color: scheme.onSurfaceVariant,
+              size: 24,
+            ),
     );
   }
 

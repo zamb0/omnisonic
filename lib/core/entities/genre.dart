@@ -1,4 +1,3 @@
-
 /// Represents a music genre with its statistics
 class Genre {
   const Genre({

@@ -38,9 +38,15 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   late List<AnimationController> _barControllers;
   late List<Animation<double>> _barAnimations;
 
+  bool _initialized = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Not initState: starting the loop needs MediaQuery, to know whether the
+    // platform is asking for reduced motion.
+    if (_initialized) return;
+    _initialized = true;
     _initializeAnimations();
   }
 
@@ -84,6 +90,18 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   }
 
   void _startAnimations() {
+    // The visualizer is the one thing in the app that animates continuously
+    // and forever, which makes it exactly what "reduce motion" is asking
+    // about. Held at a static midpoint instead, so the bars are still drawn
+    // and the panel does not look broken.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _animationController.value = 0.5;
+      for (var i = 0; i < _barControllers.length; i++) {
+        _barControllers[i].value = 0.3 + (i % 4) * 0.15;
+      }
+      return;
+    }
+
     _animationController.repeat();
 
     for (int i = 0; i < _barControllers.length; i++) {
@@ -127,34 +145,45 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   Widget _buildEqualizer() {
     return SizedBox(
       height: widget.height,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(widget.barCount, (index) {
-          return AnimatedBuilder(
-            animation: _barAnimations[index],
-            builder: (context, child) {
-              final height = widget.height * _barAnimations[index].value;
-              return Container(
-                width: math.max(2.0, (300 / widget.barCount) - 2),
-                height: height,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      widget.color ?? OmnisonicColors.primaryPurple,
-                      (widget.color ?? OmnisonicColors.primaryBlue).withValues(
-                        alpha: 0.6,
+      // Bar width came from a hardcoded 300px design width, so the row
+      // overflowed in anything narrower — the panel it lives in is not a
+      // fixed size.
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final available = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : 300.0;
+          final barWidth = math.max(2.0, (available / widget.barCount) - 2);
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(widget.barCount, (index) {
+              return AnimatedBuilder(
+                animation: _barAnimations[index],
+                builder: (context, child) {
+                  final height = widget.height * _barAnimations[index].value;
+                  return Container(
+                    width: barWidth,
+                    height: height,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          widget.color ?? OmnisonicColors.primaryPurple,
+                          (widget.color ?? OmnisonicColors.primaryBlue)
+                              .withValues(alpha: 0.6),
+                        ],
                       ),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(1),
-                ),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  );
+                },
               );
-            },
+            }),
           );
-        }),
+        },
       ),
     );
   }
@@ -284,7 +313,9 @@ class CircularVisualizerPainter extends CustomPainter {
       final endX = center.dx + math.cos(angle) * (radius + barHeight);
       final endY = center.dy + math.sin(angle) * (radius + barHeight);
 
-      paint.color = color.withValues(alpha: 0.3 + (barAnimations[i].value * 0.7));
+      paint.color = color.withValues(
+        alpha: 0.3 + (barAnimations[i].value * 0.7),
+      );
 
       canvas.drawLine(
         Offset(startX, startY),

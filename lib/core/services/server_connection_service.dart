@@ -36,7 +36,7 @@ class ServerConnectionService {
   static FlutterSecureStorage? _createSecureStorage() {
     try {
       return const FlutterSecureStorage(
-        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        aOptions: AndroidOptions(),
         iOptions: IOSOptions(
           accessibility: KeychainAccessibility.first_unlock_this_device,
         ),
@@ -129,22 +129,19 @@ class ServerConnectionService {
       final encryptedPassword = PasswordEncryption.encryptPassword(password);
 
       // Update the server record with encrypted password
-      final server = await _database.getServerById(serverId);
+      final server = await _database.serverDao.getServerById(serverId);
       if (server != null) {
-        await _database.updateServer(
-          server
-              .copyWith(encryptedPassword: encryptedPassword)
-              .toCompanion(false),
+        await _database.serverDao.updateEncryptedPassword(
+          serverId,
+          encryptedPassword,
         );
         AppLog.info('Password stored in encrypted database');
 
         // Verify by reading it back immediately
-        final verifyServer = await _database.getServerById(serverId);
-        if (verifyServer != null && verifyServer.encryptedPassword.isNotEmpty) {
+        final stored = await _database.serverDao.getEncryptedPassword(serverId);
+        if (stored != null && stored.isNotEmpty) {
           try {
-            final testDecrypt = PasswordEncryption.decryptPassword(
-              verifyServer.encryptedPassword,
-            );
+            final testDecrypt = PasswordEncryption.decryptPassword(stored);
             if (testDecrypt != password) {
               AppLog.warn(
                 'Password verification failed after database storage',
@@ -212,11 +209,13 @@ class ServerConnectionService {
     // Fallback to encrypted database storage
     try {
       AppLog.info('Falling back to database password storage');
-      final server = await _database.getServerById(serverId);
+      final encryptedPassword = await _database.serverDao.getEncryptedPassword(
+        serverId,
+      );
 
-      if (server != null && server.encryptedPassword.isNotEmpty) {
+      if (encryptedPassword != null && encryptedPassword.isNotEmpty) {
         final decryptedPassword = PasswordEncryption.decryptPassword(
-          server.encryptedPassword,
+          encryptedPassword,
         );
         AppLog.info('Password retrieved from encrypted database');
 
@@ -250,12 +249,7 @@ class ServerConnectionService {
       _passwordCache.remove(serverId);
 
       // Remove from database
-      final server = await _database.getServerById(serverId);
-      if (server != null) {
-        await _database.updateServer(
-          server.copyWith(encryptedPassword: '').toCompanion(false),
-        );
-      }
+      await _database.serverDao.updateEncryptedPassword(serverId, '');
 
       return ResultHelper.success(null);
     } catch (e) {

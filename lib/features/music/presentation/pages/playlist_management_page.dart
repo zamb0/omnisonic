@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/routing/app_router.dart';
+
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../widgets/playlist_creation_dialog.dart';
 import '../widgets/playlist_edit_dialog.dart';
 import '../widgets/playlist_list_tile.dart';
-import '../../../ui/presentation/widgets/loading_indicator.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
 
 /// Page for managing playlists - creation, editing, deletion, and organization
 class PlaylistManagementPage extends StatefulWidget {
@@ -29,7 +32,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
         title: const Text('Playlist Management'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(OmnisonicIcons.add),
             onPressed: () => _showCreatePlaylistDialog(context),
             tooltip: 'Create Playlist',
           ),
@@ -38,7 +41,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
       body: Consumer<PlaylistViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading) {
-            return const Center(child: LoadingIndicator());
+            return const LoadingStateView(kind: SkeletonKind.list);
           }
 
           if (viewModel.errorMessage != null) {
@@ -46,7 +49,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  Icon(
+                    OmnisonicIcons.errorOutline,
+                    size: OmnisonicIconSizes.xxxl,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     viewModel.errorMessage!,
@@ -86,10 +93,10 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
           TextField(
             decoration: InputDecoration(
               hintText: 'Search playlists...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(OmnisonicIcons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const Icon(OmnisonicIcons.clear),
                       onPressed: () {
                         setState(() {
                           _searchQuery = '';
@@ -99,7 +106,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                     )
                   : null,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
               ),
             ),
             onChanged: (value) {
@@ -158,7 +165,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.playlist_play, size: 64, color: Colors.grey[400]),
+            Icon(
+              OmnisonicIcons.playlistPlay,
+              size: OmnisonicIconSizes.xxxl,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty
@@ -177,7 +188,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => _showCreatePlaylistDialog(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(OmnisonicIcons.add),
                 label: const Text('Create Playlist'),
               ),
             ],
@@ -265,7 +276,9 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -321,6 +334,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
   }
 
   void _navigateToPlaylistDetail(BuildContext context, Playlist playlist) {
-    context.go('/playlist-detail?id=${playlist.id}');
+    context.go(AppRouter.playlistDetailLocation(playlist.id));
   }
 }

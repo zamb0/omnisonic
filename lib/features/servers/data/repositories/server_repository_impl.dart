@@ -6,17 +6,35 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/repositories/server_repository.dart';
 import '../../../../core/database/data_sources/local_server_data_source.dart';
 import '../../../../core/services/server_connection_service.dart';
+import '../../../../core/services/server_status_monitor.dart';
+import '../../../../core/utils/server_validator.dart';
 
 /// Implementation of ServerRepository that manages server CRUD operations and monitoring
 class ServerRepositoryImpl implements ServerRepository {
   final LocalServerDataSource _localDataSource;
   final ServerConnectionService _connectionService;
+  final ServerStatusMonitor _statusMonitor;
 
   ServerRepositoryImpl({
     required LocalServerDataSource localDataSource,
     required ServerConnectionService connectionService,
+    required ServerStatusMonitor statusMonitor,
   }) : _localDataSource = localDataSource,
-       _connectionService = connectionService;
+       _connectionService = connectionService,
+       _statusMonitor = statusMonitor {
+    // Every status the monitor observes is written back to the database, so
+    // getOnlineServers and source selection see live reachability rather than
+    // whatever the status was when the server was added.
+    _statusSubscription = _statusMonitor.statusUpdates.listen((server) {
+      _localDataSource.updateServerStatus(
+        server.id,
+        server.status,
+        errorMessage: server.errorMessage,
+      );
+    });
+  }
+
+  StreamSubscription<MusicServer>? _statusSubscription;
 
   @override
   Future<Result<void>> addServer(MusicServer server) async {
@@ -45,8 +63,7 @@ class ServerRepositoryImpl implements ServerRepository {
         return ResultHelper.failure(insertResult.failureOrNull!);
       }
 
-      // Start monitoring the server (simplified - actual implementation would need proper monitoring)
-      // _statusMonitor.startMonitoring(server.id);
+      _statusMonitor.startMonitoring(server);
 
       return ResultHelper.success(null);
     } catch (e) {
@@ -57,8 +74,7 @@ class ServerRepositoryImpl implements ServerRepository {
   @override
   Future<Result<void>> removeServer(String serverId) async {
     try {
-      // Stop monitoring first (simplified)
-      // _statusMonitor.stopMonitoring(serverId);
+      _statusMonitor.stopMonitoring(serverId);
 
       // Remove stored credentials
       await _connectionService.removeServerPassword(serverId);
@@ -92,9 +108,9 @@ class ServerRepositoryImpl implements ServerRepository {
         return ResultHelper.failure(updateResult.failureOrNull!);
       }
 
-      // Restart monitoring with updated configuration (simplified)
-      // _statusMonitor.stopMonitoring(server.id);
-      // _statusMonitor.startMonitoring(server.id);
+      // Refreshes the monitor's copy so the next check uses the new URL and
+      // credentials.
+      _statusMonitor.startMonitoring(server);
 
       return ResultHelper.success(null);
     } catch (e) {
@@ -390,42 +406,38 @@ class ServerRepositoryImpl implements ServerRepository {
     }
   }
 
-  /// Validates server configuration
-  Result<void> _validateServerConfig(MusicServer server) {
-    if (server.url.isEmpty) {
-      return ResultHelper.failure(
-        ValidationFailure('Server URL cannot be empty'),
-      );
-    }
-
-    if (server.username.isEmpty) {
-      return ResultHelper.failure(
-        ValidationFailure('Username cannot be empty'),
-      );
-    }
-
-    if (server.name.isEmpty) {
-      return ResultHelper.failure(
-        ValidationFailure('Server name cannot be empty'),
-      );
-    }
-
-    // Basic URL validation
+  /// Starts monitoring all servers
+  @override
+  Future<Result<void>> startMonitoringAllServers() async {
     try {
-      final uri = Uri.parse(server.url);
-      if (!uri.hasScheme || (!uri.scheme.startsWith('http'))) {
-        return ResultHelper.failure(
-          ValidationFailure('Invalid server URL format'),
-        );
+      final serversResult = await getAllServers();
+      if (serversResult.isFailure) {
+        return ResultHelper.failure(serversResult.failureOrNull!);
       }
-    } catch (e) {
-      return ResultHelper.failure(ValidationFailure('Invalid server URL: $e'));
-    }
 
-    return ResultHelper.success(null);
+      final servers = serversResult.valueOrNull!;
+      for (final server in servers) {
+        _statusMonitor.startMonitoring(server);
+      }
+
+      return ResultHelper.success(null);
+    } catch (e) {
+      return ResultHelper.failure(
+        UnknownFailure('Failed to start monitoring: $e'),
+      );
+    }
   }
 
-  /// Generates a unique server ID based on URL and username
+  /// Stops monitoring all servers
+  void stopMonitoringAllServers() {
+    _statusMonitor.stopAllMonitoring();
+  }
+
+  /// Validates server configuration
+  Result<void> _validateServerConfig(MusicServer server) =>
+      ServerValidator.validateServerConfig(server);
+
+  /// Generates a stable-ish server ID from its URL and username
   String _generateServerId(String url, String username) {
     final normalizedUrl = url.toLowerCase().replaceAll(
       RegExp(r'[^a-z0-9]'),
@@ -436,11 +448,16 @@ class ServerRepositoryImpl implements ServerRepository {
       '',
     );
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    return '${normalizedUrl}_${normalizedUsername}_$timestamp';
+    // No underscores: entity IDs are `{serverId}_{subsonicId}` and are split
+    // on the first underscore, so one inside the server ID would corrupt both
+    // halves.
+    return '$normalizedUrl-$normalizedUsername-$timestamp';
   }
 
   /// Disposes resources
   void dispose() {
+    _statusSubscription?.cancel();
+    _statusMonitor.dispose();
     _connectionService.dispose();
   }
 }

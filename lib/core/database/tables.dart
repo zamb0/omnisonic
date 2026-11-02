@@ -23,6 +23,11 @@ class ServersTable extends Table {
 }
 
 // Tracks table
+@TableIndex(name: 'idx_tracks_server_id', columns: {#serverId})
+@TableIndex(name: 'idx_tracks_album_id', columns: {#albumId})
+@TableIndex(name: 'idx_tracks_artist_id', columns: {#artistId})
+@TableIndex(name: 'idx_tracks_is_cached', columns: {#isCached})
+@TableIndex(name: 'idx_tracks_is_starred', columns: {#isStarred})
 @DataClassName('TrackData')
 class TracksTable extends Table {
   TextColumn get id => text()();
@@ -52,6 +57,8 @@ class TracksTable extends Table {
 }
 
 // Albums table
+@TableIndex(name: 'idx_albums_server_id', columns: {#serverId})
+@TableIndex(name: 'idx_albums_artist_id', columns: {#artistId})
 @DataClassName('AlbumData')
 class AlbumsTable extends Table {
   TextColumn get id => text()();
@@ -73,6 +80,7 @@ class AlbumsTable extends Table {
 }
 
 // Artists table
+@TableIndex(name: 'idx_artists_server_id', columns: {#serverId})
 @DataClassName('ArtistData')
 class ArtistsTable extends Table {
   TextColumn get id => text()();
@@ -108,6 +116,8 @@ class PlaylistsTable extends Table {
 }
 
 // Playlist tracks junction table
+// playlistId is the leading primary-key column, so it is already indexed.
+@TableIndex(name: 'idx_playlist_tracks_track_id', columns: {#trackId})
 @DataClassName('PlaylistTrackData')
 class PlaylistTracksTable extends Table {
   TextColumn get playlistId =>
@@ -121,6 +131,10 @@ class PlaylistTracksTable extends Table {
 }
 
 // Duplicate groups table
+@TableIndex(
+  name: 'idx_duplicate_groups_representative_track_id',
+  columns: {#representativeTrackId},
+)
 @DataClassName('DuplicateGroupData')
 class DuplicateGroupsTable extends Table {
   TextColumn get id => text()();
@@ -133,6 +147,7 @@ class DuplicateGroupsTable extends Table {
 }
 
 // Duplicate group members table
+@TableIndex(name: 'idx_duplicate_group_members_track_id', columns: {#trackId})
 @DataClassName('DuplicateGroupMemberData')
 class DuplicateGroupMembersTable extends Table {
   TextColumn get groupId => text().references(
@@ -149,6 +164,9 @@ class DuplicateGroupMembersTable extends Table {
 }
 
 // Cache entries table for offline content
+@TableIndex(name: 'idx_cache_entries_last_accessed', columns: {#lastAccessed})
+@TableIndex(name: 'idx_cache_entries_is_pinned', columns: {#isPinned})
+@TableIndex(name: 'idx_cache_entries_is_complete', columns: {#isComplete})
 @DataClassName('CacheEntryData')
 class CacheEntriesTable extends Table {
   TextColumn get trackId =>

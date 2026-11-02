@@ -5,7 +5,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
 import '../../../../core/repositories/lyrics_repository.dart';
 
-@injectable
+@lazySingleton
 class LyricsViewModel extends ChangeNotifier {
   LyricsViewModel(this._lyricsRepository);
 

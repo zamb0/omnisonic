@@ -228,9 +228,13 @@ class PlaybackService {
     );
   }
 
-  /// Gets the underlying playback repository for direct access
-  PlaybackRepositoryImpl get repository =>
-      PlaybackRepositoryImpl(audioPlayerDataSource: _audioPlayerDataSource);
+  /// Gets the underlying playback repository for direct access.
+  ///
+  /// Built once: the getter used to allocate a fresh repository — and with it
+  /// a fresh set of stream subscriptions — on every access.
+  late final PlaybackRepositoryImpl repository = PlaybackRepositoryImpl(
+    audioPlayerDataSource: _audioPlayerDataSource,
+  );
 
   /// Disposes of resources
   void dispose() {

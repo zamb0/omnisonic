@@ -4,14 +4,12 @@ import 'colors.dart';
 import 'typography.dart';
 import 'spacing.dart';
 import 'icons.dart';
-import 'animation_manager.dart';
-import 'platform_theme_extensions.dart';
 
 /// Main theme system for Omnisonic UI Enhancement
 class OmnisonicTheme {
   /// Light theme configuration
   static ThemeData get lightTheme {
-    final baseTheme = ThemeData(
+    return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: OmnisonicColors.lightColorScheme,
@@ -91,7 +89,7 @@ class OmnisonicTheme {
             OmnisonicTouchTargets.iconButton,
             OmnisonicTouchTargets.iconButton,
           ),
-          iconSize: OmnisonicIconSizes.medium,
+          iconSize: OmnisonicIconSizes.md,
         ),
       ),
 
@@ -101,7 +99,7 @@ class OmnisonicTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         ),
-        iconSize: OmnisonicIconSizes.large,
+        iconSize: OmnisonicIconSizes.lg,
       ),
 
       // List Tile Theme
@@ -218,11 +216,11 @@ class OmnisonicTheme {
       ),
       iconTheme: IconThemeData(
         color: OmnisonicColors.lightColorScheme.onSurface,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
       primaryIconTheme: IconThemeData(
         color: OmnisonicColors.lightColorScheme.onPrimary,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
 
       // Slider Theme
@@ -247,16 +245,17 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.lightColorScheme.primary,
         unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.lightColorScheme.primary,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         unselectedIconTheme: IconThemeData(
           color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
@@ -264,7 +263,8 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.lightColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(
@@ -273,26 +273,17 @@ class OmnisonicTheme {
         ),
         iconTheme: WidgetStateProperty.all(
           IconThemeData(
-            size: OmnisonicIconSizes.navigation,
+            size: OmnisonicIconSizes.md,
             color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
           ),
         ),
       ),
-
-      // Extensions
-      extensions: const [
-        OmnisonicColorExtension.light,
-        OmnisonicAnimationExtension(),
-      ],
     );
-
-    // Add platform-specific extensions
-    return addPlatformExtensions(baseTheme);
   }
 
   /// Dark theme configuration
   static ThemeData get darkTheme {
-    final baseTheme = ThemeData(
+    return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: OmnisonicColors.darkColorScheme,
@@ -372,7 +363,7 @@ class OmnisonicTheme {
             OmnisonicTouchTargets.iconButton,
             OmnisonicTouchTargets.iconButton,
           ),
-          iconSize: OmnisonicIconSizes.medium,
+          iconSize: OmnisonicIconSizes.md,
         ),
       ),
 
@@ -382,7 +373,7 @@ class OmnisonicTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
         ),
-        iconSize: OmnisonicIconSizes.large,
+        iconSize: OmnisonicIconSizes.lg,
       ),
 
       // List Tile Theme
@@ -499,11 +490,11 @@ class OmnisonicTheme {
       ),
       iconTheme: IconThemeData(
         color: OmnisonicColors.darkColorScheme.onSurface,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
       primaryIconTheme: IconThemeData(
         color: OmnisonicColors.darkColorScheme.onPrimary,
-        size: OmnisonicIconSizes.medium,
+        size: OmnisonicIconSizes.md,
       ),
 
       // Slider Theme
@@ -528,16 +519,17 @@ class OmnisonicTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         selectedItemColor: OmnisonicColors.darkColorScheme.primary,
         unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
         selectedIconTheme: IconThemeData(
           color: OmnisonicColors.darkColorScheme.primary,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         unselectedIconTheme: IconThemeData(
           color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.navigation,
+          size: OmnisonicIconSizes.md,
         ),
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
@@ -545,7 +537,8 @@ class OmnisonicTheme {
         elevation: OmnisonicElevation.appBar,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
+        backgroundColor:
+            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
         indicatorColor: OmnisonicColors.darkColorScheme.primaryContainer,
         labelTextStyle: WidgetStateProperty.all(
           OmnisonicTypography.labelSmall.copyWith(
@@ -554,84 +547,11 @@ class OmnisonicTheme {
         ),
         iconTheme: WidgetStateProperty.all(
           IconThemeData(
-            size: OmnisonicIconSizes.navigation,
+            size: OmnisonicIconSizes.md,
             color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
           ),
         ),
       ),
-
-      // Extensions
-      extensions: const [
-        OmnisonicColorExtension.dark,
-        OmnisonicAnimationExtension(),
-      ],
     );
-
-    // Add platform-specific extensions
-    return addPlatformExtensions(baseTheme);
   }
-}
-
-/// Extension to easily access Omnisonic color extension from context
-extension OmnisonicThemeExtension on BuildContext {
-  OmnisonicColorExtension get omnisonicColors {
-    return Theme.of(this).extension<OmnisonicColorExtension>() ??
-        OmnisonicColorExtension.light;
-  }
-
-  OmnisonicAnimationExtension get omnisonicAnimations {
-    return Theme.of(this).extension<OmnisonicAnimationExtension>() ??
-        const OmnisonicAnimationExtension();
-  }
-
-  ColorScheme get colorScheme => Theme.of(this).colorScheme;
-  TextTheme get textTheme => Theme.of(this).textTheme;
-
-  // Music-specific color getters
-  Color get playingIndicatorColor =>
-      omnisonicColors.playingIndicator ?? OmnisonicColors.playingIndicator;
-  Color get pausedIndicatorColor =>
-      omnisonicColors.pausedIndicator ?? OmnisonicColors.pausedIndicator;
-  Color get queueIndicatorColor =>
-      omnisonicColors.queueIndicator ?? OmnisonicColors.queueIndicator;
-  Color get favoriteIndicatorColor =>
-      omnisonicColors.favoriteIndicator ?? OmnisonicColors.favoriteIndicator;
-
-  // Gradient getters
-  LinearGradient get primaryGradient =>
-      omnisonicColors.primaryGradient ?? OmnisonicColors.primaryGradient;
-  LinearGradient get accentGradient =>
-      omnisonicColors.accentGradient ?? OmnisonicColors.accentGradient;
-  LinearGradient get heroGradient =>
-      omnisonicColors.heroGradient ?? OmnisonicColors.heroGradient;
-  LinearGradient get subtleGradient =>
-      omnisonicColors.subtleGradient ?? OmnisonicColors.subtleGradient;
-  LinearGradient get primaryAnimatedGradient =>
-      omnisonicColors.primaryAnimatedGradient ??
-      OmnisonicColors.primaryAnimatedGradient;
-  LinearGradient get accentAnimatedGradient =>
-      omnisonicColors.accentAnimatedGradient ??
-      OmnisonicColors.accentAnimatedGradient;
-  RadialGradient get cardDepthGradient =>
-      omnisonicColors.cardDepthGradient ?? OmnisonicColors.cardDepthGradient;
-  LinearGradient get shimmerGradient =>
-      omnisonicColors.shimmerGradient ?? OmnisonicColors.shimmerGradient;
-  LinearGradient get glassMorphismGradient =>
-      omnisonicColors.glassMorphismGradient ??
-      OmnisonicColors.glassMorphismLight;
-  LinearGradient get nowPlayingGradient =>
-      omnisonicColors.nowPlayingGradient ?? OmnisonicColors.nowPlayingGradient;
-  LinearGradient get albumArtOverlay =>
-      omnisonicColors.albumArtOverlay ?? OmnisonicColors.albumArtOverlay;
-  LinearGradient get progressBarGradient =>
-      omnisonicColors.progressBarGradient ??
-      OmnisonicColors.progressBarGradient;
-
-  // Animation getters
-  Duration get fastAnimationDuration => omnisonicAnimations.fastDuration;
-  Duration get normalAnimationDuration => omnisonicAnimations.normalDuration;
-  Duration get slowAnimationDuration => omnisonicAnimations.slowDuration;
-  Curve get standardAnimationCurve => omnisonicAnimations.standardCurve;
-  Curve get fastAnimationCurve => omnisonicAnimations.fastCurve;
-  Curve get slowAnimationCurve => omnisonicAnimations.slowCurve;
 }

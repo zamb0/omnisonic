@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/utils/animation_utils.dart';
+
+import '../../../../core/design_system/design_system.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 
 enum FeishinImageShape { rounded, circle }
@@ -17,7 +20,6 @@ class FeishinCard extends StatefulWidget {
     this.isStarred = false,
     this.width,
     this.imageShape = FeishinImageShape.rounded,
-    this.imageSize,
     this.titleMaxLines = 1,
   });
 
@@ -28,9 +30,14 @@ class FeishinCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onStar;
   final bool isStarred;
+
+  /// Fixed card width, for carousels where each item has to be the same
+  /// size regardless of what its neighbours contain.
+  ///
+  /// Left null in grids, where the column count decides the width.
   final double? width;
+
   final FeishinImageShape imageShape;
-  final double? imageSize;
   final int titleMaxLines;
 
   @override
@@ -45,7 +52,13 @@ class _FeishinCardState extends State<FeishinCard> {
     final scheme = Theme.of(context).colorScheme;
     final isCircle = widget.imageShape == FeishinImageShape.circle;
 
-    return MouseRegion(
+    // `width` and `imageSize` were both declared and never read: the card
+    // took its size entirely from its parent, so every `AlbumCard(width: 160)`
+    // in a carousel was a no-op and the cards were whatever the surrounding
+    // SizedBox happened to be. `width` is now honoured; `imageSize` is gone,
+    // because the image is an AspectRatio of the card and has no size of its
+    // own to set.
+    final card = MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
@@ -59,71 +72,88 @@ class _FeishinCardState extends State<FeishinCard> {
                 aspectRatio: 1,
                 child: AnimatedScale(
                   scale: _isHovering ? 1.03 : 1.0,
-                  duration: const Duration(milliseconds: 150),
-                  child: ClipRRect(
-                    borderRadius: isCircle
-                        ? BorderRadius.circular(999)
-                        : BorderRadius.circular(8),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        _buildImage(context, scheme),
-                        // Hover overlay with play and star buttons
-                        AnimatedOpacity(
-                          opacity: _isHovering ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 150),
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Star button
-                                  if (widget.onStar != null)
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    AnimationManager.fastDuration,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: isCircle
+                          ? BorderRadius.circular(OmnisonicRadius.full)
+                          : BorderRadius.circular(OmnisonicRadius.art),
+                      // `0 12px 24px -14px` from the design's cover-art spec:
+                      // enough lift that the art floats over the tinted
+                      // backdrop without casting a visible grey box.
+                      boxShadow: OmnisonicShadows.art,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: isCircle
+                          ? BorderRadius.circular(OmnisonicRadius.full)
+                          : BorderRadius.circular(OmnisonicRadius.art),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildImage(context, scheme),
+                          // Hover overlay with play and star buttons
+                          AnimatedOpacity(
+                            opacity: _isHovering ? 1.0 : 0.0,
+                            duration: AnimationUtils.adjustedDuration(
+                              context,
+                              AnimationManager.fastDuration,
+                            ),
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Star button
+                                    if (widget.onStar != null)
+                                      GestureDetector(
+                                        onTap: widget.onStar,
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: scheme.surface,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            widget.isStarred
+                                                ? OmnisonicIcons.star
+                                                : OmnisonicIcons.starOutline,
+                                            color: scheme.onSurface,
+                                            size: OmnisonicIconSizes.smd,
+                                          ),
+                                        ),
+                                      ),
+                                    const SizedBox(width: 12),
+                                    // Play button
                                     GestureDetector(
-                                      onTap: widget.onStar,
+                                      onTap: widget.onTap,
                                       behavior: HitTestBehavior.opaque,
                                       child: Container(
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: scheme.tertiary,
+                                          color: scheme.onSurface,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          widget.isStarred
-                                              ? Icons.star
-                                              : Icons.star_outline,
-                                          color: scheme.onTertiary,
-                                          size: 20,
+                                          OmnisonicIcons.playArrow,
+                                          color: scheme.surface,
+                                          size: OmnisonicIconSizes.md,
                                         ),
                                       ),
                                     ),
-                                  const SizedBox(width: 12),
-                                  // Play button
-                                  GestureDetector(
-                                    onTap: widget.onTap,
-                                    behavior: HitTestBehavior.opaque,
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: scheme.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.play_arrow,
-                                        color: scheme.onPrimary,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -137,32 +167,32 @@ class _FeishinCardState extends State<FeishinCard> {
                 children: [
                   Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: OmnisonicTypography.bodySmall.copyWith(
+                      fontSize: 12.5,
+                      fontWeight: OmnisonicTypography.bold,
                       color: scheme.onSurface,
                     ),
                     maxLines: widget.titleMaxLines,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.subtitle != null) ...[
-                    const SizedBox(height: 2),
+                  if (widget.subtitle != null)
                     Text(
                       widget.subtitle!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      style: OmnisonicTypography.bodySmall.copyWith(
                         fontSize: 11,
+                        fontWeight: OmnisonicTypography.medium,
+                        color: scheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
                   if (widget.meta != null) ...[
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       widget.meta!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-                        fontSize: 11,
+                      style: OmnisonicTypography.technical.copyWith(
+                        fontSize: 9.5,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -175,21 +205,28 @@ class _FeishinCardState extends State<FeishinCard> {
         ),
       ),
     );
+
+    final width = widget.width;
+    return width == null ? card : SizedBox(width: width, child: card);
   }
 
   Widget _buildImage(BuildContext context, ColorScheme scheme) {
     final placeholder = Container(
       color: scheme.surfaceContainerHighest,
-      child: Icon(Icons.music_note, color: scheme.onSurfaceVariant, size: 32),
+      child: Icon(
+        OmnisonicIcons.musicNote,
+        color: scheme.onSurfaceVariant,
+        size: 32,
+      ),
     );
 
     if (widget.imageUrl == null) return placeholder;
 
-    final sizedUrl = widget.imageUrl!.withCoverArtSize(400);
+    final art = SubsonicCoverArt.of(widget.imageUrl!, 400);
 
     return CachedNetworkImage(
-      imageUrl: sizedUrl,
-      cacheKey: sizedUrl.subsonicCacheKey,
+      imageUrl: art.url,
+      cacheKey: art.cacheKey,
       cacheManager: OmnisonicImageCacheManager.instance,
       fit: BoxFit.cover,
       memCacheWidth: 400,

@@ -1,95 +1,57 @@
 import 'package:flutter/material.dart';
 
-/// Standard animation durations and curves used across the app.
+/// The app's motion tokens: how long things take and how they ease.
 ///
-/// This used to be backed by an animation-coordination/performance-monitoring
-/// subsystem (queueing, priority levels, adaptive scaling) that had no real
-/// callers anywhere in the app — only these constants and
-/// [OmnisonicAnimationExtension] were ever consumed. Trimmed to just that.
+/// There used to be three of these — this one, `AnimationConstants` under
+/// `core/constants/`, and a per-platform set in `platform_animations.dart` —
+/// with overlapping values under different names, so the same transition was
+/// 200ms or 300ms depending on which file the author reached for. They are
+/// merged here, in the design system, next to the colour and spacing tokens.
+///
+/// These are values, not behaviour. Anything that has to *decide* something
+/// (reduced motion, sheet vs dialog presentation) lives in
+/// `core/utils/animation_utils.dart` and reads from here.
 class AnimationManager {
+  const AnimationManager._();
+
+  // ---------------------------------------------------------------------
   // Durations
+  // ---------------------------------------------------------------------
+
+  /// State changes inside a widget: a pressed state, an icon swap.
   static const Duration fastDuration = Duration(milliseconds: 150);
+
+  /// Page transitions and content swaps — the default reach-for.
+  static const Duration quickDuration = Duration(milliseconds: 200);
+
+  /// Motion that covers real distance: a sheet rising, the player sliding up.
   static const Duration normalDuration = Duration(milliseconds: 300);
+
+  /// The upper bound for anything the user is waiting on.
   static const Duration slowDuration = Duration(milliseconds: 500);
-  static const Duration extraSlowDuration = Duration(milliseconds: 800);
 
+  /// Ambient, non-blocking motion: shimmer sweeps, the glass sheen.
+  static const Duration loadingDuration = Duration(milliseconds: 1500);
+
+  // ---------------------------------------------------------------------
   // Curves
+  // ---------------------------------------------------------------------
+
+  /// Default for anything that both enters and leaves.
   static const Curve standardCurve = Curves.easeInOutCubic;
+
+  /// For short movements where the ease-in would not be perceptible anyway.
   static const Curve fastCurve = Curves.easeOutQuart;
+
+  /// Long movements, where a gentler settle reads as less abrupt.
   static const Curve slowCurve = Curves.easeInOutQuint;
-}
 
-/// Theme extension exposing [AnimationManager]'s defaults, so they can be
-/// looked up via `Theme.of(context).extension<OmnisonicAnimationExtension>()`
-/// and overridden per-theme if a future theme ever needs different pacing.
-class OmnisonicAnimationExtension
-    extends ThemeExtension<OmnisonicAnimationExtension> {
-  final Duration fastDuration;
-  final Duration normalDuration;
-  final Duration slowDuration;
-  final Curve standardCurve;
-  final Curve fastCurve;
-  final Curve slowCurve;
+  /// Dialogs, which appear in place rather than travelling.
+  static const Curve dialogCurve = Curves.easeOutCubic;
 
-  const OmnisonicAnimationExtension({
-    this.fastDuration = AnimationManager.fastDuration,
-    this.normalDuration = AnimationManager.normalDuration,
-    this.slowDuration = AnimationManager.slowDuration,
-    this.standardCurve = AnimationManager.standardCurve,
-    this.fastCurve = AnimationManager.fastCurve,
-    this.slowCurve = AnimationManager.slowCurve,
-  });
+  /// Bottom sheets, which decelerate into their resting position.
+  static const Curve sheetCurve = fastCurve;
 
-  @override
-  ThemeExtension<OmnisonicAnimationExtension> copyWith({
-    Duration? fastDuration,
-    Duration? normalDuration,
-    Duration? slowDuration,
-    Curve? standardCurve,
-    Curve? fastCurve,
-    Curve? slowCurve,
-  }) {
-    return OmnisonicAnimationExtension(
-      fastDuration: fastDuration ?? this.fastDuration,
-      normalDuration: normalDuration ?? this.normalDuration,
-      slowDuration: slowDuration ?? this.slowDuration,
-      standardCurve: standardCurve ?? this.standardCurve,
-      fastCurve: fastCurve ?? this.fastCurve,
-      slowCurve: slowCurve ?? this.slowCurve,
-    );
-  }
-
-  @override
-  ThemeExtension<OmnisonicAnimationExtension> lerp(
-    ThemeExtension<OmnisonicAnimationExtension>? other,
-    double t,
-  ) {
-    if (other is! OmnisonicAnimationExtension) {
-      return this;
-    }
-
-    return OmnisonicAnimationExtension(
-      fastDuration: Duration(
-        milliseconds:
-            (fastDuration.inMilliseconds * (1 - t) +
-                    other.fastDuration.inMilliseconds * t)
-                .round(),
-      ),
-      normalDuration: Duration(
-        milliseconds:
-            (normalDuration.inMilliseconds * (1 - t) +
-                    other.normalDuration.inMilliseconds * t)
-                .round(),
-      ),
-      slowDuration: Duration(
-        milliseconds:
-            (slowDuration.inMilliseconds * (1 - t) +
-                    other.slowDuration.inMilliseconds * t)
-                .round(),
-      ),
-      standardCurve: t < 0.5 ? standardCurve : other.standardCurve,
-      fastCurve: t < 0.5 ? fastCurve : other.fastCurve,
-      slowCurve: t < 0.5 ? slowCurve : other.slowCurve,
-    );
-  }
+  /// Looping ambient motion, which has no start or end to emphasise.
+  static const Curve loadingCurve = Curves.easeInOut;
 }

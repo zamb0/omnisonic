@@ -58,6 +58,10 @@ Padding(
 Icon(OmnisonicIcons.shuffle, size: OmnisonicIconSizes.md)
 ```
 
+Always `OmnisonicIcons`, never `Icons.*` directly — the token file is the
+only thing keeping one shape language across the app. Sizes come from the
+ladder, not from a literal.
+
 ### Responsive layout
 
 ```dart
@@ -71,9 +75,9 @@ ResponsiveLayout(
 ## Color System
 
 ### Primary Colors
-- **Primary Purple**: `#6366F1` — main brand color
-- **Primary Blue**: `#3B82F6` — secondary brand color
-- **Primary Teal**: `#06B6D4` — accent color
+- **Primary Purple**: `#7C7CFF` — main brand color
+- **Primary Blue**: `#5A67D8` — secondary brand color
+- **Primary Teal**: `#4DD0E1` — accent color
 
 ### Semantic Colors
 - **Success**: `#10B981`
@@ -91,15 +95,21 @@ The light color scheme uses darkened `*Light` variants of the brand colors (`pri
 
 ## Typography
 
-- **Inter**: primary font — body text, labels, UI elements
-- **Poppins**: display font — headings and titles
+- **Manrope**: primary font — body text, labels, UI elements
+- **Gabarito**: display font — headings, titles, nav and button labels
+- **JetBrains Mono**: technical font — durations, bitrates, counts, server ids
 
-Both are loaded via `google_fonts` (no bundled font assets required).
+All three are bundled as assets under `assets/fonts/` and declared in the
+`fonts:` section of `pubspec.yaml`. They are not fetched at runtime: golden
+tests need deterministic metrics, and a first launch shouldn't need the
+network to draw text. Only the weights the type ramp asks for are shipped;
+`typography_system_test.dart` fails if a style requests a weight that isn't
+bundled.
 
 ### Music-Specific Styles
-- **Track Title**: 16px, Medium, Inter
-- **Artist Name**: 14px, Regular, Inter
-- **Album Title**: 14px, Medium, Inter
+- **Track Title**: 16px, Medium, Manrope
+- **Artist Name**: 14px, Regular, Manrope
+- **Album Title**: 14px, Medium, Manrope
 
 ## Spacing System
 
@@ -110,12 +120,18 @@ Both are loaded via `google_fonts` (no bundled font assets required).
 ## Responsive Design
 
 Breakpoints live in `ResponsiveBreakpoints` (`responsive_layout.dart`):
+`mobile` 480, `tablet` 768, `desktop` 1024, `largeDesktop` 1440.
 
-- **Mobile**: < 768px
-- **Tablet**: 768px – 1024px
-- **Desktop**: > 1024px
+`MainShell` switches chrome at 768 (bottom bar → 72px rail) and 1024 (rail →
+234px sidebar), and publishes the result through `ShellLayout`.
 
-The app shell (`MainShell`) and the now-playing bar both switch on the same 768px threshold, so the compact mobile UI and the sidebar shell always appear together.
+**Pages inside the shell should ask `ShellLayout`, not `MediaQuery`.** The
+content column is narrower than the window by the width of the sidebar, so
+the two disagree at exactly the widths that matter — that disagreement once
+hid the library's tab bar on a 1000px window and left two tabs unreachable.
+
+`ResponsiveLayout` and `ResponsiveGridView` both measure their own
+constraints for the same reason.
 
 ## Accessibility
 
@@ -127,9 +143,45 @@ The app shell (`MainShell`) and the now-playing bar both switch on the same 768p
 ### Color Contrast
 - All color combinations meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text) — enforced by `color_contrast_test.dart`.
 
-## Platform Theme Extensions
+### Dynamic Type (`OmnisonicTextScale`)
 
-`platform_theme_extensions.dart` + `platform_optimizations.dart` + `platform_animations.dart` add per-platform touch target size, border radius, page-transition builder and haptics, applied automatically by `OmnisonicTheme` via `addPlatformExtensions`.
+Content scales without limit. The shell's own chrome — nav labels, the rail,
+the transport bar — stops at `chromeMax` (1.3x) via `clampChrome`: it is
+fixed furniture with nowhere to reflow, and past that it takes the screen
+away from the content the user enlarged the text to read.
+
+Boxes that are part artwork and part text use `boxExtent`, which grows only
+the text half; scaling the whole height would enlarge the artwork too and
+push the row off screen.
+
+`text_scale_test.dart` pumps every major screen at 1.0 / 1.3 / 2.0 across two
+widths and asserts nothing throws.
+
+### Reduced Motion
+
+Durations go through `AnimationUtils.adjustedDuration`, which returns
+`Duration.zero` when the platform asks for reduced motion. Looping animations
+— the shimmer sweep, the glass sheen, the audio visualizer — park at a static
+frame instead of running at zero duration forever.
+
+### State Vocabulary
+
+Loading, empty and error are `state_views.dart`, not per-screen inventions.
+`ErrorStateView` takes a **required** `onRetry`, so an error the user cannot
+act on is not expressible. `screen_states_test.dart` holds every screen to it.
+
+## Motion
+
+`animation_manager.dart` holds every duration and curve the app uses:
+`fast` (150ms) / `quick` (200ms) / `normal` (300ms) / `slow` (500ms) /
+`loading` (1500ms), plus a curve per role (`standard`, `fast`, `slow`,
+`dialog`, `sheet`, `loading`). These are values only — anything that has to
+*decide* (reduced motion, sheet vs dialog presentation) lives in
+`core/utils/animation_utils.dart` and reads from here.
+
+There used to be three overlapping sets of these under different names, so
+the same transition was 200ms or 300ms depending on which file the author
+reached for. A per-platform set also existed and was read by nothing.
 
 ## Testing
 
@@ -142,15 +194,15 @@ flutter test test/core/design_system/
 ```
 lib/core/design_system/
 ├── colors.dart                     # Color palette and schemes
-├── typography.dart                 # Text styles and fonts (google_fonts)
+├── typography.dart                 # Text styles and bundled font families
 ├── spacing.dart                    # Spacing, grid, touch targets
 ├── icons.dart                      # Icon system and sizes
 ├── theme.dart                      # ThemeData assembly (light/dark)
-├── animation_manager.dart          # Standard durations/curves + ThemeExtension
-├── responsive_layout.dart          # Breakpoints, ResponsiveLayout, ScreenSizeDetector
-├── platform_theme_extensions.dart  # Per-platform ThemeExtension
-├── platform_optimizations.dart     # Per-platform touch/haptics/scroll physics
-├── platform_animations.dart        # Per-platform page transitions
+├── animation_manager.dart          # Durations and curves
+├── responsive_layout.dart          # Breakpoints and ResponsiveLayout
+├── glass_surface.dart              # Blur/saturate glass panes
+├── art_tint_background.dart        # Cover-art tint wash
+├── theme_mode_controller.dart      # Persisted light/dark/system choice
 ├── design_system.dart              # Barrel export
 └── README.md                       # This documentation
 ```

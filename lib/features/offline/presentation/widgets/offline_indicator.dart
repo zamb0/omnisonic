@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/services/offline_mode_service.dart';
 import '../viewmodels/offline_mode_view_model.dart';
+import '../../../../core/design_system/design_system.dart';
 
 /// Widget that shows offline mode status
 class OfflineIndicator extends StatelessWidget {
@@ -29,14 +30,18 @@ class OfflineIndicator extends StatelessWidget {
             vertical: compact ? 4 : 6,
           ),
           decoration: BoxDecoration(
-            color: viewModel.isOffline ? Colors.orange : Colors.green,
+            color: viewModel.isOffline
+                ? OmnisonicColors.warning
+                : OmnisonicColors.success,
             borderRadius: BorderRadius.circular(compact ? 12 : 16),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                viewModel.isOffline ? Icons.cloud_off : Icons.cloud_done,
+                viewModel.isOffline
+                    ? OmnisonicIcons.cloudOff
+                    : OmnisonicIcons.cloudDone,
                 size: compact ? 14 : 16,
                 color: Colors.white,
               ),
@@ -81,13 +86,13 @@ class NetworkQualityIndicator extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: color),
+              Icon(icon, size: OmnisonicIconSizes.inline, color: color),
               if (showLabel) ...[
                 const SizedBox(width: 4),
                 Text(
@@ -109,30 +114,30 @@ class NetworkQualityIndicator extends StatelessWidget {
   Color _getQualityColor(NetworkQuality quality) {
     switch (quality) {
       case NetworkQuality.none:
-        return Colors.grey;
+        return OmnisonicColors.neutralGray500;
       case NetworkQuality.poor:
-        return Colors.red;
+        return OmnisonicColors.error;
       case NetworkQuality.fair:
-        return Colors.orange;
+        return OmnisonicColors.warning;
       case NetworkQuality.good:
-        return Colors.blue;
+        return OmnisonicColors.info;
       case NetworkQuality.excellent:
-        return Colors.green;
+        return OmnisonicColors.success;
     }
   }
 
   IconData _getQualityIcon(NetworkQuality quality) {
     switch (quality) {
       case NetworkQuality.none:
-        return Icons.signal_cellular_off;
+        return OmnisonicIcons.signalCellularOff;
       case NetworkQuality.poor:
-        return Icons.network_cell;
+        return OmnisonicIcons.networkCell;
       case NetworkQuality.fair:
-        return Icons.network_wifi_1_bar;
+        return OmnisonicIcons.networkWifi1Bar;
       case NetworkQuality.good:
-        return Icons.network_wifi_2_bar;
+        return OmnisonicIcons.networkWifi2Bar;
       case NetworkQuality.excellent:
-        return Icons.wifi;
+        return OmnisonicIcons.wifi;
     }
   }
 }
@@ -158,10 +163,14 @@ class OfflineContentBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: const BoxDecoration(
-        color: Colors.green,
+        color: OmnisonicColors.success,
         shape: BoxShape.circle,
       ),
-      child: Icon(Icons.offline_pin, size: size * 0.7, color: Colors.white),
+      child: Icon(
+        OmnisonicIcons.offlinePin,
+        size: size * 0.7,
+        color: Colors.white,
+      ),
     );
   }
 }
@@ -183,22 +192,22 @@ class ConnectionTypeIndicator extends StatelessWidget {
         Color color;
 
         if (viewModel.isWiFiConnection) {
-          icon = Icons.wifi;
+          icon = OmnisonicIcons.wifi;
           label = 'WiFi';
-          color = Colors.blue;
+          color = OmnisonicColors.info;
         } else if (viewModel.isMeteredConnection) {
-          icon = Icons.signal_cellular_4_bar;
+          icon = OmnisonicIcons.signalCellular4Bar;
           label = 'Mobile';
-          color = Colors.orange;
+          color = OmnisonicColors.warning;
         } else {
-          icon = Icons.lan;
+          icon = OmnisonicIcons.lan;
           label = 'Ethernet';
-          color = Colors.green;
+          color = OmnisonicColors.success;
         }
 
         return Tooltip(
           message: label,
-          child: Icon(icon, size: 16, color: color),
+          child: Icon(icon, size: OmnisonicIconSizes.sm, color: color),
         );
       },
     );
@@ -220,10 +229,14 @@ class OfflineModeBanner extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: Colors.orange.withValues(alpha: 0.1),
+          color: OmnisonicColors.warning.withValues(alpha: 0.1),
           child: Row(
             children: [
-              const Icon(Icons.cloud_off, size: 20, color: Colors.orange),
+              const Icon(
+                OmnisonicIcons.cloudOff,
+                size: OmnisonicIconSizes.smd,
+                color: OmnisonicColors.warning,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -233,14 +246,14 @@ class OfflineModeBanner extends StatelessWidget {
                       'Offline Mode',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Colors.orange,
+                        color: OmnisonicColors.warning,
                       ),
                     ),
                     Text(
                       'Showing ${viewModel.offlineTrackCount} cached tracks',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.orange.withValues(alpha: 0.8),
+                        color: OmnisonicColors.warning.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -250,7 +263,7 @@ class OfflineModeBanner extends StatelessWidget {
                 onPressed: () => viewModel.checkConnectivity(),
                 child: const Text(
                   'Retry',
-                  style: TextStyle(color: Colors.orange),
+                  style: TextStyle(color: OmnisonicColors.warning),
                 ),
               ),
             ],

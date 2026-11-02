@@ -1,18 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Typography system for Omnisonic UI Enhancement
-/// Uses Inter for body text and Poppins for display text
+/// Uses Manrope for UI text, Gabarito for display text, and JetBrains Mono
+/// for technical text (durations, bitrates, IDs, server names).
 ///
-/// Fonts are loaded via `google_fonts` (fetched and cached on first use, no
-/// bundled `.ttf` assets required) rather than declared as bare
-/// `fontFamily` strings, which silently fall back to the system font
-/// without ever actually loading the intended typeface.
+/// The three families are bundled as assets (see the `fonts:` section of
+/// `pubspec.yaml`) rather than fetched at runtime. Golden tests need
+/// deterministic metrics, and a first launch shouldn't need the network to
+/// draw text.
 class OmnisonicTypography {
-  // Font families
-  static const String primaryFont = 'Inter';
-  static const String displayFont = 'Poppins';
+  // Font families. These names must match the `family:` keys in pubspec.yaml.
+  static const String primaryFont = 'Manrope';
+  static const String displayFont = 'Gabarito';
+  static const String monoFont = 'JetBrains Mono';
   static const String fallbackFont = 'Roboto';
+
+  // Family constructors. Every style below goes through one of these so the
+  // family name is written once per typeface instead of once per style.
+  static TextStyle _manrope({
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    double? height,
+  }) => TextStyle(
+    fontFamily: primaryFont,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+
+  static TextStyle _gabarito({
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    double? height,
+  }) => TextStyle(
+    fontFamily: displayFont,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+
+  static TextStyle _mono({
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    double? height,
+  }) => TextStyle(
+    fontFamily: monoFont,
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
 
   // Font weights
   static const FontWeight thin = FontWeight.w100;
@@ -25,110 +67,106 @@ class OmnisonicTypography {
   static const FontWeight extraBold = FontWeight.w800;
   static const FontWeight black = FontWeight.w900;
 
-  // Display styles (using Poppins)
-  static TextStyle get displayLarge => GoogleFonts.poppins(
+  // Display styles
+  static TextStyle get displayLarge => _gabarito(
     fontSize: 57,
     fontWeight: bold,
     letterSpacing: -0.25,
     height: 1.12,
   );
 
-  static TextStyle get displayMedium => GoogleFonts.poppins(
-    fontSize: 45,
-    fontWeight: bold,
-    letterSpacing: 0,
-    height: 1.16,
-  );
+  static TextStyle get displayMedium =>
+      _gabarito(fontSize: 45, fontWeight: bold, letterSpacing: 0, height: 1.16);
 
-  static TextStyle get displaySmall => GoogleFonts.poppins(
+  static TextStyle get displaySmall => _gabarito(
     fontSize: 36,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.22,
   );
 
-  // Headline styles (using Poppins)
-  static TextStyle get headlineLarge => GoogleFonts.poppins(
+  // Headline styles
+  static TextStyle get headlineLarge => _gabarito(
     fontSize: 32,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.25,
   );
 
-  static TextStyle get headlineMedium => GoogleFonts.poppins(
+  static TextStyle get headlineMedium => _gabarito(
     fontSize: 28,
     fontWeight: semiBold,
     letterSpacing: 0,
     height: 1.29,
   );
 
-  static TextStyle get headlineSmall => GoogleFonts.poppins(
+  static TextStyle get headlineSmall => _gabarito(
     fontSize: 24,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.33,
   );
 
-  // Title styles (using Inter)
-  static TextStyle get titleLarge => GoogleFonts.inter(
+  // Title styles
+  static TextStyle get titleLarge => _manrope(
     fontSize: 22,
     fontWeight: medium,
     letterSpacing: 0,
     height: 1.27,
   );
 
-  static TextStyle get titleMedium => GoogleFonts.inter(
+  static TextStyle get titleMedium => _manrope(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.15,
     height: 1.5,
   );
 
-  static TextStyle get titleSmall => GoogleFonts.inter(
+  static TextStyle get titleSmall => _manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.43,
   );
 
-  // Label styles (using Inter)
-  static TextStyle get labelLarge => GoogleFonts.inter(
+  // Label styles
+  static TextStyle get labelLarge => _manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.1,
     height: 1.43,
   );
 
-  static TextStyle get labelMedium => GoogleFonts.inter(
+  static TextStyle get labelMedium => _manrope(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.33,
   );
 
-  static TextStyle get labelSmall => GoogleFonts.inter(
+  static TextStyle get labelSmall => _manrope(
     fontSize: 11,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.45,
   );
 
-  // Body styles (using Inter)
-  static TextStyle get bodyLarge => GoogleFonts.inter(
+  // Body styles
+  static TextStyle get bodyLarge => _manrope(
     fontSize: 16,
     fontWeight: regular,
     letterSpacing: 0.5,
     height: 1.5,
   );
 
-  static TextStyle get bodyMedium => GoogleFonts.inter(
+  static TextStyle get bodyMedium => _manrope(
     fontSize: 14,
     fontWeight: regular,
     letterSpacing: 0.25,
     height: 1.43,
   );
 
-  static TextStyle get bodySmall => GoogleFonts.inter(
+  static TextStyle get bodySmall => _manrope(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
@@ -136,78 +174,136 @@ class OmnisonicTypography {
   );
 
   // Music-specific typography styles
-  static TextStyle get trackTitle => GoogleFonts.inter(
-    fontSize: 16,
+  static TextStyle get trackTitle =>
+      _manrope(fontSize: 16, fontWeight: medium, letterSpacing: 0, height: 1.4);
+
+  static TextStyle get artistName => _manrope(
+    fontSize: 14,
+    fontWeight: regular,
+    letterSpacing: 0.1,
+    height: 1.3,
+  );
+
+  static TextStyle get albumTitle => _manrope(
+    fontSize: 14,
     fontWeight: medium,
+    letterSpacing: 0.1,
+    height: 1.3,
+  );
+
+  static TextStyle get playlistTitle => _gabarito(
+    fontSize: 18,
+    fontWeight: semiBold,
     letterSpacing: 0,
+    height: 1.3,
+  );
+
+  static TextStyle get nowPlayingTitle => _manrope(
+    fontSize: 18,
+    fontWeight: semiBold,
+    letterSpacing: 0,
+    height: 1.3,
+  );
+
+  static TextStyle get nowPlayingArtist => _manrope(
+    fontSize: 14,
+    fontWeight: regular,
+    letterSpacing: 0.1,
+    height: 1.3,
+  );
+
+  static TextStyle get duration =>
+      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.4, height: 1.2);
+
+  static TextStyle get metadata =>
+      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.3, height: 1.3);
+
+  // ---------------------------------------------------------------------
+  // Liquid-glass shell styles
+  //
+  // The redesign leans on a much tighter set of type roles than the Material
+  // ramp above: an oversized Gabarito title per screen, a Gabarito section
+  // heading, a Gabarito nav/button label, and JetBrains Mono for every
+  // technical string (counts, bitrates, server ids, timestamps).
+  // ---------------------------------------------------------------------
+
+  /// Screen title — "Home", "Library". Gabarito 800 at display size.
+  static TextStyle get pageTitle => _gabarito(
+    fontSize: 40,
+    fontWeight: extraBold,
+    letterSpacing: -0.8,
+    height: 1.0,
+  );
+
+  /// Section heading inside a screen — "Recently added".
+  static TextStyle get sectionTitle => _gabarito(
+    fontSize: 30,
+    fontWeight: extraBold,
+    letterSpacing: -0.6,
+    height: 1.1,
+  );
+
+  /// Compact section heading, used where a full [sectionTitle] would crowd
+  /// the layout (mobile, side rails).
+  static TextStyle get sectionTitleSmall => _gabarito(
+    fontSize: 22,
+    fontWeight: extraBold,
+    letterSpacing: -0.22,
+    height: 1.15,
+  );
+
+  /// All-caps mono label above a group — "SERVERS", "THIS WEEK".
+  static TextStyle get eyebrow => _mono(
+    fontSize: 10,
+    fontWeight: semiBold,
+    letterSpacing: 0.8,
     height: 1.4,
   );
 
-  static TextStyle get artistName => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: regular,
-    letterSpacing: 0.1,
-    height: 1.3,
-  );
-
-  static TextStyle get albumTitle => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: medium,
-    letterSpacing: 0.1,
-    height: 1.3,
-  );
-
-  static TextStyle get playlistTitle => GoogleFonts.poppins(
-    fontSize: 18,
+  /// Sidebar / segmented-control label.
+  static TextStyle get navLabel => _gabarito(
+    fontSize: 13.5,
     fontWeight: semiBold,
     letterSpacing: 0,
-    height: 1.3,
-  );
-
-  static TextStyle get nowPlayingTitle => GoogleFonts.inter(
-    fontSize: 18,
-    fontWeight: semiBold,
-    letterSpacing: 0,
-    height: 1.3,
-  );
-
-  static TextStyle get nowPlayingArtist => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: regular,
-    letterSpacing: 0.1,
-    height: 1.3,
-  );
-
-  static TextStyle get duration => GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: regular,
-    letterSpacing: 0.4,
     height: 1.2,
   );
 
-  static TextStyle get metadata => GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: regular,
-    letterSpacing: 0.3,
+  /// Glass button label — "Play", "Sync now".
+  static TextStyle get glassButton =>
+      _gabarito(fontSize: 13, fontWeight: bold, letterSpacing: 0, height: 1.2);
+
+  /// Big number in a stat tile.
+  static TextStyle get statValue => _gabarito(
+    fontSize: 21,
+    fontWeight: extraBold,
+    letterSpacing: -0.2,
+    height: 1.1,
+  );
+
+  /// Inline technical string — bitrate, server id, count, timestamp.
+  static TextStyle get technical => _mono(
+    fontSize: 10.5,
+    fontWeight: semiBold,
+    letterSpacing: 0,
     height: 1.3,
   );
 
   // Button typography
-  static TextStyle get buttonLarge => GoogleFonts.inter(
+  static TextStyle get buttonLarge => _manrope(
     fontSize: 16,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static TextStyle get buttonMedium => GoogleFonts.inter(
+  static TextStyle get buttonMedium => _manrope(
     fontSize: 14,
     fontWeight: medium,
     letterSpacing: 0.5,
     height: 1.25,
   );
 
-  static TextStyle get buttonSmall => GoogleFonts.inter(
+  static TextStyle get buttonSmall => _manrope(
     fontSize: 12,
     fontWeight: medium,
     letterSpacing: 0.5,
@@ -215,14 +311,14 @@ class OmnisonicTypography {
   );
 
   // Caption and overline
-  static TextStyle get caption => GoogleFonts.inter(
+  static TextStyle get caption => _manrope(
     fontSize: 12,
     fontWeight: regular,
     letterSpacing: 0.4,
     height: 1.33,
   );
 
-  static TextStyle get overline => GoogleFonts.inter(
+  static TextStyle get overline => _manrope(
     fontSize: 10,
     fontWeight: medium,
     letterSpacing: 1.5,
@@ -248,28 +344,6 @@ class OmnisonicTypography {
     bodySmall: bodySmall,
   );
 
-  /// Creates a responsive text style based on screen size
-  static TextStyle responsive({
-    required BuildContext context,
-    required TextStyle baseStyle,
-    double? mobileScale,
-    double? tabletScale,
-    double? desktopScale,
-  }) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double scale = 1.0;
-
-    if (screenWidth < 600) {
-      scale = mobileScale ?? 0.9;
-    } else if (screenWidth < 1200) {
-      scale = tabletScale ?? 1.0;
-    } else {
-      scale = desktopScale ?? 1.1;
-    }
-
-    return baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 14) * scale);
-  }
-
   /// Creates a text style with custom color
   static TextStyle withColor(TextStyle style, Color color) {
     return style.copyWith(color: color);
@@ -293,6 +367,14 @@ extension OmnisonicTextTheme on TextTheme {
   TextStyle get nowPlayingArtist => OmnisonicTypography.nowPlayingArtist;
   TextStyle get duration => OmnisonicTypography.duration;
   TextStyle get metadata => OmnisonicTypography.metadata;
+  TextStyle get pageTitle => OmnisonicTypography.pageTitle;
+  TextStyle get sectionTitle => OmnisonicTypography.sectionTitle;
+  TextStyle get sectionTitleSmall => OmnisonicTypography.sectionTitleSmall;
+  TextStyle get eyebrow => OmnisonicTypography.eyebrow;
+  TextStyle get navLabel => OmnisonicTypography.navLabel;
+  TextStyle get glassButton => OmnisonicTypography.glassButton;
+  TextStyle get statValue => OmnisonicTypography.statValue;
+  TextStyle get technical => OmnisonicTypography.technical;
   TextStyle get buttonLarge => OmnisonicTypography.buttonLarge;
   TextStyle get buttonMedium => OmnisonicTypography.buttonMedium;
   TextStyle get buttonSmall => OmnisonicTypography.buttonSmall;

@@ -9,21 +9,55 @@ class OfflineContentFilter {
 
   final OfflineRepository _offlineRepository;
 
+  // The IDs of fully cached tracks, shared across the calls of one screen
+  // refresh. Several of the methods below call filterCachedTracks in a loop or
+  // nested inside each other, and each call used to re-read the whole cache
+  // table — building the downloads screen's stats alone did it five times.
+  Future<Result<Set<String>>>? _cachedTrackIdsRequest;
+  DateTime? _cachedTrackIdsFetchedAt;
+  static const Duration _cachedTrackIdsTtl = Duration(seconds: 2);
+
+  /// Drops the memoized cache-entry IDs, so the next filter re-reads them.
+  void invalidateCachedTrackIds() {
+    _cachedTrackIdsRequest = null;
+    _cachedTrackIdsFetchedAt = null;
+  }
+
+  Future<Result<Set<String>>> _completeCachedTrackIds() {
+    final cached = _cachedTrackIdsRequest;
+    final fetchedAt = _cachedTrackIdsFetchedAt;
+    if (cached != null &&
+        fetchedAt != null &&
+        DateTime.now().difference(fetchedAt) < _cachedTrackIdsTtl) {
+      return cached;
+    }
+
+    final request = _fetchCompleteCachedTrackIds();
+    _cachedTrackIdsRequest = request;
+    _cachedTrackIdsFetchedAt = DateTime.now();
+    return request;
+  }
+
+  Future<Result<Set<String>>> _fetchCompleteCachedTrackIds() async {
+    final entriesResult = await _offlineRepository.getAllCachedEntries();
+    return entriesResult.fold(
+      ResultHelper.failure,
+      (entries) => ResultHelper.success({
+        for (final entry in entries)
+          if (entry.isComplete) entry.trackId,
+      }),
+    );
+  }
+
   /// Filters tracks to only include cached ones
   Future<Result<List<Track>>> filterCachedTracks(List<Track> tracks) async {
     try {
-      final cachedEntriesResult = await _offlineRepository
-          .getAllCachedEntries();
-      if (cachedEntriesResult.isFailure) {
-        return ResultHelper.failure(cachedEntriesResult.failureOrNull!);
+      final idsResult = await _completeCachedTrackIds();
+      if (idsResult.isFailure) {
+        return ResultHelper.failure(idsResult.failureOrNull!);
       }
 
-      final cachedEntries = cachedEntriesResult.valueOrNull!;
-      final cachedTrackIds = cachedEntries
-          .where((entry) => entry.isComplete)
-          .map((entry) => entry.trackId)
-          .toSet();
-
+      final cachedTrackIds = idsResult.valueOrNull!;
       final cachedTracks = tracks
           .where((track) => cachedTrackIds.contains(track.id))
           .toList();

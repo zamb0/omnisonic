@@ -14,7 +14,7 @@ import '../../../../core/utils/app_log.dart';
 /// - Adding, updating, and removing servers
 /// - Connection testing and validation
 /// - Server credentials management
-@injectable
+@lazySingleton
 class ServerManagementViewModel extends ChangeNotifier {
   ServerManagementViewModel(
     this._serverRepository,
@@ -59,6 +59,9 @@ class ServerManagementViewModel extends ChangeNotifier {
   void _initialize() {
     _subscribeToServers();
     _loadServers();
+    // Kicks off the periodic reachability checks; without them every server
+    // keeps whatever status it had when it was added.
+    _serverRepository.startMonitoringAllServers();
   }
 
   void _subscribeToServers() {
@@ -193,7 +196,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     try {
       final result = await _serverRepository.updateServer(server);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to update server: ${failure.message}');
         return false;
       }, (_) => true);
@@ -218,7 +221,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
       // Remove the server
       final result = await _serverRepository.removeServer(serverId);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to remove server: ${failure.message}');
         return false;
       }, (_) => true);

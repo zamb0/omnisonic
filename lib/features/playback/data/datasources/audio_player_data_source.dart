@@ -27,6 +27,17 @@ class AudioPlayerDataSource {
       BehaviorSubject<List<Track>>.seeded([]);
 
   List<Track> _currentQueue = [];
+
+  /// Read-only copy of [_currentQueue] handed to listeners. Publishing the
+  /// working list itself let them observe — and size indices against — the
+  /// queue halfway through a remove-then-insert.
+  List<Track> _queueSnapshot = const [];
+
+  void _publishQueue() {
+    _queueSnapshot = List.unmodifiable(_currentQueue);
+    _queueController.add(_queueSnapshot);
+  }
+
   int _currentIndex = 0;
   RepeatMode _repeatMode = RepeatMode.none;
   bool _shuffleEnabled = false;
@@ -202,7 +213,7 @@ class AudioPlayerDataSource {
     try {
       _currentQueue = List.from(tracks);
       _currentIndex = startIndex.clamp(0, tracks.length - 1);
-      _queueController.add(_currentQueue);
+      _publishQueue();
 
       if (tracks.isNotEmpty && startIndex < tracks.length) {
         await _loadTrack(tracks[startIndex]);
@@ -219,7 +230,7 @@ class AudioPlayerDataSource {
   Future<Result<void>> addToQueue(Track track) async {
     try {
       _currentQueue.add(track);
-      _queueController.add(_currentQueue);
+      _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -238,7 +249,7 @@ class AudioPlayerDataSource {
         _currentIndex++;
       }
 
-      _queueController.add(_currentQueue);
+      _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -268,7 +279,7 @@ class AudioPlayerDataSource {
         _currentIndex = _currentIndex.clamp(0, _currentQueue.length - 1);
       }
 
-      _queueController.add(_currentQueue);
+      _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -284,7 +295,7 @@ class AudioPlayerDataSource {
       await stop();
       _currentQueue.clear();
       _currentIndex = 0;
-      _queueController.add(_currentQueue);
+      _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -311,7 +322,7 @@ class AudioPlayerDataSource {
         if (_currentIndex == -1) _currentIndex = 0;
       }
 
-      _queueController.add(_currentQueue);
+      _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
     } catch (e) {
@@ -497,7 +508,7 @@ class AudioPlayerDataSource {
       currentTrack: _currentTrack,
       position: _audioPlayer.position,
       duration: resolvedDuration,
-      queue: _currentQueue,
+      queue: _queueSnapshot,
       currentIndex: _currentIndex,
       repeatMode: _repeatMode,
       shuffleEnabled: _shuffleEnabled,

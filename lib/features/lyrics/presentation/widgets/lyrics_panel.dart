@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/design_system/spacing.dart';
+import '../../../ui/presentation/widgets/widgets.dart';
+
+import '../../../../core/design_system/design_system.dart';
+
 import '../../../../core/entities/entities.dart';
 import '../../utils/lrc_parser.dart';
 import '../viewmodels/lyrics_view_model.dart';
@@ -101,13 +104,13 @@ class _LyricsControls extends StatelessWidget {
               builder: (_) => LyricsSearchSheet(track: track),
             );
           },
-          icon: const Icon(Icons.search),
+          icon: const Icon(OmnisonicIcons.search),
           label: const Text('Search'),
         ),
         if (viewModel.override != null)
           OutlinedButton.icon(
             onPressed: viewModel.clearOverride,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(OmnisonicIcons.refresh),
             label: const Text('Auto'),
           ),
         if (hasSynced)
@@ -124,19 +127,19 @@ class _LyricsControls extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove),
+                  icon: const Icon(OmnisonicIcons.remove),
                   onPressed: () => viewModel.adjustOffset(-250),
                   tooltip: 'Offset -250ms',
                 ),
                 Text('${viewModel.offsetMs} ms'),
                 IconButton(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(OmnisonicIcons.add),
                   onPressed: () => viewModel.adjustOffset(250),
                   tooltip: 'Offset +250ms',
                 ),
@@ -193,15 +196,26 @@ class _LyricsBody extends StatelessWidget {
     final data = lyrics;
 
     if (viewModel.isLoading && data == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingStateView(kind: SkeletonKind.list, itemCount: 4);
+    }
+
+    // LyricsViewModel has tracked errorMessage all along; nothing rendered
+    // it, so a failed fetch was indistinguishable from a track that simply
+    // has no lyrics.
+    final error = viewModel.errorMessage;
+    if (error != null && data == null) {
+      return ErrorStateView(
+        title: 'Could not load lyrics',
+        message: error,
+        onRetry: viewModel.refresh,
+      );
     }
 
     if (data == null || data.raw.trim().isEmpty) {
-      return Center(
-        child: Text(
-          'Lyrics not available',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+      return const EmptyState(
+        icon: OmnisonicIcons.textSnippetOutline,
+        title: 'Lyrics not available',
+        subtitle: 'No lyrics were found for this track.',
       );
     }
 

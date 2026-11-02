@@ -4,6 +4,7 @@ import '../../../../core/design_system/design_system.dart';
 import 'empty_state.dart';
 import 'media_card.dart';
 import 'responsive_grid.dart';
+import 'chips.dart';
 
 /// The four states every screen in the app can be in.
 ///
@@ -191,13 +192,39 @@ class AsyncStateSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    // Placeholders and full-page errors only when there is nothing to show:
+    // a refresh or a failed sync over content already on screen keeps the
+    // content, with the error as a banner above it.
+    if (isLoading && isEmpty) {
       return LoadingStateView(kind: skeleton, itemCount: skeletonItemCount);
     }
 
     final message = error;
-    if (message != null) {
+    if (message != null && isEmpty) {
       return ErrorStateView(message: message, onRetry: onRetry);
+    }
+    if (message != null) {
+      return Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              OmnisonicSpacing.md,
+              OmnisonicSpacing.sm,
+              OmnisonicSpacing.md,
+              0,
+            ),
+            child: InlineBanner(
+              kind: BannerKind.warning,
+              message: message,
+              action: TextButton(
+                onPressed: onRetry,
+                child: const Text('Try again'),
+              ),
+            ),
+          ),
+          Expanded(child: builder(context)),
+        ],
+      );
     }
 
     if (isEmpty) {

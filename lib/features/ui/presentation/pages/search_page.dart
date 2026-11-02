@@ -642,28 +642,31 @@ class _SearchPageState extends State<SearchPage> {
             // height would enlarge the artwork too and push the row off
             // screen.
             height: AlbumCard.extentFor(context, 160),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.md,
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.md,
+                ),
+                itemCount: expanded
+                    ? albums.length
+                    : albums.length.clamp(0, _carouselPreviewCount),
+                itemBuilder: (context, index) {
+                  final album = albums[index];
+                  final sources = sourceServerIds[album.id] ?? const [];
+                  return Padding(
+                    key: ValueKey(album.id),
+                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    child: AlbumCard(
+                      album: album,
+                      width: 160,
+                      onTap: () => _onAlbumTapped(album),
+                      sourceServerIds: sources.length > 1 ? sources : null,
+                    ),
+                  );
+                },
               ),
-              itemCount: expanded
-                  ? albums.length
-                  : albums.length.clamp(0, _carouselPreviewCount),
-              itemBuilder: (context, index) {
-                final album = albums[index];
-                final sources = sourceServerIds[album.id] ?? const [];
-                return Padding(
-                  key: ValueKey(album.id),
-                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
-                  child: AlbumCard(
-                    album: album,
-                    width: 160,
-                    onTap: () => _onAlbumTapped(album),
-                    sourceServerIds: sources.length > 1 ? sources : null,
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -694,26 +697,29 @@ class _SearchPageState extends State<SearchPage> {
               subtitle: false,
               meta: true,
             ),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.md,
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.md,
+                ),
+                itemCount: expanded
+                    ? artists.length
+                    : artists.length.clamp(0, _carouselPreviewCount),
+                itemBuilder: (context, index) {
+                  final artist = artists[index];
+                  return Padding(
+                    key: ValueKey(artist.id),
+                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    child: ArtistCard(
+                      artist: artist,
+                      width: 140,
+                      onTap: () => _onArtistTapped(artist),
+                    ),
+                  );
+                },
               ),
-              itemCount: expanded
-                  ? artists.length
-                  : artists.length.clamp(0, _carouselPreviewCount),
-              itemBuilder: (context, index) {
-                final artist = artists[index];
-                return Padding(
-                  key: ValueKey(artist.id),
-                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
-                  child: ArtistCard(
-                    artist: artist,
-                    width: 140,
-                    onTap: () => _onArtistTapped(artist),
-                  ),
-                );
-              },
             ),
           ),
         ],

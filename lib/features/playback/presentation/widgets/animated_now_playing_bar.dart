@@ -255,7 +255,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                   track.title,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight:
+                                            OmnisonicTypography.semiBold,
                                         color: scheme.onSurface,
                                       ),
                                   maxLines: 1,
@@ -264,11 +265,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 const SizedBox(height: 2),
                                 Text(
                                   track.artist,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                        fontSize: 12,
-                                      ),
+                                  style: OmnisonicTypography.bodySmall.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -446,14 +445,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.art),
                     color: scheme.surfaceContainerHighest,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 18,
-                        spreadRadius: -8,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    boxShadow: OmnisonicShadows.art,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.art),
@@ -471,7 +463,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     Text(
                       track.title,
                       style: OmnisonicTypography.bodyMedium.copyWith(
-                        fontSize: 14,
                         fontWeight: OmnisonicTypography.bold,
                         color: scheme.onSurface,
                       ),
@@ -500,7 +491,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmnisonicTypography.technical.copyWith(
-                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -526,7 +516,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
-      fontSize: 12,
       color: scheme.onSurfaceVariant,
     );
 
@@ -801,7 +790,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         child: Text(
           label,
           style: OmnisonicTypography.glassButton.copyWith(
-            fontSize: 12,
             color: scheme.onSurfaceVariant,
           ),
         ),

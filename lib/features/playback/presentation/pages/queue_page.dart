@@ -32,7 +32,10 @@ class QueuePage extends StatelessWidget {
                 ),
             ],
           ),
-          body: vm.isLoading
+          // The skeleton only before the queue first loads: isLoading is
+          // also set by every playTrack, and the whole queue used to flash
+          // to placeholders, losing its scroll and any drag in progress.
+          body: vm.isLoading && !vm.hasQueue
               ? const LoadingStateView(kind: SkeletonKind.list, itemCount: 6)
               : track == null
               ? const EmptyState(

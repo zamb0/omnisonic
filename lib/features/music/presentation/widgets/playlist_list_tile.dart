@@ -35,7 +35,7 @@ class PlaylistListTile extends StatelessWidget {
           leading: _buildPlaylistArt(scheme),
           title: Text(
             playlist.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: const TextStyle(fontWeight: OmnisonicTypography.medium),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -70,17 +70,15 @@ class PlaylistListTile extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     playlist.isPublic ? 'Public' : 'Private',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
-                      fontSize: 11,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     formatRelativeTime(playlist.updatedAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
-                      fontSize: 11,
                     ),
                   ),
                 ],

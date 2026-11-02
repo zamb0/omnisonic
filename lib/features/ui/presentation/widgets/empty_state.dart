@@ -38,7 +38,7 @@ class EmptyState extends StatelessWidget {
             Text(
               title,
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: OmnisonicTypography.semiBold,
                 color: scheme.onSurface,
               ),
               textAlign: TextAlign.center,

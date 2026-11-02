@@ -115,6 +115,8 @@ class OmnisonicIcons {
   static const IconData syncOutline = Icons.sync_outlined;
   static const IconData syncAlt = Icons.sync_alt_rounded;
   static const IconData reorder = Icons.reorder_rounded;
+  static const IconData image = Icons.image_outlined;
+  static const IconData description = Icons.description_outlined;
   static const IconData arrowUpward = Icons.arrow_upward_rounded;
   static const IconData arrowDownward = Icons.arrow_downward_rounded;
   static const IconData dragHandle = Icons.drag_handle_rounded;

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Desktop side rail: what the aggregated collection actually contains, what
 /// gets played most, and where the last sync got to.
@@ -56,11 +57,17 @@ class LibraryStatsRail extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          // "Up to date" only when that is true: it used to
+                          // say so with no sync ever run, or right after a
+                          // failed one.
                           viewModel.isSyncing
                               ? 'Syncing servers'
-                              : 'Collection up to date',
+                              : viewModel.errorMessage != null
+                              ? 'Last sync failed'
+                              : viewModel.lastUpdated == null
+                              ? 'Not synced yet'
+                              : 'Synced ${formatRelativeTime(viewModel.lastUpdated!)}',
                           style: OmnisonicTypography.glassButton.copyWith(
-                            fontSize: 11.5,
                             color: scheme.onSurface,
                           ),
                         ),
@@ -70,8 +77,7 @@ class LibraryStatsRail extends StatelessWidget {
                               ? '${viewModel.duplicateGroupCount} duplicate '
                                     'groups merged'
                               : 'no duplicates found',
-                          style: OmnisonicTypography.technical.copyWith(
-                            fontSize: 9.5,
+                          style: OmnisonicTypography.technicalSmall.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
@@ -140,7 +146,9 @@ class _StatGrid extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.55),
+              color: OmnisonicColors.glassFill(
+                isDark ? Brightness.dark : Brightness.light,
+              ),
               borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
             ),
             child: Column(
@@ -160,8 +168,7 @@ class _StatGrid extends StatelessWidget {
                   stat.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: OmnisonicTypography.technical.copyWith(
-                    fontSize: 9.5,
+                  style: OmnisonicTypography.technicalSmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -218,8 +225,7 @@ class _TopArtists extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${entry.value}',
-                      style: OmnisonicTypography.technical.copyWith(
-                        fontSize: 10,
+                      style: OmnisonicTypography.technicalSmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
                     ),

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'media_card.dart';
@@ -133,4 +134,21 @@ class ResponsiveGridView extends StatelessWidget {
       },
     );
   }
+}
+
+/// Lets a horizontal carousel be dragged with a mouse or trackpad.
+///
+/// Flutter only drag-scrolls with touch and stylus by default, so on desktop
+/// the Home and Search carousels could only be moved with a horizontal
+/// scroll wheel — which most mice do not have.
+class CarouselScrollBehavior extends MaterialScrollBehavior {
+  const CarouselScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+  };
 }

@@ -308,6 +308,16 @@ class OmnisonicColors {
   /// than the light stack since it sits on a near-black base.
   static const List<double> glassAlphasDark = [0.05, 0.09, 0.13, 0.18];
 
+  /// A flat glass-like fill for a tile inside a glass pane: a white wash
+  /// at [light] alpha in light mode and [dark] alpha in dark mode.
+  static Color glassFill(
+    Brightness brightness, {
+    double light = 0.55,
+    double dark = 0.06,
+  }) => neutralWhite.withValues(
+    alpha: brightness == Brightness.dark ? dark : light,
+  );
+
   static Color glassLight(int stop) =>
       Colors.white.withValues(alpha: glassAlphasLight[stop]);
 

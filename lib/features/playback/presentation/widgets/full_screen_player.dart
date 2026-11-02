@@ -346,7 +346,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: OmnisonicTypography.semiBold,
                   ),
                 ),
                 const Spacer(),
@@ -394,13 +394,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
               color: scheme.surfaceContainerHighest,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              boxShadow: OmnisonicShadows.art,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
@@ -446,9 +440,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         Text(
           track.title,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: OmnisonicTypography.bold,
+          ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -880,7 +874,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isCurrent
+                        ? OmnisonicTypography.semiBold
+                        : OmnisonicTypography.medium,
                   ),
                 ),
                 subtitle: Text(

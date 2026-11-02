@@ -9,7 +9,12 @@ import '../../../../core/services/download_preferences_service.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../../core/utils/haptics.dart';
-import '../widgets/page_header.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/entities/entities.dart';
+import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
+import '../../../playback/data/datasources/adaptive_streaming_service.dart';
+import '../widgets/widgets.dart';
 
 /// Settings screen. Every row here is backed by a real, already-persisted
 /// setting or a real piece of app state — nothing is a decorative stub.
@@ -37,6 +42,9 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionHeader(context, 'Account'),
           _buildAccountCard(context),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, 'About'),
+          _buildAboutCard(context),
         ],
       ),
     );
@@ -88,7 +96,6 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _buildPlaybackCard(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return GlassSurface(
       borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
       padding: EdgeInsets.zero,
@@ -96,18 +103,24 @@ class SettingsPage extends StatelessWidget {
         children: [
           Consumer<PlaybackViewModel>(
             builder: (context, vm, child) {
+              final streaming = getIt.isRegistered<AdaptiveStreamingService>()
+                  ? getIt<AdaptiveStreamingService>()
+                  : null;
+              final cap = streaming?.qualityCap;
               return ListTile(
                 leading: const Icon(OmnisonicIcons.graphicEq),
                 title: const Text('Streaming quality'),
-                subtitle: const Text(
-                  'Automatic — adapts to your network connection',
+                subtitle: Text(
+                  cap == null
+                      ? 'Automatic — adapts to your connection. Now: '
+                            '${vm.currentQuality.displayName}'
+                      : 'Up to ${cap.displayName}, lower when the '
+                            'connection struggles',
                 ),
-                trailing: Text(
-                  vm.currentQuality.format,
-                  style: OmnisonicTypography.metadata.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
+                trailing: const Icon(OmnisonicIcons.chevronRight),
+                onTap: streaming == null
+                    ? null
+                    : () => _chooseQuality(context, streaming, cap),
               );
             },
           ),
@@ -150,6 +163,29 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
+          if (_hasProvider<OfflineModeViewModel>(context))
+            const Divider(height: 1),
+          if (_hasProvider<OfflineModeViewModel>(context))
+            Consumer<OfflineModeViewModel>(
+              builder: (context, offline, child) => SwitchListTile(
+                secondary: const Icon(OmnisonicIcons.cloudOff),
+                title: const Text('Offline mode'),
+                subtitle: const Text(
+                  'Use only what is downloaded, even with a connection',
+                ),
+                value: offline.isForcedOffline,
+                onChanged: offline.setOfflineMode,
+              ),
+            ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(OmnisonicIcons.image),
+            title: const Text('Clear artwork cache'),
+            subtitle: const Text(
+              'Frees space; covers download again as you browse',
+            ),
+            onTap: () => _clearArtworkCache(context),
+          ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(OmnisonicIcons.downloadOutline),
@@ -184,5 +220,102 @@ class SettingsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _chooseQuality(
+    BuildContext context,
+    AdaptiveStreamingService service,
+    AudioQuality? current,
+  ) {
+    const options = <(AudioQuality?, String, String)>[
+      (null, 'Automatic', 'The best your connection can carry'),
+      (AudioQuality.ultra, 'Original', 'As stored on the server'),
+      (AudioQuality.high, 'High', 'MP3, the highest bitrate'),
+      (AudioQuality.medium, 'Standard', 'Saves data'),
+      (AudioQuality.low, 'Low', 'Least data'),
+    ];
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: RadioGroup<AudioQuality?>(
+          groupValue: current,
+          onChanged: (value) {
+            service.setQualityCap(value);
+            Navigator.pop(sheetContext);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final (value, title, subtitle) in options)
+                RadioListTile<AudioQuality?>(
+                  value: value,
+                  title: Text(title),
+                  subtitle: Text(subtitle),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _clearArtworkCache(BuildContext context) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear artwork cache?',
+      message: 'Covers are downloaded again as you browse.',
+      confirmLabel: 'Clear',
+    );
+    if (!confirmed) return;
+    await OmnisonicImageCacheManager.instance.emptyCache();
+    if (context.mounted) {
+      showFeedback(
+        context,
+        'Artwork cache cleared',
+        kind: FeedbackKind.success,
+      );
+    }
+  }
+
+  Widget _buildAboutCard(BuildContext context) {
+    return GlassSurface(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(OmnisonicIcons.info),
+            title: const Text('About Omnisonic'),
+            subtitle: const Text(
+              'One library across all your Subsonic servers',
+            ),
+            onTap: () => showAboutDialog(
+              context: context,
+              applicationName: 'Omnisonic',
+              applicationLegalese:
+                  'A client for Subsonic-compatible music servers.',
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(OmnisonicIcons.description),
+            title: const Text('Open-source licences'),
+            trailing: const Icon(OmnisonicIcons.chevronRight),
+            onTap: () =>
+                showLicensePage(context: context, applicationName: 'Omnisonic'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static bool _hasProvider<T>(BuildContext context) {
+    try {
+      Provider.of<T>(context, listen: false);
+      return true;
+    } on ProviderNotFoundException {
+      return false;
+    }
   }
 }

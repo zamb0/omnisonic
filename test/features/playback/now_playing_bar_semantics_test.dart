@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/entity_factories.dart';
@@ -38,17 +37,7 @@ void main() {
     // The bar slides in; its semantics are off screen until it lands.
     await tester.pump(const Duration(seconds: 1));
 
-    final values = <String>[];
-    void walk(SemanticsNode node) {
-      if (node.value.isNotEmpty) values.add(node.value);
-      node.visitChildren((child) {
-        walk(child);
-        return true;
-      });
-    }
-
-    walk(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
-    expect(values, contains('1:00 of 4:00'));
+    expect(find.semantics.byValue('1:00 of 4:00'), findsOne);
     handle.dispose();
   });
 }

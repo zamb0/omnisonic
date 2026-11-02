@@ -97,7 +97,7 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
     if (!mounted || !_controller.hasClients) return;
     final duration = AnimationUtils.adjustedDuration(
       context,
-      const Duration(milliseconds: 250),
+      AnimationManager.quickDuration,
     );
 
     final target = _itemKeys[index]?.currentContext;
@@ -170,7 +170,9 @@ class _SyncedLyricsViewState extends State<SyncedLyricsView> {
                 color: isActive
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive
+                    ? OmnisonicTypography.semiBold
+                    : OmnisonicTypography.regular,
                 height: 1.4,
               ),
               child: Text(line.text, textAlign: TextAlign.center),

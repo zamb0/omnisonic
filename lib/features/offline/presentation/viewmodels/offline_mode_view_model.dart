@@ -46,6 +46,11 @@ class OfflineModeViewModel extends ChangeNotifier {
 
   // Getters
   bool get isOffline => _isOffline;
+
+  /// Whether the user switched offline mode on themselves, as opposed to
+  /// the network being down.
+  bool get isForcedOffline => _isForcedOffline;
+  bool _isForcedOffline = false;
   ConnectivityResult get connectivityType => _connectivityType;
   NetworkQuality get networkQuality => _networkQuality;
   bool get isLoading => _isLoading;
@@ -186,7 +191,8 @@ class OfflineModeViewModel extends ChangeNotifier {
       result.fold(
         (failure) => _setError('Failed to set offline mode: $failure'),
         (_) {
-          // Success - offline mode set
+          _isForcedOffline = forceOffline;
+          notifyListeners();
         },
       );
     } catch (e) {

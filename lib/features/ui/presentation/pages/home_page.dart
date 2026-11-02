@@ -11,7 +11,6 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../widgets/widgets.dart';
-import 'main_shell.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -295,15 +294,13 @@ class _HomePageState extends State<HomePage> {
                           Text(
                             'Pick up where you left',
                             style: OmnisonicTypography.glassButton.copyWith(
-                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             track.title,
-                            style: OmnisonicTypography.bodyMedium.copyWith(
-                              fontSize: 15,
+                            style: OmnisonicTypography.titleSmall.copyWith(
                               fontWeight: OmnisonicTypography.bold,
                               color: scheme.onSurface,
                             ),
@@ -326,10 +323,8 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(width: 6),
                               Text(
                                 track.quality.displayName,
-                                style: OmnisonicTypography.technical.copyWith(
-                                  fontSize: 9.5,
-                                  color: scheme.onSurfaceVariant,
-                                ),
+                                style: OmnisonicTypography.technicalSmall
+                                    .copyWith(color: scheme.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -374,18 +369,32 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Random Tracks', meta: 'shuffle all'),
+              // "shuffle all" used to sit here as plain text that looked
+              // like an action; it is one now.
+              _buildSectionHeader(
+                'Random Tracks',
+                actionLabel: 'Shuffle all',
+                onAction: () => _shuffleAll(viewModel.tracks),
+              ),
               SizedBox(
-                height: 72,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: randomTracks.length,
-                  itemBuilder: (context, index) => Padding(
-                    // Keyed by track so a reshuffle cannot hand one tile's
-                    // state (hover, artwork fade-in) to another track.
-                    key: ValueKey(randomTracks[index].id),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _buildTrackTile(randomTracks, index),
+                // Two lines of text in a dense row, at the user's text size.
+                height: OmnisonicTextScale.boxExtent(
+                  context,
+                  fixed: 24,
+                  text: 48,
+                ),
+                child: ScrollConfiguration(
+                  behavior: const CarouselScrollBehavior(),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: randomTracks.length,
+                    itemBuilder: (context, index) => Padding(
+                      // Keyed by track so a reshuffle cannot hand one tile's
+                      // state (hover, artwork fade-in) to another track.
+                      key: ValueKey(randomTracks[index].id),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: _buildTrackTile(randomTracks, index),
+                    ),
                   ),
                 ),
               ),
@@ -420,39 +429,19 @@ class _HomePageState extends State<HomePage> {
   /// Section heading: an oversized Gabarito title with an optional mono
   /// counter aligned to its baseline. No icon chip — the redesign carries
   /// hierarchy in the type, not in decoration beside it.
-  Widget _buildSectionHeader(String title, {String? meta}) {
-    final scheme = Theme.of(context).colorScheme;
-    final wide = ShellLayout.hasSidebar(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style:
-                  (wide
-                          ? OmnisonicTypography.sectionTitle
-                          : OmnisonicTypography.sectionTitleSmall)
-                      .copyWith(color: scheme.onSurface),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (meta != null)
-            Text(
-              meta,
-              style: OmnisonicTypography.technical.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget _buildSectionHeader(
+    String title, {
+    String? meta,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) => SectionHeader(
+    title: title,
+    meta: meta,
+    size: SectionHeaderSize.large,
+    padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+    seeAllLabel: actionLabel ?? 'See all',
+    onSeeAllPressed: onAction,
+  );
 
   /// First-run state: with no server configured every section below collapses,
   /// so Home would otherwise be a title over a blank screen.
@@ -539,21 +528,32 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title, meta: meta),
+          // Carousels show a preview; "See all" leads to the full list.
+          _buildSectionHeader(
+            title,
+            meta: meta,
+            onAction: () => context.go('${AppRouter.library}?tab=albums'),
+          ),
           SizedBox(
             height: AlbumCard.extentFor(context, 160, showMeta: false),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: albums.length,
-              itemBuilder: (context, index) {
-                final album = albums[index];
-                return Padding(
-                  key: ValueKey(album.id),
-                  padding: const EdgeInsets.only(right: 14),
-                  child: _buildAlbumCard(album, showServerDot: showServerDots),
-                );
-              },
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: albums.length,
+                itemBuilder: (context, index) {
+                  final album = albums[index];
+                  return Padding(
+                    key: ValueKey(album.id),
+                    padding: const EdgeInsets.only(right: 14),
+                    child: _buildAlbumCard(
+                      album,
+                      showServerDot: showServerDots,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -568,6 +568,16 @@ class _HomePageState extends State<HomePage> {
         showMeta: false,
         sourceServerIds: showServerDot ? [album.serverId] : null,
       );
+
+  void _shuffleAll(List<Track> tracks) {
+    if (tracks.isEmpty) return;
+    final queue = List<Track>.of(tracks)..shuffle();
+    context.read<PlaybackViewModel>().playTrack(
+      queue.first,
+      queue: queue,
+      startIndex: 0,
+    );
+  }
 
   Future<void> _onRefresh() async {
     final viewModel = context.read<MusicLibraryViewModel>();

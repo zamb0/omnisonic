@@ -13,6 +13,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/errors/errors.dart';
 import '../../../../core/utils/app_log.dart';
 import '../services/library_sort_service.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Artist detail page showing albums with enhanced functionality
 class ArtistDetailPage extends StatefulWidget {
@@ -124,7 +125,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
                     Text(
                       'Albums',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: OmnisonicTypography.bold,
                       ),
                     ),
                   ],
@@ -194,164 +195,54 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     );
   }
 
+  /// The artist's [DetailHeader].
+  ///
+  /// The old one showed "Artist information will be available in a future
+  /// update." whenever there was a MusicBrainz id but no biography, a
+  /// "MusicBrainz" chip that looked like a link and was not, and the raw id
+  /// in a hard-coded monospace font. Only the biography is shown now, when
+  /// the server has one.
   Widget _buildArtistHeader(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final biography = widget.artist.biography?.trim();
+    final hasAlbums = _albums.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 720;
-          final imageSize = isNarrow ? 150.0 : 190.0;
-          final content = _buildArtistHeaderContent(context, scheme);
-          if (isNarrow) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildArtistArtwork(context, scheme, imageSize),
-                const SizedBox(height: 16),
-                content,
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildArtistArtwork(context, scheme, imageSize),
-              const SizedBox(width: 24),
-              Expanded(child: content),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildArtistHeaderContent(BuildContext context, ColorScheme scheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.artist.name,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+      child: DetailHeader(
+        eyebrow: 'Artist',
+        title: widget.artist.name,
+        artwork: LayoutBuilder(
+          builder: (context, constraints) =>
+              _buildArtistArtwork(context, scheme, constraints.maxWidth),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 8,
-          children: [
+        chips: [
+          if (!_isLoading)
             MetadataChip(
               icon: OmnisonicIcons.album,
-              label: '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
+              label: pluralize(_albums.length, 'album'),
             ),
-            MetadataChip(
-              icon: OmnisonicIcons.dns,
-              label: _getServerName(context),
-            ),
-            if (widget.artist.musicBrainzId != null)
-              MetadataChip(
-                icon: OmnisonicIcons.fingerprint,
-                label: 'MusicBrainz',
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (widget.artist.biography != null &&
-            widget.artist.biography!.isNotEmpty)
-          _buildAboutCard(
-            context,
-            scheme,
-            widget.artist.biography!,
-            widget.artist.musicBrainzId,
-          )
-        else if (widget.artist.musicBrainzId != null)
-          _buildAboutCard(
-            context,
-            scheme,
-            'Artist information will be available in a future update.',
-            widget.artist.musicBrainzId,
-          ),
-        if (_albums.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _playArtist,
-                icon: const Icon(OmnisonicIcons.playArrow),
-                label: const Text('Play All'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                onPressed: _shuffleArtist,
-                icon: const Icon(OmnisonicIcons.shuffle),
-                label: const Text('Shuffle'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ],
+          MetadataChip(
+            icon: OmnisonicIcons.dns,
+            label: _getServerName(context),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildAboutCard(
-    BuildContext context,
-    ColorScheme scheme,
-    String text,
-    String? musicBrainzId,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'About',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-            border: Border.all(color: scheme.outlineVariant),
+        actions: [
+          FilledButton.icon(
+            onPressed: hasAlbums ? _playArtist : null,
+            icon: const Icon(OmnisonicIcons.playArrow),
+            label: const Text('Play all'),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                text,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              if (musicBrainzId != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'MusicBrainz ID: $musicBrainzId',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-            ],
+          OutlinedButton.icon(
+            onPressed: hasAlbums ? _shuffleArtist : null,
+            icon: const Icon(OmnisonicIcons.shuffle),
+            label: const Text('Shuffle'),
           ),
-        ),
-      ],
+        ],
+        below: biography == null || biography.isEmpty
+            ? null
+            : _Biography(text: biography),
+      ),
     );
   }
 
@@ -437,5 +328,42 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
   void _onAlbumTapped(Album album) {
     // Navigate to album detail page
     context.push(AppRouter.albumDetailLocation(album.id), extra: album);
+  }
+}
+
+/// The server's biography of the artist, collapsed to a few lines.
+class _Biography extends StatefulWidget {
+  const _Biography({required this.text});
+
+  final String text;
+
+  @override
+  State<_Biography> createState() => _BiographyState();
+}
+
+class _BiographyState extends State<_Biography> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          maxLines: _expanded ? null : 4,
+          overflow: _expanded ? null : TextOverflow.ellipsis,
+          style: OmnisonicTypography.bodyMedium.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        if (widget.text.length > 240)
+          TextButton(
+            onPressed: () => setState(() => _expanded = !_expanded),
+            child: Text(_expanded ? 'Show less' : 'Read more'),
+          ),
+      ],
+    );
   }
 }

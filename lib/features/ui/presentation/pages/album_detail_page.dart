@@ -145,9 +145,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               children: [
                 Text(
                   'Tracks',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: OmnisonicTypography.bold,
+                  ),
                 ),
               ],
             ),
@@ -251,9 +251,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       children: [
         Text(
           'Tracks',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: OmnisonicTypography.bold,
+          ),
         ),
         const Spacer(),
       ],
@@ -368,8 +368,13 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       ),
     );
 
-    return ColoredBox(
-      color: scheme.surface,
+    // Frosted rather than an opaque surface slab: the rows still have to
+    // be hidden as they scroll under the pinned labels, but a flat block of
+    // `surface` broke the glass backdrop.
+    return GlassSurface(
+      borderRadius: BorderRadius.zero,
+      intensity: GlassIntensity.pill,
+      highlight: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1061,9 +1066,10 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   /// The header's height for the current text scale.
   static double extentFor(BuildContext context) =>
-      // 2 × 8px padding + 1px divider are fixed; the label line (11px at a
-      // 1.6 line height, plus rounding slack) scales.
-      17 + OmnisonicTextScale.textExtent(context, 19);
+      // 2 × 8px padding, a 1px divider and the glass's 2 × 1px border are
+      // fixed; the label line (11px at a 1.6 line height, plus rounding
+      // slack) scales.
+      19 + OmnisonicTextScale.textExtent(context, 19);
 
   @override
   double get minExtent => extent;

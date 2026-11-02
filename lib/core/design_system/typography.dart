@@ -291,6 +291,19 @@ class OmnisonicTypography {
   static TextStyle get technical =>
       _mono(fontSize: 12, fontWeight: semiBold, letterSpacing: 0, height: 1.3);
 
+  /// The app name in the sidebar.
+  static TextStyle get wordmark => _gabarito(
+    fontSize: 17,
+    fontWeight: extraBold,
+    letterSpacing: -0.17,
+    height: 1.2,
+  );
+
+  /// Technical text where space is tight — rail counts, short ids, stat
+  /// tile captions. The floor for any text: 11px.
+  static TextStyle get technicalSmall =>
+      _mono(fontSize: 11, fontWeight: semiBold, letterSpacing: 0, height: 1.3);
+
   // Media cards
   //
   // Cards used literal 12.5/11/9.5px sizes, each page its own. These are the

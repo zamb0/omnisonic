@@ -49,87 +49,75 @@ class ServerListTile extends StatelessWidget {
   }
 
   Widget _buildTile(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: _buildLeading(context),
       title: Text(
         server.name,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: OmnisonicTypography.titleSmall.copyWith(color: scheme.onSurface),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            server.url,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: OmnisonicTypography.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StatusChip(status: server.status),
-              const SizedBox(width: 8),
               Text(
-                'User: ${server.username}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: OmnisonicColors.neutralGray600,
+                server.username,
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-          if (server.lastSync != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              'Last sync: ${formatRelativeTime(server.lastSync!)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: OmnisonicColors.neutralGray600,
-                fontSize: 11,
-              ),
-            ),
-          ],
         ],
       ),
       trailing: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
+          ? const SizedBox.square(
+              dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : PopupMenuButton<String>(
-              onSelected: (value) => _handleMenuAction(value),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'test',
-                  child: ListTile(
-                    leading: Icon(OmnisonicIcons.wifiProtectedSetup),
-                    title: Text('Test Connection'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+          : MenuAnchor(
+              builder: (context, controller, child) => IconButton(
+                icon: const Icon(OmnisonicIcons.moreVert),
+                tooltip: 'Actions for ${server.name}',
+                onPressed: () =>
+                    controller.isOpen ? controller.close() : controller.open(),
+              ),
+              menuChildren: [
+                MenuItemButton(
+                  leadingIcon: const Icon(OmnisonicIcons.wifiProtectedSetup),
+                  onPressed: onTest,
+                  child: const Text('Test connection'),
                 ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                    leading: Icon(OmnisonicIcons.edit),
-                    title: Text('Edit'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                MenuItemButton(
+                  leadingIcon: const Icon(OmnisonicIcons.edit),
+                  onPressed: onEdit,
+                  child: const Text('Edit'),
                 ),
-                const PopupMenuDivider(),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                    leading: Icon(
-                      OmnisonicIcons.delete,
-                      color: OmnisonicColors.error,
-                    ),
-                    title: Text(
-                      'Delete',
-                      style: TextStyle(color: OmnisonicColors.error),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                MenuItemButton(
+                  leadingIcon: Icon(OmnisonicIcons.delete, color: scheme.error),
+                  onPressed: onDelete,
+                  child: Text('Remove', style: TextStyle(color: scheme.error)),
                 ),
               ],
             ),
       onTap: onTap,
-      isThreeLine: true,
     );
   }
 
@@ -139,20 +127,20 @@ class ServerListTile extends StatelessWidget {
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Row(
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 4,
         children: [
           _buildStat(
             context,
             OmnisonicIcons.albumOutline,
-            albumCount != null ? '$albumCount albums' : '— albums',
+            albumCount != null ? pluralize(albumCount!, 'album') : '— albums',
           ),
-          const SizedBox(width: 16),
           _buildStat(
             context,
             OmnisonicIcons.speedOutline,
             latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
           ),
-          const SizedBox(width: 16),
           _buildStat(
             context,
             OmnisonicIcons.syncOutline,
@@ -197,19 +185,5 @@ class ServerListTile extends StatelessWidget {
       ),
       child: Icon(OmnisonicIcons.dns, color: color, size: 24),
     );
-  }
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'test':
-        onTest?.call();
-        break;
-      case 'edit':
-        onEdit?.call();
-        break;
-      case 'delete':
-        onDelete?.call();
-        break;
-    }
   }
 }

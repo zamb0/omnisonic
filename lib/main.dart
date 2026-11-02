@@ -164,7 +164,14 @@ class _OmnisonicAppState extends State<OmnisonicApp>
                   source: () => getIt<PlaylistViewModel>(),
                   message: () => getIt<PlaylistViewModel>().actionError,
                   clear: () => getIt<PlaylistViewModel>().clearActionError(),
-                  child: child ?? const SizedBox.shrink(),
+                  child: ActionErrorListener(
+                    source: () => getIt<ServerManagementViewModel>(),
+                    message: () =>
+                        getIt<ServerManagementViewModel>().actionError,
+                    clear: () =>
+                        getIt<ServerManagementViewModel>().clearActionError(),
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),

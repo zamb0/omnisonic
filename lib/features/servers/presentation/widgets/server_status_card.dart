@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/design_system/design_system.dart';
 
-/// A card widget for displaying server status statistics
+/// One count on the Status tab — "Online 3" — as a glass stat tile.
 class ServerStatusCard extends StatelessWidget {
   final String title;
   final int count;
@@ -18,41 +19,33 @@ class ServerStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: '$title: $count',
+      excludeSemantics: true,
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
+                Icon(icon, color: color, size: OmnisonicIconSizes.smd),
                 const Spacer(),
                 Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                  '$count',
+                  style: OmnisonicTypography.statValue.copyWith(
+                    color: scheme.onSurface,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: OmnisonicSpacing.sm),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: OmnisonicTypography.labelMedium.copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
           ],

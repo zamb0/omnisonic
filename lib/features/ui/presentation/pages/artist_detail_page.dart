@@ -80,13 +80,12 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              leading: IconButton(
-                icon: const Icon(OmnisonicIcons.arrowBack),
+              leading: BackButton(
                 onPressed: () {
                   if (context.canPop()) {
                     context.pop();
                   } else {
-                    context.go('/library');
+                    context.go(AppRouter.library);
                   }
                 },
               ),

@@ -492,7 +492,19 @@ class FakeServerManagementViewModel extends ChangeNotifier
   Future<bool> refreshServers() async => true;
 
   @override
-  void syncAllServers() {}
+  Future<bool> syncAllServers() async => true;
+
+  @override
+  bool get isSyncingAll => false;
+
+  @override
+  bool get isSaving => false;
+
+  @override
+  String? get actionError => null;
+
+  @override
+  void clearActionError() {}
 
   @override
   void clearError() {

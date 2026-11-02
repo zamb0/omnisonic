@@ -13,6 +13,8 @@ import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/errors/errors.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// Album detail page showing tracks with enhanced functionality
 class AlbumDetailPage extends StatefulWidget {
@@ -90,6 +92,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       // Use proper getAlbumTracks method which queries by albumId
       // and fetches from server if not found locally
       final albumTracks = await musicRepository.getAlbumTracks(_album.id);
+      // The user may have left while the server was answering.
+      if (!mounted) return;
 
       setState(() {
         _tracks = albumTracks;
@@ -98,8 +102,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         _rebuildSourceNotes();
       });
     } catch (e) {
+      AppLog.error('Loading tracks for ${_album.id} failed: $e');
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load tracks: $e';
+        _errorMessage = describeUnexpected(action: "load this album's tracks");
         _isLoading = false;
       });
     }
@@ -177,13 +183,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildAlbumHeaderContent(
-                            context,
-                            Theme.of(context).colorScheme,
-                            0,
-                            includeArtwork: true,
-                            includeSourcePanel: false,
-                          ),
+                          _buildHeader(context, desktop: true),
                           const SizedBox(height: OmnisonicSpacing.lg),
                           _buildTracksHeaderRow(context),
                           const SizedBox(height: OmnisonicSpacing.sm),
@@ -213,13 +213,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
       pinned: true,
-      leading: IconButton(
-        icon: const Icon(OmnisonicIcons.arrowBack),
+      leading: BackButton(
         onPressed: () {
           if (context.canPop()) {
             context.pop();
           } else {
-            context.go('/library');
+            context.go(AppRouter.library);
           }
         },
       ),
@@ -498,6 +497,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               width: 40,
               child: IconButton(
                 icon: const Icon(OmnisonicIcons.moreVert, size: 18),
+                tooltip: 'More actions for ${track.title}',
                 onPressed: () => _showTrackOptions(track),
               ),
             ),
@@ -655,165 +655,85 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     );
   }
 
-  Widget _buildAlbumHeader(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 720;
-          final artworkSize = isNarrow ? 160.0 : 200.0;
-          final content = _buildAlbumHeaderContent(
-            context,
-            scheme,
-            artworkSize,
-          );
-          if (isNarrow) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAlbumArtwork(context, scheme, artworkSize),
-                const SizedBox(height: 16),
-                content,
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAlbumArtwork(context, scheme, artworkSize),
-              const SizedBox(width: 24),
-              Expanded(child: content),
-            ],
-          );
-        },
-      ),
-    );
-  }
+  Widget _buildAlbumHeader(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    child: _buildHeader(context),
+  );
 
-  Widget _buildAlbumHeaderContent(
-    BuildContext context,
-    ColorScheme scheme,
-    double artworkSize, {
-    bool includeArtwork = false,
-    bool includeSourcePanel = true,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (includeArtwork) ...[
-          _buildAlbumArtwork(context, scheme, 220),
-          const SizedBox(height: 16),
-        ],
-        // Eyebrow states the aggregation up front — this is the one screen
-        // where "the same album lives on N servers" is the point.
-        Text(
-          _albumVariants.length > 1
-              ? 'ALBUM · MERGED FROM ${_albumVariants.length} SERVERS'
-              : 'ALBUM',
-          style: OmnisonicTypography.eyebrow.copyWith(
-            fontSize: 10.5,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          _album.title,
-          style: OmnisonicTypography.pageTitle.copyWith(
-            fontSize: includeArtwork ? 28 : 52,
-            fontWeight: OmnisonicTypography.black,
-            letterSpacing: includeArtwork ? -0.56 : -1.56,
-            color: scheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          _album.artist,
-          style: OmnisonicTypography.bodyMedium.copyWith(
-            fontSize: includeArtwork ? 14 : 15,
-            fontWeight: OmnisonicTypography.semiBold,
-            color: scheme.onSurface,
-          ),
-        ),
-        if (includeSourcePanel && _albumVariants.length > 1) ...[
-          const SizedBox(height: 12),
-          _buildSourcePanel(context, scheme),
-        ],
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 8,
-          children: [
-            if (_album.year != null)
-              MetadataChip(
-                icon: OmnisonicIcons.calendarToday,
-                label: '${_album.year}',
-              ),
-            if (_album.genre != null)
-              MetadataChip(
-                icon: OmnisonicIcons.musicNote,
-                label: _album.genre!,
-              ),
-            MetadataChip(
-              icon: OmnisonicIcons.queueMusic,
-              label: '${_tracks.length} track${_tracks.length == 1 ? '' : 's'}',
+  /// The album's [DetailHeader]. On desktop it sits in the left column above
+  /// the track table, stacked, and the source picker moves to the right
+  /// panel.
+  Widget _buildHeader(BuildContext context, {bool desktop = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    final canPlay = _tracks.isNotEmpty;
+    final artistId = _album.artistId;
+
+    return DetailHeader(
+      forceNarrow: desktop,
+      artworkSize: desktop ? 220 : null,
+      // Eyebrow states the aggregation up front — this is the one screen
+      // where "the same album lives on N servers" is the point.
+      eyebrow: _albumVariants.length > 1
+          ? 'Album · merged from ${_albumVariants.length} servers'
+          : 'Album',
+      title: _album.title,
+      artwork: LayoutBuilder(
+        builder: (context, constraints) =>
+            _buildAlbumArtwork(context, scheme, constraints.maxWidth),
+      ),
+      subtitle: artistId == null
+          ? Text(_album.artist)
+          : _ArtistLink(
+              name: _album.artist,
+              onTap: () =>
+                  context.push(AppRouter.artistDetailLocation(artistId)),
             ),
-            if (_tracks.isNotEmpty)
-              MetadataChip(
-                icon: OmnisonicIcons.accessTime,
-                label: formatTotalDuration(
-                  _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
-                ),
-              ),
-            MetadataChip(
-              icon: OmnisonicIcons.dns,
-              label: _getServerNameForAlbum(context, _album),
-            ),
-          ],
-        ),
-        if (_tracks.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _playAlbum,
-                icon: const Icon(OmnisonicIcons.playArrow),
-                label: const Text('Play'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                onPressed: _shuffleAlbum,
-                icon: const Icon(OmnisonicIcons.shuffle),
-                label: const Text('Shuffle'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              OutlinedButton.icon(
-                onPressed: _downloadAlbum,
-                icon: const Icon(OmnisonicIcons.downloadOutline),
-                label: const Text('Download'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ],
+      chips: [
+        if (_album.year != null)
+          MetadataChip(
+            icon: OmnisonicIcons.calendarToday,
+            label: '${_album.year}',
           ),
-        ],
+        if (_album.genre != null)
+          MetadataChip(icon: OmnisonicIcons.musicNote, label: _album.genre!),
+        // Not while loading: "0 tracks" there read as an empty album.
+        if (!_isLoading)
+          MetadataChip(
+            icon: OmnisonicIcons.queueMusic,
+            label: pluralize(_tracks.length, 'track'),
+          ),
+        if (_tracks.isNotEmpty)
+          MetadataChip(
+            icon: OmnisonicIcons.accessTime,
+            label: formatTotalDuration(
+              _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
+            ),
+          ),
+        MetadataChip(
+          icon: OmnisonicIcons.dns,
+          label: _getServerNameForAlbum(context, _album),
+        ),
       ],
+      actions: [
+        FilledButton.icon(
+          onPressed: canPlay ? _playAlbum : null,
+          icon: const Icon(OmnisonicIcons.playArrow),
+          label: const Text('Play'),
+        ),
+        OutlinedButton.icon(
+          onPressed: canPlay ? _shuffleAlbum : null,
+          icon: const Icon(OmnisonicIcons.shuffle),
+          label: const Text('Shuffle'),
+        ),
+        OutlinedButton.icon(
+          onPressed: canPlay ? _downloadAlbum : null,
+          icon: const Icon(OmnisonicIcons.downloadOutline),
+          label: const Text('Download'),
+        ),
+      ],
+      below: !desktop && _albumVariants.length > 1
+          ? _buildSourcePanel(context, scheme)
+          : null,
     );
   }
 
@@ -1077,43 +997,21 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       context.read<ServerManagementViewModel>().serverNameFor(album.serverId);
 
   void _playAlbum() {
-    if (_tracks.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No tracks to play')));
-      return;
-    }
-
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(_tracks.first, queue: _tracks, startIndex: 0);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Playing ${_album.title} (${_tracks.length} tracks)'),
-      ),
+    if (_tracks.isEmpty) return;
+    context.read<PlaybackViewModel>().playTrack(
+      _tracks.first,
+      queue: _tracks,
+      startIndex: 0,
     );
   }
 
   void _shuffleAlbum() {
-    if (_tracks.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No tracks to shuffle')));
-      return;
-    }
-
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    final shuffledTracks = List<Track>.from(_tracks)..shuffle();
-    playbackViewModel.playTrack(
-      shuffledTracks.first,
-      queue: shuffledTracks,
+    if (_tracks.isEmpty) return;
+    final shuffled = List<Track>.of(_tracks)..shuffle();
+    context.read<PlaybackViewModel>().playTrack(
+      shuffled.first,
+      queue: shuffled,
       startIndex: 0,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Shuffling ${_album.title} (${_tracks.length} tracks)'),
-      ),
     );
   }
 
@@ -1123,22 +1021,18 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     if (_tracks.isEmpty) return;
 
     final offline = context.read<OfflineModeViewModel>();
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.showSnackBar(
-      SnackBar(content: Text('Downloading ${_album.title}…')),
-    );
-
+    showFeedback(context, 'Downloading ${_album.title}…');
     final failures = await offline.downloadTracks(_tracks);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          failures == 0
-              ? '${_album.title} is available offline'
-              : '$failures of ${_tracks.length} tracks could not be downloaded',
-        ),
-      ),
+    if (!mounted) return;
+    showFeedback(
+      context,
+      failures == 0
+          ? '${_album.title} is available offline'
+          : "${pluralize(failures, 'track')} of ${_tracks.length} couldn't "
+                'be downloaded',
+      kind: failures == 0 ? FeedbackKind.success : FeedbackKind.error,
+      actionLabel: failures == 0 ? null : 'Retry',
+      onAction: failures == 0 ? null : _downloadAlbum,
     );
   }
 
@@ -1187,4 +1081,27 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_TrackTableHeaderDelegate oldDelegate) =>
       oldDelegate.child != child || oldDelegate.extent != extent;
+}
+
+/// The album's artist as a link to their page.
+class _ArtistLink extends StatelessWidget {
+  const _ArtistLink({required this.name, required this.onTap});
+
+  final String name;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      link: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(name),
+        ),
+      ),
+    );
+  }
 }

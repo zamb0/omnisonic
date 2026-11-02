@@ -6,6 +6,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/errors/errors.dart';
 
 /// ViewModel for managing server connections and configuration
 ///
@@ -32,7 +33,10 @@ class ServerManagementViewModel extends ChangeNotifier {
   List<MusicServer> _servers = [];
   bool _isLoading = false;
   bool _isTestingConnection = false;
+  bool _isSaving = false;
+  bool _isSyncingAll = false;
   String? _errorMessage;
+  String? _actionError;
   ServerConnectionResult? _lastConnectionTest;
   final Map<String, bool> _serverLoadingStates = {};
 
@@ -48,7 +52,19 @@ class ServerManagementViewModel extends ChangeNotifier {
       _servers.where((s) => s.status == ServerStatus.error).toList();
   bool get isLoading => _isLoading;
   bool get isTestingConnection => _isTestingConnection;
+
+  /// Why the server list could not be loaded — a page-level state.
   String? get errorMessage => _errorMessage;
+
+  /// Why the last add, save, remove, test or sync failed. Transient: shown
+  /// inline by the dialog that caused it, or as a snackbar, then cleared.
+  String? get actionError => _actionError;
+
+  /// An add or save is in progress.
+  bool get isSaving => _isSaving;
+
+  /// A manual sync of every server is in progress.
+  bool get isSyncingAll => _isSyncingAll;
   ServerConnectionResult? get lastConnectionTest => _lastConnectionTest;
   bool get hasServers => _servers.isNotEmpty;
   bool get hasOnlineServers => onlineServers.isNotEmpty;
@@ -102,131 +118,199 @@ class ServerManagementViewModel extends ChangeNotifier {
   }
 
   /// Adds a new server
+  /// Adds a new server after testing the connection.
+  ///
+  /// Does not touch [isLoading]: that flag is the server *list* loading, and
+  /// setting it here turned the list behind the Add dialog into a skeleton.
+  /// On failure, [actionError] says why, for the dialog to show inline.
   Future<bool> addServer({
     required String name,
     required String url,
     required String username,
     required String password,
   }) async {
-    if (_isLoading) return false;
-
-    _isLoading = true;
-    _clearError();
+    if (_isSaving) return false;
+    _isSaving = true;
+    _actionError = null;
     notifyListeners();
 
     try {
-      // First test the connection
-      final testResult = await _serverRepository.testConnectionWithCredentials(
+      final connection = await _test(
         url: url,
         username: username,
         password: password,
       );
+      if (connection == null) return false;
 
-      final connectionResult = testResult.fold((failure) {
-        _setError('Connection test failed: ${failure.message}');
-        return null;
-      }, (result) => result);
-
-      if (connectionResult == null || !connectionResult.isSuccessful) {
-        _setError(
-          'Connection failed: ${connectionResult?.errorMessage ?? 'Unknown error'}',
-        );
-        return false;
-      }
-
-      // Create the server entity
       final server = MusicServer(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
+        name: name.isEmpty
+            ? (connection.serverInfo?.serverName ?? Uri.parse(url).host)
+            : name,
         url: url,
         username: username,
         status: ServerStatus.online,
         createdAt: DateTime.now(),
-        apiVersion: connectionResult.serverInfo?.apiVersion,
-        serverVersion: connectionResult.serverInfo?.version,
+        apiVersion: connection.serverInfo?.apiVersion,
+        serverVersion: connection.serverInfo?.version,
       );
 
-      // Add the server
-      final addResult = await _serverRepository.addServer(server);
-      final addSuccess = addResult.fold((failure) {
-        _setError('Failed to add server: ${failure.message}');
-        return false;
-      }, (_) => true);
-
-      if (!addSuccess) return false;
-
-      // Store credentials
-      final credentialsResult = await _serverRepository.storeCredentials(
-        server.id,
-        password,
-      );
-      final credentialsSuccess = credentialsResult.fold((failure) {
-        // If credential storage fails, remove the server to maintain consistency
-        _serverRepository.removeServer(server.id);
-        _setError('Failed to store credentials securely: ${failure.message}');
-        return false;
-      }, (_) => true);
-
-      if (!credentialsSuccess) {
+      final added = await _serverRepository.addServer(server);
+      if (added.isLeft()) {
+        _actionError = describeFailure(
+          added.fold((f) => f, (_) => throw StateError('unreachable')),
+          action: 'add the server',
+        );
         return false;
       }
 
-      _clearError();
+      final stored = await _serverRepository.storeCredentials(
+        server.id,
+        password,
+      );
+      if (stored.isLeft()) {
+        // Without its password the server is unusable; keep things
+        // consistent rather than leaving a half-added entry.
+        await _serverRepository.removeServer(server.id);
+        _actionError =
+            "Couldn't store the password securely, so the server wasn't "
+            'added. Try again.';
+        return false;
+      }
 
-      // Automatically sync the music collection from the new server
       AppLog.info('Starting automatic sync for new server');
       _triggerAutoSync(server.id);
-
       return true;
     } catch (e) {
-      _setError('Unexpected error adding server: $e');
+      AppLog.error('Adding a server failed: $e');
+      _actionError = describeUnexpected(action: 'add the server');
       return false;
     } finally {
-      _isLoading = false;
+      _isSaving = false;
       notifyListeners();
     }
   }
 
-  /// Updates an existing server
-  Future<bool> updateServer(MusicServer server) async {
-    if (_isLoading) return false;
+  /// Tests a connection and turns a failure into [actionError]; null when
+  /// the server cannot be reached or refuses the credentials.
+  Future<ServerConnectionResult?> _test({
+    required String url,
+    required String username,
+    required String password,
+  }) async {
+    final result = await _serverRepository.testConnectionWithCredentials(
+      url: url,
+      username: username,
+      password: password,
+    );
+    return result.fold(
+      (failure) {
+        _actionError = describeFailure(
+          failure,
+          action: 'connect to the server',
+        );
+        return null;
+      },
+      (connection) {
+        if (connection.isSuccessful) return connection;
+        _actionError =
+            "Couldn't connect to the server: "
+            '${connection.errorMessage ?? 'check the URL and credentials.'}';
+        return null;
+      },
+    );
+  }
 
+  /// Updates an existing server
+  /// Saves changes to [server].
+  ///
+  /// When the URL, the username or the password changes, the connection is
+  /// tested first — they used to be saved untested — using [newPassword] or
+  /// the stored one. A new password is stored only once the test passes, so
+  /// changing it no longer means deleting and re-adding the server (and
+  /// losing its cache and sync state).
+  Future<bool> updateServer(MusicServer server, {String? newPassword}) async {
+    if (_isSaving) return false;
+    _isSaving = true;
+    _actionError = null;
     _setServerLoading(server.id, true);
-    _clearError();
 
     try {
+      final previous = getServerById(server.id);
+      final password = newPassword?.isNotEmpty == true ? newPassword : null;
+      final needsTest =
+          password != null ||
+          previous == null ||
+          previous.url != server.url ||
+          previous.username != server.username;
+
+      if (needsTest) {
+        final testPassword =
+            password ??
+            (await _serverRepository.getCredentials(
+              server.id,
+            )).fold((_) => null, (stored) => stored);
+        if (testPassword == null) {
+          _actionError =
+              "Couldn't read this server's saved password. Enter it again to "
+              'save.';
+          return false;
+        }
+        final connection = await _test(
+          url: server.url,
+          username: server.username,
+          password: testPassword,
+        );
+        if (connection == null) return false;
+      }
+
       final result = await _serverRepository.updateServer(server);
-      return result.fold<bool>((failure) {
-        _setError('Failed to update server: ${failure.message}');
+      if (result.isLeft()) {
+        _actionError = describeFailure(
+          result.fold((f) => f, (_) => throw StateError('unreachable')),
+          action: 'save the server',
+        );
         return false;
-      }, (_) => true);
+      }
+      if (password != null) {
+        final stored = await _serverRepository.storeCredentials(
+          server.id,
+          password,
+        );
+        if (stored.isLeft()) {
+          _actionError =
+              "The server was saved, but the new password couldn't be "
+              'stored. Try again.';
+          return false;
+        }
+      }
+      return true;
     } catch (e) {
-      _setError('Unexpected error updating server: $e');
+      AppLog.error('Updating a server failed: $e');
+      _actionError = describeUnexpected(action: 'save the server');
       return false;
     } finally {
+      _isSaving = false;
       _setServerLoading(server.id, false);
     }
   }
 
   /// Removes a server
+  /// Removes a server and its stored password.
   Future<bool> removeServer(String serverId) async {
-    if (_isLoading) return false;
-
     _setServerLoading(serverId, true);
-    _clearError();
+    _actionError = null;
 
     try {
-      // Remove credentials first
       await _serverRepository.removeCredentials(serverId);
-
-      // Remove the server
       final result = await _serverRepository.removeServer(serverId);
       return result.fold<bool>((failure) {
-        _setError('Failed to remove server: ${failure.message}');
+        _actionError = describeFailure(failure, action: 'remove the server');
         return false;
       }, (_) => true);
     } catch (e) {
-      _setError('Unexpected error removing server: $e');
+      AppLog.error('Removing a server failed: $e');
+      _actionError = describeUnexpected(action: 'remove the server');
       return false;
     } finally {
       _setServerLoading(serverId, false);
@@ -261,6 +345,10 @@ class ServerManagementViewModel extends ChangeNotifier {
   }
 
   /// Tests connection with credentials
+  /// Tests a connection with credentials that are not saved yet.
+  ///
+  /// The result (or [actionError], on failure) is for the dialog to show
+  /// inline; it no longer becomes the page's error.
   Future<ServerConnectionResult?> testConnectionWithCredentials({
     required String url,
     required String username,
@@ -270,24 +358,19 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     _isTestingConnection = true;
     _lastConnectionTest = null;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
-      final result = await _serverRepository.testConnectionWithCredentials(
+      _lastConnectionTest = await _test(
         url: url,
         username: username,
         password: password,
       );
-
-      _lastConnectionTest = result.fold((failure) {
-        _setError('Connection test failed: ${failure.message}');
-        return null;
-      }, (connectionResult) => connectionResult);
-
       return _lastConnectionTest;
     } catch (e) {
-      _setError('Unexpected error testing connection: $e');
+      AppLog.error('Connection test failed: $e');
+      _actionError = describeUnexpected(action: 'test the connection');
       return null;
     } finally {
       _isTestingConnection = false;
@@ -368,30 +451,42 @@ class ServerManagementViewModel extends ChangeNotifier {
   }
 
   /// Manually sync all servers (user-initiated)
-  void syncAllServers() {
-    Future.delayed(const Duration(milliseconds: 100), () async {
-      try {
-        AppLog.info('Manual sync from all servers');
-        final params = SyncMusicCollectionParams(
-          serverId: null, // Sync from all servers
-          forceRefresh: true, // Force refresh for manual sync
-        );
-
-        final result = await _syncMusicCollectionUseCase(params);
-        result.fold(
-          (failure) {
-            AppLog.warn('Manual sync failed: ${failure.message}');
-          },
-          (collection) {
-            AppLog.info(
-              'Manual sync completed: ${collection.tracks.length} tracks, ${collection.albumCount} albums',
-            );
-          },
-        );
-      } catch (e) {
-        AppLog.warn('Manual sync error: $e');
-      }
-    });
+  /// Syncs every server, user-initiated. Completes with whether it worked;
+  /// [isSyncingAll] is true meanwhile.
+  ///
+  /// It used to return at once and report only to the log, so the page
+  /// showed "Syncing…" for two seconds and then nothing, success or not.
+  Future<bool> syncAllServers() async {
+    if (_isSyncingAll) return false;
+    _isSyncingAll = true;
+    notifyListeners();
+    try {
+      AppLog.info('Manual sync from all servers');
+      final result = await _syncMusicCollectionUseCase(
+        SyncMusicCollectionParams(serverId: null, forceRefresh: true),
+      );
+      return result.fold<bool>(
+        (failure) {
+          AppLog.warn('Manual sync failed: ${failure.message}');
+          _actionError = describeFailure(failure, action: 'sync your servers');
+          return false;
+        },
+        (collection) {
+          AppLog.info(
+            'Manual sync completed: ${collection.tracks.length} tracks, '
+            '${collection.albumCount} albums',
+          );
+          return true;
+        },
+      );
+    } catch (e) {
+      AppLog.warn('Manual sync error: $e');
+      _actionError = describeUnexpected(action: 'sync your servers');
+      return false;
+    } finally {
+      _isSyncingAll = false;
+      notifyListeners();
+    }
   }
 
   /// Gets server statistics
@@ -417,6 +512,13 @@ class ServerManagementViewModel extends ChangeNotifier {
 
   void _clearError() {
     _errorMessage = null;
+  }
+
+  /// Clears [actionError] once it has been shown.
+  void clearActionError() {
+    if (_actionError == null) return;
+    _actionError = null;
+    notifyListeners();
   }
 
   /// Clears the current error message

@@ -154,14 +154,14 @@ Future<void> showAlbumActions(
           context,
         ) async {
           final tracks = await library.getAlbumTracks(album.id);
-          final queued = await offline.downloadTracks(tracks);
+          final failures = await offline.downloadTracks(tracks);
           if (!context.mounted) return;
           showFeedback(
             context,
-            queued > 0
-                ? 'Downloading ${pluralize(queued, 'track')}'
-                : 'Nothing new to download',
-            kind: FeedbackKind.success,
+            failures == 0
+                ? '${album.title} is available offline'
+                : "${pluralize(failures, 'track')} couldn't be downloaded",
+            kind: failures == 0 ? FeedbackKind.success : FeedbackKind.error,
           );
         }),
       if (showGoToAlbum)

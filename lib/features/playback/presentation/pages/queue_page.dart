@@ -8,6 +8,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../viewmodels/playback_view_model.dart';
 import '../../../../core/utils/haptics.dart';
+import '../widgets/transport_controls.dart';
 
 /// Dedicated queue screen: a summary of what's playing now, and a
 /// reorderable "up next" list for everything queued after it.
@@ -210,20 +211,9 @@ class QueuePage extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: vm.hasPrevious ? () => vm.skipToPrevious() : null,
-            icon: const Icon(OmnisonicIcons.skipPrevious),
-          ),
-          IconButton(
-            onPressed: () => vm.togglePlayPause(),
-            icon: Icon(
-              vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
-            ),
-          ),
-          IconButton(
-            onPressed: vm.hasNext ? () => vm.skipToNext() : null,
-            icon: const Icon(OmnisonicIcons.skipNext),
-          ),
+          SkipPreviousButton(playback: vm),
+          PlayPauseButton(playback: vm),
+          SkipNextButton(playback: vm),
         ],
       ),
     );

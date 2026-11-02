@@ -266,6 +266,7 @@ class _LibraryPageState extends State<LibraryPage> {
                           final sources =
                               _albumSourceServerIdsCache[album.id] ?? const [];
                           return Stack(
+                            key: ValueKey(album.id),
                             children: [
                               AlbumCard(
                                 album: album,
@@ -413,6 +414,7 @@ class _LibraryPageState extends State<LibraryPage> {
             itemBuilder: (context, index) {
               final artist = sortedArtists[index];
               return ArtistCard(
+                key: ValueKey(artist.id),
                 artist: artist,
                 onTap: () => _onArtistTapped(artist),
               );

@@ -29,4 +29,24 @@ void main() {
     expect(find.widgetWithText(ListTile, 'Shuffle'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Go to album'), findsOneWidget);
   });
+
+  testWidgets('carousel items are keyed by entity, not position', (
+    tester,
+  ) async {
+    final models = TestViewModels();
+    final albums = testAlbums(3);
+    models.servers.emitServers([testServer()]);
+    models.library.emitSmartCollections(recentlyAddedAlbums: albums);
+
+    await pumpPage(
+      tester,
+      HomePage(),
+      viewModels: models,
+      size: TestSizes.phone,
+      settle: false,
+    );
+    await tester.pump();
+
+    expect(find.byKey(ValueKey(albums.first.id)), findsOneWidget);
+  });
 }

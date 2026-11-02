@@ -167,6 +167,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             for (final server in servers.take(6))
               Padding(
+                key: ValueKey(server.id),
                 padding: const EdgeInsets.only(right: 4),
                 child: Container(
                   width: 8,
@@ -407,6 +408,9 @@ class _HomePageState extends State<HomePage> {
                   scrollDirection: Axis.horizontal,
                   itemCount: randomTracks.length,
                   itemBuilder: (context, index) => Padding(
+                    // Keyed by track so a reshuffle cannot hand one tile's
+                    // state (hover, artwork fade-in) to another track.
+                    key: ValueKey(randomTracks[index].id),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: _buildTrackTile(randomTracks, index),
                   ),
@@ -633,6 +637,7 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final album = albums[index];
                 return Padding(
+                  key: ValueKey(album.id),
                   padding: const EdgeInsets.only(right: 14),
                   child: _buildAlbumCard(album, showServerDot: showServerDots),
                 );

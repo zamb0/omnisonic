@@ -965,6 +965,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               final isCurrent = index == currentIndex;
 
               return ListTile(
+                // The same track can sit in the queue twice, so the position
+                // is part of the key, as on the queue page.
+                key: ValueKey('queue-${track.id}-$index'),
                 dense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 8,

@@ -571,6 +571,7 @@ class _SearchPageState extends State<SearchPage> {
             final item = items[index];
             final track = item.representative;
             return TrackTile(
+              key: ValueKey(track.id),
               track: track,
               serverId: track.serverId,
               sourceServerIds: item.serverIds,
@@ -625,6 +626,7 @@ class _SearchPageState extends State<SearchPage> {
                 final album = albums[index];
                 final sources = sourceServerIds[album.id] ?? const [];
                 return Padding(
+                  key: ValueKey(album.id),
                   padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
                   child: Stack(
                     children: [
@@ -679,6 +681,7 @@ class _SearchPageState extends State<SearchPage> {
               itemBuilder: (context, index) {
                 final artist = artists[index];
                 return Padding(
+                  key: ValueKey(artist.id),
                   padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
                   child: ArtistCard(
                     artist: artist,

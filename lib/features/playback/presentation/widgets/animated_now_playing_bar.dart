@@ -310,7 +310,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: scheme.onSurfaceVariant,
-                                        fontSize: 11,
+                                        fontSize: 12,
                                       ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -577,7 +577,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmnisonicTypography.technical.copyWith(
-                              fontSize: 9.5,
+                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -603,7 +603,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
-      fontSize: 10,
+      fontSize: 12,
       color: scheme.onSurfaceVariant,
     );
 
@@ -875,7 +875,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         child: Text(
           label,
           style: OmnisonicTypography.glassButton.copyWith(
-            fontSize: 11,
+            fontSize: 12,
             color: scheme.onSurfaceVariant,
           ),
         ),

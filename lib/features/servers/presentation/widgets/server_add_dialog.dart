@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
@@ -44,162 +45,171 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Server Name *',
-                    hintText: 'My Music Server',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a server name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _urlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Server URL *',
-                    hintText: 'https://music.example.com',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.url,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a server URL';
-                    }
-                    final uri = Uri.tryParse(value.trim());
-                    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
-                      return 'Please enter a valid URL';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Username *',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a username';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password *',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? OmnisonicIcons.visibility
-                            : OmnisonicIcons.visibilityOff,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+            // Groups URL, username and password so the platform password
+            // manager treats them as one credential to fill and save.
+            child: AutofillGroup(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Server Name *',
+                      hintText: 'My Music Server',
+                      border: OutlineInputBorder(),
                     ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a server name';
+                      }
+                      return null;
+                    },
                   ),
-                  obscureText: _obscurePassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: OmnisonicColors.info.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    border: Border.all(color: OmnisonicColors.info, width: 1),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _urlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Server URL *',
+                      hintText: 'https://music.example.com',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.url,
+                    autofillHints: const [AutofillHints.url],
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a server URL';
+                      }
+                      final uri = Uri.tryParse(value.trim());
+                      if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                        return 'Please enter a valid URL';
+                      }
+                      return null;
+                    },
                   ),
-                  child: const _NavidromeTips(),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isTesting || _isAdding
-                            ? null
-                            : _testConnection,
-                        icon: _isTesting
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(OmnisonicIcons.wifiProtectedSetup),
-                        label: Text(
-                          _isTesting ? 'Testing...' : 'Test Connection',
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Username *',
+                      border: OutlineInputBorder(),
+                    ),
+                    autofillHints: const [AutofillHints.username],
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a username';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password *',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? OmnisonicIcons.visibility
+                              : OmnisonicIcons.visibilityOff,
                         ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                     ),
-                  ],
-                ),
-                if (_testResult != null) ...[
-                  const SizedBox(height: 12),
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.password],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _testPassed
-                          ? OmnisonicColors.success.withValues(alpha: 0.1)
-                          : OmnisonicColors.error.withValues(alpha: 0.1),
+                      color: OmnisonicColors.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                      border: Border.all(
-                        color: _testPassed
-                            ? OmnisonicColors.success
-                            : OmnisonicColors.error,
-                        width: 1,
-                      ),
+                      border: Border.all(color: OmnisonicColors.info, width: 1),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _testPassed
-                              ? OmnisonicIcons.checkCircle
-                              : OmnisonicIcons.error,
+                    child: const _NavidromeTips(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isTesting || _isAdding
+                              ? null
+                              : _testConnection,
+                          icon: _isTesting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(OmnisonicIcons.wifiProtectedSetup),
+                          label: Text(
+                            _isTesting ? 'Testing...' : 'Test Connection',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_testResult != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _testPassed
+                            ? OmnisonicColors.success.withValues(alpha: 0.1)
+                            : OmnisonicColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+                        border: Border.all(
                           color: _testPassed
                               ? OmnisonicColors.success
                               : OmnisonicColors.error,
-                          size: OmnisonicIconSizes.smd,
+                          width: 1,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _testResult!,
-                            style: TextStyle(
-                              color: _testPassed
-                                  ? OmnisonicColors.success
-                                  : OmnisonicColors.error,
-                              fontSize: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _testPassed
+                                ? OmnisonicIcons.checkCircle
+                                : OmnisonicIcons.error,
+                            color: _testPassed
+                                ? OmnisonicColors.success
+                                : OmnisonicColors.error,
+                            size: OmnisonicIconSizes.smd,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _testResult!,
+                              style: TextStyle(
+                                color: _testPassed
+                                    ? OmnisonicColors.success
+                                    : OmnisonicColors.error,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -286,6 +296,9 @@ class _ServerAddDialogState extends State<ServerAddDialog> {
 
       if (mounted) {
         if (success) {
+          // Commits the autofill context: this is the moment the system
+          // offers to save the credentials that just worked.
+          TextInput.finishAutofillContext();
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Added "${_nameController.text.trim()}"')),

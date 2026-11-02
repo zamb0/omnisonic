@@ -655,7 +655,10 @@ class _HomePageState extends State<HomePage> {
             children: [
               AspectRatio(
                 aspectRatio: 1,
+                // Expand, or the art box shrinks to its child and the
+                // placeholder sits small in the corner of an empty square.
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
                     Container(
                       decoration: BoxDecoration(

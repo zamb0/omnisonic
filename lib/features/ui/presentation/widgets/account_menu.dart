@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/destinations.dart';
-import '../../../../core/utils/animation_utils.dart';
 
 /// The way into every destination that doesn't get a permanent slot —
 /// Starred, Downloads, Servers, Settings.
@@ -63,34 +62,68 @@ class AccountButton extends StatelessWidget {
           : OmnisonicTypography.navLabel.copyWith(color: color),
     );
 
-    return Semantics(
+    Widget button(VoidCallback onTap) => Semantics(
       button: true,
       selected: active,
       label: 'Account and settings',
-      child: InkWell(
-        onTap: () => showAccountMenu(context),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.sm,
-            vertical: OmnisonicSpacing.xs,
-          ),
-          child: Flex(
-            direction: axis,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              avatar,
-              if (showLabel) ...[
-                SizedBox(
-                  width: vertical ? 0 : OmnisonicSpacing.sm,
-                  height: vertical ? 2 : 0,
-                ),
-                label,
-              ],
-            ],
+      excludeSemantics: true,
+      child: Tooltip(
+        message: 'Account and settings',
+        excludeFromSemantics: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: OmnisonicTouchTargets.minimum,
+              minHeight: OmnisonicTouchTargets.minimum,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: OmnisonicSpacing.sm,
+                vertical: OmnisonicSpacing.xs,
+              ),
+              child: Flex(
+                direction: axis,
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  avatar,
+                  if (showLabel) ...[
+                    SizedBox(
+                      width: vertical ? 0 : OmnisonicSpacing.sm,
+                      height: vertical ? 2 : 0,
+                    ),
+                    Flexible(child: label),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
+    );
+
+    // The bottom bar opens a sheet, as phones expect. In the sidebar the
+    // menu is anchored to the button: a sheet rising from the bottom of a
+    // desktop window, far from what was clicked, read as a different app.
+    if (vertical) return button(() => showAccountMenu(context));
+    return MenuAnchor(
+      builder: (context, controller, child) => button(
+        () => controller.isOpen ? controller.close() : controller.open(),
+      ),
+      menuChildren: [
+        for (final destination in AppDestinations.secondary)
+          MenuItemButton(
+            leadingIcon: Icon(
+              destination.matches(path)
+                  ? destination.activeIcon
+                  : destination.icon,
+            ),
+            onPressed: () => GoRouter.of(context).go(destination.route),
+            child: Text(destination.label),
+          ),
+      ],
     );
   }
 }
@@ -99,7 +132,7 @@ class AccountButton extends StatelessWidget {
 void showAccountMenu(BuildContext context) {
   final currentPath = GoRouterState.of(context).uri.path;
 
-  AnimationUtils.showCustomBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => SafeArea(

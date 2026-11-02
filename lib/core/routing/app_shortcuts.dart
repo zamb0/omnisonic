@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/playback/presentation/viewmodels/playback_view_model.dart';
 import 'app_router.dart';
+import 'search_focus.dart';
 
 /// Keyboard shortcuts for the whole app.
 ///
@@ -48,8 +49,10 @@ class AppShortcuts extends StatelessWidget {
       child: Actions(
         actions: <Type, Action<Intent>>{
           _FocusSearch: _GuardedAction<_FocusSearch>(
-            onInvoke: (context, [intent]) =>
-                GoRouter.of(context).go(AppRouter.search),
+            onInvoke: (context, [intent]) {
+              SearchFocusRequest.request();
+              GoRouter.of(context).go(AppRouter.search);
+            },
           ),
           _TogglePlayback: _GuardedAction<_TogglePlayback>(
             yieldToControls: true,

@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../../../core/routing/app_router.dart';
-
-import '../../../music/presentation/viewmodels/music_library_view_model.dart';
-import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
-import '../widgets/widgets.dart';
-import '../models/library_tab.dart';
-import '../models/library_sort_state.dart';
-import '../models/sort_option.dart';
-import '../services/library_sort_service.dart';
-import '../../../../core/entities/entities.dart';
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/utils/debouncer.dart';
-import 'main_shell.dart';
+import '../../../../core/entities/entities.dart';
+import '../../../../core/routing/app_router.dart';
 import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/animation_utils.dart';
+import '../../../../core/utils/debouncer.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../models/library_sort_state.dart';
+import '../models/library_tab.dart';
+import '../models/sort_option.dart';
+import '../services/library_sort_service.dart';
+import '../widgets/widgets.dart';
+import 'main_shell.dart';
 
-/// Library page displaying albums, artists, and playlists
+/// What the Library page remembers while the user is on another tab.
+///
+/// The shell rebuilds a tab's page each time it is selected, so the sort,
+/// the search and the scroll position used to be lost on every switch.
+class _LibraryMemory {
+  static final sort = LibrarySortState();
+  static final queries = <LibraryTab, String>{};
+  static final offsets = <LibraryTab, double>{};
+}
+
+/// The library: albums and artists, searchable, sortable and filterable.
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
 
@@ -27,39 +36,46 @@ class LibraryPage extends StatefulWidget {
 }
 
 class _LibraryPageState extends State<LibraryPage> {
-  // 3 columns fit comfortably down to ~360px-wide phones; wider layouts
-  // (tablet/desktop sidebar shell) scale up from here same as before.
+  final LibrarySortState _sortState = _LibraryMemory.sort;
+  final Map<LibraryTab, TextEditingController> _searchControllers = {
+    for (final tab in LibraryTab.values)
+      tab: TextEditingController(text: _LibraryMemory.queries[tab] ?? ''),
+  };
+  final Map<LibraryTab, ScrollController> _scrollControllers = {
+    for (final tab in LibraryTab.values)
+      tab: ScrollController(
+        initialScrollOffset: _LibraryMemory.offsets[tab] ?? 0,
+      ),
+  };
 
-  late LibrarySortState _sortState;
-  late TextEditingController _searchController;
-
-  /// Filtering runs over the whole sorted album list, so it waits for a pause
-  /// in typing rather than running on every keystroke.
+  /// Filtering runs over the whole sorted list, so it waits for a pause in
+  /// typing rather than running on every keystroke.
   final Debouncer _searchDebouncer = Debouncer();
-  String _searchQuery = '';
 
-  // Dedupe + sort are O(n log n) over the whole collection; memoized here so
-  // they only re-run when the view model hands back a different album list
-  // (viewModel.filteredAlbums is itself cached and reference-stable unless
-  // the source data or filters actually changed) or the sort option changes,
-  // instead of on every rebuild the Consumer2 triggers.
+  // Dedupe + sort are O(n log n) over the whole collection; memoized so they
+  // only re-run when the view model hands back a different album list or the
+  // sort changes, not on every rebuild.
   List<Album>? _albumsSortInputCache;
   SortOption? _sortOptionCache;
   List<Album> _sortedAlbumsCache = const [];
   int _originalAlbumCountCache = 0;
   Map<String, List<String>> _albumSourceServerIdsCache = const {};
 
-  @override
-  void initState() {
-    super.initState();
-    _sortState = LibrarySortState();
-    _searchController = TextEditingController();
-  }
+  String _query(LibraryTab tab) =>
+      (_LibraryMemory.queries[tab] ?? '').trim().toLowerCase();
 
   @override
   void dispose() {
+    for (final entry in _scrollControllers.entries) {
+      if (entry.value.hasClients) {
+        _LibraryMemory.offsets[entry.key] = entry.value.offset;
+      }
+      entry.value.dispose();
+    }
+    for (final controller in _searchControllers.values) {
+      controller.dispose();
+    }
     _searchDebouncer.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -70,28 +86,15 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
     final deduped = dedupeAlbumsByServer(albums);
-    final sortedAlbums = LibrarySortService.sortAlbums(
+    _albumsSortInputCache = albums;
+    _sortOptionCache = sortOption;
+    _sortedAlbumsCache = LibrarySortService.sortAlbums(
       deduped.albums,
       sortOption,
     );
-
-    _albumsSortInputCache = albums;
-    _sortOptionCache = sortOption;
-    _sortedAlbumsCache = sortedAlbums;
     _originalAlbumCountCache = albums.length;
     _albumSourceServerIdsCache = deduped.sourceServerIds;
-    return sortedAlbums;
-  }
-
-  List<Album> _filterBySearch(List<Album> albums) {
-    if (_searchQuery.isEmpty) return albums;
-    return albums
-        .where(
-          (album) =>
-              album.title.toLowerCase().contains(_searchQuery) ||
-              album.artist.toLowerCase().contains(_searchQuery),
-        )
-        .toList();
+    return _sortedAlbumsCache;
   }
 
   @override
@@ -99,11 +102,8 @@ class _LibraryPageState extends State<LibraryPage> {
     final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
     final activeTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
     // The sidebar shell already exposes one entry per tab; the TabBar is the
-    // only way into Artists and Playlists when there is no sidebar. Asking the
-    // shell rather than MediaQuery, because the shell decides from its own
-    // constraints — on a 1000px window it shows the icon-only rail while the
-    // screen still reads as tablet-wide, which used to hide the TabBar and
-    // leave both tabs unreachable.
+    // only way between them when there is no sidebar. Asking the shell rather
+    // than MediaQuery, because the shell decides from its own constraints.
     final showTabBar = !ShellLayout.hasSidebar(context);
 
     return Scaffold(
@@ -117,7 +117,7 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
           IconButton(
             icon: const Icon(OmnisonicIcons.sort),
-            onPressed: _showSortOptions,
+            onPressed: () => _showSortOptions(activeTab),
             tooltip: 'Sort',
           ),
         ],
@@ -130,152 +130,302 @@ class _LibraryPageState extends State<LibraryPage> {
         ),
         switchInCurve: AnimationManager.standardCurve,
         switchOutCurve: AnimationManager.standardCurve,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
         child: KeyedSubtree(
           key: ValueKey(activeTab),
-          child: _buildSectionForTab(activeTab),
+          child: switch (activeTab) {
+            LibraryTab.albums => _buildAlbumsTab(),
+            LibraryTab.artists => _buildArtistsTab(),
+          },
         ),
       ),
     );
   }
 
   /// Tab strip driven by the `?tab=` query parameter, so the sidebar, the tab
-  /// strip and deep links all read and write the same piece of state and the
-  /// back button steps through tab changes.
+  /// strip and deep links all read and write the same piece of state.
   PreferredSizeWidget _buildTabBar(LibraryTab activeTab) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kTextTabBarHeight),
-      // Keyed on the active tab so the controller is rebuilt whenever the query
-      // parameter changes from elsewhere (sidebar, deep link, back button)
-      // instead of drifting out of sync with it.
+      // Keyed on the active tab so the controller is rebuilt whenever the
+      // query parameter changes from elsewhere.
       child: DefaultTabController(
         key: ValueKey(activeTab),
         length: LibraryTab.count,
         initialIndex: activeTab.index,
-        child: TabBar(
-          tabs: LibraryTab.values.map((tab) => Tab(text: tab.label)).toList(),
-          onTap: (index) => _onTabSelected(LibraryTab.fromIndex(index)),
+        child: Builder(
+          builder: (context) => PageHeaderAppBar.tabBar(
+            context,
+            tabs: [for (final tab in LibraryTab.values) Tab(text: tab.label)],
+            onTap: (index) =>
+                context.go('/library?tab=${LibraryTab.fromIndex(index).name}'),
+          ),
         ),
       ),
     );
   }
 
-  void _onTabSelected(LibraryTab tab) {
-    context.go('/library?tab=${tab.name}');
-  }
-
-  Widget _buildSectionForTab(LibraryTab tab) {
-    switch (tab) {
-      case LibraryTab.albums:
-        return _buildAlbumsTab();
-      case LibraryTab.artists:
-        return _buildArtistsTab();
+  /// The common frame of both tabs: loading, load error and the empty
+  /// library are page states; everything else is a scroll view whose
+  /// search, count and filters scroll away with the grid instead of
+  /// sitting fixed above it (~170px of a 640px phone).
+  Widget _buildTab({
+    required LibraryTab tab,
+    required MusicLibraryViewModel viewModel,
+    required bool isEmptyLibrary,
+    required String emptyTitle,
+    required List<Widget> header,
+    required List<Widget> body,
+  }) {
+    if (viewModel.isLoading && isEmptyLibrary) {
+      return const LoadingStateView(kind: SkeletonKind.grid);
     }
+
+    final error = viewModel.errorMessage;
+    return RefreshIndicator(
+      onRefresh: () => viewModel.syncCollection(),
+      child: CustomScrollView(
+        controller: _scrollControllers[tab],
+        // So pull-to-refresh works on the empty and error states too.
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          if (error != null && isEmptyLibrary)
+            ErrorStateView.sliver(message: error, onRetry: _syncLibrary)
+          else if (isEmptyLibrary)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                icon: tab == LibraryTab.albums
+                    ? OmnisonicIcons.album
+                    : OmnisonicIcons.person,
+                title: emptyTitle,
+                subtitle: 'Add a server and sync your library to see it here.',
+                action: FilledButton(
+                  onPressed: _syncLibrary,
+                  child: const Text('Sync library'),
+                ),
+              ),
+            )
+          else ...[
+            // With a library on screen, a failed sync is a banner, not a
+            // page: what was there stays usable.
+            if (error != null)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                sliver: SliverToBoxAdapter(
+                  child: InlineBanner(
+                    kind: BannerKind.warning,
+                    message: error,
+                    action: TextButton(
+                      onPressed: _syncLibrary,
+                      child: const Text('Retry'),
+                    ),
+                  ),
+                ),
+              ),
+            for (final widget in header) SliverToBoxAdapter(child: widget),
+            ...body,
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildAlbumsTab() {
-    return Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
-      builder: (context, viewModel, serverViewModel, child) {
-        if (viewModel.isLoading) {
-          return const LoadingStateView(kind: SkeletonKind.grid);
-        }
-
-        // A sync failure used to surface only as a SnackBar, which is gone
-        // three seconds later and leaves an empty grid behind it.
-        final error = viewModel.errorMessage;
-        if (error != null) {
-          return ErrorStateView(message: error, onRetry: _syncLibrary);
-        }
-
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
         final albums = viewModel.filteredAlbums;
-        if (albums.isEmpty &&
-            !viewModel.showStarredOnly &&
-            viewModel.selectedGenre == null) {
-          return EmptyState(
-            icon: OmnisonicIcons.album,
-            title: 'No Albums',
-            subtitle:
-                'Connect to servers and sync your library to see albums here',
-            action: ElevatedButton(
-              onPressed: _syncLibrary,
-              child: const Text('Sync Library'),
-            ),
-          );
-        }
+        final filtered =
+            viewModel.showStarredOnly || viewModel.selectedGenre != null;
+        final isEmptyLibrary = viewModel.albums.isEmpty;
 
         final sortOption = _sortState.getOption(LibraryTab.albums);
-        final sortedAlbums = _getSortedAlbums(albums, sortOption);
-        final displayedAlbums = _filterBySearch(sortedAlbums);
+        final sorted = _getSortedAlbums(albums, sortOption);
+        final query = _query(LibraryTab.albums);
+        final shown = query.isEmpty
+            ? sorted
+            : [
+                for (final album in sorted)
+                  if (album.title.toLowerCase().contains(query) ||
+                      album.artist.toLowerCase().contains(query))
+                    album,
+              ];
 
-        return RefreshIndicator(
-          onRefresh: () => viewModel.syncCollection(),
-          child: Column(
-            children: [
-              _buildSearchPill(),
-              _buildAlbumCountLine(
-                _sortedAlbumsCache.length,
-                _originalAlbumCountCache,
+        return _buildTab(
+          tab: LibraryTab.albums,
+          viewModel: viewModel,
+          isEmptyLibrary: isEmptyLibrary,
+          emptyTitle: 'No albums yet',
+          header: [
+            _buildSearchPill(LibraryTab.albums, 'Search albums'),
+            _buildCountLine(
+              shown: shown.length,
+              total: sorted.length,
+              before: _originalAlbumCountCache,
+              noun: 'album',
+            ),
+            _buildFilters(viewModel),
+          ],
+          body: [
+            if (shown.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: OmnisonicIcons.filterAltOff,
+                  title: 'No matching albums',
+                  subtitle: query.isNotEmpty
+                      ? 'Nothing matches '
+                            '"${_searchControllers[LibraryTab.albums]!.text.trim()}".'
+                      : 'No albums match the current filters.',
+                  action: TextButton(
+                    onPressed: () {
+                      _setQuery(LibraryTab.albums, '');
+                      if (filtered) viewModel.clearFilters();
+                    },
+                    child: const Text('Clear search and filters'),
+                  ),
+                ),
+              )
+            else
+              _buildGrid(
+                itemCount: shown.length,
+                meta: true,
+                itemBuilder: (context, index) {
+                  final album = shown[index];
+                  final sources =
+                      _albumSourceServerIdsCache[album.id] ?? const [];
+                  return AlbumCard(
+                    key: ValueKey(album.id),
+                    album: album,
+                    onTap: () => _onAlbumTapped(album),
+                    onStar: () => viewModel.starAlbum(album),
+                    onUnstar: () => viewModel.unstarAlbum(album),
+                    isStarred: viewModel.isAlbumStarred(album),
+                    sourceServerIds: sources.length > 1 ? sources : null,
+                  );
+                },
               ),
-              _buildFilterSection(viewModel),
-              Expanded(
-                child: displayedAlbums.isEmpty
-                    ? EmptyState(
-                        icon: OmnisonicIcons.filterAltOff,
-                        title: 'No Results',
-                        subtitle: _searchQuery.isNotEmpty
-                            ? 'No albums match "$_searchQuery"'
-                            : 'No albums match your current filters',
-                        action: TextButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                            viewModel.clearFilters();
-                          },
-                          child: const Text('Clear Filters'),
-                        ),
-                      )
-                    : ResponsiveGridView.media(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        meta: true,
-                        itemCount: displayedAlbums.length,
-                        itemBuilder: (context, index) {
-                          final album = displayedAlbums[index];
-                          final isStarred = viewModel.isAlbumStarred(album);
-                          final sources =
-                              _albumSourceServerIdsCache[album.id] ?? const [];
-                          return AlbumCard(
-                            key: ValueKey(album.id),
-                            album: album,
-                            onTap: () => _onAlbumTapped(album),
-                            onStar: () => viewModel.starAlbum(album),
-                            onUnstar: () => viewModel.unstarAlbum(album),
-                            isStarred: isStarred,
-                            sourceServerIds: sources.length > 1
-                                ? sources
-                                : null,
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildSearchPill() {
+  Widget _buildArtistsTab() {
+    return Consumer<MusicLibraryViewModel>(
+      builder: (context, viewModel, child) {
+        final artists = viewModel.artists;
+        final sorted = LibrarySortService.sortArtists(
+          artists,
+          _sortState.getOption(LibraryTab.artists),
+        );
+        final query = _query(LibraryTab.artists);
+        final shown = query.isEmpty
+            ? sorted
+            : [
+                for (final artist in sorted)
+                  if (artist.name.toLowerCase().contains(query)) artist,
+              ];
+
+        return _buildTab(
+          tab: LibraryTab.artists,
+          viewModel: viewModel,
+          isEmptyLibrary: artists.isEmpty,
+          emptyTitle: 'No artists yet',
+          header: [
+            _buildSearchPill(LibraryTab.artists, 'Search artists'),
+            _buildCountLine(
+              shown: shown.length,
+              total: sorted.length,
+              before: sorted.length,
+              noun: 'artist',
+            ),
+          ],
+          body: [
+            if (shown.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: OmnisonicIcons.searchOff,
+                  title: 'No matching artists',
+                  subtitle:
+                      'Nothing matches '
+                      '"${_searchControllers[LibraryTab.artists]!.text.trim()}".',
+                  action: TextButton(
+                    onPressed: () => _setQuery(LibraryTab.artists, ''),
+                    child: const Text('Clear search'),
+                  ),
+                ),
+              )
+            else
+              _buildGrid(
+                itemCount: shown.length,
+                subtitle: false,
+                meta: true,
+                itemBuilder: (context, index) {
+                  final artist = shown[index];
+                  return ArtistCard(
+                    key: ValueKey(artist.id),
+                    artist: artist,
+                    onTap: () => _onArtistTapped(artist),
+                  );
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildGrid({
+    required int itemCount,
+    required IndexedWidgetBuilder itemBuilder,
+    bool subtitle = true,
+    bool meta = false,
+  }) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.crossAxisExtent;
+          final columns = MediaGridPreset.columnsFor(width);
+          final cell = MediaGridPreset.cellWidth(width, columns);
+          return SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: MediaGridPreset.spacing,
+              mainAxisSpacing: MediaGridPreset.spacing,
+              mainAxisExtent: MediaCard.extentFor(
+                context,
+                cell,
+                subtitle: subtitle,
+                meta: meta,
+              ),
+            ),
+            itemCount: itemCount,
+            itemBuilder: itemBuilder,
+          );
+        },
+      ),
+    );
+  }
+
+  void _setQuery(LibraryTab tab, String value) {
+    final controller = _searchControllers[tab]!;
+    if (controller.text != value) controller.text = value;
+    _searchDebouncer.cancel();
+    setState(() => _LibraryMemory.queries[tab] = value);
+  }
+
+  Widget _buildSearchPill(LibraryTab tab, String hint) {
     final scheme = Theme.of(context).colorScheme;
+    final controller = _searchControllers[tab]!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
       child: GlassSurface(
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.only(left: 16, right: 4),
         child: Row(
           children: [
             Icon(
@@ -286,51 +436,65 @@ class _LibraryPageState extends State<LibraryPage> {
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
-                controller: _searchController,
+                controller: controller,
                 style: OmnisonicTypography.bodyMedium.copyWith(
                   color: scheme.onSurface,
                 ),
-                decoration: const InputDecoration(
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
                   border: InputBorder.none,
-                  hintText: 'Search albums',
-                  isDense: true,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  hintText: hint,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onChanged: (value) => _searchDebouncer.run(() {
                   if (!mounted) return;
-                  setState(() => _searchQuery = value.trim().toLowerCase());
+                  setState(() => _LibraryMemory.queries[tab] = value);
                 }),
               ),
             ),
-            if (_searchQuery.isNotEmpty)
-              IconButton(
-                icon: const Icon(OmnisonicIcons.close, size: 18),
-                tooltip: 'Clear search',
-                onPressed: () {
-                  _searchController.clear();
-                  _searchDebouncer.cancel();
-                  setState(() => _searchQuery = '');
-                },
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              ),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, child) => value.text.isEmpty
+                  ? const SizedBox(height: OmnisonicTouchTargets.minimum)
+                  // A full-size target: the old clear button was ~18px.
+                  : IconButton(
+                      icon: const Icon(OmnisonicIcons.close),
+                      iconSize: 18,
+                      tooltip: 'Clear search',
+                      onPressed: () => _setQuery(tab, ''),
+                    ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAlbumCountLine(int dedupedCount, int originalCount) {
+  /// "3 of 812 albums" while searching or filtering — it used to show the
+  /// full total even when three albums were on screen.
+  Widget _buildCountLine({
+    required int shown,
+    required int total,
+    required int before,
+    required String noun,
+  }) {
     final scheme = Theme.of(context).colorScheme;
-    final albumWord = dedupedCount == 1 ? 'album' : 'albums';
-    final text = originalCount > dedupedCount
-        ? '$dedupedCount $albumWord · deduplicated from $originalCount'
-        : '$dedupedCount $albumWord';
+    final String text;
+    if (shown != total) {
+      text = '$shown of ${pluralize(total, noun)}';
+    } else if (before > total) {
+      text = '${pluralize(total, noun)} · deduplicated from $before';
+    } else {
+      text = pluralize(total, noun);
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
-      child: Align(
-        alignment: Alignment.centerLeft,
+      child: Semantics(
+        liveRegion: true,
         child: Text(
           text,
           style: OmnisonicTypography.metadata.copyWith(
@@ -341,213 +505,103 @@ class _LibraryPageState extends State<LibraryPage> {
     );
   }
 
-  Widget _buildArtistsTab() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading) {
-          return const LoadingStateView(kind: SkeletonKind.grid);
-        }
+  /// Starred and genre filters as one compact row of chips.
+  Widget _buildFilters(MusicLibraryViewModel viewModel) {
+    final scheme = Theme.of(context).colorScheme;
+    final genre = viewModel.selectedGenre;
+    final filtered = viewModel.showStarredOnly || genre != null;
 
-        final error = viewModel.errorMessage;
-        if (error != null) {
-          return ErrorStateView(message: error, onRetry: _syncLibrary);
-        }
-
-        final artists = viewModel.artists;
-        if (artists.isEmpty) {
-          return EmptyState(
-            icon: OmnisonicIcons.person,
-            title: 'No Artists',
-            subtitle:
-                'Connect to servers and sync your library to see artists here',
-            action: ElevatedButton(
-              onPressed: _syncLibrary,
-              child: const Text('Sync Library'),
-            ),
-          );
-        }
-
-        final sortOption = _sortState.getOption(LibraryTab.artists);
-        final sortedArtists = LibrarySortService.sortArtists(
-          artists,
-          sortOption,
-        );
-
-        return RefreshIndicator(
-          onRefresh: () => viewModel.syncCollection(),
-          child: ResponsiveGridView.media(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            subtitle: false,
-            meta: true,
-            itemCount: sortedArtists.length,
-            itemBuilder: (context, index) {
-              final artist = sortedArtists[index];
-              return ArtistCard(
-                key: ValueKey(artist.id),
-                artist: artist,
-                onTap: () => _onArtistTapped(artist),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterSection(MusicLibraryViewModel viewModel) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  OmnisonicIcons.filterList,
-                  size: OmnisonicIconSizes.smd,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          FilterChip(
+            avatar: const Icon(OmnisonicIcons.star, size: 16),
+            label: const Text('Starred'),
+            selected: viewModel.showStarredOnly,
+            onSelected: (_) => viewModel.toggleStarredFilter(),
+          ),
+          if (viewModel.genres.isNotEmpty)
+            // A MenuAnchor rather than a PopupMenuButton: "All genres" has
+            // no value, and PopupMenuButton treats a null selection as a
+            // dismissal, so that item did nothing.
+            MenuAnchor(
+              builder: (context, controller, child) => FilterChip(
+                avatar: const Icon(OmnisonicIcons.musicNote, size: 16),
+                label: Text(genre ?? 'All genres'),
+                selected: genre != null,
+                onSelected: (_) =>
+                    controller.isOpen ? controller.close() : controller.open(),
+              ),
+              menuChildren: [
+                MenuItemButton(
+                  leadingIcon: genre == null
+                      ? Icon(OmnisonicIcons.check, color: scheme.primary)
+                      : const SizedBox(width: 24),
+                  onPressed: () => viewModel.setGenreFilter(null),
+                  child: const Text('All genres'),
                 ),
-                const SizedBox(width: 8),
-                Text('Filters', style: Theme.of(context).textTheme.titleSmall),
-                const Spacer(),
-                if (viewModel.showStarredOnly ||
-                    viewModel.selectedGenre != null)
-                  TextButton.icon(
-                    onPressed: () => viewModel.clearFilters(),
-                    icon: const Icon(OmnisonicIcons.clear, size: 16),
-                    label: const Text('Clear'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+                const Divider(height: 1),
+                for (final g in viewModel.genres)
+                  MenuItemButton(
+                    leadingIcon: genre == g.name
+                        ? Icon(OmnisonicIcons.check, color: scheme.primary)
+                        : const SizedBox(width: 24),
+                    trailingIcon: Text(
+                      '${g.albumCount}',
+                      style: OmnisonicTypography.metadata.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
+                    onPressed: () => viewModel.setGenreFilter(g.name),
+                    child: Text(g.name, overflow: TextOverflow.ellipsis),
                   ),
               ],
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                // Starred filter chip
-                FilterChip(
-                  label: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(OmnisonicIcons.star, size: 16),
-                      SizedBox(width: 4),
-                      Text('Starred'),
-                    ],
-                  ),
-                  selected: viewModel.showStarredOnly,
-                  onSelected: (_) => viewModel.toggleStarredFilter(),
-                ),
-                // Genre filter chips
-                if (viewModel.genres.isNotEmpty)
-                  PopupMenuButton<String>(
-                    child: Chip(
-                      avatar: Icon(
-                        OmnisonicIcons.musicNote,
-                        size: OmnisonicIconSizes.sm,
-                        color: viewModel.selectedGenre != null
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                      label: Text(viewModel.selectedGenre ?? 'All Genres'),
-                      deleteIcon: viewModel.selectedGenre != null
-                          ? const Icon(OmnisonicIcons.close, size: 16)
-                          : null,
-                      onDeleted: viewModel.selectedGenre != null
-                          ? () => viewModel.setGenreFilter(null)
-                          : null,
-                      backgroundColor: viewModel.selectedGenre != null
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
-                    ),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem<String>(
-                        value: null,
-                        child: Text('All Genres'),
-                      ),
-                      const PopupMenuDivider(),
-                      ...viewModel.genres.map((genre) {
-                        return PopupMenuItem<String>(
-                          value: genre.name,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  genre.name,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                '${genre.albumCount}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                    onSelected: (value) => viewModel.setGenreFilter(value),
-                  ),
-              ],
+          if (filtered)
+            TextButton.icon(
+              onPressed: viewModel.clearFilters,
+              icon: const Icon(OmnisonicIcons.clear, size: 16),
+              label: const Text('Clear filters'),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  void _onAlbumTapped(Album album) {
-    // Navigate to album detail page
-    context.push(AppRouter.albumDetailLocation(album.id), extra: album);
-  }
+  void _onAlbumTapped(Album album) =>
+      context.push(AppRouter.albumDetailLocation(album.id), extra: album);
 
-  void _onArtistTapped(Artist artist) {
-    // Navigate to artist detail page
-    context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
-  }
+  void _onArtistTapped(Artist artist) =>
+      context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
 
   Future<void> _syncLibrary() async {
-    final messenger = ScaffoldMessenger.of(context);
     final viewModel = context.read<MusicLibraryViewModel>();
-
     viewModel.clearError();
-    messenger.showSnackBar(const SnackBar(content: Text('Syncing library...')));
-
     final success = await viewModel.syncCollection();
     if (!mounted) return;
-
-    messenger.hideCurrentSnackBar();
-    // Only the success case is a SnackBar now. A failure renders inline
-    // through ErrorStateView, which stays on screen and keeps its Retry
-    // rather than disappearing after three seconds.
+    // A failure stays on screen as the banner or error view, with Retry,
+    // rather than in a snackbar that is gone three seconds later.
     if (success) {
-      messenger.showSnackBar(const SnackBar(content: Text('Library synced')));
+      showFeedback(context, 'Library synced', kind: FeedbackKind.success);
     }
   }
 
-  void _showSortOptions() {
-    final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
-    final currentTab = LibraryTab.fromName(tabName) ?? LibraryTab.albums;
-    final currentOption = _sortState.getOption(currentTab);
-
-    AnimationUtils.showCustomBottomSheet(
+  void _showSortOptions(LibraryTab tab) {
+    showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       builder: (context) => SortOptionsSheet(
-        currentOption: currentOption,
-        onOptionSelected: (option) {
-          setState(() {
-            _sortState.setOption(currentTab, option);
-          });
+        currentOption: _sortState.getOption(tab),
+        fields: switch (tab) {
+          LibraryTab.albums => SortField.values,
+          LibraryTab.artists => const [SortField.title, SortField.dateAdded],
         },
+        onOptionSelected: (option) =>
+            setState(() => _sortState.setOption(tab, option)),
       ),
     );
   }

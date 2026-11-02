@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/routing/search_focus.dart';
 
 import '../../../music/presentation/bloc/search_bloc.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -83,11 +84,45 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    // The bloc outlives this page; leaving and coming back used to show its
+    // results under an empty field.
+    final query = context.read<SearchBloc>().state.query;
+    if (query.isNotEmpty) {
+      _searchController.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    }
     _searchController.addListener(_onSearchChanged);
+    SearchFocusRequest.requests.addListener(_focusField);
+    if (SearchFocusRequest.takePending()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusField());
+    }
+  }
+
+  void _focusField() {
+    if (!mounted) return;
+    SearchFocusRequest.takePending();
+    _searchFocusNode.requestFocus();
+    _searchController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _searchController.text.length,
+    );
+  }
+
+  /// Records the current query in the recent searches. Called on submit and
+  /// when a result is opened — the list used to fill only from taps on
+  /// itself, so on a fresh install it never appeared.
+  void _rememberQuery() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      context.read<SearchBloc>().add(SearchHistoryAdded(query));
+    }
   }
 
   @override
   void dispose() {
+    SearchFocusRequest.requests.removeListener(_focusField);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -223,6 +258,7 @@ class _SearchPageState extends State<SearchPage> {
           onSubmitted: (query) {
             if (query.trim().isNotEmpty) {
               context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
+              _rememberQuery();
             }
           },
         ),
@@ -686,6 +722,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onTrackTapped(Track track, List<Track> playlist, int index) {
+    _rememberQuery();
     context.read<PlaybackViewModel>().playTrack(
       track,
       queue: playlist,
@@ -694,11 +731,13 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onAlbumTapped(Album album) {
+    _rememberQuery();
     // Navigate to album detail page
     context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
+    _rememberQuery();
     // Navigate to artist detail page
     context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }

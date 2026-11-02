@@ -10,6 +10,9 @@ import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/errors/errors.dart';
+import '../../../../core/utils/app_log.dart';
+import '../services/library_sort_service.dart';
 
 /// Artist detail page showing albums with enhanced functionality
 class ArtistDetailPage extends StatefulWidget {
@@ -52,7 +55,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         } else if (b.year != null) {
           return 1;
         }
-        return a.title.compareTo(b.title);
+        return LibrarySortService.compareNames(a.title, b.title);
       });
 
       if (!mounted) return;
@@ -61,9 +64,10 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         _isLoading = false;
       });
     } catch (e) {
+      AppLog.error('Loading albums for ${widget.artist.id} failed: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load albums: $e';
+        _errorMessage = describeUnexpected(action: "load this artist's albums");
         _isLoading = false;
       });
     }

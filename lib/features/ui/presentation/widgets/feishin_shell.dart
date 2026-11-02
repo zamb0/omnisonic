@@ -179,9 +179,15 @@ class FeishinShell extends StatelessWidget {
       (d) => d.route == AppRouter.library,
     );
     final isLibrary = libraryDestination.matches(path);
-    final activeLibraryTab =
+    // Derived from where the user actually is: an artist page used to light
+    // "Albums", because the missing ?tab= defaulted to albums.
+    final activeLibraryTab = switch (path) {
+      AppRouter.artistDetail => LibraryTab.artists,
+      AppRouter.albumDetail => LibraryTab.albums,
+      _ =>
         LibraryTab.fromName(location.queryParameters['tab']) ??
-        LibraryTab.albums;
+            LibraryTab.albums,
+    };
 
     Widget item(AppDestination destination) => _NavItem(
       extended: extended,

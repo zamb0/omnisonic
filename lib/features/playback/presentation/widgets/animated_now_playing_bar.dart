@@ -658,21 +658,28 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        // Words where there is room, icons where there is not — they used to
+        // disappear below 900px with no other way in from the bar.
         if (showTextActions) ...[
-          _textBtn(
-            'Lyrics',
-            scheme,
-            () => GoRouter.of(
-              context,
-            ).push(AppRouter.nowPlaying, extra: NowPlayingPanel.lyrics),
-          ),
+          _textBtn('Lyrics', scheme, () => _openLyrics(context)),
           const SizedBox(width: 4),
-          _textBtn(
-            'Queue',
-            scheme,
-            () => GoRouter.of(context).push(AppRouter.queue),
-          ),
+          _textBtn('Queue', scheme, () => _openQueue(context)),
           const SizedBox(width: 4),
+        ] else ...[
+          _iconBtn(
+            OmnisonicIcons.lyrics,
+            17,
+            scheme.onSurfaceVariant,
+            () => _openLyrics(context),
+            label: 'Lyrics',
+          ),
+          _iconBtn(
+            OmnisonicIcons.queueMusic,
+            17,
+            scheme.onSurfaceVariant,
+            () => _openQueue(context),
+            label: 'Queue',
+          ),
         ],
         Consumer<PlaybackViewModel>(
           builder: (context, vm, child) {
@@ -734,30 +741,37 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         ),
         const SizedBox(width: 8),
         // Expand: a soft-square chip rather than a bare icon, matching the
-        // design's trailing control.
-        Tooltip(
-          message: 'Expand player',
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: scheme.onSurface.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              ),
-              child: Icon(
-                OmnisonicIcons.openInFull,
-                size: OmnisonicIconSizes.inline,
-                color: scheme.onSurface,
-              ),
+        // design's trailing control — drawn at 30px, hit-tested at 44.
+        IconButton(
+          onPressed: widget.onTap,
+          tooltip: 'Expand player',
+          icon: const Icon(OmnisonicIcons.openInFull),
+          iconSize: OmnisonicIconSizes.inline,
+          color: scheme.onSurface,
+          style: IconButton.styleFrom(
+            fixedSize: const Size.square(30),
+            minimumSize: const Size.square(30),
+            tapTargetSize: MaterialTapTargetSize.padded,
+            backgroundColor: scheme.onSurface.withValues(alpha: 0.07),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
             ),
           ),
         ),
       ],
     );
   }
+
+  /// Opens the queue, unless it is already the page on screen — repeated
+  /// clicks used to stack duplicate queue pages.
+  void _openQueue(BuildContext context) {
+    if (GoRouterState.of(context).uri.path == AppRouter.queue) return;
+    GoRouter.of(context).push(AppRouter.queue);
+  }
+
+  void _openLyrics(BuildContext context) => GoRouter.of(
+    context,
+  ).push(AppRouter.nowPlaying, extra: NowPlayingPanel.lyrics);
 
   /// Gabarito text action — the design's treatment for the bar's secondary
   /// destinations, which read better as words than as another icon.

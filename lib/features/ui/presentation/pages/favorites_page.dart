@@ -20,13 +20,15 @@ class FavoritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavoritesPage>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  /// The tab the user was on, kept across visits: the shell rebuilds this
+  /// page on every tab switch, and it used to come back on Albums.
+  static int _lastTab = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
+  late final TabController _tabController = TabController(
+    length: 3,
+    vsync: this,
+    initialIndex: _lastTab,
+  )..addListener(() => _lastTab = _tabController.index);
 
   @override
   void dispose() {

@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/routing/search_focus.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 
 /// Desktop content-column header: a glass search field, the last-sync
-/// timestamp, a "Sync now" action and an avatar-style shortcut into
-/// settings.
+/// timestamp and a "Sync now" action. Settings are reached through the
+/// sidebar's account button — there used to be a second, identical-looking
+/// avatar here that did something different.
 ///
 /// The sidebar deliberately carries no search entry of its own — search is a
 /// content-area concern in the redesign, reachable from anywhere with ⌘K.
@@ -18,17 +20,21 @@ class DesktopTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final onSearch = GoRouterState.of(context).uri.path == AppRouter.search;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
       child: Row(
         children: [
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: _SearchField(),
+          // Not on /search, which has its own field: two search boxes on
+          // one screen, only one of which works, is a puzzle.
+          if (!onSearch)
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: _SearchField(),
+              ),
             ),
-          ),
           const Spacer(),
           Consumer<MusicLibraryViewModel>(
             builder: (context, viewModel, child) {
@@ -58,27 +64,6 @@ class DesktopTopBar extends StatelessWidget {
               forceRefresh: true,
             ),
           ),
-          const SizedBox(width: 12),
-          Tooltip(
-            message: 'Settings',
-            child: InkWell(
-              onTap: () => context.go(AppRouter.settings),
-              borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: scheme.onSurface,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  OmnisonicIcons.personOutline,
-                  size: OmnisonicIconSizes.smd,
-                  color: scheme.surface,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -102,7 +87,10 @@ class _SearchField extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return GlassInkButton(
-      onTap: () => context.go(AppRouter.search),
+      onTap: () {
+        SearchFocusRequest.request();
+        context.go(AppRouter.search);
+      },
       borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
       semanticLabel: 'Search',

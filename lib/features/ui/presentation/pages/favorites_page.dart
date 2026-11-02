@@ -79,8 +79,8 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite albums to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
             meta: true,
@@ -120,8 +120,8 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite artists to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
             subtitle: false,
@@ -157,8 +157,8 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite tracks to see them here',
           ),
           builder: (context) => ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
             itemCount: starredTracks.length,

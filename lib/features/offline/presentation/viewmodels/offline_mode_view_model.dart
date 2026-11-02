@@ -9,6 +9,7 @@ import '../../../../core/repositories/offline_repository.dart';
 import '../../../../core/services/offline_mode_service.dart';
 import '../../domain/usecases/manage_offline_mode_use_case.dart';
 import '../../domain/services/offline_content_filter.dart';
+import '../../../../core/utils/app_log.dart';
 
 /// View model for offline mode functionality
 @lazySingleton
@@ -99,7 +100,8 @@ class OfflineModeViewModel extends ChangeNotifier {
         }
       },
       onError: (error) {
-        _setError('Offline mode error: $error');
+        AppLog.error('Offline mode stream error: $error');
+        _setError("Couldn't check whether you're offline.");
       },
     );
   }
@@ -113,7 +115,8 @@ class OfflineModeViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        _setError('Connectivity error: $error');
+        AppLog.error('Connectivity stream error: $error');
+        _setError("Couldn't check your connection.");
       },
     );
   }
@@ -132,7 +135,8 @@ class OfflineModeViewModel extends ChangeNotifier {
       final result = await _manageOfflineModeUseCase(params);
 
       result.fold(
-        (failure) => _setError('Failed to load offline collection: $failure'),
+        (failure) =>
+            _setError(describeFailure(failure, action: 'load your downloads')),
         (value) {
           final collection = value as OfflineCollectionResult;
           _offlineTracks = collection.tracks;
@@ -143,7 +147,8 @@ class OfflineModeViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error loading offline collection: $e');
+      AppLog.error('Loading downloads failed: $e');
+      _setError(describeUnexpected(action: 'load your downloads'));
     } finally {
       _setLoading(false);
     }
@@ -166,13 +171,16 @@ class OfflineModeViewModel extends ChangeNotifier {
       final result = await _manageOfflineModeUseCase(params);
 
       result.fold(
-        (failure) => _setError('Failed to check connectivity: $failure'),
+        (failure) => _setError(
+          describeFailure(failure, action: 'check your connection'),
+        ),
         (_) {
           // The connectivity state will be updated via the stream subscription
         },
       );
     } catch (e) {
-      _setError('Unexpected error checking connectivity: $e');
+      AppLog.error('Connectivity check failed: $e');
+      _setError(describeUnexpected(action: 'check your connection'));
     } finally {
       _setLoading(false);
     }
@@ -189,14 +197,16 @@ class OfflineModeViewModel extends ChangeNotifier {
       final result = await _manageOfflineModeUseCase(params);
 
       result.fold(
-        (failure) => _setError('Failed to set offline mode: $failure'),
+        (failure) =>
+            _setError(describeFailure(failure, action: 'change offline mode')),
         (_) {
           _isForcedOffline = forceOffline;
           notifyListeners();
         },
       );
     } catch (e) {
-      _setError('Unexpected error setting offline mode: $e');
+      AppLog.error('Setting offline mode failed: $e');
+      _setError(describeUnexpected(action: 'change offline mode'));
     }
   }
 
@@ -212,11 +222,12 @@ class OfflineModeViewModel extends ChangeNotifier {
       final result = await _manageOfflineModeUseCase(params);
 
       return result.fold<Map<String, dynamic>?>((failure) {
-        _setError('Failed to get offline stats: $failure');
+        _setError(describeFailure(failure, action: 'load storage details'));
         return null;
       }, (value) => value as Map<String, dynamic>);
     } catch (e) {
-      _setError('Unexpected error getting offline stats: $e');
+      AppLog.error('Loading offline stats failed: $e');
+      _setError(describeUnexpected(action: 'load storage details'));
       return null;
     } finally {
       _setLoading(false);

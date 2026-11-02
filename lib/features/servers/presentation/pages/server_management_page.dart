@@ -123,50 +123,54 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       );
     }
 
-    final albumCounts = context.select<MusicLibraryViewModel, Map<String, int>>(
-      (library) {
-        final counts = <String, int>{};
-        for (final album in library.albums) {
-          counts[album.serverId] = (counts[album.serverId] ?? 0) + 1;
-        }
-        return counts;
+    // A Builder so the select runs in a build method — this function is
+    // called from a Consumer's builder, where `context.select` asserts.
+    return Builder(
+      builder: (context) {
+        final albumCounts = context
+            .select<MusicLibraryViewModel, Map<String, int>>((library) {
+              final counts = <String, int>{};
+              for (final album in library.albums) {
+                counts[album.serverId] = (counts[album.serverId] ?? 0) + 1;
+              }
+              return counts;
+            });
+        return RefreshIndicator(
+          onRefresh: viewModel.refreshServers,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+              OmnisonicSpacing.md,
+              0,
+              OmnisonicSpacing.md,
+              OmnisonicSpacing.lg,
+            ),
+            children: [
+              _buildServerSummary(viewModel),
+              if (viewModel.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
+                  child: InlineBanner(
+                    kind: BannerKind.warning,
+                    message: viewModel.errorMessage!,
+                  ),
+                ),
+              for (final server in servers)
+                ServerListTile(
+                  key: ValueKey(server.id),
+                  server: server,
+                  isLoading: viewModel.isServerLoading(server.id),
+                  albumCount: albumCounts[server.id],
+                  latency: _latencyByServerId[server.id],
+                  onTap: () => _showServerDetails(server),
+                  onEdit: () => showServerFormDialog(context, server: server),
+                  onTest: () => _testServerConnection(server, viewModel),
+                  onDelete: () => _confirmRemove(server, viewModel),
+                ),
+            ],
+          ),
+        );
       },
-    );
-
-    return RefreshIndicator(
-      onRefresh: viewModel.refreshServers,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          OmnisonicSpacing.md,
-          0,
-          OmnisonicSpacing.md,
-          OmnisonicSpacing.lg,
-        ),
-        children: [
-          _buildServerSummary(viewModel),
-          if (viewModel.errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
-              child: InlineBanner(
-                kind: BannerKind.warning,
-                message: viewModel.errorMessage!,
-              ),
-            ),
-          for (final server in servers)
-            ServerListTile(
-              key: ValueKey(server.id),
-              server: server,
-              isLoading: viewModel.isServerLoading(server.id),
-              albumCount: albumCounts[server.id],
-              latency: _latencyByServerId[server.id],
-              onTap: () => _showServerDetails(server),
-              onEdit: () => showServerFormDialog(context, server: server),
-              onTest: () => _testServerConnection(server, viewModel),
-              onDelete: () => _confirmRemove(server, viewModel),
-            ),
-        ],
-      ),
     );
   }
 

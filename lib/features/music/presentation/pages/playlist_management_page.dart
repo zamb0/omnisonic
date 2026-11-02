@@ -107,8 +107,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
             },
           ),
           const SizedBox(height: 12),
-          // Filter chips
-          Row(
+          // Filter chips and the count, wrapping at large text sizes.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               FilterChip(
                 label: const Text('Public'),
@@ -120,7 +123,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                   });
                 },
               ),
-              const SizedBox(width: 8),
               FilterChip(
                 label: const Text('Private'),
                 selected: _showPrivateOnly,
@@ -131,7 +133,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
                   });
                 },
               ),
-              const Spacer(),
               Text(
                 pluralize(_getFilteredPlaylists(viewModel).length, 'playlist'),
                 style: OmnisonicTypography.metadata.copyWith(

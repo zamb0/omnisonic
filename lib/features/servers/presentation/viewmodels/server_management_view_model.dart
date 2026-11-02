@@ -88,7 +88,8 @@ class ServerManagementViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        _setError('Failed to load servers: $error');
+        AppLog.error('Server stream error: $error');
+        _setError("Couldn't load your servers. Pull down to try again.");
       },
     );
   }
@@ -102,14 +103,16 @@ class ServerManagementViewModel extends ChangeNotifier {
     try {
       final result = await _serverRepository.getAllServers();
       result.fold(
-        (failure) => _setError('Failed to load servers: ${failure.message}'),
+        (failure) =>
+            _setError(describeFailure(failure, action: 'load servers')),
         (servers) {
           _servers = servers;
           success = true;
         },
       );
     } catch (e) {
-      _setError('Unexpected error loading servers: $e');
+      AppLog.error('Loading servers failed: $e');
+      _setError(describeUnexpected(action: 'load your servers'));
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -330,13 +333,14 @@ class ServerManagementViewModel extends ChangeNotifier {
       final result = await _serverRepository.testConnection(server);
 
       _lastConnectionTest = result.fold((failure) {
-        _setError('Connection test failed: ${failure.message}');
+        _setError(describeFailure(failure, action: 'test the connection'));
         return null;
       }, (connectionResult) => connectionResult);
 
       return _lastConnectionTest;
     } catch (e) {
-      _setError('Unexpected error testing connection: $e');
+      AppLog.error('Connection test failed: $e');
+      _setError(describeUnexpected(action: 'test the connection'));
       return null;
     } finally {
       _isTestingConnection = false;
@@ -401,7 +405,7 @@ class ServerManagementViewModel extends ChangeNotifier {
     final result = await _serverRepository.updateServerStatus(serverId, status);
     result.fold(
       (failure) =>
-          _setError('Failed to update server status: ${failure.message}'),
+          _setError(describeFailure(failure, action: 'update server status')),
       (_) => AppLog.debug('Server status updated to $status'),
     );
   }
@@ -410,7 +414,8 @@ class ServerManagementViewModel extends ChangeNotifier {
   Future<void> updateLastSync(String serverId, DateTime lastSync) async {
     final result = await _serverRepository.updateLastSync(serverId, lastSync);
     result.fold(
-      (failure) => _setError('Failed to update last sync: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'update last sync')),
       (_) => AppLog.debug('Server last sync updated'),
     );
   }

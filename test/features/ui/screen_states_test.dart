@@ -56,20 +56,39 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
-    testWidgets('a failure renders inline with a working retry', (
+    testWidgets('a failure over a loaded library keeps it, as a banner', (
       tester,
     ) async {
+      // #57: a failed sync used to replace a library already on screen with
+      // a full-page error.
       final models = loaded();
       models.library.emitError('Server unreachable');
 
       await pumpLibrary(tester, models);
 
-      expect(find.byType(ErrorStateView), findsOneWidget);
+      expect(find.byType(ErrorStateView), findsNothing);
+      expect(find.byType(InlineBanner), findsOneWidget);
       expect(find.text('Server unreachable'), findsOneWidget);
+      expect(find.byType(AlbumCard), findsWidgets);
 
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('Retry'));
       await tester.pump();
 
+      expect(models.library.syncCallCount, 1);
+    });
+
+    testWidgets('a failure with nothing loaded is the page, with retry', (
+      tester,
+    ) async {
+      final models = TestViewModels();
+      models.servers.emitServers([testServer()]);
+      models.library.emitError('Server unreachable');
+
+      await pumpLibrary(tester, models);
+
+      expect(find.byType(ErrorStateView), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      await tester.pump();
       expect(models.library.syncCallCount, 1);
     });
 

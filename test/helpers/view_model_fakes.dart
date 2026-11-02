@@ -495,6 +495,15 @@ class FakeServerManagementViewModel extends ChangeNotifier
   Future<bool> syncAllServers() async => true;
 
   @override
+  Map<String, int> getServerStatistics() => {
+    'total': serverCount,
+    'online': onlineServerCount,
+    'offline': offlineServerCount,
+    'connecting': connectingServers.length,
+    'error': errorServers.length,
+  };
+
+  @override
   bool get isSyncingAll => false;
 
   @override

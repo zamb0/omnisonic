@@ -183,6 +183,54 @@ There used to be three overlapping sets of these under different names, so
 the same transition was 200ms or 300ms depending on which file the author
 reached for. A per-platform set also existed and was read by nothing.
 
+## Rules
+
+- **No literals outside this folder.** Font sizes, weights, `Colors.*` and
+  `Color(0x…)` belong here; `test/core/design_system/token_guardrail_test.dart`
+  fails on any that appear in `lib/` elsewhere. Add a token instead.
+- **Text floor.** Nothing below 11px; informative text (counts, metadata) at
+  12px or larger. Card text uses `cardTitle` / `cardSubtitle` / `cardMeta`;
+  tight technical text uses `technicalSmall`.
+- **On-colours.** Text on a vivid `warning`/`success` fill uses `onWarning` /
+  `onSuccess`; text over artwork sits on `scrim` and uses `onScrim`. Status
+  colours as text use the `*Accessible` variants in light mode.
+- **Gutter.** Page edges use `OmnisonicSpacing.gutter(context)` (16/24/32).
+- **Glass.** `GlassSurface` gives its child a transparent `Material`, so ink
+  from controls inside it is visible; for a pane that *is* the button use
+  `GlassInkButton`.
+
+## Components
+
+Shared widgets live in `lib/features/ui/presentation/widgets/` and are
+exported from `widgets.dart`. Pages compose these rather than rebuilding
+cards, rows, artwork or headers by hand.
+
+| Component | Use it for | Notes |
+|---|---|---|
+| `MediaCard` | Any album/artist/playlist card | Hover/focus overlay, long press & right-click → actions, one semantics label, server badge slot. `MediaCard.extentFor` sizes grid cells so the art stays square. |
+| `AlbumCard` / `ArtistCard` | Domain adapters over `MediaCard` | Work with no callbacks: tap opens, overlay plays/shuffles. |
+| `ResponsiveGridView.media` / `MediaGridPreset` | Every card grid and its skeleton | Columns bounded by min/max card width. |
+| `CoverArt` | Every piece of artwork | One placeholder/error state, size-aware request, excluded from semantics. |
+| `TrackRow` | Every track list | Variants: art / track number / position; `dense`; `reorderIndex` adds a drag handle (drag starts only there). |
+| `showTrackActions` / `showAlbumActions` | Long press / more button | One action set everywhere; `extra` adds context actions. |
+| `DetailHeader` | Album, artist, playlist headers | Title size by width; actions in a `Wrap`. |
+| `PageHeaderAppBar` | Every top-level page | Transparent 72px header; `PageHeaderAppBar.tabBar` for tabs. |
+| `SectionHeader` | Section titles | `large` (Home), `medium`, `small`; `meta` counter; one action. |
+| `StatusChip` / `ServerStatusVisuals` | Server status | Icon + label, never colour alone. |
+| `MetadataChip` | Facts in a header | Outlined, neutral. |
+| `InlineBanner` | Messages that stay in the layout | info / success / warning / error, optional action. |
+| `showFeedback` | Every snackbar | Kind as an icon on the inverse surface; `actionLabel` for Retry/Undo. |
+| `ActionErrorListener` | View-model action errors | Mounted app-wide in `main.dart`; failed actions never replace a page. |
+| `showConfirmDialog` / `showTextInputDialog` | Confirmations, one-line input | Max width 440, scrollable, Enter submits. Prefer Undo for reversible actions. |
+| `ServerDot` | Which server something is on | Colour by server index, server name as tooltip/semantics. |
+| `ArtTintMixin` | Following a cover's dominant colour | Stale results are dropped. |
+| Transport (`playback/.../transport_controls.dart`) | Play/pause, skip, shuffle, repeat | Tooltips, 0.38 disabled, distinct icon per mode, toggled semantics. |
+
+Formatting lives in `lib/core/utils/formatters.dart` (`formatDuration` with
+hours, `formatTotalDuration`, `formatRelativeTime`, `pluralize`); readable
+error text in `lib/core/errors/user_messages.dart` (`describeFailure`,
+`describeUnexpected`) — never show `$e` or `failure.message` raw.
+
 ## Testing
 
 ```bash

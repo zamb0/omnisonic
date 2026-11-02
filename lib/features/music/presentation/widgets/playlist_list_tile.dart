@@ -58,7 +58,10 @@ class PlaylistListTile extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 4),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Icon(
                     playlist.isPublic
@@ -67,16 +70,14 @@ class PlaylistListTile extends StatelessWidget {
                     size: OmnisonicIconSizes.xs,
                     color: scheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 4),
                   Text(
                     playlist.isPublic ? 'Public' : 'Private',
                     style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(width: 12),
                   Text(
-                    formatRelativeTime(playlist.updatedAt),
+                    '· ${formatRelativeTime(playlist.updatedAt)}',
                     style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),

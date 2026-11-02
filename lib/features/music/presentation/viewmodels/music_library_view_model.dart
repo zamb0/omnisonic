@@ -152,7 +152,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
       },
       onError: (error) {
         AppLog.warn('Collection stream error: $error');
-        _setError('Failed to load music collection: $error');
+        AppLog.error('Collection stream error: $error');
+        _setError("Couldn't load your library. Pull down to try again.");
       },
     );
   }
@@ -180,16 +181,19 @@ class MusicLibraryViewModel extends ChangeNotifier {
       );
 
       final result = await _syncMusicCollectionUseCase(params);
-      result.fold((failure) => _setError('Sync failed: ${failure.message}'), (
-        collection,
-      ) {
-        _collection = collection;
-        _invalidateAlbumsCache();
-        success = true;
-        _loadSmartCollections(); // Refresh smart collections after sync
-      });
+      result.fold(
+        (failure) =>
+            _setError(describeFailure(failure, action: 'sync your library')),
+        (collection) {
+          _collection = collection;
+          _invalidateAlbumsCache();
+          success = true;
+          _loadSmartCollections(); // Refresh smart collections after sync
+        },
+      );
     } catch (e) {
-      _setError('Unexpected error during sync: $e');
+      AppLog.error('Sync failed: $e');
+      _setError(describeUnexpected(action: 'sync your library'));
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -216,11 +220,12 @@ class MusicLibraryViewModel extends ChangeNotifier {
       final result = await _searchMusicUseCase(params);
 
       result.fold(
-        (failure) => _setError('Search failed: ${failure.message}'),
+        (failure) => _setError(describeFailure(failure, action: 'search')),
         (results) => _searchResults = results,
       );
     } catch (e) {
-      _setError('Unexpected error during search: $e');
+      AppLog.error('Search failed: $e');
+      _setError(describeUnexpected(action: 'search'));
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -345,7 +350,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     );
 
     return result.fold((failure) {
-      _setError('Filter failed: ${failure.message}');
+      _setError(describeFailure(failure, action: 'filter your library'));
       return <Track>[];
     }, (tracks) => tracks);
   }
@@ -354,7 +359,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   Future<List<Track>> getAlbumTracks(String albumId) async {
     final result = await _musicRepository.getAlbumTracks(albumId);
     return result.fold((failure) {
-      _setError('Failed to load album tracks: ${failure.message}');
+      _setError(describeFailure(failure, action: 'load album tracks'));
       return <Track>[];
     }, (tracks) => tracks);
   }
@@ -363,7 +368,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   Future<List<Album>> getArtistAlbums(String artistId) async {
     final result = await _musicRepository.getArtistAlbums(artistId);
     return result.fold((failure) {
-      _setError('Failed to load artist albums: ${failure.message}');
+      _setError(describeFailure(failure, action: 'load artist albums'));
       return <Album>[];
     }, (albums) => albums);
   }
@@ -375,7 +380,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   Future<List<Track>> getArtistTracks(String artistId) async {
     final result = await _musicRepository.getArtistTracks(artistId);
     final tracks = result.fold((failure) {
-      _setError('Failed to load artist tracks: ${failure.message}');
+      _setError(describeFailure(failure, action: 'load artist tracks'));
       return <Track>[];
     }, (tracks) => tracks);
 
@@ -393,7 +398,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
   Future<Map<String, List<Track>>> getDuplicateGroups() async {
     final result = await _musicRepository.getDuplicateGroups();
     return result.fold((failure) {
-      _setError('Failed to load duplicate groups: ${failure.message}');
+      _setError(describeFailure(failure, action: 'load duplicate groups'));
       return <String, List<Track>>{};
     }, (groups) => groups);
   }
@@ -403,7 +408,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     final result = await _musicRepository.markAsDuplicates(trackIds);
     result.fold(
       (failure) =>
-          _setError('Failed to mark as duplicates: ${failure.message}'),
+          _setError(describeFailure(failure, action: 'mark as duplicates')),
       (_) => AppLog.info('Tracks marked as duplicates successfully'),
     );
   }
@@ -412,7 +417,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
   Future<void> markAsUnique(List<String> trackIds) async {
     final result = await _musicRepository.markAsUnique(trackIds);
     result.fold(
-      (failure) => _setError('Failed to mark as unique: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'mark as unique')),
       (_) => AppLog.info('Tracks marked as unique successfully'),
     );
   }
@@ -572,7 +578,11 @@ class MusicLibraryViewModel extends ChangeNotifier {
         _starredAlbumIds.remove(album.id);
         _invalidateAlbumsCache();
         final failure = result.fold((f) => f, (v) => null);
-        _setError('Failed to star album: ${failure?.message}');
+        _setError(
+          failure != null
+              ? describeFailure(failure, action: 'star the album')
+              : describeUnexpected(action: 'star the album'),
+        );
         AppLog.warn('Star album failure: ${failure?.message}');
       }
       notifyListeners();
@@ -580,7 +590,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
       // Revert optimistic update on error
       _starredAlbumIds.remove(album.id);
       _invalidateAlbumsCache();
-      _setError('Error starring album: $e');
+      AppLog.error('Starring an album failed: $e');
+      _setError(describeUnexpected(action: 'star the album'));
       AppLog.error('Error starring album: $e');
       notifyListeners();
     }
@@ -605,7 +616,11 @@ class MusicLibraryViewModel extends ChangeNotifier {
         _unstarredAlbumIds.remove(album.id);
         _invalidateAlbumsCache();
         final failure = result.fold((f) => f, (v) => null);
-        _setError('Failed to unstar album: ${failure?.message}');
+        _setError(
+          failure != null
+              ? describeFailure(failure, action: 'unstar the album')
+              : describeUnexpected(action: 'unstar the album'),
+        );
         AppLog.warn('Unstar album failure: ${failure?.message}');
       }
       notifyListeners();
@@ -613,7 +628,8 @@ class MusicLibraryViewModel extends ChangeNotifier {
       // Revert optimistic update on error
       _unstarredAlbumIds.remove(album.id);
       _invalidateAlbumsCache();
-      _setError('Error unstarring album: $e');
+      AppLog.error('Unstarring an album failed: $e');
+      _setError(describeUnexpected(action: 'unstar the album'));
       AppLog.error('Error unstarring album: $e');
       notifyListeners();
     }

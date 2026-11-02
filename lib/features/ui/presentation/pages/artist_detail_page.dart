@@ -287,42 +287,28 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
   /// artist ID instead, falling back to the artist's albums when a server
   /// does not tag songs with one.
   Future<void> _playArtistTracks({required bool shuffle}) async {
-    if (_albums.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(shuffle ? 'No albums to shuffle' : 'No albums to play'),
-        ),
-      );
-      return;
-    }
+    if (_albums.isEmpty) return;
 
     final library = context.read<MusicLibraryViewModel>();
     final playbackViewModel = context.read<PlaybackViewModel>();
-    final messenger = ScaffoldMessenger.of(context);
 
     final artistTracks = await library.getArtistTracks(widget.artist.id);
     if (!mounted) return;
 
     if (artistTracks.isEmpty) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('No tracks found for this artist')),
+      showFeedback(
+        context,
+        "Couldn't find tracks for ${widget.artist.name}",
+        kind: FeedbackKind.error,
       );
       return;
     }
 
+    // No "Playing …" snackbar: the mini player already says so.
     final queue = shuffle
         ? (List<Track>.from(artistTracks)..shuffle())
         : artistTracks;
     playbackViewModel.playTrack(queue.first, queue: queue, startIndex: 0);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          '${shuffle ? 'Shuffling' : 'Playing'} ${widget.artist.name} '
-          '(${queue.length} tracks)',
-        ),
-      ),
-    );
   }
 
   void _onAlbumTapped(Album album) {

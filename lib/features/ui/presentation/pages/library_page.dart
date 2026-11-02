@@ -212,7 +212,12 @@ class _LibraryPageState extends State<LibraryPage> {
             // page: what was there stays usable.
             if (error != null)
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                padding: EdgeInsets.fromLTRB(
+                  OmnisonicSpacing.gutter(context),
+                  12,
+                  OmnisonicSpacing.gutter(context),
+                  0,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: InlineBanner(
                     kind: BannerKind.warning,
@@ -385,7 +390,12 @@ class _LibraryPageState extends State<LibraryPage> {
     bool meta = false,
   }) {
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        OmnisonicSpacing.gutter(context),
+        8,
+        OmnisonicSpacing.gutter(context),
+        24,
+      ),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.crossAxisExtent;
@@ -422,7 +432,12 @@ class _LibraryPageState extends State<LibraryPage> {
     final scheme = Theme.of(context).colorScheme;
     final controller = _searchControllers[tab]!;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      padding: EdgeInsets.fromLTRB(
+        OmnisonicSpacing.gutter(context),
+        12,
+        OmnisonicSpacing.gutter(context),
+        0,
+      ),
       child: GlassSurface(
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         padding: const EdgeInsets.only(left: 16, right: 4),
@@ -492,7 +507,12 @@ class _LibraryPageState extends State<LibraryPage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+      padding: EdgeInsets.fromLTRB(
+        OmnisonicSpacing.gutter(context),
+        10,
+        OmnisonicSpacing.gutter(context),
+        0,
+      ),
       child: Semantics(
         liveRegion: true,
         child: Text(
@@ -512,7 +532,12 @@ class _LibraryPageState extends State<LibraryPage> {
     final filtered = viewModel.showStarredOnly || genre != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      padding: EdgeInsets.fromLTRB(
+        OmnisonicSpacing.gutter(context),
+        8,
+        OmnisonicSpacing.gutter(context),
+        0,
+      ),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,

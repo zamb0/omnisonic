@@ -726,90 +726,60 @@ class MusicRepositoryImpl implements MusicRepository {
   }
 
   @override
-  Future<Result<void>> starAlbum(String albumId) async {
-    try {
-      final serversResult = await _serverRepository.getAllServers();
-      if (serversResult.isFailure) {
-        return ResultHelper.failure(serversResult.failureOrNull!);
-      }
-
-      final servers = serversResult.valueOrNull!
-          .where((s) => s.isAvailable)
-          .toList();
-      if (servers.isEmpty) {
-        return ResultHelper.success(null);
-      }
-
-      for (final server in servers) {
-        try {
-          // Extract the original album ID from the unique ID if needed
-          final originalAlbumId = albumId.contains('|')
-              ? albumId.split('|')[1]
-              : albumId;
-
-          final passwordResult = await _connectionService.getServerPassword(
-            server.id,
-          );
-          if (passwordResult.isFailure) continue;
-
-          final password = passwordResult.valueOrNull!;
-          await _apiClient.star(server, password, albumId: originalAlbumId);
-
-          AppLog.info('⭐ Starred album $albumId on server ${server.name}');
-        } catch (e) {
-          AppLog.warn('Failed to star album on server ${server.name}: $e');
-        }
-      }
-
-      _invalidateStarredContent();
-      return ResultHelper.success(null);
-    } catch (e) {
-      AppLog.warn('Error starring album: $e');
-      return ResultHelper.failure(UnknownFailure('Failed to star album: $e'));
-    }
-  }
+  Future<Result<void>> starAlbum(String albumId) =>
+      _setAlbumStarred(albumId, starred: true);
 
   @override
-  Future<Result<void>> unstarAlbum(String albumId) async {
+  Future<Result<void>> unstarAlbum(String albumId) =>
+      _setAlbumStarred(albumId, starred: false);
+
+  /// Stars or unstars [albumId] on the server that owns it.
+  ///
+  /// The album lives on exactly one server, encoded in its unique ID; the
+  /// Subsonic API only understands the raw ID that follows the server prefix.
+  Future<Result<void>> _setAlbumStarred(
+    String albumId, {
+    required bool starred,
+  }) async {
+    final action = starred ? 'star' : 'unstar';
     try {
-      final serversResult = await _serverRepository.getAllServers();
-      if (serversResult.isFailure) {
-        return ResultHelper.failure(serversResult.failureOrNull!);
+      final serverId = IdGenerator.extractServerId(albumId);
+      final subsonicAlbumId = IdGenerator.extractSubsonicId(albumId);
+
+      final serverResult = await _serverRepository.getServerById(serverId);
+      if (serverResult.isFailure) {
+        return ResultHelper.failure(serverResult.failureOrNull!);
+      }
+      final server = serverResult.valueOrNull;
+      if (server == null) {
+        return ResultHelper.failure(
+          ValidationFailure('Server not found for album $albumId'),
+        );
       }
 
-      final servers = serversResult.valueOrNull!
-          .where((s) => s.isAvailable)
-          .toList();
-      if (servers.isEmpty) {
-        return ResultHelper.success(null);
+      final passwordResult = await _connectionService.getServerPassword(
+        server.id,
+      );
+      if (passwordResult.isFailure) {
+        return ResultHelper.failure(passwordResult.failureOrNull!);
+      }
+      final password = passwordResult.valueOrNull!;
+
+      final response = starred
+          ? await _apiClient.star(server, password, albumId: subsonicAlbumId)
+          : await _apiClient.unstar(server, password, albumId: subsonicAlbumId);
+      if (!response.isSuccess) {
+        return ResultHelper.failure(
+          ServerFailure('Failed to $action album on ${server.name}'),
+        );
       }
 
-      for (final server in servers) {
-        try {
-          // Extract the original album ID from the unique ID if needed
-          final originalAlbumId = albumId.contains('|')
-              ? albumId.split('|')[1]
-              : albumId;
-
-          final passwordResult = await _connectionService.getServerPassword(
-            server.id,
-          );
-          if (passwordResult.isFailure) continue;
-
-          final password = passwordResult.valueOrNull!;
-          await _apiClient.unstar(server, password, albumId: originalAlbumId);
-
-          AppLog.info('⭐ Unstarred album $albumId on server ${server.name}');
-        } catch (e) {
-          AppLog.warn('Failed to unstar album on server ${server.name}: $e');
-        }
-      }
-
+      AppLog.info('${starred ? 'Starred' : 'Unstarred'} album $albumId');
       _invalidateStarredContent();
       return ResultHelper.success(null);
     } catch (e) {
-      AppLog.warn('Error unstarring album: $e');
-      return ResultHelper.failure(UnknownFailure('Failed to unstar album: $e'));
+      AppLog.warn('Error trying to $action album: $e');
+      return ResultHelper.failure(ServerFailure('Failed to $action album: $e'));
     }
   }
 

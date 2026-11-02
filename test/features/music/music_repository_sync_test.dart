@@ -168,4 +168,38 @@ void main() {
     ).captured;
     expect(offsets, containsAll(<int>[0, 500, 1000]));
   });
+
+  group('starring an album', () {
+    final pong = ok(const PingResponse());
+
+    test('stars it on its own server with the raw Subsonic id', () async {
+      when(
+        apiClient.star(any, any, albumId: anyNamed('albumId')),
+      ).thenAnswer((_) async => pong);
+
+      final result = await repository.starAlbum('server1_al_7');
+
+      expect(result.isSuccess, isTrue);
+      final call = verify(
+        apiClient.star(captureAny, any, albumId: captureAnyNamed('albumId')),
+      )..called(1);
+      expect((call.captured[0] as MusicServer).id, 'server1');
+      expect(call.captured[1], 'al_7');
+    });
+
+    test('reports a failure when the server rejects it', () async {
+      when(apiClient.unstar(any, any, albumId: anyNamed('albumId'))).thenAnswer(
+        (_) async => SubsonicResponse<PingResponse>(
+          subsonicResponse: SubsonicResponseData<PingResponse>(
+            status: 'failed',
+            version: '1.16.1',
+          ),
+        ),
+      );
+
+      final result = await repository.unstarAlbum('server1_al_7');
+
+      expect(result.isFailure, isTrue);
+    });
+  });
 }

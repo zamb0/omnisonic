@@ -47,6 +47,9 @@ class MusicLibraryViewModel extends ChangeNotifier {
   bool _showStarredOnly = false;
   final Set<String> _starredAlbumIds =
       {}; // Track starred album IDs for immediate UI updates
+  // Albums unstarred locally whose server-side starred list has not been
+  // reloaded yet; without this an unstar shows no effect until the reload.
+  final Set<String> _unstarredAlbumIds = {};
   SearchResults? _searchResults;
   bool _isLoading = false;
   bool _isSyncing = false;
@@ -83,19 +86,13 @@ class MusicLibraryViewModel extends ChangeNotifier {
     final starredIds = _starredAlbums.map((a) => a.id).toSet();
 
     return _albumsCache = _collection!.albums.map((album) {
-      // Update isStarred if it's in the starred albums list or in optimistic updates
-      if ((_starredAlbumIds.contains(album.id) ||
-              starredIds.contains(album.id)) &&
-          !album.isStarred) {
-        return album.copyWith(isStarred: true);
-      }
-      // Revert isStarred if it was unstarred
-      if (!_starredAlbumIds.contains(album.id) &&
-          !starredIds.contains(album.id) &&
-          album.isStarred) {
-        return album.copyWith(isStarred: false);
-      }
-      return album;
+      final starred =
+          !_unstarredAlbumIds.contains(album.id) &&
+          (_starredAlbumIds.contains(album.id) ||
+              starredIds.contains(album.id));
+      return album.isStarred == starred
+          ? album
+          : album.copyWith(isStarred: starred);
     }).toList();
   }
 
@@ -306,7 +303,11 @@ class MusicLibraryViewModel extends ChangeNotifier {
       (failure) =>
           AppLog.warn('Failed to load starred albums: ${failure.message}'),
       (albums) {
+        // The server's list now reflects every completed star/unstar, so the
+        // optimistic overrides are no longer needed.
         _starredAlbums = albums;
+        _starredAlbumIds.clear();
+        _unstarredAlbumIds.clear();
         _invalidateAlbumsCache();
       },
     );
@@ -472,11 +473,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
 
     // Apply starred filter - check both local optimistic updates and server data
     if (_showStarredOnly) {
-      result = result
-          .where(
-            (album) => _starredAlbumIds.contains(album.id) || album.isStarred,
-          )
-          .toList();
+      result = result.where(isAlbumStarred).toList();
     }
 
     // Apply genre filter
@@ -540,6 +537,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
 
   /// Checks if an album is starred (includes both optimistic updates and server data)
   bool isAlbumStarred(Album album) {
+    if (_unstarredAlbumIds.contains(album.id)) return false;
     return _starredAlbumIds.contains(album.id) || album.isStarred;
   }
 
@@ -558,6 +556,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     try {
       // Optimistic update: add to starred immediately for instant UI feedback
       _starredAlbumIds.add(album.id);
+      _unstarredAlbumIds.remove(album.id);
       _invalidateAlbumsCache();
       notifyListeners();
 
@@ -592,6 +591,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     try {
       // Optimistic update: remove from starred immediately for instant UI feedback
       _starredAlbumIds.remove(album.id);
+      _unstarredAlbumIds.add(album.id);
       _invalidateAlbumsCache();
       notifyListeners();
 
@@ -602,7 +602,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
         AppLog.info('Successfully unstarred album: ${album.title}');
       } else {
         // Revert optimistic update on failure
-        _starredAlbumIds.add(album.id);
+        _unstarredAlbumIds.remove(album.id);
         _invalidateAlbumsCache();
         final failure = result.fold((f) => f, (v) => null);
         _setError('Failed to unstar album: ${failure?.message}');
@@ -611,7 +611,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       // Revert optimistic update on error
-      _starredAlbumIds.add(album.id);
+      _unstarredAlbumIds.remove(album.id);
       _invalidateAlbumsCache();
       _setError('Error unstarring album: $e');
       AppLog.error('Error unstarring album: $e');

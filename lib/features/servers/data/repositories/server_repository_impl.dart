@@ -448,7 +448,10 @@ class ServerRepositoryImpl implements ServerRepository {
       '',
     );
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    return '${normalizedUrl}_${normalizedUsername}_$timestamp';
+    // No underscores: entity IDs are `{serverId}_{subsonicId}` and are split
+    // on the first underscore, so one inside the server ID would corrupt both
+    // halves.
+    return '$normalizedUrl-$normalizedUsername-$timestamp';
   }
 
   /// Disposes resources

@@ -205,7 +205,7 @@ class OfflineModeViewModel extends ChangeNotifier {
       );
       final result = await _manageOfflineModeUseCase(params);
 
-      return result.fold((failure) {
+      return result.fold<Map<String, dynamic>?>((failure) {
         _setError('Failed to get offline stats: $failure');
         return null;
       }, (value) => value as Map<String, dynamic>);

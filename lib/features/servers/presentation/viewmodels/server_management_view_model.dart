@@ -196,7 +196,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
     try {
       final result = await _serverRepository.updateServer(server);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to update server: ${failure.message}');
         return false;
       }, (_) => true);
@@ -221,7 +221,7 @@ class ServerManagementViewModel extends ChangeNotifier {
 
       // Remove the server
       final result = await _serverRepository.removeServer(serverId);
-      return result.fold((failure) {
+      return result.fold<bool>((failure) {
         _setError('Failed to remove server: ${failure.message}');
         return false;
       }, (_) => true);

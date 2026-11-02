@@ -7,8 +7,9 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../viewmodels/playlist_view_model.dart';
-import '../widgets/playlist_creation_dialog.dart';
-import '../widgets/playlist_edit_dialog.dart';
+import '../../../../core/utils/formatters.dart';
+import '../widgets/playlist_actions.dart';
+import '../widgets/playlist_form_dialog.dart';
 import '../widgets/playlist_list_tile.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 
@@ -28,13 +29,13 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Playlist Management'),
+      appBar: PageHeaderAppBar(
+        title: 'Playlists',
         actions: [
           IconButton(
             icon: const Icon(OmnisonicIcons.add),
-            onPressed: () => _showCreatePlaylistDialog(context),
-            tooltip: 'Create Playlist',
+            onPressed: () => showPlaylistFormDialog(context),
+            tooltip: 'New playlist',
           ),
         ],
       ),
@@ -44,32 +45,16 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
             return const LoadingStateView(kind: SkeletonKind.list);
           }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    OmnisonicIcons.errorOutline,
-                    size: OmnisonicIconSizes.xxxl,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage!,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      viewModel.clearError();
-                      viewModel.refreshPlaylists();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+          // Only a failure to load the list replaces it. A failed delete
+          // or duplicate is an action error, shown as a snackbar.
+          final error = viewModel.errorMessage;
+          if (error != null && !viewModel.hasPlaylists) {
+            return ErrorStateView(
+              message: error,
+              onRetry: () {
+                viewModel.clearError();
+                viewModel.refreshPlaylists();
+              },
             );
           }
 
@@ -97,6 +82,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(OmnisonicIcons.clear),
+                      tooltip: 'Clear search',
                       onPressed: () {
                         setState(() {
                           _searchQuery = '';
@@ -147,8 +133,10 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               ),
               const Spacer(),
               Text(
-                '${_getFilteredPlaylists(viewModel).length} playlists',
-                style: Theme.of(context).textTheme.bodySmall,
+                pluralize(_getFilteredPlaylists(viewModel).length, 'playlist'),
+                style: OmnisonicTypography.metadata.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -161,38 +149,32 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
     final playlists = _getFilteredPlaylists(viewModel);
 
     if (playlists.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              OmnisonicIcons.playlistPlay,
-              size: OmnisonicIconSizes.xxxl,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _searchQuery.isNotEmpty
-                  ? 'No playlists found for "$_searchQuery"'
-                  : 'No playlists yet',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchQuery.isNotEmpty
-                  ? 'Try a different search term'
-                  : 'Create your first playlist to get started',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (_searchQuery.isEmpty) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _showCreatePlaylistDialog(context),
-                icon: const Icon(OmnisonicIcons.add),
-                label: const Text('Create Playlist'),
+      final searching = _searchQuery.isNotEmpty;
+      return RefreshIndicator(
+        onRefresh: viewModel.refreshPlaylists,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: EmptyState(
+                icon: OmnisonicIcons.playlistPlay,
+                title: searching
+                    ? 'No playlists match "$_searchQuery"'
+                    : 'No playlists yet',
+                subtitle: searching
+                    ? 'Try a different search.'
+                    : 'Make one, then add tracks from any album or search.',
+                action: searching
+                    ? null
+                    : FilledButton.icon(
+                        onPressed: () => showPlaylistFormDialog(context),
+                        icon: const Icon(OmnisonicIcons.add),
+                        label: const Text('New playlist'),
+                      ),
               ),
-            ],
-          ],
+            ),
+          ),
         ),
       );
     }
@@ -200,17 +182,16 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
     return RefreshIndicator(
       onRefresh: viewModel.refreshPlaylists,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: playlists.length,
         itemBuilder: (context, index) {
           final playlist = playlists[index];
           return PlaylistListTile(
             playlist: playlist,
             onTap: () => _navigateToPlaylistDetail(context, playlist),
-            onEdit: () => _showEditPlaylistDialog(context, playlist),
-            onDelete: () =>
-                _showDeleteConfirmation(context, playlist, viewModel),
-            onDuplicate: () =>
-                _showDuplicateDialog(context, playlist, viewModel),
+            onEdit: () => showPlaylistFormDialog(context, playlist: playlist),
+            onDelete: () => confirmAndDeletePlaylist(context, playlist),
+            onDuplicate: () => duplicatePlaylistFlow(context, playlist),
           );
         },
       ),
@@ -233,104 +214,6 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
     }
 
     return playlists;
-  }
-
-  void _showCreatePlaylistDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const PlaylistCreationDialog(),
-    );
-  }
-
-  void _showEditPlaylistDialog(BuildContext context, Playlist playlist) {
-    showDialog(
-      context: context,
-      builder: (context) => PlaylistEditDialog(playlist: playlist),
-    );
-  }
-
-  void _showDeleteConfirmation(
-    BuildContext context,
-    Playlist playlist,
-    PlaylistViewModel viewModel,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Playlist'),
-        content: Text(
-          'Are you sure you want to delete "${playlist.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final success = await viewModel.deletePlaylist(playlist.id);
-              if (success && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Deleted "${playlist.name}"')),
-                );
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDuplicateDialog(
-    BuildContext context,
-    Playlist playlist,
-    PlaylistViewModel viewModel,
-  ) {
-    final controller = TextEditingController(text: '${playlist.name} (Copy)');
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Duplicate Playlist'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'New playlist name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                Navigator.of(context).pop();
-                final success = await viewModel.duplicatePlaylist(
-                  playlist.id,
-                  newName,
-                );
-                if (success && context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Created "$newName"')));
-                }
-              }
-            },
-            child: const Text('Duplicate'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _navigateToPlaylistDetail(BuildContext context, Playlist playlist) {

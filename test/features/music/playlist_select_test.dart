@@ -41,6 +41,63 @@ void main() {
     expect(seen.last, (loading: false, count: 3));
     vm.dispose();
   });
+
+  group('moveTrackInPlaylist (#59)', () {
+    test('moves the row at once, before the server answers', () async {
+      final tracks = testTracks(4);
+      final (vm, useCase) = await _selected(tracks);
+      useCase.gate = Completer<void>();
+
+      final done = vm.moveTrackInPlaylist(testPlaylist().id, 0, 2);
+      expect(vm.selectedPlaylistTracks.map((t) => t.id), [
+        tracks[1].id,
+        tracks[2].id,
+        tracks[0].id,
+        tracks[3].id,
+      ]);
+
+      // A second drag in the same window is not dropped.
+      final second = vm.moveTrackInPlaylist(testPlaylist().id, 3, 0);
+      expect(vm.selectedPlaylistTracks.first.id, tracks[3].id);
+
+      useCase.gate!.complete();
+      expect(await done, isTrue);
+      expect(await second, isTrue);
+      expect(useCase.calls, hasLength(2));
+      vm.dispose();
+    });
+
+    test('rolls back to the server order and reports on failure', () async {
+      final tracks = testTracks(3);
+      final (vm, useCase) = await _selected(tracks);
+      useCase.succeed = false;
+
+      final ok = await vm.moveTrackInPlaylist(testPlaylist().id, 0, 2);
+
+      expect(ok, isFalse);
+      expect(vm.selectedPlaylistTracks.map((t) => t.id), [
+        for (final t in tracks) t.id,
+      ]);
+      expect(vm.actionError, startsWith("Couldn't move the track"));
+      expect(vm.actionError, isNot(contains('500')));
+      // An action failure never becomes the page's load error.
+      expect(vm.errorMessage, isNull);
+      vm.dispose();
+    });
+  });
+}
+
+Future<(PlaylistViewModel, _FakeManagePlaylistUseCase)> _selected(
+  List<Track> tracks,
+) async {
+  final gate = Completer<void>()..complete();
+  final useCase = _FakeManagePlaylistUseCase();
+  final vm = PlaylistViewModel(
+    _FakePlaylistRepository(testPlaylist(), tracks, gate),
+    useCase,
+  );
+  await vm.selectPlaylist(testPlaylist().id);
+  return (vm, useCase);
 }
 
 class _FakePlaylistRepository extends Fake implements PlaylistRepository {
@@ -67,5 +124,19 @@ class _FakePlaylistRepository extends Fake implements PlaylistRepository {
   }
 }
 
-class _FakeManagePlaylistUseCase extends Fake
-    implements ManagePlaylistUseCase {}
+class _FakeManagePlaylistUseCase extends Fake implements ManagePlaylistUseCase {
+  final calls = <ManagePlaylistParams>[];
+  bool succeed = true;
+  Completer<void>? gate;
+
+  @override
+  Future<Result<PlaylistOperationResult>> call(
+    ManagePlaylistParams params,
+  ) async {
+    calls.add(params);
+    if (gate != null) await gate!.future;
+    return succeed
+        ? ResultHelper.success(const PlaylistOperationResult.success())
+        : ResultHelper.failure(const ServerFailure('500 from upstream'));
+  }
+}

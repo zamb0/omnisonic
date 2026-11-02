@@ -165,14 +165,7 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 key: ValueKey(server.id),
                 padding: const EdgeInsets.only(right: 4),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: OmnisonicColors.serverColorFor(server.id),
-                  ),
-                ),
+                child: ServerDot(serverId: server.id, size: 8),
               ),
             const SizedBox(width: 4),
             Text(
@@ -332,7 +325,7 @@ class _HomePageState extends State<HomePage> {
                               ServerDot(serverId: track.serverId, size: 6),
                               const SizedBox(width: 6),
                               Text(
-                                track.quality.toString(),
+                                track.quality.displayName,
                                 style: OmnisonicTypography.technical.copyWith(
                                   fontSize: 9.5,
                                   color: scheme.onSurfaceVariant,
@@ -405,67 +398,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTrackTile(List<Track> queue, int index) {
     final track = queue[index];
-    final scheme = Theme.of(context).colorScheme;
+    // Playing the whole row, not just this track, so the queue keeps going.
+    void play() => context.read<PlaybackViewModel>().playTrack(
+      track,
+      queue: queue,
+      startIndex: index,
+    );
     return SizedBox(
       width: 220,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-        // Playing the whole row, not just this track, so the queue keeps going.
-        onTap: () => context.read<PlaybackViewModel>().playTrack(
-          track,
-          queue: queue,
-          startIndex: index,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: CoverArt(url: track.coverArtUrl, radius: 0),
-                    ),
-                  ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: ServerDot(serverId: track.serverId),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      track.title,
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: OmnisonicTypography.medium,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      track.artist,
-                      style: OmnisonicTypography.caption.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: TrackRow(
+        track: track,
+        dense: true,
+        showDuration: false,
+        serverId: track.serverId,
+        onTap: play,
+        onShowActions: () => showTrackActions(context, track, onPlay: play),
       ),
     );
   }

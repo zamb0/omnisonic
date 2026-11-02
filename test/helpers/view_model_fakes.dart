@@ -551,8 +551,51 @@ class FakePlaylistViewModel extends ChangeNotifier
   List<Playlist> get searchResults => const [];
   @override
   bool get isLoading => _isLoading;
+
+  /// Every `moveTrackInPlaylist` call, for assertions.
+  final moveCalls = <(int, int)>[];
+
+  /// Every `createPlaylist` / `updatePlaylist` name, for assertions.
+  final savedNames = <String>[];
+
+  @override
+  Future<void> selectPlaylist(String playlistId) async {}
+
+  @override
+  Future<bool> moveTrackInPlaylist(
+    String playlistId,
+    int fromIndex,
+    int toIndex,
+  ) async {
+    moveCalls.add((fromIndex, toIndex));
+    return true;
+  }
+
+  @override
+  Future<bool> createPlaylist({
+    required String name,
+    String? description,
+    bool isPublic = false,
+  }) async {
+    savedNames.add(name);
+    return true;
+  }
+
+  @override
+  Future<bool> updatePlaylist(Playlist playlist) async {
+    savedNames.add(playlist.name);
+    return true;
+  }
+
+  @override
+  void clearSelectedPlaylist() {}
+
   @override
   bool get isLoadingTracks => false;
+  @override
+  String? get actionError => null;
+  @override
+  void clearActionError() {}
   @override
   bool get isOperating => false;
   @override

@@ -247,21 +247,16 @@ class FeishinShell extends StatelessWidget {
                 child: Text(
                   'SERVERS',
                   style: OmnisonicTypography.eyebrow.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.4),
-                  ),
-                ),
-              ),
-              InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-                onTap: () => context.go(AppRouter.servers),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    OmnisonicIcons.add,
-                    size: OmnisonicIconSizes.sm,
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
+              ),
+              IconButton(
+                tooltip: 'Add a server',
+                onPressed: () => context.go(AppRouter.servers),
+                icon: const Icon(OmnisonicIcons.add),
+                iconSize: OmnisonicIconSizes.sm,
+                color: scheme.onSurfaceVariant,
               ),
             ],
           ),

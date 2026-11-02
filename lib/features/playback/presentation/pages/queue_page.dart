@@ -106,6 +106,10 @@ class QueuePage extends StatelessWidget {
                   subtitle: 'Add tracks from an album or playlist.',
                 )
               : ReorderableListView.builder(
+                  // Only the row's own handle starts a drag: the default
+                  // handles doubled it on desktop, and on touch a whole-row
+                  // long-press drag fought with scrolling.
+                  buildDefaultDragHandles: false,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
@@ -123,16 +127,30 @@ class QueuePage extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final upcomingTrack = upNext[i];
                     final absoluteIndex = currentIndex + 1 + i;
-                    return _QueueRow(
+                    void play() => vm.playTrack(
+                      upcomingTrack,
+                      queue: queue,
+                      startIndex: absoluteIndex,
+                    );
+                    return TrackRow(
                       key: ValueKey('queue-${upcomingTrack.id}-$absoluteIndex'),
                       track: upcomingTrack,
+                      leading: TrackRowLeading.positionAndArt,
                       position: i + 1,
-                      onTap: () => vm.playTrack(
+                      isCurrent: false,
+                      onTap: play,
+                      onShowActions: () => showTrackActions(
+                        context,
                         upcomingTrack,
-                        queue: queue,
-                        startIndex: absoluteIndex,
+                        onPlay: play,
                       ),
-                      onRemove: () => vm.removeFromQueue(absoluteIndex),
+                      trailing: IconButton(
+                        icon: const Icon(OmnisonicIcons.close),
+                        iconSize: 18,
+                        tooltip: 'Remove from queue',
+                        onPressed: () => vm.removeFromQueue(absoluteIndex),
+                      ),
+                      reorderIndex: i,
                     );
                   },
                 ),
@@ -250,87 +268,6 @@ class QueuePage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _QueueRow extends StatelessWidget {
-  const _QueueRow({
-    super.key,
-    required this.track,
-    required this.position,
-    required this.onTap,
-    required this.onRemove,
-  });
-
-  final Track track;
-  final int position;
-  final VoidCallback onTap;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 18,
-                child: Text(
-                  '$position',
-                  textAlign: TextAlign.center,
-                  style: OmnisonicTypography.metadata.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: CoverArt(url: track.coverArtUrl, radius: 0),
-                ),
-              ),
-            ],
-          ),
-          title: Text(
-            track.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OmnisonicTypography.bodyMedium.copyWith(
-              color: scheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            track.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OmnisonicTypography.bodySmall.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(OmnisonicIcons.close, size: 18),
-                tooltip: 'Remove from queue',
-                onPressed: onRemove,
-              ),
-              Icon(OmnisonicIcons.dragHandle, color: scheme.onSurfaceVariant),
-            ],
-          ),
-        ),
       ),
     );
   }

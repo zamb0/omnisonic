@@ -6,8 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 
 import '../../../music/presentation/bloc/search_bloc.dart';
-import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
-import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
@@ -16,7 +14,6 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/deduplication_engine.dart';
 import '../../../../core/utils/album_grouping.dart';
-import '../../../../core/utils/animation_utils.dart';
 
 typedef _MergedTrack = ({
   Track representative,
@@ -258,13 +255,8 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
             child: ChoiceChip(
-              avatar: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: OmnisonicColors.serverColorFor(server.id),
-                ),
+              avatar: ExcludeSemantics(
+                child: ServerDot(serverId: server.id, size: 10),
               ),
               label: Text(server.name),
               selected: _selectedServerId == server.id,
@@ -570,14 +562,14 @@ class _SearchPageState extends State<SearchPage> {
           itemBuilder: (context, index) {
             final item = items[index];
             final track = item.representative;
-            return TrackTile(
+            return TrackRow(
               key: ValueKey(track.id),
               track: track,
               serverId: track.serverId,
               sourceServerIds: item.serverIds,
               qualityLabel: track.quality.format,
               onTap: () => _onTrackTapped(track, tracks, index),
-              onMorePressed: () => _showTrackOptions(tracks, index),
+              onShowActions: () => _showTrackOptions(tracks, index),
             );
           },
         ),
@@ -711,98 +703,11 @@ class _SearchPageState extends State<SearchPage> {
     context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }
 
-  void _showTrackOptions(List<Track> tracks, int index) {
-    final track = tracks[index];
-    AnimationUtils.showCustomBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playArrow),
-              title: const Text('Play Now'),
-              onTap: () {
-                Navigator.pop(context);
-                _onTrackTapped(track, tracks, index);
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.queueMusic),
-              title: const Text('Add to Queue'),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<PlaybackViewModel>().addToQueue(track);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Added to queue')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playlistAdd),
-              title: const Text('Add to Playlist'),
-              onTap: () {
-                Navigator.pop(context);
-                showAddToPlaylistSheet(context, track);
-              },
-            ),
-            _DownloadTrackTile(track: track),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "Download" row for the track options sheet: downloads the track for
-/// offline playback, or removes it again when it is already downloaded.
-class _DownloadTrackTile extends StatelessWidget {
-  const _DownloadTrackTile({required this.track});
-
-  final Track track;
-
-  @override
-  Widget build(BuildContext context) {
-    final offline = context.watch<OfflineModeViewModel>();
-    final isDownloaded = offline.isTrackAvailableOffline(track.id);
-    final isDownloading = offline.isTrackDownloading(track.id);
-
-    return ListTile(
-      leading: Icon(
-        isDownloaded
-            ? OmnisonicIcons.downloadDone
-            : isDownloading
-            ? OmnisonicIcons.downloading
-            : OmnisonicIcons.downloadOutline,
-      ),
-      title: Text(
-        isDownloaded
-            ? 'Remove Download'
-            : isDownloading
-            ? 'Downloading…'
-            : 'Download',
-      ),
-      enabled: !isDownloading,
-      onTap: () async {
-        Navigator.pop(context);
-        final messenger = ScaffoldMessenger.of(context);
-        final error = isDownloaded
-            ? await offline.removeDownload(track.id)
-            : await offline.downloadTrack(track);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              error ??
-                  (isDownloaded
-                      ? 'Download removed'
-                      : 'Downloaded for offline'),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showTrackOptions(List<Track> tracks, int index) => showTrackActions(
+    context,
+    tracks[index],
+    onPlay: () => _onTrackTapped(tracks[index], tracks, index),
+  );
 }
 
 /// Result sections that can be expanded past their preview length.

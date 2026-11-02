@@ -107,31 +107,18 @@ class _LibraryPageState extends State<LibraryPage> {
     final showTabBar = !ShellLayout.hasSidebar(context);
 
     return Scaffold(
-      appBar: AppBar(
-        // Oversized Gabarito title on a transparent bar: the art-tinted
-        // background has to run behind the header, not stop at it.
-        toolbarHeight: 72,
-        titleSpacing: 4,
-        title: Text(
-          showTabBar ? 'Library' : activeTab.label,
-          style: OmnisonicTypography.pageTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+      appBar: PageHeaderAppBar(
+        title: showTabBar ? 'Library' : activeTab.label,
         actions: [
           IconButton(
             icon: const Icon(OmnisonicIcons.sync),
             onPressed: _syncLibrary,
-            tooltip: 'Sync Library',
+            tooltip: 'Sync library',
           ),
           IconButton(
             icon: const Icon(OmnisonicIcons.sort),
             onPressed: _showSortOptions,
-            tooltip: 'Sort Options',
+            tooltip: 'Sort',
           ),
         ],
         bottom: showTabBar ? _buildTabBar(activeTab) : null,

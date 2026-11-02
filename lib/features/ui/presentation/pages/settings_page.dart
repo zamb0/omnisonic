@@ -9,6 +9,7 @@ import '../../../../core/services/download_preferences_service.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../../core/utils/haptics.dart';
+import '../widgets/page_header.dart';
 
 /// Settings screen. Every row here is backed by a real, already-persisted
 /// setting or a real piece of app state — nothing is a decorative stub.
@@ -21,7 +22,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: const PageHeaderAppBar(title: 'Settings'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -41,27 +41,4 @@ class LibrarySortService {
       getDate: (artist) => artist.lastModified,
     );
   }
-
-  /// Sort tracks by the current sort option
-  static List<Track> sortTracks(List<Track> tracks, SortOption option) {
-    return sortItems<Track>(
-      items: tracks,
-      option: option,
-      getTitle: (track) => track.title,
-      getDate: (track) => track.lastModified,
-    );
-  }
-
-  /// Sort playlists by the current sort option
-  static List<Playlist> sortPlaylists(
-    List<Playlist> playlists,
-    SortOption option,
-  ) {
-    return sortItems<Playlist>(
-      items: playlists,
-      option: option,
-      getTitle: (playlist) => playlist.name,
-      getDate: (playlist) => playlist.createdAt,
-    );
-  }
 }

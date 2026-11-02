@@ -17,16 +17,4 @@ class LibrarySortState {
   void setOption(LibraryTab tab, SortOption option) {
     _sortOptions[tab] = option;
   }
-
-  /// Get the current sort option based on tab index
-  SortOption getOptionByIndex(int index) {
-    final tab = LibraryTab.fromIndex(index);
-    return getOption(tab);
-  }
-
-  /// Set the sort option based on tab index
-  void setOptionByIndex(int index, SortOption option) {
-    final tab = LibraryTab.fromIndex(index);
-    setOption(tab, option);
-  }
 }

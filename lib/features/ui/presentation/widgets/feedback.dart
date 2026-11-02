@@ -57,3 +57,67 @@ Color _errorOnInverse(ColorScheme scheme) =>
     scheme.brightness == Brightness.light
     ? OmnisonicColors.error
     : OmnisonicColors.errorAccessible;
+
+/// Shows a view model's transient action error as an error snackbar, then
+/// clears it.
+///
+/// Action errors (a failed delete, a refused reorder) are reported this way
+/// so they never replace the page the user is looking at. Sits above the
+/// navigator, in `MaterialApp.builder`, so it covers every route.
+///
+/// If something else consumes the error first — a dialog that shows it
+/// inline and clears it — nothing is shown here.
+class ActionErrorListener extends StatefulWidget {
+  const ActionErrorListener({
+    super.key,
+    required this.source,
+    required this.message,
+    required this.clear,
+    required this.child,
+  });
+
+  /// Resolves the notifier lazily; returning null (no DI in a test, say)
+  /// makes this a pass-through.
+  final Listenable? Function() source;
+  final String? Function() message;
+  final VoidCallback clear;
+  final Widget child;
+
+  @override
+  State<ActionErrorListener> createState() => _ActionErrorListenerState();
+}
+
+class _ActionErrorListenerState extends State<ActionErrorListener> {
+  Listenable? _source;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      _source = widget.source()?..addListener(_onChange);
+    } catch (_) {
+      _source = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _source?.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() {
+    final message = widget.message();
+    if (message == null) return;
+    // Clearing notifies; defer both so this never runs mid-build, and so a
+    // dialog that shows the error inline gets to consume it first.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.message() != message) return;
+      widget.clear();
+      showFeedback(context, message, kind: FeedbackKind.error);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

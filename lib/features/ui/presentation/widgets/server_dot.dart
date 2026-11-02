@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/entities/entities.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 
-/// Small colored dot identifying which source server a track/album came
-/// from, using [OmnisonicColors.serverColorFor]'s deterministic per-server
-/// hue. A thin surface-colored ring keeps the dot legible when it sits over
-/// cover art of a similar color.
+/// Small coloured dot identifying which source server a track or album came
+/// from.
+///
+/// The colour is picked by the server's position in the user's server list
+/// ([OmnisonicColors.serverColorFor] with an index), so two servers never
+/// share a dot; it falls back to a hash of the id where the list is not
+/// available. Colour is never the only cue: the dot carries the server's name
+/// as a tooltip and for screen readers.
+///
+/// A thin surface-coloured ring keeps the dot legible over cover art of a
+/// similar colour.
 class ServerDot extends StatelessWidget {
   const ServerDot({super.key, required this.serverId, this.size = 10});
 
@@ -15,15 +25,39 @@ class ServerDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    final servers = _servers(context);
+    final index = servers?.indexWhere((s) => s.id == serverId) ?? -1;
+    final name = index >= 0 ? servers![index].name : null;
+
+    final dot = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: OmnisonicColors.serverColorFor(serverId),
+        color: OmnisonicColors.serverColorFor(
+          serverId,
+          index: index >= 0 ? index : null,
+        ),
         border: Border.all(color: scheme.surface, width: size * 0.2),
       ),
     );
+
+    if (name == null) return ExcludeSemantics(child: dot);
+    return Tooltip(
+      message: name,
+      excludeFromSemantics: true,
+      child: Semantics(label: 'On $name', child: dot),
+    );
+  }
+
+  static List<MusicServer>? _servers(BuildContext context) {
+    try {
+      return context.select<ServerManagementViewModel, List<MusicServer>>(
+        (vm) => vm.servers,
+      );
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 }
 

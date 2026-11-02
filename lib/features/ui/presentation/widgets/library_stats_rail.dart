@@ -91,7 +91,7 @@ class LibraryStatsRail extends StatelessWidget {
     return Text(
       label,
       style: OmnisonicTypography.eyebrow.copyWith(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }

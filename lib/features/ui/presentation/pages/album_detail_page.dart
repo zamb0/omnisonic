@@ -7,10 +7,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/album_grouping.dart';
-import '../../../../core/utils/id_generator.dart';
-import '../../../../core/utils/animation_utils.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
-import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
@@ -293,14 +290,15 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final track = _tracks[index];
-        return TrackTile(
+        return TrackRow(
+          key: ValueKey(track.id),
           track: track,
-          showTrackNumber: true,
+          leading: TrackRowLeading.trackNumber,
           serverId: _albumVariants.length > 1 ? track.serverId : null,
           qualityLabel: track.quality.format,
           sourceNote: _sourceNotes?[track.id],
           onTap: () => _onTrackTapped(track, index),
-          onMorePressed: () => _showTrackOptions(track),
+          onShowActions: () => _showTrackOptions(track),
         );
       }, childCount: _tracks.length),
     );
@@ -478,7 +476,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             SizedBox(
               width: 96,
               child: Text(
-                '${track.quality.format} ${track.quality.bitrate}',
+                track.quality.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: OmnisonicTypography.metadata.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -745,34 +745,29 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           runSpacing: 8,
           children: [
             if (_album.year != null)
-              _buildMetadataChip(
-                context,
-                OmnisonicIcons.calendarToday,
-                '${_album.year}',
+              MetadataChip(
+                icon: OmnisonicIcons.calendarToday,
+                label: '${_album.year}',
               ),
             if (_album.genre != null)
-              _buildMetadataChip(
-                context,
-                OmnisonicIcons.musicNote,
-                _album.genre!,
+              MetadataChip(
+                icon: OmnisonicIcons.musicNote,
+                label: _album.genre!,
               ),
-            _buildMetadataChip(
-              context,
-              OmnisonicIcons.queueMusic,
-              '${_tracks.length} track${_tracks.length == 1 ? '' : 's'}',
+            MetadataChip(
+              icon: OmnisonicIcons.queueMusic,
+              label: '${_tracks.length} track${_tracks.length == 1 ? '' : 's'}',
             ),
             if (_tracks.isNotEmpty)
-              _buildMetadataChip(
-                context,
-                OmnisonicIcons.accessTime,
-                formatTotalDuration(
+              MetadataChip(
+                icon: OmnisonicIcons.accessTime,
+                label: formatTotalDuration(
                   _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
                 ),
               ),
-            _buildMetadataChip(
-              context,
-              OmnisonicIcons.dns,
-              _getServerNameForAlbum(context, _album),
+            MetadataChip(
+              icon: OmnisonicIcons.dns,
+              label: _getServerNameForAlbum(context, _album),
             ),
           ],
         ),
@@ -1044,36 +1039,6 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     );
   }
 
-  Widget _buildMetadataChip(BuildContext context, IconData icon, String label) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: OmnisonicIconSizes.sm,
-            color: scheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   List<Album> _resolveAlbumVariants() {
     final libraryViewModel = context.read<MusicLibraryViewModel>();
     final key = _albumGroupKey(_album);
@@ -1110,10 +1075,6 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
   String _getServerNameForAlbum(BuildContext context, Album album) =>
       context.read<ServerManagementViewModel>().serverNameFor(album.serverId);
-
-  String _getTrackServerName(Track track) => context
-      .read<ServerManagementViewModel>()
-      .serverNameFor(IdGenerator.extractServerId(track.id));
 
   void _playAlbum() {
     if (_tracks.isEmpty) {
@@ -1182,109 +1143,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   void _onTrackTapped(Track track, int index) {
-    debugPrint('Track tapped: ${track.title} (${track.id})');
     final playbackViewModel = context.read<PlaybackViewModel>();
     playbackViewModel.playTrack(track, queue: _tracks, startIndex: index);
   }
 
-  void _showTrackOptions(Track track) {
-    AnimationUtils.showCustomBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playArrow),
-              title: const Text('Play Now'),
-              onTap: () {
-                context.pop();
-                _onTrackTapped(track, _tracks.indexOf(track));
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.queueMusic),
-              title: const Text('Add to Queue'),
-              onTap: () {
-                context.pop();
-                context.read<PlaybackViewModel>().addToQueue(track);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Added to queue')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playlistAdd),
-              title: const Text('Add to Playlist'),
-              onTap: () {
-                context.pop();
-                showAddToPlaylistSheet(context, track);
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.info),
-              title: const Text('Track Info'),
-              onTap: () {
-                context.pop();
-                _showTrackInfo(track);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTrackInfo(Track track) {
-    AnimationUtils.showCustomDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(track.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Artist', track.artist),
-            _buildInfoRow('Album', track.album),
-            _buildInfoRow('Duration', formatDuration(track.duration)),
-            if (track.year != null)
-              _buildInfoRow('Year', track.year.toString()),
-            if (track.genre != null) _buildInfoRow('Genre', track.genre!),
-            if (track.trackNumber != null)
-              _buildInfoRow('Track', track.trackNumber.toString()),
-            _buildInfoRow('Quality', track.quality.toString()),
-            _buildInfoRow('Server', _getTrackServerName(track)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
+  void _showTrackOptions(Track track) => showTrackActions(
+    context,
+    track,
+    onPlay: () => _onTrackTapped(track, _tracks.indexOf(track)),
+    showGoToAlbum: false,
+  );
 }
 
 /// Pins the desktop track table's column labels above the rows.

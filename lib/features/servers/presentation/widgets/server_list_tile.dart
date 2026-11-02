@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/chips.dart';
 
 /// A list tile widget for displaying server information
 class ServerListTile extends StatelessWidget {
@@ -49,7 +50,7 @@ class ServerListTile extends StatelessWidget {
 
   Widget _buildTile(BuildContext context) {
     return ListTile(
-      leading: _buildLeading(),
+      leading: _buildLeading(context),
       title: Text(
         server.name,
         style: const TextStyle(fontWeight: FontWeight.w500),
@@ -63,7 +64,7 @@ class ServerListTile extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              _buildStatusChip(server.status),
+              StatusChip(status: server.status),
               const SizedBox(width: 8),
               Text(
                 'User: ${server.username}',
@@ -185,100 +186,17 @@ class ServerListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildLeading() {
+  Widget _buildLeading(BuildContext context) {
+    final color = ServerStatusVisuals.of(context, server.status).color;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        color: _getStatusColor(server.status).withValues(alpha: 0.1),
-      ),
-      child: Icon(
-        OmnisonicIcons.dns,
-        color: _getStatusColor(server.status),
-        size: 24,
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(ServerStatus status) {
-    final color = _getStatusColor(status);
-    final icon = _getStatusIcon(status);
-    final text = _getStatusText(status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+      child: Icon(OmnisonicIcons.dns, color: color, size: 24),
     );
-  }
-
-  Color _getStatusColor(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return OmnisonicColors.success;
-      case ServerStatus.offline:
-        return OmnisonicColors.error;
-      case ServerStatus.connecting:
-        return OmnisonicColors.warning;
-      case ServerStatus.authenticating:
-        return OmnisonicColors.info;
-      case ServerStatus.syncing:
-        return OmnisonicColors.primaryPurple;
-      case ServerStatus.error:
-        return OmnisonicColors.error;
-    }
-  }
-
-  IconData _getStatusIcon(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return OmnisonicIcons.checkCircle;
-      case ServerStatus.offline:
-        return OmnisonicIcons.error;
-      case ServerStatus.connecting:
-        return OmnisonicIcons.sync;
-      case ServerStatus.authenticating:
-        return OmnisonicIcons.lock;
-      case ServerStatus.syncing:
-        return OmnisonicIcons.syncAlt;
-      case ServerStatus.error:
-        return OmnisonicIcons.warning;
-    }
-  }
-
-  String _getStatusText(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return 'Online';
-      case ServerStatus.offline:
-        return 'Offline';
-      case ServerStatus.connecting:
-        return 'Connecting';
-      case ServerStatus.authenticating:
-        return 'Authenticating';
-      case ServerStatus.syncing:
-        return 'Syncing';
-      case ServerStatus.error:
-        return 'Error';
-    }
   }
 
   void _handleMenuAction(String action) {

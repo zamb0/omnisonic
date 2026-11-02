@@ -101,38 +101,36 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return InkWell(
+    return GlassInkButton(
       onTap: () => context.go(AppRouter.search),
       borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-        child: Row(
-          children: [
-            Icon(
-              OmnisonicIcons.search,
-              size: OmnisonicIconSizes.sm,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Search albums, artists, tracks — all servers',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: OmnisonicTypography.bodyMedium.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      semanticLabel: 'Search',
+      child: Row(
+        children: [
+          Icon(
+            OmnisonicIcons.search,
+            size: OmnisonicIconSizes.sm,
+            color: scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Search albums, artists, tracks — all servers',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OmnisonicTypography.bodyMedium.copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
-            Text(
-              '⌘K',
-              style: OmnisonicTypography.technical.copyWith(
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
+          ),
+          Text(
+            '⌘K',
+            style: OmnisonicTypography.technical.copyWith(
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -149,17 +147,12 @@ class _GlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return InkWell(
+    return GlassInkButton(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-        child: Text(
-          label,
-          style: OmnisonicTypography.glassButton.copyWith(
-            color: scheme.onSurface,
-          ),
+      child: Text(
+        label,
+        style: OmnisonicTypography.glassButton.copyWith(
+          color: scheme.onSurface,
         ),
       ),
     );

@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/services/cover_palette_service.dart';
 import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../ui/presentation/pages/main_shell.dart';
@@ -14,6 +12,8 @@ import 'full_screen_player.dart' show NowPlayingPanel;
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../ui/presentation/widgets/cover_art.dart';
+import 'transport_controls.dart';
+import '../../../ui/presentation/widgets/art_tint.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
 ///
@@ -31,11 +31,7 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 }
 
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
-    with TickerProviderStateMixin {
-  /// Material's disabled-content opacity. Lower reads as decoration rather
-  /// than as a control that is merely unavailable right now.
-  static const double _disabledAlpha = 0.38;
-
+    with TickerProviderStateMixin, ArtTintMixin {
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
@@ -86,22 +82,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     }
   }
 
-  /// Dominant color extracted from the current track's cover art, used to
-  /// tint the progress indicator. Null (falls back to `scheme.primary`)
-  /// until extraction finishes or if it fails.
-  Color? _tintColor;
-  String? _tintedCoverUrl;
-
-  void _updateTint(String? coverArtUrl) {
-    if (coverArtUrl == _tintedCoverUrl) return;
-    _tintedCoverUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _tintedCoverUrl == coverArtUrl) {
-        setState(() => _tintColor = color);
-      }
-    });
-  }
-
   @override
   void dispose() {
     _slideController.dispose();
@@ -124,8 +104,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           return const SizedBox.shrink();
         }
 
-        _updateTint(track.coverArtUrl);
-        final tint = _tintColor ?? scheme.primary;
+        updateArtTint(track.coverArtUrl);
+        final tint = artTint ?? scheme.primary;
 
         final position = vm.position;
         final duration = vm.duration;
@@ -330,19 +310,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ),
                           const SizedBox(width: 8),
                         ],
-                        _iconBtn(
-                          OmnisonicIcons.skipPrevious,
-                          22,
-                          vm.hasPrevious
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(
-                                  alpha: _disabledAlpha,
-                                ),
-                          vm.hasPrevious ? () => vm.skipToPrevious() : null,
-                          label: 'Previous track',
-                        ),
+                        SkipPreviousButton(playback: vm, size: 22),
                         const SizedBox(width: 8),
-                        _playPauseBtn(vm, scheme),
+                        PlayPauseButton(playback: vm),
                         if (showFavorite) ...[
                           const SizedBox(width: 6),
                           SizedBox(
@@ -361,17 +331,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ),
                         ],
                         const SizedBox(width: 8),
-                        _iconBtn(
-                          OmnisonicIcons.skipNext,
-                          22,
-                          vm.hasNext
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(
-                                  alpha: _disabledAlpha,
-                                ),
-                          vm.hasNext ? () => vm.skipToNext() : null,
-                          label: 'Next track',
-                        ),
+                        SkipNextButton(playback: vm, size: 22),
                       ],
                     ),
                   ),
@@ -539,7 +499,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            track.quality.toString(),
+                            track.quality.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmnisonicTypography.technical.copyWith(
@@ -587,48 +547,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _iconBtn(
-                  OmnisonicIcons.shuffle,
-                  18,
-                  vm.shuffleEnabled
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant,
-                  () => vm.toggleShuffleMode(),
-                  label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
-                ),
+                ShuffleModeButton(playback: vm, size: 18),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  OmnisonicIcons.skipPrevious,
-                  24,
-                  vm.hasPrevious
-                      ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
-                  vm.hasPrevious ? () => vm.skipToPrevious() : null,
-                  label: 'Previous track',
-                ),
+                SkipPreviousButton(playback: vm),
                 const SizedBox(width: 6),
-                // Play/Pause - prominent circular button
-                _playPauseBtn(vm, scheme),
+                PlayPauseButton(playback: vm),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  OmnisonicIcons.skipNext,
-                  24,
-                  vm.hasNext
-                      ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
-                  vm.hasNext ? () => vm.skipToNext() : null,
-                  label: 'Next track',
-                ),
+                SkipNextButton(playback: vm),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  _repeatIcon(vm.repeatMode),
-                  18,
-                  vm.repeatMode != playback.RepeatMode.none
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant,
-                  () => vm.toggleRepeatMode(),
-                  label: _repeatLabel(vm.repeatMode),
-                ),
+                RepeatModeButton(playback: vm, size: 18),
               ],
             ),
           ),
@@ -887,58 +814,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   ///
   /// Solid ink rather than the brand accent: in the redesign this is the one
   /// element allowed to be fully opaque against the glass.
-  Widget _playPauseBtn(PlaybackViewModel vm, ColorScheme scheme) {
-    return Container(
-      width: OmnisonicTouchTargets.iconButton,
-      height: OmnisonicTouchTargets.iconButton,
-      decoration: BoxDecoration(
-        color: scheme.onSurface,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            spreadRadius: -8,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Semantics(
-        button: true,
-        label: vm.isPlaying ? 'Pause' : 'Play',
-        child: IconButton(
-          icon: Icon(
-            vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
-            color: scheme.surface,
-          ),
-          iconSize: OmnisonicIconSizes.md,
-          padding: EdgeInsets.zero,
-          tooltip: vm.isPlaying ? 'Pause' : 'Play',
-          onPressed: () {
-            Haptics.impact();
-            vm.togglePlayPause();
-          },
-        ),
-      ),
-    );
-  }
-
-  IconData _repeatIcon(playback.RepeatMode mode) {
-    return mode == playback.RepeatMode.one
-        ? OmnisonicIcons.repeatOne
-        : OmnisonicIcons.repeat;
-  }
-
-  String _repeatLabel(playback.RepeatMode mode) {
-    switch (mode) {
-      case playback.RepeatMode.none:
-        return 'Repeat off';
-      case playback.RepeatMode.all:
-        return 'Repeat all';
-      case playback.RepeatMode.one:
-        return 'Repeat one';
-    }
-  }
 
   IconData _volumeIcon(double volume) {
     if (volume <= 0) return OmnisonicIcons.volumeOff;

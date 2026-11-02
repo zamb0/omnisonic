@@ -238,21 +238,18 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           spacing: 10,
           runSpacing: 8,
           children: [
-            _buildMetadataChip(
-              context,
-              OmnisonicIcons.album,
-              '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
+            MetadataChip(
+              icon: OmnisonicIcons.album,
+              label: '${_albums.length} album${_albums.length == 1 ? '' : 's'}',
             ),
-            _buildMetadataChip(
-              context,
-              OmnisonicIcons.dns,
-              _getServerName(context),
+            MetadataChip(
+              icon: OmnisonicIcons.dns,
+              label: _getServerName(context),
             ),
             if (widget.artist.musicBrainzId != null)
-              _buildMetadataChip(
-                context,
-                OmnisonicIcons.fingerprint,
-                'MusicBrainz',
+              MetadataChip(
+                icon: OmnisonicIcons.fingerprint,
+                label: 'MusicBrainz',
               ),
           ],
         ),
@@ -377,36 +374,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             fallbackIcon: OmnisonicIcons.person,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildMetadataChip(BuildContext context, IconData icon, String label) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: OmnisonicIconSizes.sm,
-            color: scheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

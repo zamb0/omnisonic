@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/errors.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
@@ -34,6 +35,7 @@ class PlaylistViewModel extends ChangeNotifier {
   bool _isLoadingTracks = false;
   bool _isOperating = false;
   String? _errorMessage;
+  String? _actionError;
   String _searchQuery = '';
 
   // Getters
@@ -50,7 +52,16 @@ class PlaylistViewModel extends ChangeNotifier {
   /// Whether the selected playlist's tracks are still being fetched.
   bool get isLoadingTracks => _isLoadingTracks;
   bool get isOperating => _isOperating;
+
+  /// Why the playlists, or the selected playlist, could not be loaded. A
+  /// page-level state: there is nothing to show.
   String? get errorMessage => _errorMessage;
+
+  /// Why the last action (create, delete, reorder, …) failed. Transient:
+  /// show it as a snackbar and call [clearActionError]. It never replaces
+  /// the page — a failed delete used to swap the whole list for an error
+  /// view.
+  String? get actionError => _actionError;
   String get searchQuery => _searchQuery;
   bool get hasPlaylists => _playlists.isNotEmpty;
   bool get hasSelectedPlaylist => _selectedPlaylist != null;
@@ -71,7 +82,8 @@ class PlaylistViewModel extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        _setError('Failed to load playlists: $error');
+        AppLog.error('Playlist stream error: $error');
+        _setError("Couldn't load your playlists. Pull to try again.");
       },
     );
   }
@@ -84,11 +96,13 @@ class PlaylistViewModel extends ChangeNotifier {
     try {
       final result = await _playlistRepository.getAllPlaylists();
       result.fold(
-        (failure) => _setError('Failed to load playlists: ${failure.message}'),
+        (failure) =>
+            _setError(describeFailure(failure, action: 'load your playlists')),
         (playlists) => _playlists = playlists,
       );
     } catch (e) {
-      _setError('Unexpected error loading playlists: $e');
+      AppLog.error('Failed to load playlists: $e');
+      _setError(describeUnexpected(action: 'load your playlists'));
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -104,7 +118,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -119,19 +133,25 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to create playlist: ${failure.message}');
+          _setActionError(
+            describeFailure(failure, action: 'create the playlist'),
+          );
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to create playlist: ${operationResult.message}');
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'create the playlist'),
+            );
             return false;
           }
           return true;
         },
       );
     } catch (e) {
-      _setError('Unexpected error creating playlist: $e');
+      AppLog.error('Playlist operation failed (create playlist): $e');
+      _setActionError(describeUnexpected(action: 'create the playlist'));
       return false;
     } finally {
       _isOperating = false;
@@ -144,7 +164,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -157,12 +177,17 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to update playlist: ${failure.message}');
+          _setActionError(
+            describeFailure(failure, action: 'save the playlist'),
+          );
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to update playlist: ${operationResult.message}');
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'save the playlist'),
+            );
             return false;
           }
 
@@ -175,7 +200,8 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error updating playlist: $e');
+      AppLog.error('Playlist operation failed (update playlist): $e');
+      _setActionError(describeUnexpected(action: 'save the playlist'));
       return false;
     } finally {
       _isOperating = false;
@@ -188,7 +214,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -201,12 +227,17 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to delete playlist: ${failure.message}');
+          _setActionError(
+            describeFailure(failure, action: 'delete the playlist'),
+          );
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError('Failed to delete playlist: ${operationResult.message}');
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'delete the playlist'),
+            );
             return false;
           }
 
@@ -220,7 +251,8 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error deleting playlist: $e');
+      AppLog.error('Playlist operation failed (delete playlist): $e');
+      _setActionError(describeUnexpected(action: 'delete the playlist'));
       return false;
     } finally {
       _isOperating = false;
@@ -233,7 +265,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -247,13 +279,14 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to add track to playlist: ${failure.message}');
+          _setActionError(describeFailure(failure, action: 'add the track'));
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError(
-              'Failed to add track to playlist: ${operationResult.message}',
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'add the track'),
             );
             return false;
           }
@@ -268,7 +301,8 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error adding track to playlist: $e');
+      AppLog.error('Playlist operation failed (add track to playlist): $e');
+      _setActionError(describeUnexpected(action: 'add the track'));
       return false;
     } finally {
       _isOperating = false;
@@ -284,7 +318,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -298,13 +332,14 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to remove track from playlist: ${failure.message}');
+          _setActionError(describeFailure(failure, action: 'remove the track'));
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError(
-              'Failed to remove track from playlist: ${operationResult.message}',
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'remove the track'),
             );
             return false;
           }
@@ -319,7 +354,10 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error removing track from playlist: $e');
+      AppLog.error(
+        'Playlist operation failed (remove track from playlist): $e',
+      );
+      _setActionError(describeUnexpected(action: 'remove the track'));
       return false;
     } finally {
       _isOperating = false;
@@ -335,7 +373,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -349,13 +387,16 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to reorder playlist tracks: ${failure.message}');
+          _setActionError(
+            describeFailure(failure, action: 'reorder the playlist'),
+          );
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError(
-              'Failed to reorder playlist tracks: ${operationResult.message}',
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'reorder the playlist'),
             );
             return false;
           }
@@ -370,7 +411,8 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error reordering playlist tracks: $e');
+      AppLog.error('Playlist operation failed (reorder playlist tracks): $e');
+      _setActionError(describeUnexpected(action: 'reorder the playlist'));
       return false;
     } finally {
       _isOperating = false;
@@ -379,55 +421,81 @@ class PlaylistViewModel extends ChangeNotifier {
   }
 
   /// Moves a track within a playlist
+  /// Moves requests are sent one after another, in the order they were
+  /// made, so the server applies them to the same order the UI shows.
+  Future<void> _moveQueue = Future.value();
+
+  /// Moves a track within a playlist. [toIndex] is the position after the
+  /// track has been taken out, as [SliverReorderableList] reports it.
+  ///
+  /// Optimistic: the selected playlist's tracks move at once, so the row
+  /// stays where it was dropped and a second drag works straight away —
+  /// it used to snap back until the round trip finished, and drags made in
+  /// that window were ignored. If the server refuses, the tracks are
+  /// reloaded from the truth and [actionError] says so.
   Future<bool> moveTrackInPlaylist(
     String playlistId,
     int fromIndex,
     int toIndex,
-  ) async {
-    if (_isOperating) return false;
+  ) {
+    if (fromIndex == toIndex) return Future.value(true);
 
-    _isOperating = true;
-    _clearError();
-    notifyListeners();
+    if (_selectedPlaylist?.id == playlistId &&
+        fromIndex >= 0 &&
+        fromIndex < _selectedPlaylistTracks.length &&
+        toIndex >= 0 &&
+        toIndex < _selectedPlaylistTracks.length) {
+      final tracks = List<Track>.of(_selectedPlaylistTracks);
+      tracks.insert(toIndex, tracks.removeAt(fromIndex));
+      _selectedPlaylistTracks = tracks;
+      _actionError = null;
+      notifyListeners();
+    }
+
+    final done = _moveQueue.then(
+      (_) => _sendMove(playlistId, fromIndex, toIndex),
+    );
+    _moveQueue = done.then((_) {});
+    return done;
+  }
+
+  Future<bool> _sendMove(String playlistId, int fromIndex, int toIndex) async {
+    Future<bool> fail(String message) async {
+      _setActionError(message);
+      if (_selectedPlaylist?.id == playlistId) {
+        await _loadSelectedPlaylistTracks();
+      }
+      return false;
+    }
 
     try {
-      final params = ManagePlaylistParams(
-        operation: PlaylistOperation.moveTrack,
-        playlistId: playlistId,
-        fromIndex: fromIndex,
-        toIndex: toIndex,
+      final result = await _managePlaylistUseCase(
+        ManagePlaylistParams(
+          operation: PlaylistOperation.moveTrack,
+          playlistId: playlistId,
+          fromIndex: fromIndex,
+          toIndex: toIndex,
+        ),
       );
-
-      final result = await _managePlaylistUseCase(params);
-
-      return result.fold<bool>(
-        (failure) {
-          _setError('Failed to move track in playlist: ${failure.message}');
-          return false;
-        },
+      return await result.fold(
+        (failure) => fail(describeFailure(failure, action: 'move the track')),
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError(
-              'Failed to move track in playlist: ${operationResult.message}',
+            return fail(
+              operationResult.message ??
+                  describeUnexpected(action: 'move the track'),
             );
-            return false;
           }
-
-          // Update selected playlist if it's the same one
-          if (_selectedPlaylist?.id == playlistId) {
+          if (_selectedPlaylist?.id == playlistId &&
+              operationResult.playlist != null) {
             _selectedPlaylist = operationResult.playlist;
-            _loadSelectedPlaylistTracks();
           }
-
           return true;
         },
       );
     } catch (e) {
-      _setError('Unexpected error moving track in playlist: $e');
-      return false;
-    } finally {
-      _isOperating = false;
-      notifyListeners();
+      AppLog.error('Moving a playlist track failed: $e');
+      return fail(describeUnexpected(action: 'move the track'));
     }
   }
 
@@ -436,7 +504,7 @@ class PlaylistViewModel extends ChangeNotifier {
     if (_isOperating) return false;
 
     _isOperating = true;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
@@ -450,13 +518,16 @@ class PlaylistViewModel extends ChangeNotifier {
 
       return result.fold<bool>(
         (failure) {
-          _setError('Failed to duplicate playlist: ${failure.message}');
+          _setActionError(
+            describeFailure(failure, action: 'duplicate the playlist'),
+          );
           return false;
         },
         (operationResult) {
           if (!operationResult.isSuccess) {
-            _setError(
-              'Failed to duplicate playlist: ${operationResult.message}',
+            _setActionError(
+              operationResult.message ??
+                  describeUnexpected(action: 'duplicate the playlist'),
             );
             return false;
           }
@@ -465,7 +536,8 @@ class PlaylistViewModel extends ChangeNotifier {
         },
       );
     } catch (e) {
-      _setError('Unexpected error duplicating playlist: $e');
+      AppLog.error('Playlist operation failed (duplicate playlist): $e');
+      _setActionError(describeUnexpected(action: 'duplicate the playlist'));
       return false;
     } finally {
       _isOperating = false;
@@ -488,7 +560,8 @@ class PlaylistViewModel extends ChangeNotifier {
     final result = await _playlistRepository.getPlaylistById(playlistId);
     Playlist? playlist;
     result.fold(
-      (failure) => _setError('Failed to load playlist: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'load this playlist')),
       (found) => playlist = found,
     );
     _selectedPlaylist = playlist;
@@ -520,8 +593,9 @@ class PlaylistViewModel extends ChangeNotifier {
       // A different playlist may have been opened while this was in flight.
       if (_selectedPlaylist?.id != playlistId) return;
       result.fold(
-        (failure) =>
-            _setError('Failed to load playlist tracks: ${failure.message}'),
+        (failure) => _setError(
+          describeFailure(failure, action: "load this playlist's tracks"),
+        ),
         (tracks) => _selectedPlaylistTracks = tracks,
       );
     } catch (e) {
@@ -545,17 +619,20 @@ class PlaylistViewModel extends ChangeNotifier {
     }
 
     _searchQuery = query;
-    _clearError();
+    _actionError = null;
     notifyListeners();
 
     try {
       final result = await _playlistRepository.searchPlaylists(query);
       result.fold(
-        (failure) => _setError('Search failed: ${failure.message}'),
+        (failure) => _setActionError(
+          describeFailure(failure, action: 'search playlists'),
+        ),
         (results) => _searchResults = results,
       );
     } catch (e) {
-      _setError('Unexpected error during search: $e');
+      AppLog.error('Playlist search failed: $e');
+      _setActionError(describeUnexpected(action: 'search playlists'));
     } finally {
       notifyListeners();
     }
@@ -572,7 +649,7 @@ class PlaylistViewModel extends ChangeNotifier {
   Future<List<Playlist>> getRecentPlaylists({int limit = 10}) async {
     final result = await _playlistRepository.getRecentPlaylists(limit: limit);
     return result.fold((failure) {
-      _setError('Failed to load recent playlists: ${failure.message}');
+      AppLog.warn('Failed to load recent playlists: ${failure.message}');
       return <Playlist>[];
     }, (playlists) => playlists);
   }
@@ -598,6 +675,18 @@ class PlaylistViewModel extends ChangeNotifier {
 
   void _clearError() {
     _errorMessage = null;
+  }
+
+  void _setActionError(String message) {
+    _actionError = message;
+    notifyListeners();
+  }
+
+  /// Clears [actionError] once it has been shown.
+  void clearActionError() {
+    if (_actionError == null) return;
+    _actionError = null;
+    notifyListeners();
   }
 
   /// Clears the current error message

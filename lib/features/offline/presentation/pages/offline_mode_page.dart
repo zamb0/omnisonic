@@ -40,8 +40,8 @@ class _OfflineModePageState extends State<OfflineModePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Offline Mode'),
+      appBar: PageHeaderAppBar(
+        title: 'Downloads',
         actions: [
           Consumer<OfflineModeViewModel>(
             builder: (context, viewModel, child) {
@@ -85,13 +85,15 @@ class _OfflineModePageState extends State<OfflineModePage>
             },
           ),
         ],
-        bottom: TabBar(
+        bottom: PageHeaderAppBar.tabBar(
+          context,
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
-            Tab(text: 'Tracks', icon: Icon(OmnisonicIcons.musicNote)),
-            Tab(text: 'Albums', icon: Icon(OmnisonicIcons.album)),
-            Tab(text: 'Artists', icon: Icon(OmnisonicIcons.person)),
-            Tab(text: 'Playlists', icon: Icon(OmnisonicIcons.playlistPlay)),
+            Tab(text: 'Tracks'),
+            Tab(text: 'Albums'),
+            Tab(text: 'Artists'),
+            Tab(text: 'Playlists'),
           ],
         ),
       ),
@@ -348,13 +350,17 @@ class _OfflineModePageState extends State<OfflineModePage>
       itemCount: tracks.length,
       itemBuilder: (context, index) {
         final track = tracks[index];
-        return TrackTile(
+        void play() => context.read<PlaybackViewModel>().playTrack(
+          track,
+          queue: tracks,
+          startIndex: index,
+        );
+        return TrackRow(
+          key: ValueKey(track.id),
           track: track,
-          onTap: () => context.read<PlaybackViewModel>().playTrack(
-            track,
-            queue: tracks,
-            startIndex: index,
-          ),
+          showAlbum: true,
+          onTap: play,
+          onShowActions: () => showTrackActions(context, track, onPlay: play),
         );
       },
     );

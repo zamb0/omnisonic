@@ -46,13 +46,13 @@ class _ServerManagementPageState extends State<ServerManagementPage>
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Server Management'),
+      appBar: PageHeaderAppBar(
+        title: 'Servers',
         actions: [
           IconButton(
             icon: const Icon(OmnisonicIcons.add),
             onPressed: () => _showAddServerDialog(context),
-            tooltip: 'Add Server',
+            tooltip: 'Add server',
           ),
           IconButton(
             icon: const Icon(OmnisonicIcons.refresh),
@@ -81,11 +81,12 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             ],
           ),
         ],
-        bottom: TabBar(
+        bottom: PageHeaderAppBar.tabBar(
+          context,
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Servers', icon: Icon(OmnisonicIcons.dns)),
-            Tab(text: 'Status', icon: Icon(OmnisonicIcons.monitorHeart)),
+            Tab(text: 'Servers'),
+            Tab(text: 'Status'),
           ],
         ),
       ),
@@ -352,7 +353,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                     ),
                   ),
                 ),
-                _buildStatusChip(server.status),
+                StatusChip(status: server.status),
               ],
             ),
             const SizedBox(height: 8),
@@ -377,63 +378,6 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(ServerStatus status) {
-    // Colour comes from the palette; only the icon and label are per-status.
-    final color = OmnisonicColors.statusColorFor(status);
-    late final IconData icon;
-    late final String text;
-
-    switch (status) {
-      case ServerStatus.online:
-        icon = OmnisonicIcons.checkCircle;
-        text = 'Online';
-        break;
-      case ServerStatus.offline:
-        icon = OmnisonicIcons.error;
-        text = 'Offline';
-        break;
-      case ServerStatus.connecting:
-        icon = OmnisonicIcons.sync;
-        text = 'Connecting';
-        break;
-      case ServerStatus.authenticating:
-        icon = OmnisonicIcons.lock;
-        text = 'Authenticating';
-        break;
-      case ServerStatus.syncing:
-        icon = OmnisonicIcons.syncAlt;
-        text = 'Syncing';
-        break;
-      case ServerStatus.error:
-        icon = OmnisonicIcons.warning;
-        text = 'Error';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -7,8 +7,6 @@ import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart' as playback;
-import '../../../../core/services/cover_palette_service.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
@@ -16,6 +14,8 @@ import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
+import '../pages/player_page.dart';
+import 'transport_controls.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -30,7 +30,7 @@ class FullScreenPlayer extends StatefulWidget {
   State<FullScreenPlayer> createState() => _FullScreenPlayerState();
 }
 
-class _FullScreenPlayerState extends State<FullScreenPlayer> {
+class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
   bool _isDraggingSeek = false;
   double _seekValue = 0.0;
   late NowPlayingPanel _panel;
@@ -38,12 +38,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   /// Accumulated downward drag on the header, used to swipe-dismiss the
   /// player the way a full-screen modal is expected to close on iOS/Android.
   double _dismissDragExtent = 0.0;
-
-  /// Dominant color extracted from the current track's cover art, used to
-  /// tint the background. Null until extraction finishes (or if it fails),
-  /// in which case [OmnisonicColors.nowPlayingGradient] is used instead.
-  Color? _tintColor;
-  String? _tintedCoverUrl;
 
   /// Set when the player was opened on a specific panel; on the mobile
   /// layout that panel lives in a sheet, which is opened after first build.
@@ -54,16 +48,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     super.initState();
     _panel = widget.initialPanel ?? NowPlayingPanel.queue;
     _pendingPanel = widget.initialPanel;
-  }
-
-  void _updateTint(String? coverArtUrl) {
-    if (coverArtUrl == _tintedCoverUrl) return;
-    _tintedCoverUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _tintedCoverUrl == coverArtUrl) {
-        setState(() => _tintColor = color);
-      }
-    });
   }
 
   /// Closes the player. Falls back to Home when there's nothing to pop
@@ -87,18 +71,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         final progress = playbackViewModel.progress;
 
         if (currentTrack == null) {
-          return const Scaffold(
-            body: EmptyState(
-              icon: OmnisonicIcons.musicNoteOutline,
-              title: 'Nothing playing',
-              subtitle: 'Pick a track and it will show up here.',
-            ),
-          );
+          return const NothingPlayingView();
         }
 
-        _updateTint(currentTrack.coverArtUrl);
-        final tint =
-            _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
+        updateArtTint(currentTrack.coverArtUrl);
+        final tint = artTint ?? OmnisonicColors.nowPlayingGradient.colors.first;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -330,6 +307,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               children: [
                 IconButton(
                   onPressed: _closePlayer,
+                  tooltip: 'Close player',
                   icon: const Icon(OmnisonicIcons.keyboardArrowDown),
                 ),
                 const SizedBox(width: 8),
@@ -537,6 +515,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
+  /// What is streaming, without numbers: the tiers' bitrates are nominal,
+  /// not what the file or the stream actually has, so showing them
+  /// presented invented figures as fact.
   Widget _buildQualityIndicator(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
@@ -544,14 +525,16 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     final scheme = Theme.of(context).colorScheme;
     final quality = playbackViewModel.currentQuality;
     final maxQuality = playbackViewModel.maxQuality;
-    final ratio = (playbackViewModel.streamingQualityRatio * 100)
-        .clamp(0, 100)
-        .round();
+    final reduced = quality.qualityScore < maxQuality.qualityScore;
 
     return Align(
       alignment: Alignment.centerRight,
       child: Text(
-        '${quality.format} ${quality.bitrate} kbps • $ratio% of max ${maxQuality.bitrate}',
+        reduced
+            ? '${quality.displayName} · reduced from ${maxQuality.displayName}'
+            : quality.displayName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: OmnisonicTypography.metadata.copyWith(
           color: scheme.onSurfaceVariant,
         ),
@@ -563,133 +546,43 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     BuildContext context,
     PlaybackViewModel playbackViewModel,
   ) {
-    final scheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _glassCircleButton(
-          context,
-          icon: OmnisonicIcons.skipPrevious,
-          onPressed: playbackViewModel.hasPrevious
-              ? () => playbackViewModel.skipToPrevious()
-              : null,
-        ),
+        _glassCircle(SkipPreviousButton(playback: playbackViewModel, size: 28)),
         const SizedBox(width: 16),
-        FilledButton(
-          onPressed: () => playbackViewModel.togglePlayPause(),
-          style: FilledButton.styleFrom(
-            shape: const CircleBorder(),
-            padding: const EdgeInsets.all(18),
-            backgroundColor: scheme.primary,
-          ),
-          child: Icon(
-            playbackViewModel.isPlaying
-                ? OmnisonicIcons.pause
-                : OmnisonicIcons.playArrow,
-            size: OmnisonicIconSizes.lg,
-          ),
-        ),
+        PlayPauseButton(playback: playbackViewModel, prominent: true),
         const SizedBox(width: 16),
-        _glassCircleButton(
-          context,
-          icon: OmnisonicIcons.skipNext,
-          onPressed: playbackViewModel.hasNext
-              ? () => playbackViewModel.skipToNext()
-              : null,
-        ),
+        _glassCircle(SkipNextButton(playback: playbackViewModel, size: 28)),
       ],
     );
   }
 
-  /// Circular glass transport button, used for prev/next around the solid
-  /// primary-colored play/pause button.
-  Widget _glassCircleButton(
-    BuildContext context, {
-    required IconData icon,
-    required VoidCallback? onPressed,
-    double size = 56,
-    double iconSize = 28,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
+  /// Circular glass backing for the prev/next buttons either side of the
+  /// solid play/pause button.
+  Widget _glassCircle(Widget button, {double size = 56}) {
     return GlassSurface(
       borderRadius: BorderRadius.circular(size / 2),
       padding: EdgeInsets.zero,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: iconSize),
-          color: onPressed != null
-              ? scheme.onSurface
-              : scheme.onSurfaceVariant.withValues(alpha: 0.4),
-        ),
+      child: SizedBox.square(
+        dimension: size,
+        child: Center(child: button),
       ),
     );
-  }
-
-  IconData _getRepeatIcon(playback.RepeatMode repeatMode) {
-    switch (repeatMode) {
-      case playback.RepeatMode.none:
-        return OmnisonicIcons.repeat;
-      case playback.RepeatMode.all:
-        return OmnisonicIcons.repeat;
-      case playback.RepeatMode.one:
-        return OmnisonicIcons.repeatOne;
-    }
   }
 
   Widget _buildSecondaryControls(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
   ) {
-    final scheme = Theme.of(context).colorScheme;
+    // The favourite toggle lives in the header only; it used to be here as
+    // well, so the same action showed twice on one screen.
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          onPressed: () => playbackViewModel.toggleShuffleMode(),
-          icon: Icon(
-            OmnisonicIcons.shuffle,
-            color: playbackViewModel.shuffleEnabled
-                ? scheme.primary
-                : scheme.onSurfaceVariant,
-          ),
-          tooltip: 'Shuffle',
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: () => playbackViewModel.toggleRepeatMode(),
-          icon: Icon(
-            _getRepeatIcon(playbackViewModel.repeatMode),
-            color: playbackViewModel.repeatMode != playback.RepeatMode.none
-                ? scheme.primary
-                : scheme.onSurfaceVariant,
-          ),
-          tooltip: 'Repeat',
-        ),
-        const SizedBox(width: 8),
-        Consumer<PlaybackViewModel>(
-          builder: (context, viewModel, child) {
-            final track = viewModel.currentTrack;
-            final isStarred = track?.isStarred ?? false;
-
-            return IconButton(
-              onPressed: track != null && !viewModel.isFavoritePending(track.id)
-                  ? () => viewModel.toggleFavorite(track)
-                  : null,
-              icon: Icon(
-                isStarred
-                    ? OmnisonicIcons.favorite
-                    : OmnisonicIcons.favoriteOutline,
-                color: isStarred
-                    ? OmnisonicColors.favoriteIndicator
-                    : scheme.onSurfaceVariant,
-              ),
-              tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
-            );
-          },
-        ),
+        ShuffleModeButton(playback: playbackViewModel, size: 24),
+        const SizedBox(width: 16),
+        RepeatModeButton(playback: playbackViewModel, size: 24),
       ],
     );
   }
@@ -703,11 +596,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     PlaybackViewModel playbackViewModel,
   ) {
     final scheme = Theme.of(context).colorScheme;
-    final serverViewModel = context.watch<ServerManagementViewModel>();
-    final matches = serverViewModel.servers.where(
-      (s) => s.id == track.serverId,
+    final serverName = context.watch<ServerManagementViewModel>().serverNameFor(
+      track.serverId,
     );
-    final serverName = matches.isEmpty ? track.serverId : matches.first.name;
 
     final quality = playbackViewModel.currentQuality;
     final maxQuality = playbackViewModel.maxQuality;
@@ -725,7 +616,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$serverName · ${quality.format} ${quality.bitrate}kbps · '
+              '$serverName · ${quality.displayName} · '
               '${isDirect ? 'Direct' : 'Transcoded'}',
               style: OmnisonicTypography.metadata.copyWith(
                 color: scheme.onSurfaceVariant,

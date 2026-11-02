@@ -36,27 +36,12 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        // Oversized display title on a transparent bar, matching Library: the
-        // art tint has to run behind the header rather than stop at it.
-        toolbarHeight: 72,
-        titleSpacing: OmnisonicSpacing.xs,
-        title: Text(
-          'Starred',
-          style: OmnisonicTypography.pageTitle.copyWith(
-            color: scheme.onSurface,
-          ),
-        ),
-        bottom: TabBar(
+      appBar: PageHeaderAppBar(
+        title: 'Starred',
+        bottom: PageHeaderAppBar.tabBar(
+          context,
           controller: _tabController,
-          labelStyle: OmnisonicTypography.navLabel,
-          unselectedLabelStyle: OmnisonicTypography.navLabel,
-          labelColor: scheme.onSurface,
-          unselectedLabelColor: scheme.onSurfaceVariant,
-          indicatorColor: scheme.primary,
           tabs: const [
             Tab(text: 'Albums'),
             Tab(text: 'Artists'),
@@ -177,9 +162,16 @@ class _FavoritesPageState extends State<FavoritesPage>
             itemCount: starredTracks.length,
             itemBuilder: (context, index) {
               final track = starredTracks[index];
-              return TrackTile(
+              return TrackRow(
+                key: ValueKey(track.id),
                 track: track,
+                serverId: track.serverId,
                 onTap: () => _onTrackTapped(track, starredTracks),
+                onShowActions: () => showTrackActions(
+                  context,
+                  track,
+                  onPlay: () => _onTrackTapped(track, starredTracks),
+                ),
               );
             },
           ),

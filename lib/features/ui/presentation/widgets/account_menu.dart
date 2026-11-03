@@ -181,8 +181,12 @@ class _AccountMenuItem extends StatelessWidget {
       onTap: () {
         // Pop the sheet before navigating: pushing first leaves the sheet
         // stacked over the destination.
+        //
+        // Pushed, not replaced: these pages sit above the tabs, and with go()
+        // Servers had a back arrow when opened from Home but none from here.
+        final router = GoRouter.of(context);
         Navigator.of(context).pop();
-        GoRouter.of(context).go(destination.route);
+        if (!selected) router.push(destination.route);
       },
     );
   }

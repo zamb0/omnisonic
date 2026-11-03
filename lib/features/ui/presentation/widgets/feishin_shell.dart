@@ -265,7 +265,7 @@ class FeishinShell extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Add a server',
+                tooltip: 'Add server',
                 onPressed: () => context.go(AppRouter.servers),
                 icon: const Icon(OmnisonicIcons.add),
                 iconSize: OmnisonicIconSizes.sm,

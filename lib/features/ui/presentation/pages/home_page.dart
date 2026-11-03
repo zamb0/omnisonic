@@ -11,6 +11,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../widgets/widgets.dart';
+import '../../../servers/presentation/widgets/server_form_dialog.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -486,10 +487,12 @@ class _HomePageState extends State<HomePage> {
             subtitle:
                 'Add a Subsonic-compatible server to start browsing and '
                 'playing your library.',
+            // Straight to the form: the Servers list it used to open was
+            // empty and had its own "Add server" button, two taps for one.
             action: FilledButton.icon(
-              onPressed: () => context.push(AppRouter.servers),
+              onPressed: () => showServerFormDialog(context),
               icon: const Icon(OmnisonicIcons.add),
-              label: const Text('Add a server'),
+              label: const Text('Add server'),
             ),
           ),
         );

@@ -162,7 +162,6 @@ class _SearchPageState extends State<SearchPage> {
             title: const Text('Search'),
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.transparent,
             foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
           ),
           // Pinned and non-collapsing: the field is the page's entire
@@ -793,8 +792,13 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    // Same rule as the shell's AppBar theme: transparent at rest, a surface
+    // once results scroll under the field.
+    final scrolled = overlapsContent || shrinkOffset > 0;
     return Material(
-      type: MaterialType.transparency,
+      color: scrolled
+          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.94)
+          : Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [searchBar, ?chips],

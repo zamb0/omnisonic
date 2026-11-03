@@ -82,87 +82,92 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         // of the app's light/dark setting — every descendant reading
         // Theme.of(context).colorScheme (this file, LyricsPanel, the queue
         // list) picks up dark-appropriate colors automatically.
-        return Theme(
-          data: Theme.of(context).copyWith(
-            brightness: Brightness.dark,
-            colorScheme: darkScheme,
-            textTheme: OmnisonicTypography.textTheme.apply(
-              bodyColor: darkScheme.onSurface,
-              displayColor: darkScheme.onSurface,
+        // The surface is always dark, so the status bar icons have to be
+        // light whatever the app theme is.
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              brightness: Brightness.dark,
+              colorScheme: darkScheme,
+              textTheme: OmnisonicTypography.textTheme.apply(
+                bodyColor: darkScheme.onSurface,
+                displayColor: darkScheme.onSurface,
+              ),
             ),
-          ),
-          // A fresh context, positioned below the Theme above, so every
-          // Theme.of(context) call made further down (including inside this
-          // class's own helper methods, which aren't separate widgets and
-          // would otherwise see the ambient app theme instead) resolves to
-          // the dark scheme.
-          child: Builder(
-            builder: (context) {
-              // Esc closes the player, like any modal on desktop.
-              return CallbackShortcuts(
-                bindings: {
-                  const SingleActivator(LogicalKeyboardKey.escape):
-                      _closePlayer,
-                },
-                child: Focus(
-                  autofocus: true,
-                  child: AnimatedSlide(
-                    offset: Offset(
-                      0,
-                      _dismissDragExtent /
-                          MediaQuery.sizeOf(context).height.clamp(1, 1e9),
-                    ),
-                    duration: _dismissDragExtent == 0
-                        ? AnimationUtils.adjustedDuration(
-                            context,
-                            AnimationManager.fastDuration,
-                          )
-                        : Duration.zero,
-                    child: Scaffold(
-                      backgroundColor: darkScheme.surface,
-                      body: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(0, -0.4),
-                            radius: 1.3,
-                            colors: [
-                              tint.withValues(alpha: 0.55),
-                              darkScheme.surface,
-                            ],
+            // A fresh context, positioned below the Theme above, so every
+            // Theme.of(context) call made further down (including inside this
+            // class's own helper methods, which aren't separate widgets and
+            // would otherwise see the ambient app theme instead) resolves to
+            // the dark scheme.
+            child: Builder(
+              builder: (context) {
+                // Esc closes the player, like any modal on desktop.
+                return CallbackShortcuts(
+                  bindings: {
+                    const SingleActivator(LogicalKeyboardKey.escape):
+                        _closePlayer,
+                  },
+                  child: Focus(
+                    autofocus: true,
+                    child: AnimatedSlide(
+                      offset: Offset(
+                        0,
+                        _dismissDragExtent /
+                            MediaQuery.sizeOf(context).height.clamp(1, 1e9),
+                      ),
+                      duration: _dismissDragExtent == 0
+                          ? AnimationUtils.adjustedDuration(
+                              context,
+                              AnimationManager.fastDuration,
+                            )
+                          : Duration.zero,
+                      child: Scaffold(
+                        backgroundColor: darkScheme.surface,
+                        body: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: const Alignment(0, -0.4),
+                              radius: 1.3,
+                              colors: [
+                                tint.withValues(alpha: 0.55),
+                                darkScheme.surface,
+                              ],
+                            ),
                           ),
-                        ),
-                        child: SafeArea(
-                          // Two columns from the shell's tablet breakpoint (768),
-                          // not ResponsiveLayout's 480: between the two, the side
-                          // panel was 85–200px wide and its tabs overflowed.
-                          child: LayoutBuilder(
-                            builder: (context, constraints) =>
-                                constraints.maxWidth >=
-                                    ResponsiveBreakpoints.tablet
-                                ? _buildDesktopLayout(
-                                    context,
-                                    currentTrack,
-                                    playbackViewModel,
-                                    position,
-                                    duration,
-                                    progress,
-                                  )
-                                : _buildMobileLayout(
-                                    context,
-                                    currentTrack,
-                                    playbackViewModel,
-                                    position,
-                                    duration,
-                                    progress,
-                                  ),
+                          child: SafeArea(
+                            // Two columns from the shell's tablet breakpoint (768),
+                            // not ResponsiveLayout's 480: between the two, the side
+                            // panel was 85–200px wide and its tabs overflowed.
+                            child: LayoutBuilder(
+                              builder: (context, constraints) =>
+                                  constraints.maxWidth >=
+                                      ResponsiveBreakpoints.tablet
+                                  ? _buildDesktopLayout(
+                                      context,
+                                      currentTrack,
+                                      playbackViewModel,
+                                      position,
+                                      duration,
+                                      progress,
+                                    )
+                                  : _buildMobileLayout(
+                                      context,
+                                      currentTrack,
+                                      playbackViewModel,
+                                      position,
+                                      duration,
+                                      progress,
+                                    ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },

@@ -218,6 +218,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   SliverAppBar _buildSliverAppBar() {
     return SliverAppBar(
       pinned: true,
+      // Left-aligned always: centred, a long title flipped it to the left.
+      centerTitle: false,
       leading: BackButton(
         onPressed: () {
           if (context.canPop()) {

@@ -328,22 +328,22 @@ class OmnisonicColors {
   // Per-server accent hues
   // ---------------------------------------------------------------------
 
-  /// Precomputed sRGB stand-ins for an oklch(.68 .16 H) sweep (H = 0..330 in
-  /// 30° steps), used to give each source server a stable, distinguishable
-  /// accent dot without a runtime oklch->sRGB conversion.
+  /// Precomputed sRGB stand-ins for an oklch(.68 .16 H) sweep, used to give
+  /// each source server a stable, distinguishable accent dot without a
+  /// runtime oklch->sRGB conversion.
+  ///
+  /// The red, orange, yellow and red-pink hues (H 0, 30, 60, 330) are left
+  /// out: the first server's dot was red, and beside "1 server · up to date"
+  /// it read as an error. Ordered so neighbouring servers get distant hues.
   static const List<Color> serverHueSwatches = [
-    Color(0xFFD86464), // H 0
-    Color(0xFFD89E64), // H 30
-    Color(0xFFD8D864), // H 60
-    Color(0xFF9ED864), // H 90
-    Color(0xFF64D864), // H 120
-    Color(0xFF64D89E), // H 150
-    Color(0xFF64D8D8), // H 180
     Color(0xFF649ED8), // H 210
-    Color(0xFF6464D8), // H 240
+    Color(0xFF64D864), // H 120
     Color(0xFF9E64D8), // H 270
+    Color(0xFF64D8D8), // H 180
+    Color(0xFF9ED864), // H 90
     Color(0xFFD864D8), // H 300
-    Color(0xFFD8649E), // H 330
+    Color(0xFF64D89E), // H 150
+    Color(0xFF6464D8), // H 240
   ];
 
   /// Deterministic accent color for a server ID, used to tag which source

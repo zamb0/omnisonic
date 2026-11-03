@@ -159,8 +159,25 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // Same title treatment as PageHeaderAppBar on the other tabs; it
+          // was the one centred, regular-weight title.
           SliverAppBar(
-            title: const Text('Search'),
+            centerTitle: false,
+            titleSpacing: OmnisonicSpacing.gutter(context),
+            title: Semantics(
+              header: true,
+              child: Text(
+                'Search',
+                style:
+                    (MediaQuery.sizeOf(context).width <
+                                ResponsiveBreakpoints.mobile
+                            ? OmnisonicTypography.sectionTitle
+                            : OmnisonicTypography.pageTitle)
+                        .copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+              ),
+            ),
             pinned: true,
             elevation: 0,
             foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
@@ -589,7 +606,7 @@ class _SearchPageState extends State<SearchPage> {
         child: SectionHeader(
           title: 'Tracks',
           subtitle: _resultCountLabel(items.length, rawTotal, 'result'),
-          seeAllLabel: expanded ? 'Show Less' : 'See All',
+          seeAllLabel: expanded ? 'Show less' : 'See all',
           onSeeAllPressed: items.length > _trackPreviewCount
               ? () => _toggleSection(_ResultSection.tracks)
               : null,
@@ -635,7 +652,7 @@ class _SearchPageState extends State<SearchPage> {
           SectionHeader(
             title: 'Albums',
             subtitle: _resultCountLabel(albums.length, rawTotal, 'result'),
-            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            seeAllLabel: expanded ? 'Show less' : 'See all',
             onSeeAllPressed: albums.length > _carouselPreviewCount
                 ? () => _toggleSection(_ResultSection.albums)
                 : null,
@@ -689,7 +706,7 @@ class _SearchPageState extends State<SearchPage> {
             title: 'Artists',
             subtitle:
                 '${artists.length} result${artists.length != 1 ? 's' : ''}',
-            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            seeAllLabel: expanded ? 'Show less' : 'See all',
             onSeeAllPressed: artists.length > _carouselPreviewCount
                 ? () => _toggleSection(_ResultSection.artists)
                 : null,

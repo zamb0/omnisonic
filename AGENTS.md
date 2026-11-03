@@ -4,14 +4,14 @@ Guidance for AI coding agents working in this repository.
 
 ## Project
 
-Omnisonic — a Flutter client that aggregates **multiple Subsonic-compatible servers** into one unified music collection (iOS, Android, macOS, Windows, Linux, web). The multi-server aspect drives most of the non-obvious design: IDs, deduplication, source selection, and credential storage all exist because the same track can live on several servers.
+Omnisonic — a Flutter client that aggregates **multiple Subsonic-compatible servers** into one unified music collection (iOS, Android, macOS, Windows, Linux). Web is not supported: drift uses `NativeDatabase` (`dart:ffi`), and downloads, the cache and MPRIS use `dart:io`. The multi-server aspect drives most of the non-obvious design: IDs, deduplication, source selection, and credential storage all exist because the same track can live on several servers.
 
 ## Commands
 
 ```bash
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # required after DI/drift/json changes
-flutter run                                                # add -d macos|ios|chrome|linux|windows
+flutter run                                                # add -d macos|ios|linux|windows
 flutter analyze                                            # lints: package:flutter_lints
 flutter test                                               # all tests
 flutter test test/core/services/deduplication_engine_test.dart          # one file

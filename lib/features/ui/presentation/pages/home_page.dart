@@ -111,9 +111,10 @@ class _HomePageState extends State<HomePage> {
   static const double _statsRailBreakpoint = 1100;
 
   Widget _buildAppBar() {
+    final gutter = OmnisonicSpacing.gutter(context);
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+        padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 8),
         child: Row(
           children: [
             Expanded(
@@ -167,10 +168,15 @@ class _HomePageState extends State<HomePage> {
                 child: ServerDot(serverId: server.id, size: 8),
               ),
             const SizedBox(width: 4),
-            Text(
-              '${servers.length} $serverWord · $status',
-              style: OmnisonicTypography.metadata.copyWith(
-                color: scheme.onSurfaceVariant,
+            // Flexible: at large text sizes the line overflowed the row.
+            Flexible(
+              child: Text(
+                '${servers.length} $serverWord · $status',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -218,7 +224,12 @@ class _HomePageState extends State<HomePage> {
         final scheme = Theme.of(context).colorScheme;
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(bottom: OmnisonicSpacing.md),
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              0,
+              OmnisonicSpacing.gutter(context),
+              OmnisonicSpacing.md,
+            ),
             child: GlassPanel(
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: Row(
@@ -265,7 +276,12 @@ class _HomePageState extends State<HomePage> {
 
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              8,
+              OmnisonicSpacing.gutter(context),
+              8,
+            ),
             child: GlassSurface(
               borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
@@ -387,6 +403,11 @@ class _HomePageState extends State<HomePage> {
                   behavior: const CarouselScrollBehavior(),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
+                    // Each tile carries 4 on both sides; together they line
+                    // the first tile up with the page gutter.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.gutter(context) - 4,
+                    ),
                     itemCount: randomTracks.length,
                     itemBuilder: (context, index) => Padding(
                       // Keyed by track so a reshuffle cannot hand one tile's
@@ -438,7 +459,12 @@ class _HomePageState extends State<HomePage> {
     title: title,
     meta: meta,
     size: SectionHeaderSize.large,
-    padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+    padding: EdgeInsets.fromLTRB(
+      OmnisonicSpacing.gutter(context),
+      24,
+      OmnisonicSpacing.gutter(context),
+      12,
+    ),
     seeAllLabel: actionLabel ?? 'See all',
     onSeeAllPressed: onAction,
   );
@@ -540,7 +566,9 @@ class _HomePageState extends State<HomePage> {
               behavior: const CarouselScrollBehavior(),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.gutter(context),
+                ),
                 itemCount: albums.length,
                 itemBuilder: (context, index) {
                   final album = albums[index];

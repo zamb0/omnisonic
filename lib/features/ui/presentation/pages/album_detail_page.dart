@@ -730,10 +730,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           icon: const Icon(OmnisonicIcons.shuffle),
           label: const Text('Shuffle'),
         ),
-        OutlinedButton.icon(
+        // Icon-only: with a label the third button wrapped onto a row of
+        // its own on phones. The app bar has the same action.
+        IconButton.outlined(
           onPressed: canPlay ? _downloadAlbum : null,
+          tooltip: 'Download album',
           icon: const Icon(OmnisonicIcons.downloadOutline),
-          label: const Text('Download'),
         ),
       ],
       below: !desktop && _albumVariants.length > 1

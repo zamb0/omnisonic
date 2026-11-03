@@ -186,33 +186,42 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         _buildHeader(context, title: 'Now Playing'),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(OmnisonicSpacing.lg),
-            child: Column(
-              children: [
-                _buildArtwork(context, track),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                _buildTrackInfo(context, track),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                _buildSeekBar(
-                  context,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildPrimaryControls(context, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildSecondaryControls(context, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildSourceInfoPanel(context, track, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                // The queue, lyrics and visualizer open in a sheet: embedded
-                // here, the lyrics list scrolled inside this scroll view and
-                // the two fought over every vertical drag.
-                _buildPanelLauncher(context),
-              ],
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.all(OmnisonicSpacing.lg),
+              child: Column(
+                children: [
+                  // Sized against the height too: at a fixed 360 the cover
+                  // pushed shuffle, repeat and the panel launcher below the
+                  // fold on a 390x844 phone.
+                  _buildArtwork(
+                    context,
+                    track,
+                    maxSize: (constraints.maxHeight * 0.42).clamp(160.0, 360.0),
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  _buildTrackInfo(context, track),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  _buildSeekBar(
+                    context,
+                    playbackViewModel,
+                    position,
+                    duration,
+                    progress,
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildPrimaryControls(context, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildSecondaryControls(context, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildSourceInfoPanel(context, track, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  // The queue, lyrics and visualizer open in a sheet: embedded
+                  // here, the lyrics list scrolled inside this scroll view and
+                  // the two fought over every vertical drag.
+                  _buildPanelLauncher(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -388,14 +397,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     );
   }
 
-  Widget _buildArtwork(BuildContext context, Track track) {
+  Widget _buildArtwork(
+    BuildContext context,
+    Track track, {
+    double maxSize = 360,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     return _artworkSwipe(
       child: Center(
         child: Hero(
           tag: 'now-playing-artwork-${track.id}',
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+            constraints: BoxConstraints(maxWidth: maxSize, maxHeight: maxSize),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
               color: scheme.surfaceContainerHighest,
@@ -523,6 +536,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             trackHeight: 4,
           ),
           child: Slider(
+            // No inset of its own, so the track spans the same width as the
+            // time labels above it.
+            padding: EdgeInsets.zero,
             value: activeValue,
             // Read as a time, not as "37%".
             semanticFormatterCallback: (value) =>

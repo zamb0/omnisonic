@@ -80,31 +80,40 @@ class FeishinShell extends StatelessWidget {
   }
 
   Widget _buildSidebar(BuildContext context) {
+    // A landscape phone gives the rail ~360pt: the default insets left the
+    // nav items half cut off.
+    final short = MediaQuery.sizeOf(context).height < 500;
     return GlassSurface(
       borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
       padding: EdgeInsets.symmetric(
         horizontal: extended ? 14 : 8,
-        vertical: 18,
+        vertical: short ? 10 : 18,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildBrand(context),
-          const SizedBox(height: 18),
+          SizedBox(height: short ? 8 : 18),
           // Everything below the brand scrolls. The nav items alone used to
           // scroll while the SERVERS list and the health card were pinned
           // outside it, which overflows a short window as soon as enough
           // servers are configured — that list has no upper bound.
+          //
+          // The thumb shows whenever the items do not fit, so a clipped
+          // item reads as "scroll for more" rather than as a glitch.
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ..._buildNavItems(context),
-                  _buildServersSection(context),
-                  const SizedBox(height: 12),
-                  _buildLibraryHealthCard(context),
-                ],
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ..._buildNavItems(context),
+                    _buildServersSection(context),
+                    const SizedBox(height: 12),
+                    _buildLibraryHealthCard(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -337,13 +346,18 @@ class FeishinShell extends StatelessWidget {
       final isSyncing = context.select<MusicLibraryViewModel, bool>(
         (viewModel) => viewModel.isSyncing,
       );
+      // Only a sync indicator: at rest the unlabelled shield looked like a
+      // nav item that did nothing.
+      if (!isSyncing) return const SizedBox.shrink();
       return Center(
-        child: Icon(
-          isSyncing
-              ? OmnisonicIcons.sync
-              : OmnisonicIcons.healthAndSafetyOutline,
-          size: OmnisonicIconSizes.smd,
-          color: scheme.onSurfaceVariant,
+        child: Tooltip(
+          message: 'Syncing library',
+          child: Icon(
+            OmnisonicIcons.sync,
+            size: OmnisonicIconSizes.smd,
+            color: scheme.onSurfaceVariant,
+            semanticLabel: 'Syncing library',
+          ),
         ),
       );
     }

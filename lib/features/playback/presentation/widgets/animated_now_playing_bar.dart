@@ -96,7 +96,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     // Asking the shell which chrome it picked, rather than re-deriving it from
     // the screen width: this bar sits inside a column narrowed by the sidebar,
     // so the two answers disagree around the breakpoints.
-    final isMobile = !ShellLayout.hasSidebar(context);
+    //
+    // A phone on its side gets the sidebar but is only ~390pt tall: the 96pt
+    // three-section bar took a quarter of it and squeezed the scrubber to
+    // ~25pt. Short windows use the compact one-row bar instead; the full
+    // player still has the seek bar.
+    final isMobile =
+        !ShellLayout.hasSidebar(context) ||
+        MediaQuery.sizeOf(context).height < _compactBarMaxHeight;
 
     return Consumer<PlaybackViewModel>(
       builder: (context, vm, child) {
@@ -141,6 +148,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
+  /// Window heights below this get the compact one-row bar.
+  static const double _compactBarMaxHeight = 500;
+
   /// Flick speed, in logical pixels per second, that counts as a gesture
   /// rather than a stray drag while scrolling the page behind.
   static const double _flickVelocity = 300;
@@ -157,7 +167,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     // Below this width four 44px targets plus artwork leave the title unreadable.
-    final showFavorite = MediaQuery.of(context).size.width >= 380;
+    final width = MediaQuery.sizeOf(context).width;
+    final showFavorite = width >= 380;
+    // Below ~420 the title got ~70px and truncated to five characters.
+    // Previous and the visualizer go first: swipe right still skips back.
+    final roomy = width >= 420;
 
     // The whole bar is tappable, so it announces itself as one control
     // rather than as an unlabelled region — a screen reader otherwise reads
@@ -309,10 +323,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ),
                           const SizedBox(width: 8),
                         ],
-                        SkipPreviousButton(playback: vm, size: 22),
-                        const SizedBox(width: 8),
+                        if (roomy) ...[
+                          SkipPreviousButton(playback: vm, size: 22),
+                          const SizedBox(width: 8),
+                        ],
                         PlayPauseButton(playback: vm),
-                        if (showFavorite) ...[
+                        // Hidden while paused: three still bars read as an
+                        // overflow menu.
+                        if (roomy && vm.isPlaying) ...[
                           const SizedBox(width: 6),
                           SizedBox(
                             width: 18,
@@ -382,6 +400,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         scheme,
                         width: showTextActions ? 260 : 180,
                       ),
+                      // Without a gap the quality label ran into the
+                      // elapsed time at ~800px.
+                      const SizedBox(width: OmnisonicSpacing.md),
                       // === CENTER: Controls + Progress ===
                       Expanded(
                         child: _buildCenterSection(
@@ -576,7 +597,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   child: SliderTheme(
                     data: _hairlineSliderTheme(
                       context,
-                      activeColor: tint,
+                      activeColor: _legibleTint(context, tint),
                       inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
                       active: _hoveringSeek || _draggingProgress != null,
                     ),
@@ -621,6 +642,16 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   /// the slider or dragging it — at rest it is a line, as the redesign
   /// wants, but it was a line with no affordance at all and a ~20px hit
   /// area. The overlay keeps the hit area at 28px either way.
+  /// The art tint, unless it is too close to the surface to see: a cream
+  /// cover gave a cream scrubber on the light theme.
+  Color _legibleTint(BuildContext context, Color tint) {
+    final theme = Theme.of(context);
+    final tintBrightness = ThemeData.estimateBrightnessForColor(tint);
+    return tintBrightness == theme.brightness
+        ? theme.colorScheme.primary
+        : tint;
+  }
+
   SliderThemeData _hairlineSliderTheme(
     BuildContext context, {
     required Color activeColor,

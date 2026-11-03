@@ -34,4 +34,25 @@ void main() {
     expect(titles, isNot(contains(queue[0].title)));
     expect(titles, hasLength(5)); // tracks 8..12: current plus what follows
   });
+
+  testWidgets('inline queue lists the whole rest of the queue, no link', (
+    tester,
+  ) async {
+    final models = TestViewModels();
+    final queue = testTracks(20);
+    models.playback.emitPlaying(queue[0], queue: queue, currentIndex: 0);
+
+    await pumpPage(
+      tester,
+      const FullScreenPlayer(initialPanel: NowPlayingPanel.queue),
+      viewModels: models,
+      size: TestSizes.desktop,
+      settle: false,
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final list = tester.widget<ListView>(find.byType(ListView).last);
+    expect(list.childrenDelegate.estimatedChildCount, 39); // 20 rows + gaps
+    expect(find.textContaining('Open full queue'), findsNothing);
+  });
 }

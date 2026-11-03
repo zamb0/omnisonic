@@ -61,23 +61,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     }
   }
 
-  /// Opens the queue page from the inline panel or its sheet ([from]).
-  ///
-  /// The queue lives inside the shell, which sits under this full-screen
-  /// route: pushing it from here put a second copy of the shell page on the
-  /// root navigator and failed on duplicate page keys (red screen). So the
-  /// sheet and the player close first, and the queue opens in the shell.
-  void _openFullQueue(BuildContext from) {
-    final router = GoRouter.of(context);
-    if (ModalRoute.of(from) is PopupRoute) Navigator.of(from).pop();
-    if (router.canPop()) {
-      router.pop();
-      router.push(AppRouter.queue);
-    } else {
-      router.go(AppRouter.queue);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<PlaybackViewModel>(
@@ -826,10 +809,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     }
   }
 
-  /// Preview length for the inline queue list; the full, reorderable queue
-  /// lives on its own screen (see [QueuePage]).
-  static const int _queuePreviewCount = 6;
-
   Widget _buildQueuePanel(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
@@ -849,104 +828,74 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       );
     }
 
-    // The current track and what plays after it — not the head of the
-    // queue, which is mostly tracks that have already played.
+    // The current track and everything that plays after it — not the head
+    // of the queue, which is mostly tracks that have already played. The
+    // whole rest of the queue, not a preview: there is no "Open full queue"
+    // link to reach the remainder any more.
     final start = currentIndex.clamp(0, queue.length - 1);
-    final previewCount = (queue.length - start).clamp(0, _queuePreviewCount);
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.separated(
-            itemCount: previewCount,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) {
-              final index = start + i;
-              final track = queue[index];
-              final isCurrent = index == currentIndex;
+    return ListView.separated(
+      itemCount: queue.length - start,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, i) {
+        final index = start + i;
+        final track = queue[index];
+        final isCurrent = index == currentIndex;
 
-              return ListTile(
-                // The same track can sit in the queue twice, so the position
-                // is part of the key, as on the queue page.
-                key: ValueKey('queue-${track.id}-$index'),
-                dense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    color: OmnisonicColors.glassDark(1),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    child: CoverArt(url: track.coverArtUrl, radius: 0),
-                  ),
-                ),
-                title: Text(
-                  track.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: isCurrent
-                        ? OmnisonicTypography.semiBold
-                        : OmnisonicTypography.medium,
-                  ),
-                ),
-                subtitle: Text(
-                  track.artist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: isCurrent
-                    ? Icon(
-                        playbackViewModel.isPlaying
-                            ? OmnisonicIcons.pause
-                            : OmnisonicIcons.playArrow,
-                        color: scheme.primary,
-                      )
-                    : null,
-                onTap: () => playbackViewModel.playTrack(
-                  track,
-                  queue: queue,
-                  startIndex: index,
-                ),
-              );
-            },
+        return ListTile(
+          // The same track can sit in the queue twice, so the position
+          // is part of the key, as on the queue page.
+          key: ValueKey('queue-${track.id}-$index'),
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
           ),
-        ),
-        const SizedBox(height: OmnisonicSpacing.sm),
-        InkWell(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-          onTap: () => _openFullQueue(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Open full queue (${queue.length})',
-                  style: OmnisonicTypography.labelMedium.copyWith(
-                    color: scheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  OmnisonicIcons.arrowForward,
-                  size: OmnisonicIconSizes.sm,
-                  color: scheme.primary,
-                ),
-              ],
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+              color: OmnisonicColors.glassDark(1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+              child: CoverArt(url: track.coverArtUrl, radius: 0),
             ),
           ),
-        ),
-      ],
+          title: Text(
+            track.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: isCurrent
+                  ? OmnisonicTypography.semiBold
+                  : OmnisonicTypography.medium,
+            ),
+          ),
+          subtitle: Text(
+            track.artist,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          trailing: isCurrent
+              ? Icon(
+                  playbackViewModel.isPlaying
+                      ? OmnisonicIcons.pause
+                      : OmnisonicIcons.playArrow,
+                  color: scheme.primary,
+                )
+              : null,
+          onTap: () => playbackViewModel.playTrack(
+            track,
+            queue: queue,
+            startIndex: index,
+          ),
+        );
+      },
     );
   }
 

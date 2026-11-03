@@ -11,6 +11,8 @@ export 'spacing.dart';
 export 'text_scale.dart';
 export 'icons.dart';
 export 'theme.dart';
+export 'surfaces.dart';
+export 'layout.dart';
 export 'glass_surface.dart';
 export 'art_tint_background.dart';
 export 'responsive_layout.dart';

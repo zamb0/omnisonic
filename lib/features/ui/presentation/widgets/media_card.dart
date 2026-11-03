@@ -154,13 +154,13 @@ class _MediaCardState extends State<MediaCard> {
             ),
             if (widget.badge != null)
               Positioned(
-                left: 6,
-                bottom: 6,
+                left: OmnisonicSpacing.sm,
+                bottom: OmnisonicSpacing.sm,
                 child: GlassSurface(
-                  borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+                  borderRadius: BorderRadius.circular(OmnisonicRadius.full),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
+                    horizontal: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                    vertical: OmnisonicSpacing.xs,
                   ),
                   child: widget.badge!,
                 ),
@@ -188,7 +188,7 @@ class _MediaCardState extends State<MediaCard> {
     );
 
     final text = Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
       child: Column(
         crossAxisAlignment: isCircle
             ? CrossAxisAlignment.center
@@ -214,7 +214,7 @@ class _MediaCardState extends State<MediaCard> {
               overflow: TextOverflow.ellipsis,
             ),
           if (widget.meta != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: OmnisonicSpacing.xxs),
             Text(
               widget.meta!,
               style: OmnisonicTypography.cardMeta.copyWith(
@@ -279,7 +279,10 @@ class _MediaCardState extends State<MediaCard> {
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+                // Ink on the card is a soft glow, not a grey slab: the art
+                // already answers the hover with its lift and overlay.
+                borderRadius: BorderRadius.circular(OmnisonicRadius.art),
+                hoverColor: Colors.transparent,
                 onTap: widget.onTap,
                 onLongPress: widget.onShowActions,
                 onSecondaryTap: widget.onShowActions,
@@ -300,8 +303,8 @@ class _MediaCardState extends State<MediaCard> {
     return Wrap(
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
+      spacing: OmnisonicSpacing.sm,
+      runSpacing: OmnisonicSpacing.sm,
       children: [
         if (widget.onStar != null)
           _OverlayButton(
@@ -350,22 +353,28 @@ class _OverlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // Over artwork, so the scrim colours in both themes: a solid white
+    // disc for Play, translucent white for the rest.
     final size = primary ? 48.0 : 40.0;
+    final foreground = primary
+        ? OmnisonicColors.onScrimFill
+        : OmnisonicColors.onScrim;
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
       isSelected: toggled,
       icon: Icon(icon),
+      selectedIcon: Icon(icon),
       iconSize: primary ? OmnisonicIconSizes.lg : OmnisonicIconSizes.smd,
       style: IconButton.styleFrom(
         fixedSize: Size.square(size),
         minimumSize: Size.square(size),
-        backgroundColor: primary ? scheme.primary : scheme.surface,
-        foregroundColor: primary ? scheme.onPrimary : scheme.onSurface,
-        hoverColor: primary
-            ? scheme.onPrimary.withValues(alpha: 0.08)
-            : scheme.onSurface.withValues(alpha: 0.08),
+        backgroundColor: primary
+            ? OmnisonicColors.onScrim
+            : OmnisonicColors.scrimControl,
+        foregroundColor: foreground,
+        hoverColor: foreground.withValues(alpha: 0.1),
+        side: BorderSide.none,
       ),
     );
   }

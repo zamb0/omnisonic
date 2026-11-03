@@ -4,567 +4,534 @@ import 'colors.dart';
 import 'typography.dart';
 import 'spacing.dart';
 import 'icons.dart';
+import 'surfaces.dart';
 
-/// Main theme system for Omnisonic UI Enhancement
+/// The app's [ThemeData], light and dark.
+///
+/// Both themes come from one builder over a [ColorScheme] and its
+/// [OmnisonicSurfaces], so a component cannot be styled in one brightness
+/// and forgotten in the other — the two hand-copied 270-line halves this
+/// replaced had already drifted. The rules it encodes are in
+/// `docs/design-system.md` §9: ink for the primary action, the accent only
+/// for live state, stadium buttons, opaque overlays.
 class OmnisonicTheme {
-  /// Light theme configuration
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: OmnisonicColors.lightColorScheme,
-      textTheme: OmnisonicTypography.textTheme.apply(
-        bodyColor: OmnisonicColors.lightColorScheme.onSurface,
-        displayColor: OmnisonicColors.lightColorScheme.onSurface,
-      ),
-      scaffoldBackgroundColor: OmnisonicColors.lightColorScheme.surface,
-      canvasColor: OmnisonicColors.lightColorScheme.surface,
+  static ThemeData get lightTheme =>
+      _build(OmnisonicColors.lightColorScheme, OmnisonicSurfaces.light);
 
-      // App Bar Theme
-      appBarTheme: AppBarTheme(
-        elevation: OmnisonicElevation.appBar,
-        centerTitle: true,
-        backgroundColor: OmnisonicColors.lightColorScheme.surface,
-        foregroundColor: OmnisonicColors.lightColorScheme.onSurface,
-        titleTextStyle: OmnisonicTypography.titleLarge.copyWith(
-          color: OmnisonicColors.lightColorScheme.onSurface,
-        ),
-        surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      ),
+  static ThemeData get darkTheme =>
+      _build(OmnisonicColors.darkColorScheme, OmnisonicSurfaces.dark);
 
-      // Card Theme
-      cardTheme: const CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.card)),
-        ),
-        color: OmnisonicColors.cardLight,
-        shadowColor: Colors.transparent,
-        margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
-      ),
-
-      // Elevated Button Theme
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          elevation: OmnisonicElevation.button,
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
-          ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
-        ),
-      ),
-
-      // Text Button Theme
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
-          ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
-        ),
-      ),
-
-      // Outlined Button Theme
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
-          ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
-        ),
-      ),
-
-      // Icon Button Theme
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          minimumSize: const Size(
-            OmnisonicTouchTargets.iconButton,
-            OmnisonicTouchTargets.iconButton,
-          ),
-          iconSize: OmnisonicIconSizes.md,
-        ),
-      ),
-
-      // Floating Action Button Theme
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        elevation: OmnisonicElevation.fab,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        ),
-        iconSize: OmnisonicIconSizes.lg,
-      ),
-
-      // List Tile Theme
-      listTileTheme: ListTileThemeData(
-        // Horizontal only: ListTile already enforces its own minimum height,
-        // and vertical padding here added 32pt on top of it.
-        contentPadding: OmnisonicInsets.horizontalMd,
-        minVerticalPadding: OmnisonicSpacing.sm,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        ),
-        titleTextStyle: OmnisonicTypography.titleMedium,
-        subtitleTextStyle: OmnisonicTypography.bodyMedium,
-        textColor: OmnisonicColors.lightColorScheme.onSurface,
-        iconColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-      ),
-
-      // Input Decoration Theme
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: OmnisonicColors.lightColorScheme.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.lightColorScheme.outline,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.lightColorScheme.outline,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.lightColorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(color: OmnisonicColors.lightColorScheme.error),
-        ),
-        contentPadding: OmnisonicInsets.allMd,
-      ),
-
-      // Chip Theme
-      chipTheme: ChipThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.surface,
-        selectedColor: OmnisonicColors.lightColorScheme.secondaryContainer,
-        disabledColor: OmnisonicColors.lightColorScheme.outline,
-        padding: OmnisonicInsets.horizontalMd,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        ),
-        labelStyle: OmnisonicTypography.labelMedium.copyWith(
-          color: OmnisonicColors.lightColorScheme.onSurface,
-        ),
-        secondaryLabelStyle: OmnisonicTypography.labelMedium.copyWith(
-          color: OmnisonicColors.lightColorScheme.onSecondaryContainer,
-        ),
-      ),
-
-      // Dialog Theme
-      dialogTheme: DialogThemeData(
-        elevation: OmnisonicElevation.modal,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(OmnisonicRadius.modal),
-          ),
-        ),
-        backgroundColor: OmnisonicColors.surfaceLight,
-        // Explicit colours: without them the title inherits the ambient
-        // DefaultTextStyle, which is light-on-light in the light theme.
-        titleTextStyle: OmnisonicTypography.headlineSmall.copyWith(
-          color: OmnisonicColors.lightColorScheme.onSurface,
-        ),
-        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
-          color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-        ),
-      ),
-
-      // Bottom Sheet Theme
-      bottomSheetTheme: BottomSheetThemeData(
-        elevation: OmnisonicElevation.modal,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(OmnisonicRadius.modal),
-          ),
-        ),
-        backgroundColor: OmnisonicColors.lightColorScheme.surface,
-      ),
-      dividerTheme: DividerThemeData(
-        color: OmnisonicColors.lightColorScheme.outlineVariant,
-        thickness: 1,
-        space: OmnisonicSpacing.md,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: OmnisonicColors.lightColorScheme.inverseSurface,
-        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
-          color: OmnisonicColors.lightColorScheme.onInverseSurface,
-        ),
-        actionTextColor: OmnisonicColors.lightColorScheme.inversePrimary,
-        behavior: SnackBarBehavior.floating,
-      ),
-      tooltipTheme: TooltipThemeData(
-        decoration: BoxDecoration(
-          color: OmnisonicColors.lightColorScheme.inverseSurface,
-          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        ),
-        textStyle: OmnisonicTypography.bodySmall.copyWith(
-          color: OmnisonicColors.lightColorScheme.onInverseSurface,
-        ),
-      ),
-      textSelectionTheme: TextSelectionThemeData(
-        cursorColor: OmnisonicColors.lightColorScheme.primary,
-        selectionColor: OmnisonicColors.lightColorScheme.primary.withValues(
-          alpha: 0.2,
-        ),
-        selectionHandleColor: OmnisonicColors.lightColorScheme.primary,
-      ),
-      iconTheme: IconThemeData(
-        color: OmnisonicColors.lightColorScheme.onSurface,
-        size: OmnisonicIconSizes.md,
-      ),
-      primaryIconTheme: IconThemeData(
-        color: OmnisonicColors.lightColorScheme.onPrimary,
-        size: OmnisonicIconSizes.md,
-      ),
-
-      // Slider Theme
-      sliderTheme: SliderThemeData(
-        trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-        overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-        activeTrackColor: OmnisonicColors.lightColorScheme.primary,
-        inactiveTrackColor: OmnisonicColors.lightColorScheme.outline,
-        thumbColor: OmnisonicColors.lightColorScheme.primary,
-        overlayColor: OmnisonicColors.lightColorScheme.primary.withValues(
-          alpha: 0.2,
-        ),
-      ),
-
-      // Progress Indicator Theme
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: OmnisonicColors.lightColorScheme.primary,
-        linearTrackColor: OmnisonicColors.lightColorScheme.outline,
-        circularTrackColor: OmnisonicColors.lightColorScheme.outline,
-      ),
-
-      // Bottom Navigation Bar Theme
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor:
-            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
-        selectedItemColor: OmnisonicColors.lightColorScheme.primary,
-        unselectedItemColor: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-        selectedIconTheme: IconThemeData(
-          color: OmnisonicColors.lightColorScheme.primary,
-          size: OmnisonicIconSizes.md,
-        ),
-        unselectedIconTheme: IconThemeData(
-          color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.md,
-        ),
-        selectedLabelStyle: OmnisonicTypography.labelSmall,
-        unselectedLabelStyle: OmnisonicTypography.labelSmall,
-        type: BottomNavigationBarType.fixed,
-        elevation: OmnisonicElevation.appBar,
-      ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor:
-            OmnisonicColors.lightColorScheme.surfaceContainerHighest,
-        indicatorColor: OmnisonicColors.lightColorScheme.primaryContainer,
-        labelTextStyle: WidgetStateProperty.all(
-          OmnisonicTypography.labelSmall.copyWith(
-            color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-          ),
-        ),
-        iconTheme: WidgetStateProperty.all(
-          IconThemeData(
-            size: OmnisonicIconSizes.md,
-            color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
+  static ThemeData _build(ColorScheme scheme, OmnisonicSurfaces surfaces) {
+    final isDark = scheme.brightness == Brightness.dark;
+    const stadium = StadiumBorder();
+    final controlShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.control),
     );
-  }
+    final overlayShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+      side: BorderSide(color: surfaces.hairline),
+    );
+    final button = OmnisonicTypography.button;
+    const buttonPadding = EdgeInsets.symmetric(horizontal: OmnisonicSpacing.ml);
+    const buttonSize = Size(64, OmnisonicTouchTargets.minimum);
 
-  /// Dark theme configuration
-  static ThemeData get darkTheme {
+    // Hover, focus and press washes over any control, in the colour of its
+    // foreground so they read on ink and on glass alike.
+    WidgetStateProperty<Color?> overlayOn(Color foreground) =>
+        WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.pressed)) {
+            return foreground.withValues(alpha: 0.12);
+          }
+          if (states.contains(WidgetState.focused)) {
+            return foreground.withValues(alpha: 0.12);
+          }
+          if (states.contains(WidgetState.hovered)) {
+            return foreground.withValues(alpha: 0.08);
+          }
+          return null;
+        });
+
+    // The keyboard focus ring: the accent, because focus is live state.
+    final focusSide = WidgetStateProperty.resolveWith<BorderSide?>(
+      (states) => states.contains(WidgetState.focused)
+          ? BorderSide(color: scheme.primary, width: 2)
+          : null,
+    );
+
+    InputBorder inputBorder(Color color, [double width = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: OmnisonicColors.darkColorScheme,
+      brightness: scheme.brightness,
+      colorScheme: scheme,
+      extensions: [surfaces],
       textTheme: OmnisonicTypography.textTheme.apply(
-        bodyColor: OmnisonicColors.darkColorScheme.onSurface,
-        displayColor: OmnisonicColors.darkColorScheme.onSurface,
+        bodyColor: scheme.onSurface,
+        displayColor: scheme.onSurface,
       ),
-      scaffoldBackgroundColor: OmnisonicColors.darkColorScheme.surface,
-      canvasColor: OmnisonicColors.darkColorScheme.surface,
+      scaffoldBackgroundColor: scheme.surface,
+      canvasColor: scheme.surface,
+      hoverColor: scheme.onSurface.withValues(alpha: 0.06),
+      focusColor: scheme.primary.withValues(alpha: 0.16),
+      highlightColor: scheme.onSurface.withValues(alpha: 0.08),
+      dividerColor: surfaces.hairline,
+      visualDensity: VisualDensity.standard,
 
-      // App Bar Theme
       appBarTheme: AppBarTheme(
-        elevation: OmnisonicElevation.appBar,
-        centerTitle: true,
-        backgroundColor: OmnisonicColors.darkColorScheme.surface,
-        foregroundColor: OmnisonicColors.darkColorScheme.onSurface,
-        titleTextStyle: OmnisonicTypography.titleLarge.copyWith(
-          color: OmnisonicColors.darkColorScheme.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        titleTextStyle: OmnisonicTypography.overlayTitle.copyWith(
+          color: scheme.onSurface,
         ),
         surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        systemOverlayStyle: isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
       ),
 
-      // Card Theme
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(OmnisonicRadius.card)),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+          side: BorderSide(color: surfaces.hairline),
         ),
-        color: OmnisonicColors.cardDark,
+        color: surfaces.well,
         shadowColor: Colors.transparent,
-        margin: EdgeInsets.all(OmnisonicSpacing.cardMargin),
+        margin: EdgeInsets.zero,
       ),
 
-      // Elevated Button Theme
+      // Buttons: one stadium, one label style, one height. Primary is ink,
+      // not the accent — the accent means "live", a button is not.
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.12)
+                : surfaces.ink,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.38)
+                : surfaces.onInk,
+          ),
+          overlayColor: overlayOn(surfaces.onInk),
+          textStyle: WidgetStatePropertyAll(button),
+          padding: const WidgetStatePropertyAll(buttonPadding),
+          minimumSize: const WidgetStatePropertyAll(buttonSize),
+          shape: const WidgetStatePropertyAll(stadium),
+          side: focusSide,
+          elevation: const WidgetStatePropertyAll(0),
+          iconSize: const WidgetStatePropertyAll(OmnisonicIconSizes.smd),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: OmnisonicElevation.button,
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
-          ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
-        ),
+          elevation: 0,
+          backgroundColor: surfaces.well,
+          foregroundColor: scheme.onSurface,
+          padding: buttonPadding,
+          minimumSize: buttonSize,
+          shape: stadium,
+          textStyle: button,
+        ).copyWith(side: focusSide),
       ),
-
-      // Text Button Theme
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
-          ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
-        ),
-      ),
-
-      // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          padding: OmnisonicInsets.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.button),
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.38)
+                : scheme.onSurface,
           ),
-          textStyle: OmnisonicTypography.buttonMedium,
-          minimumSize: const Size(0, OmnisonicTouchTargets.button),
+          overlayColor: overlayOn(scheme.onSurface),
+          textStyle: WidgetStatePropertyAll(button),
+          padding: const WidgetStatePropertyAll(buttonPadding),
+          minimumSize: const WidgetStatePropertyAll(buttonSize),
+          shape: const WidgetStatePropertyAll(stadium),
+          iconSize: const WidgetStatePropertyAll(OmnisonicIconSizes.smd),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.focused)
+                ? BorderSide(color: scheme.primary, width: 2)
+                : BorderSide(color: scheme.outline),
+          ),
         ),
       ),
-
-      // Icon Button Theme
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? scheme.onSurface.withValues(alpha: 0.38)
+                : scheme.onSurface,
+          ),
+          overlayColor: overlayOn(scheme.onSurface),
+          textStyle: WidgetStatePropertyAll(button),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+          ),
+          minimumSize: const WidgetStatePropertyAll(buttonSize),
+          shape: const WidgetStatePropertyAll(stadium),
+          iconSize: const WidgetStatePropertyAll(OmnisonicIconSizes.smd),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          minimumSize: const Size(
-            OmnisonicTouchTargets.iconButton,
-            OmnisonicTouchTargets.iconButton,
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(
+            Size.square(OmnisonicTouchTargets.minimum),
           ),
-          iconSize: OmnisonicIconSizes.md,
+          iconSize: const WidgetStatePropertyAll(OmnisonicIconSizes.smd),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return scheme.onSurface.withValues(alpha: 0.38);
+            }
+            if (states.contains(WidgetState.selected)) return scheme.primary;
+            return scheme.onSurface;
+          }),
+          overlayColor: overlayOn(scheme.onSurface),
+          side: focusSide,
         ),
       ),
-
-      // Floating Action Button Theme
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14)
+                : surfaces.well,
+          ),
+          foregroundColor: WidgetStatePropertyAll(scheme.onSurface),
+          iconColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+          textStyle: WidgetStatePropertyAll(OmnisonicTypography.labelMedium),
+          side: WidgetStatePropertyAll(BorderSide(color: surfaces.hairline)),
+          shape: const WidgetStatePropertyAll(stadium),
+          minimumSize: const WidgetStatePropertyAll(buttonSize),
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        elevation: OmnisonicElevation.fab,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        ),
-        iconSize: OmnisonicIconSizes.lg,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        backgroundColor: surfaces.ink,
+        foregroundColor: surfaces.onInk,
+        shape: stadium,
+        extendedTextStyle: button,
+        iconSize: OmnisonicIconSizes.md,
       ),
 
-      // List Tile Theme
       listTileTheme: ListTileThemeData(
-        // Horizontal only: ListTile already enforces its own minimum height,
-        // and vertical padding here added 32pt on top of it.
-        contentPadding: OmnisonicInsets.horizontalMd,
-        minVerticalPadding: OmnisonicSpacing.sm,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.md,
         ),
-        titleTextStyle: OmnisonicTypography.titleMedium,
-        subtitleTextStyle: OmnisonicTypography.bodyMedium,
-        textColor: OmnisonicColors.darkColorScheme.onSurface,
-        iconColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+        minVerticalPadding: OmnisonicSpacing.sm,
+        minTileHeight: 56,
+        horizontalTitleGap: OmnisonicSpacing.ms,
+        shape: controlShape,
+        titleTextStyle: OmnisonicTypography.titleMedium.copyWith(
+          color: scheme.onSurface,
+        ),
+        subtitleTextStyle: OmnisonicTypography.bodySmall.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        leadingAndTrailingTextStyle: OmnisonicTypography.technical.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        textColor: scheme.onSurface,
+        iconColor: scheme.onSurfaceVariant,
+        selectedColor: scheme.onSurface,
+        selectedTileColor: surfaces.wellHover,
       ),
 
-      // Input Decoration Theme
+      // Inputs are wells: recessed into whatever glass they sit on, edged by
+      // the hairline, ringed with the accent while focused.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: OmnisonicColors.darkColorScheme.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.darkColorScheme.outline,
-          ),
+        fillColor: surfaces.well,
+        hoverColor: surfaces.wellHover,
+        border: inputBorder(surfaces.hairline),
+        enabledBorder: inputBorder(surfaces.hairline),
+        focusedBorder: inputBorder(scheme.primary, 2),
+        errorBorder: inputBorder(scheme.error),
+        focusedErrorBorder: inputBorder(scheme.error, 2),
+        disabledBorder: inputBorder(surfaces.hairline),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.md,
+          vertical: OmnisonicSpacing.md,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.darkColorScheme.outline,
-          ),
+        labelStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(
-            color: OmnisonicColors.darkColorScheme.primary,
-            width: 2,
-          ),
+        floatingLabelStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: scheme.onSurfaceVariant,
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.input),
-          borderSide: BorderSide(color: OmnisonicColors.darkColorScheme.error),
+        hintStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: scheme.onSurfaceVariant,
         ),
-        contentPadding: OmnisonicInsets.allMd,
+        helperStyle: OmnisonicTypography.bodySmall.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        errorStyle: OmnisonicTypography.bodySmall.copyWith(color: scheme.error),
+        prefixIconColor: scheme.onSurfaceVariant,
+        suffixIconColor: scheme.onSurfaceVariant,
       ),
 
-      // Chip Theme
+      // A selected chip is a toggle that is on: live state, so the accent —
+      // as a tint, keeping the label and icon in the text colour.
       chipTheme: ChipThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.surface,
-        selectedColor: OmnisonicColors.darkColorScheme.secondaryContainer,
-        disabledColor: OmnisonicColors.darkColorScheme.outline,
-        padding: OmnisonicInsets.horizontalMd,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        backgroundColor: surfaces.well,
+        selectedColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
+        disabledColor: surfaces.well,
+        checkmarkColor: scheme.primary,
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => BorderSide(
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary.withValues(alpha: 0.6)
+                : surfaces.hairline,
+          ),
         ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.sm,
+          vertical: OmnisonicSpacing.xs,
+        ),
+        shape: stadium,
         labelStyle: OmnisonicTypography.labelMedium.copyWith(
-          color: OmnisonicColors.darkColorScheme.onSurface,
+          color: scheme.onSurface,
         ),
         secondaryLabelStyle: OmnisonicTypography.labelMedium.copyWith(
-          color: OmnisonicColors.darkColorScheme.onSecondaryContainer,
+          color: scheme.onSurface,
         ),
+        iconTheme: IconThemeData(
+          color: scheme.onSurface,
+          size: OmnisonicIconSizes.sm,
+        ),
+        showCheckmark: false,
       ),
 
-      // Dialog Theme
+      // Overlays are opaque, one step up the container ladder, with a
+      // hairline edge instead of a Material elevation tint.
       dialogTheme: DialogThemeData(
-        elevation: OmnisonicElevation.modal,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(OmnisonicRadius.modal),
-          ),
-        ),
-        backgroundColor: OmnisonicColors.surfaceDark,
-        // Explicit colours: without them the title inherits the ambient
-        // DefaultTextStyle, which is light-on-light in the light theme.
-        titleTextStyle: OmnisonicTypography.headlineSmall.copyWith(
-          color: OmnisonicColors.darkColorScheme.onSurface,
+        elevation: 0,
+        shape: overlayShape,
+        backgroundColor: scheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: OmnisonicTypography.overlayTitle.copyWith(
+          color: scheme.onSurface,
         ),
         contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
-          color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+          color: scheme.onSurfaceVariant,
+        ),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.lg,
+          vertical: OmnisonicSpacing.lg,
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+          OmnisonicSpacing.lg,
+          0,
+          OmnisonicSpacing.lg,
+          OmnisonicSpacing.lg,
         ),
       ),
-
-      // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
-        elevation: OmnisonicElevation.modal,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(OmnisonicRadius.modal),
+        elevation: 0,
+        modalElevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(OmnisonicRadius.overlay),
+          ),
+          side: BorderSide(color: surfaces.hairline),
+        ),
+        backgroundColor: scheme.surfaceContainerHigh,
+        modalBackgroundColor: scheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        dragHandleColor: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+        dragHandleSize: const Size(36, 4),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(8),
+          shadowColor: WidgetStatePropertyAll(scheme.shadow),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              side: BorderSide(color: surfaces.hairline),
+            ),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.all(OmnisonicSpacing.xs),
           ),
         ),
-        backgroundColor: OmnisonicColors.darkColorScheme.surface,
+      ),
+      menuButtonTheme: MenuButtonThemeData(
+        style: ButtonStyle(
+          textStyle: WidgetStatePropertyAll(OmnisonicTypography.titleSmall),
+          foregroundColor: WidgetStatePropertyAll(scheme.onSurface),
+          iconColor: WidgetStatePropertyAll(scheme.onSurfaceVariant),
+          overlayColor: overlayOn(scheme.onSurface),
+          minimumSize: const WidgetStatePropertyAll(
+            Size(180, OmnisonicTouchTargets.minimum),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: OmnisonicSpacing.ms),
+          ),
+          shape: WidgetStatePropertyAll(controlShape),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: scheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+          side: BorderSide(color: surfaces.hairline),
+        ),
+        textStyle: OmnisonicTypography.titleSmall.copyWith(
+          color: scheme.onSurface,
+        ),
       ),
       dividerTheme: DividerThemeData(
-        color: OmnisonicColors.darkColorScheme.outlineVariant,
+        color: surfaces.hairline,
         thickness: 1,
         space: OmnisonicSpacing.md,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: OmnisonicColors.darkColorScheme.inverseSurface,
+        backgroundColor: scheme.inverseSurface,
         contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
-          color: OmnisonicColors.darkColorScheme.onInverseSurface,
+          color: scheme.onInverseSurface,
         ),
-        actionTextColor: OmnisonicColors.darkColorScheme.inversePrimary,
+        actionTextColor: scheme.inversePrimary,
         behavior: SnackBarBehavior.floating,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.control),
+        ),
+        insetPadding: const EdgeInsets.all(OmnisonicSpacing.md),
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: OmnisonicColors.darkColorScheme.inverseSurface,
+          color: scheme.inverseSurface,
           borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         ),
-        textStyle: OmnisonicTypography.bodySmall.copyWith(
-          color: OmnisonicColors.darkColorScheme.onInverseSurface,
+        textStyle: OmnisonicTypography.labelMedium.copyWith(
+          color: scheme.onInverseSurface,
         ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.sm,
+          vertical: OmnisonicSpacing.xs,
+        ),
+        waitDuration: const Duration(milliseconds: 500),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: OmnisonicColors.darkColorScheme.primary,
-        selectionColor: OmnisonicColors.darkColorScheme.primary.withValues(
-          alpha: 0.25,
-        ),
-        selectionHandleColor: OmnisonicColors.darkColorScheme.primary,
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+        selectionHandleColor: scheme.primary,
       ),
       iconTheme: IconThemeData(
-        color: OmnisonicColors.darkColorScheme.onSurface,
+        color: scheme.onSurface,
         size: OmnisonicIconSizes.md,
       ),
       primaryIconTheme: IconThemeData(
-        color: OmnisonicColors.darkColorScheme.onPrimary,
+        color: scheme.onPrimary,
         size: OmnisonicIconSizes.md,
       ),
 
-      // Slider Theme
+      // Live state: the accent.
       sliderTheme: SliderThemeData(
         trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-        activeTrackColor: OmnisonicColors.darkColorScheme.primary,
-        inactiveTrackColor: OmnisonicColors.darkColorScheme.outline,
-        thumbColor: OmnisonicColors.darkColorScheme.primary,
-        overlayColor: OmnisonicColors.darkColorScheme.primary.withValues(
-          alpha: 0.2,
-        ),
+        activeTrackColor: scheme.primary,
+        inactiveTrackColor: scheme.onSurface.withValues(alpha: 0.14),
+        thumbColor: scheme.primary,
+        overlayColor: scheme.primary.withValues(alpha: 0.16),
       ),
-
-      // Progress Indicator Theme
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: OmnisonicColors.darkColorScheme.primary,
-        linearTrackColor: OmnisonicColors.darkColorScheme.outline,
-        circularTrackColor: OmnisonicColors.darkColorScheme.outline,
+        color: scheme.primary,
+        linearTrackColor: scheme.onSurface.withValues(alpha: 0.12),
+        circularTrackColor: Colors.transparent,
+        linearMinHeight: 4,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? scheme.onPrimary
+              : scheme.onSurfaceVariant,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? scheme.primary
+              : surfaces.well,
+        ),
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.transparent
+              : scheme.outline,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? scheme.primary
+              : Colors.transparent,
+        ),
+        checkColor: WidgetStatePropertyAll(scheme.onPrimary),
+        side: BorderSide(color: scheme.outline, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+        ),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? scheme.primary
+              : scheme.outline,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelStyle: OmnisonicTypography.navLabel,
+        unselectedLabelStyle: OmnisonicTypography.navLabel,
+        labelColor: scheme.onSurface,
+        unselectedLabelColor: scheme.onSurfaceVariant,
+        indicatorColor: scheme.onSurface,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: surfaces.hairline,
+        overlayColor: overlayOn(scheme.onSurface),
       ),
 
-      // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor:
-            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
-        selectedItemColor: OmnisonicColors.darkColorScheme.primary,
-        unselectedItemColor: OmnisonicColors.darkColorScheme.onSurfaceVariant,
-        selectedIconTheme: IconThemeData(
-          color: OmnisonicColors.darkColorScheme.primary,
-          size: OmnisonicIconSizes.md,
-        ),
-        unselectedIconTheme: IconThemeData(
-          color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
-          size: OmnisonicIconSizes.md,
-        ),
+        backgroundColor: Colors.transparent,
+        selectedItemColor: scheme.onSurface,
+        unselectedItemColor: scheme.onSurfaceVariant,
         selectedLabelStyle: OmnisonicTypography.labelSmall,
         unselectedLabelStyle: OmnisonicTypography.labelSmall,
         type: BottomNavigationBarType.fixed,
-        elevation: OmnisonicElevation.appBar,
+        elevation: 0,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor:
-            OmnisonicColors.darkColorScheme.surfaceContainerHighest,
-        indicatorColor: OmnisonicColors.darkColorScheme.primaryContainer,
-        labelTextStyle: WidgetStateProperty.all(
+        backgroundColor: Colors.transparent,
+        indicatorColor: surfaces.ink,
+        labelTextStyle: WidgetStatePropertyAll(
           OmnisonicTypography.labelSmall.copyWith(
-            color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+            color: scheme.onSurfaceVariant,
           ),
         ),
-        iconTheme: WidgetStateProperty.all(
-          IconThemeData(
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
             size: OmnisonicIconSizes.md,
-            color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+            color: states.contains(WidgetState.selected)
+                ? surfaces.onInk
+                : scheme.onSurfaceVariant,
           ),
         ),
       ),

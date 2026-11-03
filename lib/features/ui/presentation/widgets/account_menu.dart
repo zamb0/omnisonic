@@ -29,22 +29,29 @@ class AccountButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     final path = GoRouterState.of(context).uri.path;
     final active = AppDestinations.isSecondary(path);
-    final color = active ? scheme.primary : scheme.onSurfaceVariant;
+    final color = active ? scheme.onSurface : scheme.onSurfaceVariant;
     final vertical = axis == Axis.vertical;
 
+    // Active, the avatar takes the ink pill the nav items use, so Settings
+    // or Servers being open reads exactly like any other destination.
     final avatar = Container(
-      width: 24,
-      height: 24,
+      width: vertical ? 52 : 28,
+      height: 28,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color, width: 1.5),
+        // In the bottom bar an idle slot is bare, like its neighbours; in
+        // the sidebar footer the well marks the avatar as one.
+        color: active
+            ? surfaces.ink
+            : (vertical ? Colors.transparent : surfaces.well),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
       ),
       child: Icon(
-        OmnisonicIcons.personOutline,
-        size: OmnisonicIconSizes.sm,
-        color: color,
+        active ? OmnisonicIcons.person : OmnisonicIcons.personOutline,
+        size: vertical ? OmnisonicIconSizes.smd : OmnisonicIconSizes.sm,
+        color: active ? surfaces.onInk : color,
       ),
     );
 
@@ -53,12 +60,7 @@ class AccountButton extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: vertical
-          ? OmnisonicTypography.labelSmall.copyWith(
-              color: color,
-              fontWeight: active
-                  ? OmnisonicTypography.semiBold
-                  : OmnisonicTypography.medium,
-            )
+          ? OmnisonicTypography.labelSmall.copyWith(color: color)
           : OmnisonicTypography.navLabel.copyWith(color: color),
     );
 
@@ -79,10 +81,12 @@ class AccountButton extends StatelessWidget {
               minHeight: OmnisonicTouchTargets.minimum,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.sm,
-                vertical: OmnisonicSpacing.xs,
-              ),
+              padding: vertical
+                  ? const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs)
+                  : const EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.xs,
+                      vertical: OmnisonicSpacing.xs,
+                    ),
               child: Flex(
                 direction: axis,
                 mainAxisSize: MainAxisSize.min,
@@ -91,8 +95,8 @@ class AccountButton extends StatelessWidget {
                   avatar,
                   if (showLabel) ...[
                     SizedBox(
-                      width: vertical ? 0 : OmnisonicSpacing.sm,
-                      height: vertical ? 2 : 0,
+                      width: vertical ? 0 : OmnisonicSpacing.ms,
+                      height: vertical ? OmnisonicSpacing.xxs : 0,
                     ),
                     Flexible(child: label),
                   ],
@@ -137,12 +141,18 @@ void showAccountMenu(BuildContext context) {
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
+    showDragHandle: false,
     builder: (sheetContext) => SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          OmnisonicLayout.chromeInset,
+          OmnisonicSpacing.sm,
+          OmnisonicLayout.chromeInset,
+          OmnisonicLayout.chromeInset,
+        ),
         child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
           padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -169,14 +179,22 @@ class _AccountMenuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurface;
+    final color = selected ? scheme.onSurface : scheme.onSurfaceVariant;
 
     return ListTile(
       leading: Icon(
         selected ? destination.activeIcon : destination.icon,
         color: color,
+        size: OmnisonicIconSizes.smd,
       ),
-      title: Text(destination.label, style: TextStyle(color: color)),
+      title: Text(destination.label),
+      trailing: selected
+          ? Icon(
+              OmnisonicIcons.check,
+              color: scheme.primary,
+              size: OmnisonicIconSizes.smd,
+            )
+          : null,
       selected: selected,
       onTap: () {
         // Pop the sheet before navigating: pushing first leaves the sheet

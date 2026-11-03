@@ -64,7 +64,7 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visuals = ServerStatusVisuals.of(context, status);
-    return _TintedChip(
+    return TintedChip(
       color: visuals.color,
       icon: visuals.icon,
       label: visuals.label,
@@ -83,11 +83,16 @@ class MetadataChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.ms,
+        vertical: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+      ),
       decoration: BoxDecoration(
+        color: surfaces.well,
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        border: Border.all(color: scheme.outlineVariant),
+        border: Border.all(color: surfaces.hairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -102,14 +107,14 @@ class MetadataChip extends StatelessWidget {
             ),
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OmnisonicTypography.labelMedium.copyWith(
-                color: scheme.onSurfaceVariant,
+                color: scheme.onSurface,
               ),
             ),
           ),
@@ -119,8 +124,12 @@ class MetadataChip extends StatelessWidget {
   }
 }
 
-class _TintedChip extends StatelessWidget {
-  const _TintedChip({
+/// A small status pill in a semantic colour: tinted fill, tinted edge,
+/// icon and label in the colour itself. Status, count and offline badges all
+/// use it, so "online" looks the same wherever it is said.
+class TintedChip extends StatelessWidget {
+  const TintedChip({
+    super.key,
     required this.color,
     required this.icon,
     required this.label,
@@ -138,16 +147,20 @@ class _TintedChip extends StatelessWidget {
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.sm,
+          vertical: OmnisonicSpacing.xs,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: OmnisonicIconSizes.xs, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: OmnisonicSpacing.xs),
             Flexible(
               child: Text(
                 label,
@@ -215,14 +228,14 @@ class InlineBanner extends StatelessWidget {
         padding: const EdgeInsets.all(OmnisonicSpacing.md),
         decoration: BoxDecoration(
           color: accent.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-          border: Border.all(color: accent.withValues(alpha: 0.35)),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
+          border: Border.all(color: accent.withValues(alpha: 0.3)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon ?? kindIcon, color: accent, size: OmnisonicIconSizes.md),
-            const SizedBox(width: OmnisonicSpacing.sm),
+            Icon(icon ?? kindIcon, color: accent, size: OmnisonicIconSizes.smd),
+            const SizedBox(width: OmnisonicSpacing.ms),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +244,7 @@ class InlineBanner extends StatelessWidget {
                   if (title != null)
                     Text(
                       title!,
-                      style: OmnisonicTypography.labelLarge.copyWith(
+                      style: OmnisonicTypography.titleSmall.copyWith(
                         color: scheme.onSurface,
                       ),
                     ),

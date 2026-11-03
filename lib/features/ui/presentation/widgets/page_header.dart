@@ -44,55 +44,101 @@ class PageHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
     bool isScrollable = false,
   }) {
     final scheme = Theme.of(context).colorScheme;
+    final gutter = PageGutter.of(context);
+    // Tabs start at the gutter, under the title, and the selection is the
+    // ink underline: a tab is navigation, not live state.
     return TabBar(
       controller: controller,
       onTap: onTap,
       isScrollable: isScrollable,
       tabAlignment: isScrollable ? TabAlignment.start : null,
-      labelStyle: OmnisonicTypography.navLabel,
-      unselectedLabelStyle: OmnisonicTypography.navLabel,
-      labelColor: scheme.onSurface,
-      unselectedLabelColor: scheme.onSurfaceVariant,
-      indicatorColor: scheme.primary,
-      dividerColor: scheme.outlineVariant.withValues(alpha: 0.4),
+      padding: isScrollable
+          ? EdgeInsets.symmetric(horizontal: gutter - OmnisonicSpacing.md)
+          : EdgeInsets.symmetric(horizontal: gutter),
+      labelPadding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+      indicator: UnderlineTabIndicator(
+        borderSide: BorderSide(color: scheme.onSurface, width: 2),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+      ),
+      indicatorSize: TabBarIndicatorSize.label,
+      dividerColor: OmnisonicSurfaces.of(context).hairline,
       tabs: tabs,
+    );
+  }
+
+  /// The same header as a pinned [SliverAppBar], for pages built from a
+  /// [CustomScrollView]. Search used a stock SliverAppBar with Material's
+  /// small title, the only top-level page that did.
+  static Widget sliver(
+    BuildContext context, {
+    required String title,
+    List<Widget>? actions,
+    bool pinned = true,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final gutter = PageGutter.of(context);
+    return SliverAppBar(
+      pinned: pinned,
+      toolbarHeight: toolbarHeight,
+      titleSpacing: gutter,
+      centerTitle: false,
+      automaticallyImplyLeading: false,
+      title: _title(context, title),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: scheme.onSurface,
+      actionsPadding: EdgeInsets.only(
+        right: (gutter - OmnisonicSpacing.ms).clamp(0, gutter),
+      ),
+      actions: actions,
+    );
+  }
+
+  static Widget _title(BuildContext context, String title) {
+    final compact =
+        MediaQuery.sizeOf(context).width < ResponsiveBreakpoints.mobile;
+    final style = compact
+        ? OmnisonicTypography.sectionTitle
+        : OmnisonicTypography.pageTitle;
+    return Semantics(
+      header: true,
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: style.copyWith(color: Theme.of(context).colorScheme.onSurface),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final compact =
-        MediaQuery.sizeOf(context).width < ResponsiveBreakpoints.mobile;
-    final style = compact
-        ? OmnisonicTypography.sectionTitle
-        : OmnisonicTypography.pageTitle;
 
+    final gutter = PageGutter.of(context);
     return AppBar(
       toolbarHeight: toolbarHeight,
-      titleSpacing: leading == null && !_canPop(context)
-          ? OmnisonicSpacing.md
-          : 0,
+      // The title starts on the page's gutter, so it lines up with the
+      // content under it at every width.
+      titleSpacing: leading == null && !_canPop(context) ? gutter : 0,
       centerTitle: false,
       leading: leading,
       automaticallyImplyLeading: automaticallyImplyLeading,
-      title: Semantics(
-        header: true,
-        child: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style.copyWith(color: scheme.onSurface),
-        ),
-      ),
+      title: _title(context, title),
       elevation: 0,
       scrolledUnderElevation: 0,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       foregroundColor: scheme.onSurface,
-      actions: actions == null
-          ? null
-          : [...actions!, const SizedBox(width: OmnisonicSpacing.xs)],
+      // Icon buttons carry their own 10px of padding around a 20px glyph;
+      // trimming that from the gutter puts the last glyph on the content
+      // edge.
+      actionsPadding: EdgeInsets.only(
+        right: (gutter - OmnisonicSpacing.ms).clamp(0, gutter),
+      ),
+      actions: actions,
       bottom: bottom,
     );
   }

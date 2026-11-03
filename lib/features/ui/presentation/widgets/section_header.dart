@@ -52,17 +52,37 @@ class SectionHeader extends StatelessWidget {
         MediaQuery.sizeOf(context).width >= ResponsiveBreakpoints.tablet
             ? OmnisonicTypography.sectionTitle
             : OmnisonicTypography.sectionTitleSmall,
-      SectionHeaderSize.medium => OmnisonicTypography.titleLarge.copyWith(
-        fontWeight: OmnisonicTypography.bold,
-      ),
-      SectionHeaderSize.small => OmnisonicTypography.titleSmall.copyWith(
-        fontWeight: OmnisonicTypography.semiBold,
-      ),
+      SectionHeaderSize.medium => OmnisonicTypography.groupTitle,
+      SectionHeaderSize.small => OmnisonicTypography.eyebrow,
     };
+    final small = size == SectionHeaderSize.small;
+    // A large title and its counter do not both fit a phone row: the
+    // counter goes, rather than the title being cut to "Recently Add…".
+    final showMeta =
+        meta != null &&
+        !(size == SectionHeaderSize.large &&
+            MediaQuery.sizeOf(context).width < ResponsiveBreakpoints.mobile);
+    final shownTitle = small ? title.toUpperCase() : title;
+    final titleColor = small ? scheme.onSurfaceVariant : scheme.onSurface;
 
+    // Default: on the page gutter, with the space above stepping down with
+    // the header's rank and the header-to-content gap below.
+    final gutter = PageGutter.of(context);
     return Padding(
       padding:
-          padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding ??
+          EdgeInsets.fromLTRB(
+            gutter,
+            switch (size) {
+              SectionHeaderSize.large => OmnisonicLayout.sectionGap(context),
+              SectionHeaderSize.medium => OmnisonicSpacing.lg,
+              SectionHeaderSize.small => OmnisonicSpacing.md,
+            },
+            gutter,
+            size == SectionHeaderSize.small
+                ? OmnisonicSpacing.sm
+                : OmnisonicLayout.headerGap,
+          ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -81,13 +101,13 @@ class SectionHeader extends StatelessWidget {
                     Semantics(
                       header: true,
                       child: Text(
-                        title,
+                        shownTitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: style.copyWith(color: scheme.onSurface),
+                        style: style.copyWith(color: titleColor),
                       ),
                     ),
-                    if (meta != null)
+                    if (showMeta)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 3),
                         child: Text(
@@ -102,7 +122,7 @@ class SectionHeader extends StatelessWidget {
                   ],
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: OmnisonicSpacing.xxs),
                   Text(
                     subtitle!,
                     style: OmnisonicTypography.bodySmall.copyWith(
@@ -114,7 +134,21 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
           if (onSeeAllPressed != null)
-            TextButton(onPressed: onSeeAllPressed, child: Text(seeAllLabel)),
+            // Pulled right by its own padding so the label, not the ink
+            // area, ends on the gutter.
+            Transform.translate(
+              offset: const Offset(OmnisonicSpacing.ms, 0),
+              child: TextButton(
+                onPressed: onSeeAllPressed,
+                style: TextButton.styleFrom(
+                  foregroundColor: scheme.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OmnisonicSpacing.ms,
+                  ),
+                ),
+                child: Text(seeAllLabel),
+              ),
+            ),
         ],
       ),
     );

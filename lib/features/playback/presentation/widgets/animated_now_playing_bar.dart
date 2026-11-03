@@ -209,7 +209,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           }
         },
         child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
           padding: EdgeInsets.zero,
           child: SizedBox(
             height: 64,
@@ -218,7 +218,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 // Thin progress bar at top
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(OmnisonicRadius.xxl),
+                    top: Radius.circular(OmnisonicRadius.panel),
                   ),
                   child: LinearProgressIndicator(
                     value: progress.clamp(0.0, 1.0),
@@ -229,7 +229,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.ms,
+                    ),
                     child: Row(
                       children: [
                         // Artwork. Tag matches full_screen_player.dart's
@@ -237,27 +239,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         // continuously instead of a hard cut.
                         Hero(
                           tag: 'now-playing-artwork-${track.id}',
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                OmnisonicRadius.xs,
-                              ),
-                              color: scheme.surfaceContainerHighest,
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                OmnisonicRadius.xs,
-                              ),
-                              child: CoverArt(
-                                url: track.coverArtUrl,
-                                radius: 0,
-                              ),
-                            ),
+                          child: CoverArt(
+                            url: track.coverArtUrl,
+                            size: 44,
+                            radius: OmnisonicRadius.sm,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: OmnisonicSpacing.ms),
                         // Title + Artist
                         Expanded(
                           child: ExcludeSemantics(
@@ -267,16 +255,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                               children: [
                                 Text(
                                   track.title,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        fontWeight:
-                                            OmnisonicTypography.semiBold,
-                                        color: scheme.onSurface,
-                                      ),
+                                  style: OmnisonicTypography.cardTitle.copyWith(
+                                    color: scheme.onSurface,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: OmnisonicSpacing.xxs),
                                 Text(
                                   track.artist,
                                   style: OmnisonicTypography.bodySmall.copyWith(
@@ -304,10 +289,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 isStarred
                                     ? OmnisonicIcons.favorite
                                     : OmnisonicIcons.favoriteOutline,
-                                20,
+                                OmnisonicIconSizes.smd,
                                 isStarred
                                     ? OmnisonicColors.favoriteIndicator
-                                    : scheme.onSurface.withValues(alpha: 0.7),
+                                    : scheme.onSurfaceVariant,
                                 pending
                                     ? null
                                     : () {
@@ -321,17 +306,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                               );
                             },
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: OmnisonicSpacing.sm),
                         ],
                         if (roomy) ...[
                           SkipPreviousButton(playback: vm, size: 22),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: OmnisonicSpacing.sm),
                         ],
                         PlayPauseButton(playback: vm),
                         // Hidden while paused: three still bars read as an
                         // overflow menu.
                         if (roomy && vm.isPlaying) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(
+                            width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                          ),
                           SizedBox(
                             width: 18,
                             height: 16,
@@ -344,7 +331,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             ),
                           ),
                         ],
-                        const SizedBox(width: 8),
+                        const SizedBox(width: OmnisonicSpacing.sm),
                         SkipNextButton(playback: vm, size: 22),
                       ],
                     ),
@@ -374,15 +361,17 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     return GlassPanel(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
       padding: EdgeInsets.zero,
       child: SizedBox(
-        height: 96,
+        height: 88,
         child: Stack(
           children: [
             const Positioned.fill(child: GlassSheen()),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: OmnisonicSpacing.md,
+              ),
               // The side sections are fixed-width so the centre controls stay
               // put as the track title changes; that only works while the
               // window is wide enough to hold them, so the trailing controls
@@ -460,21 +449,14 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               // continuously instead of a hard cut.
               Hero(
                 tag: 'now-playing-artwork-${track.id}',
-                child: Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-                    color: scheme.surfaceContainerHighest,
-                    boxShadow: OmnisonicShadows.art,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-                    child: CoverArt(url: track.coverArtUrl, radius: 0),
-                  ),
+                child: CoverArt(
+                  url: track.coverArtUrl,
+                  size: 56,
+                  radius: OmnisonicRadius.md,
+                  elevated: true,
                 ),
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: OmnisonicSpacing.ms),
               // Track info
               Expanded(
                 child: Column(
@@ -483,8 +465,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   children: [
                     Text(
                       track.title,
-                      style: OmnisonicTypography.bodyMedium.copyWith(
-                        fontWeight: OmnisonicTypography.bold,
+                      style: OmnisonicTypography.titleSmall.copyWith(
                         color: scheme.onSurface,
                       ),
                       maxLines: 1,
@@ -493,25 +474,26 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     Text(
                       track.artist,
                       style: OmnisonicTypography.bodySmall.copyWith(
-                        fontWeight: OmnisonicTypography.medium,
                         color: scheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: OmnisonicSpacing.xs),
                     // Source + quality: the only place the multi-server
                     // machinery surfaces during ordinary playback.
                     Row(
                       children: [
                         ServerDot(serverId: track.serverId, size: 6),
-                        const SizedBox(width: 6),
+                        const SizedBox(
+                          width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                        ),
                         Flexible(
                           child: Text(
                             track.quality.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: OmnisonicTypography.technical.copyWith(
+                            style: OmnisonicTypography.technicalSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -554,20 +536,20 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ShuffleModeButton(playback: vm, size: 18),
-                const SizedBox(width: 6),
+                ShuffleModeButton(playback: vm, size: OmnisonicIconSizes.smd),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 SkipPreviousButton(playback: vm),
-                const SizedBox(width: 6),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 PlayPauseButton(playback: vm),
-                const SizedBox(width: 6),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 SkipNextButton(playback: vm),
-                const SizedBox(width: 6),
-                RepeatModeButton(playback: vm, size: 18),
+                const SizedBox(width: OmnisonicSpacing.sm),
+                RepeatModeButton(playback: vm, size: OmnisonicIconSizes.smd),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: OmnisonicSpacing.xs),
         // Scrubber: a 4px hairline with mono timestamps either side, capped
         // at the design's 520px so it stays a line rather than a bar.
         ConstrainedBox(
@@ -589,7 +571,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   style: timeStyle,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: OmnisonicSpacing.ms),
               Expanded(
                 child: MouseRegion(
                   onEnter: (_) => setState(() => _hoveringSeek = true),
@@ -619,7 +601,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: OmnisonicSpacing.ms),
               Flexible(
                 child: Text(
                   formatDuration(duration),
@@ -693,20 +675,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         // disappear below 900px with no other way in from the bar.
         if (showTextActions) ...[
           _textBtn('Lyrics', scheme, () => _openLyrics(context)),
-          const SizedBox(width: 4),
           _textBtn('Queue', scheme, () => _openQueue(context)),
-          const SizedBox(width: 4),
+          const SizedBox(width: OmnisonicSpacing.xs),
         ] else ...[
           _iconBtn(
             OmnisonicIcons.lyrics,
-            17,
+            OmnisonicIconSizes.smd,
             scheme.onSurfaceVariant,
             () => _openLyrics(context),
             label: 'Lyrics',
           ),
           _iconBtn(
             OmnisonicIcons.queueMusic,
-            17,
+            OmnisonicIconSizes.smd,
             scheme.onSurfaceVariant,
             () => _openQueue(context),
             label: 'Queue',
@@ -721,7 +702,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               isStarred
                   ? OmnisonicIcons.favorite
                   : OmnisonicIcons.favoriteOutline,
-              17,
+              OmnisonicIconSizes.smd,
               isStarred
                   ? OmnisonicColors.favoriteIndicator
                   : scheme.onSurfaceVariant,
@@ -741,7 +722,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               children: [
                 _iconBtn(
                   _volumeIcon(volume),
-                  17,
+                  OmnisonicIconSizes.smd,
                   scheme.onSurfaceVariant,
                   () => _toggleMute(vm),
                   label: volume > 0 ? 'Mute' : 'Unmute',
@@ -750,7 +731,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 // the slider is the first thing worth giving up.
                 if (showVolumeSlider)
                   SizedBox(
-                    width: 70,
+                    width: 80,
                     child: MouseRegion(
                       onEnter: (_) => setState(() => _hoveringVolume = true),
                       onExit: (_) => setState(() => _hoveringVolume = false),
@@ -776,23 +757,21 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             );
           },
         ),
-        const SizedBox(width: 8),
-        // Expand: a soft-square chip rather than a bare icon, matching the
-        // design's trailing control — drawn at 30px, hit-tested at 44.
+        const SizedBox(width: OmnisonicSpacing.sm),
+        // Expand: a well-filled disc rather than a bare icon — drawn at
+        // 32px, hit-tested at 44.
         IconButton(
           onPressed: widget.onTap,
           tooltip: 'Expand player',
           icon: const Icon(OmnisonicIcons.openInFull),
-          iconSize: OmnisonicIconSizes.inline,
+          iconSize: OmnisonicIconSizes.sm,
           color: scheme.onSurface,
           style: IconButton.styleFrom(
-            fixedSize: const Size.square(30),
-            minimumSize: const Size.square(30),
+            fixedSize: const Size.square(32),
+            minimumSize: const Size.square(32),
             tapTargetSize: MaterialTapTargetSize.padded,
-            backgroundColor: scheme.onSurface.withValues(alpha: 0.07),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-            ),
+            backgroundColor: OmnisonicSurfaces.of(context).well,
+            side: BorderSide(color: OmnisonicSurfaces.of(context).hairline),
           ),
         ),
       ],
@@ -815,9 +794,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   Widget _textBtn(String label, ColorScheme scheme, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.ms,
+          vertical: OmnisonicSpacing.ms,
+        ),
         child: Text(
           label,
           style: OmnisonicTypography.glassButton.copyWith(

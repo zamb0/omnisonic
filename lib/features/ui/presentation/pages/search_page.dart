@@ -159,29 +159,7 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Same title treatment as PageHeaderAppBar on the other tabs; it
-          // was the one centred, regular-weight title.
-          SliverAppBar(
-            centerTitle: false,
-            titleSpacing: OmnisonicSpacing.gutter(context),
-            title: Semantics(
-              header: true,
-              child: Text(
-                'Search',
-                style:
-                    (MediaQuery.sizeOf(context).width <
-                                ResponsiveBreakpoints.mobile
-                            ? OmnisonicTypography.sectionTitle
-                            : OmnisonicTypography.pageTitle)
-                        .copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-              ),
-            ),
-            pinned: true,
-            elevation: 0,
-            foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
-          ),
+          PageHeaderAppBar.sliver(context, title: 'Search'),
           // Pinned and non-collapsing: the field is the page's entire
           // purpose, so it must not scroll away with the results.
           SliverPersistentHeader(
@@ -217,68 +195,29 @@ class _SearchPageState extends State<SearchPage> {
   /// it cannot measure its child — so these are authoritative rather than
   /// descriptive: both builders below lay out inside a SizedBox of exactly
   /// this height.
-  static const double _searchBarExtent = 76;
+  static const double _searchBarExtent = 68;
   static const double _chipRowExtent = 48;
 
   Widget _buildSearchBar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final gutter = PageGutter.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        OmnisonicSpacing.md,
-        OmnisonicSpacing.md,
-        OmnisonicSpacing.md,
-        OmnisonicSpacing.sm,
+      padding: EdgeInsets.fromLTRB(
+        gutter,
+        OmnisonicSpacing.xs,
+        gutter,
+        OmnisonicSpacing.ms,
       ),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: TextField(
-          controller: _searchController,
-          focusNode: _searchFocusNode,
-          style: OmnisonicTypography.bodyMedium.copyWith(
-            color: scheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search across all servers…',
-            // Dense, so the field's height is predictable and matches the
-            // extent the pinned header declares.
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: OmnisonicSpacing.sm,
-            ),
-            prefixIcon: const Icon(OmnisonicIcons.search),
-            // Driven by the controller rather than by the page's build cycle:
-            // typing does not call setState, so a plain read of `.text` here
-            // would leave the clear button stale.
-            suffixIcon: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _searchController,
-              builder: (context, value, child) {
-                if (value.text.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return IconButton(
-                  icon: const Icon(OmnisonicIcons.clear),
-                  tooltip: 'Clear search',
-                  onPressed: () {
-                    _searchController.clear();
-                    _searchFocusNode.unfocus();
-                  },
-                );
-              },
-            ),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-          ),
-          textInputAction: TextInputAction.search,
-          onSubmitted: (query) {
-            if (query.trim().isNotEmpty) {
-              context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
-              _rememberQuery();
-            }
-          },
-        ),
+      child: SearchField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        hint: 'Search across all servers…',
+        onClear: _searchFocusNode.unfocus,
+        onSubmitted: (query) {
+          if (query.trim().isNotEmpty) {
+            context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
+            _rememberQuery();
+          }
+        },
       ),
     );
   }
@@ -289,10 +228,10 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildServerFilterChips(List<MusicServer> servers) {
     return ListView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(
-        OmnisonicSpacing.md,
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
         0,
-        OmnisonicSpacing.md,
+        PageGutter.of(context),
         OmnisonicSpacing.sm,
       ),
       children: [
@@ -500,7 +439,12 @@ class _SearchPageState extends State<SearchPage> {
       ),
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            PageGutter.of(context),
+            0,
+            PageGutter.of(context),
+            OmnisonicSpacing.md,
+          ),
           child: Wrap(
             spacing: OmnisonicSpacing.sm,
             runSpacing: OmnisonicSpacing.sm,
@@ -582,7 +526,9 @@ class _SearchPageState extends State<SearchPage> {
           albums.length,
         ),
       if (artists.isNotEmpty) _buildArtistsSection(artists),
-      const SliverToBoxAdapter(child: SizedBox(height: OmnisonicSpacing.xl)),
+      const SliverToBoxAdapter(
+        child: SizedBox(height: OmnisonicLayout.pageBottom),
+      ),
     ];
   }
 
@@ -612,12 +558,9 @@ class _SearchPageState extends State<SearchPage> {
               : null,
         ),
       ),
-      // TrackRow pads its content by md itself; on top of a full gutter the
-      // rows sat at 32 under headers at 16.
+      // TrackRow lays itself out on the gutter.
       SliverPadding(
-        padding: EdgeInsets.symmetric(
-          horizontal: OmnisonicSpacing.gutter(context) - OmnisonicSpacing.md,
-        ),
+        padding: EdgeInsets.zero,
         sliver: SliverList.builder(
           itemCount: visibleCount,
           itemBuilder: (context, index) {
@@ -671,9 +614,7 @@ class _SearchPageState extends State<SearchPage> {
               behavior: const CarouselScrollBehavior(),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OmnisonicSpacing.md,
-                ),
+                padding: PageGutter.horizontal(context),
                 itemCount: expanded
                     ? albums.length
                     : albums.length.clamp(0, _carouselPreviewCount),
@@ -682,7 +623,9 @@ class _SearchPageState extends State<SearchPage> {
                   final sources = sourceServerIds[album.id] ?? const [];
                   return Padding(
                     key: ValueKey(album.id),
-                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    padding: const EdgeInsets.only(
+                      right: MediaGridPreset.spacing,
+                    ),
                     child: AlbumCard(
                       album: album,
                       width: 160,
@@ -726,9 +669,7 @@ class _SearchPageState extends State<SearchPage> {
               behavior: const CarouselScrollBehavior(),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OmnisonicSpacing.md,
-                ),
+                padding: PageGutter.horizontal(context),
                 itemCount: expanded
                     ? artists.length
                     : artists.length.clamp(0, _carouselPreviewCount),
@@ -736,7 +677,9 @@ class _SearchPageState extends State<SearchPage> {
                   final artist = artists[index];
                   return Padding(
                     key: ValueKey(artist.id),
-                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    padding: const EdgeInsets.only(
+                      right: MediaGridPreset.spacing,
+                    ),
                     child: ArtistCard(
                       artist: artist,
                       width: 140,

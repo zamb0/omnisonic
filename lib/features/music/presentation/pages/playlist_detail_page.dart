@@ -88,10 +88,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
               slivers: [
                 _buildAppBar(playlist),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    OmnisonicSpacing.md,
+                  padding: EdgeInsets.fromLTRB(
+                    PageGutter.of(context),
                     OmnisonicSpacing.sm,
-                    OmnisonicSpacing.md,
+                    PageGutter.of(context),
                     OmnisonicSpacing.lg,
                   ),
                   sliver: SliverToBoxAdapter(
@@ -100,8 +100,11 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                 ),
                 if (viewModel.errorMessage != null)
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: OmnisonicSpacing.md,
+                    padding: EdgeInsets.fromLTRB(
+                      PageGutter.of(context),
+                      0,
+                      PageGutter.of(context),
+                      OmnisonicSpacing.ms,
                     ),
                     sliver: SliverToBoxAdapter(
                       child: InlineBanner(
@@ -116,7 +119,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
                   ),
                 _buildTrackList(playlist, viewModel, tracks),
                 const SliverToBoxAdapter(
-                  child: SizedBox(height: OmnisonicSpacing.xl),
+                  child: SizedBox(height: OmnisonicLayout.pageBottom),
                 ),
               ],
             ),
@@ -254,10 +257,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     List<Track> tracks,
   ) {
     if (tracks.isEmpty && viewModel.isLoadingTracks) {
-      return const SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return LoadingStateView.sliver(kind: SkeletonKind.list, itemCount: 6);
     }
 
     if (tracks.isEmpty) {

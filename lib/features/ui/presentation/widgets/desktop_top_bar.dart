@@ -23,8 +23,9 @@ class DesktopTopBar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final onSearch = GoRouterState.of(context).uri.path == AppRouter.search;
 
+    final gutter = PageGutter.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+      padding: EdgeInsets.fromLTRB(gutter, 0, gutter, OmnisonicSpacing.sm),
       child: Row(
         children: [
           // Not on /search, which has its own field: two search boxes on
@@ -41,7 +42,7 @@ class DesktopTopBar extends StatelessWidget {
             builder: (context, viewModel, servers, child) {
               return Flexible(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: OmnisonicSpacing.ms),
                   child: Text(
                     // Without a server there is no sync to report: it said
                     // "last sync just now" on a fresh install.
@@ -99,17 +100,20 @@ class _SearchField extends StatelessWidget {
         SearchFocusRequest.request();
         context.go(AppRouter.search);
       },
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.ms,
+      ),
       semanticLabel: 'Search',
       child: Row(
         children: [
           Icon(
             OmnisonicIcons.search,
-            size: OmnisonicIconSizes.sm,
+            size: OmnisonicIconSizes.smd,
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
             child: Text(
               'Search albums, artists, tracks — all servers',
@@ -120,10 +124,24 @@ class _SearchField extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            '⌘K',
-            style: OmnisonicTypography.technical.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+          const SizedBox(width: OmnisonicSpacing.sm),
+          // A key cap, so the shortcut reads as a shortcut and not as part
+          // of the placeholder.
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+              vertical: OmnisonicSpacing.xxs,
+            ),
+            decoration: BoxDecoration(
+              color: OmnisonicSurfaces.of(context).well,
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+              border: Border.all(color: OmnisonicSurfaces.of(context).hairline),
+            ),
+            child: Text(
+              '⌘K',
+              style: OmnisonicTypography.technicalSmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -145,6 +163,11 @@ class _GlassButton extends StatelessWidget {
 
     return GlassInkButton(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.ms,
+      ),
       child: Text(
         label,
         style: OmnisonicTypography.glassButton.copyWith(

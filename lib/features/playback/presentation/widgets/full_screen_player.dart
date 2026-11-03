@@ -348,7 +348,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+            padding: const EdgeInsets.fromLTRB(
+              OmnisonicSpacing.sm,
+              OmnisonicSpacing.sm,
+              OmnisonicSpacing.ms,
+              OmnisonicSpacing.sm,
+            ),
             child: Row(
               children: [
                 IconButton(
@@ -356,11 +361,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                   tooltip: 'Close player',
                   icon: const Icon(OmnisonicIcons.keyboardArrowDown),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: OmnisonicTypography.semiBold,
+                  title.toUpperCase(),
+                  style: OmnisonicTypography.eyebrow.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
                 const Spacer(),
@@ -402,23 +407,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     Track track, {
     double maxSize = 360,
   }) {
-    final scheme = Theme.of(context).colorScheme;
     return _artworkSwipe(
       child: Center(
         child: Hero(
           tag: 'now-playing-artwork-${track.id}',
-          child: Container(
+          child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxSize, maxHeight: maxSize),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-              color: scheme.surfaceContainerHighest,
-              boxShadow: OmnisonicShadows.art,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: CoverArt(url: track.coverArtUrl, radius: 0),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CoverArt(
+                url: track.coverArtUrl,
+                radius: OmnisonicRadius.overlay,
+                elevated: true,
               ),
             ),
           ),
@@ -458,30 +458,30 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         Text(
           track.title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: OmnisonicTypography.bold,
+          style: OmnisonicTypography.sectionTitleSmall.copyWith(
+            color: scheme.onSurface,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: OmnisonicSpacing.sm),
         Text(
           track.artist,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
+          style: OmnisonicTypography.bodyLarge.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
         ),
         if (track.album.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: OmnisonicSpacing.xxs),
           Text(
             track.album,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            style: OmnisonicTypography.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -527,14 +527,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.sm),
+        // The theme's slider: accent progress on a faint track.
         SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: scheme.primary,
-            inactiveTrackColor: OmnisonicColors.glassDark(1),
-            thumbColor: scheme.primary,
-            overlayColor: scheme.primary.withValues(alpha: 0.2),
-            trackHeight: 4,
-          ),
+          data: SliderTheme.of(context),
           child: Slider(
             // No inset of its own, so the track spans the same width as the
             // time labels above it.
@@ -558,7 +553,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             },
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: OmnisonicSpacing.xs),
         _buildQualityIndicator(context, playbackViewModel),
       ],
     );
@@ -584,7 +579,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             : quality.displayName,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: OmnisonicTypography.metadata.copyWith(
+        style: OmnisonicTypography.technicalSmall.copyWith(
           color: scheme.onSurfaceVariant,
         ),
       ),
@@ -599,9 +594,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _glassCircle(SkipPreviousButton(playback: playbackViewModel, size: 28)),
-        const SizedBox(width: 16),
+        const SizedBox(width: OmnisonicSpacing.lg),
         PlayPauseButton(playback: playbackViewModel, prominent: true),
-        const SizedBox(width: 16),
+        const SizedBox(width: OmnisonicSpacing.lg),
         _glassCircle(SkipNextButton(playback: playbackViewModel, size: 28)),
       ],
     );
@@ -629,9 +624,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        ShuffleModeButton(playback: playbackViewModel, size: 24),
-        const SizedBox(width: 16),
-        RepeatModeButton(playback: playbackViewModel, size: 24),
+        ShuffleModeButton(
+          playback: playbackViewModel,
+          size: OmnisonicIconSizes.md,
+        ),
+        const SizedBox(width: OmnisonicSpacing.xl),
+        RepeatModeButton(
+          playback: playbackViewModel,
+          size: OmnisonicIconSizes.md,
+        ),
       ],
     );
   }
@@ -662,30 +663,30 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       child: Row(
         children: [
           ServerDot(serverId: track.serverId, size: 8),
-          const SizedBox(width: 8),
+          const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
             child: Text(
               '$serverName · ${quality.displayName} · '
               '${isDirect ? 'Direct' : 'Transcoded'}',
-              style: OmnisonicTypography.metadata.copyWith(
+              style: OmnisonicTypography.technicalSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: OmnisonicSpacing.sm),
           Icon(
             scrobbled ? OmnisonicIcons.checkCircle : OmnisonicIcons.history,
             size: OmnisonicIconSizes.inline,
             color: scrobbled
-                ? OmnisonicColors.successAccessible
-                : scheme.onSurfaceVariant.withValues(alpha: 0.6),
+                ? OmnisonicColors.success
+                : scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: OmnisonicSpacing.xs),
           Text(
             scrobbled ? 'Scrobbled' : 'Not scrobbled yet',
-            style: OmnisonicTypography.metadata.copyWith(
+            style: OmnisonicTypography.technicalSmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
@@ -769,7 +770,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       padding: EdgeInsets.all(
         compact ? OmnisonicSpacing.md : OmnisonicSpacing.lg,
       ),
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -856,69 +857,31 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     // link to reach the remainder any more.
     final start = currentIndex.clamp(0, queue.length - 1);
 
-    return ListView.separated(
-      itemCount: queue.length - start,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, i) {
-        final index = start + i;
-        final track = queue[index];
-        final isCurrent = index == currentIndex;
-
-        return ListTile(
-          // The same track can sit in the queue twice, so the position
-          // is part of the key, as on the queue page.
-          key: ValueKey('queue-${track.id}-$index'),
-          dense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 4,
-          ),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              color: OmnisonicColors.glassDark(1),
+    // The app's TrackRow, as in every other list. Inside the panel the
+    // rows sit on the panel's own padding, with the ink reaching into it.
+    return PageGutter(
+      value: OmnisonicSpacing.sm,
+      child: ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: queue.length - start,
+        itemBuilder: (context, i) {
+          final index = start + i;
+          final track = queue[index];
+          return TrackRow(
+            // The same track can sit in the queue twice, so the position
+            // is part of the key, as on the queue page.
+            key: ValueKey('queue-${track.id}-$index'),
+            track: track,
+            isCurrent: index == currentIndex,
+            showDuration: false,
+            onTap: () => playbackViewModel.playTrack(
+              track,
+              queue: queue,
+              startIndex: index,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              child: CoverArt(url: track.coverArtUrl, radius: 0),
-            ),
-          ),
-          title: Text(
-            track.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: isCurrent
-                  ? OmnisonicTypography.semiBold
-                  : OmnisonicTypography.medium,
-            ),
-          ),
-          subtitle: Text(
-            track.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          // A "now playing" marker, not a control: the pause glyph that was
-          // here looked like a button that did something.
-          trailing: isCurrent
-              ? Icon(
-                  OmnisonicIcons.graphicEq,
-                  color: scheme.primary,
-                  semanticLabel: 'Now playing',
-                )
-              : null,
-          onTap: () => playbackViewModel.playTrack(
-            track,
-            queue: queue,
-            startIndex: index,
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

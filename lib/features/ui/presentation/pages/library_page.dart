@@ -225,9 +225,9 @@ class _LibraryPageState extends State<LibraryPage> {
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                   OmnisonicSpacing.gutter(context),
-                  12,
+                  OmnisonicSpacing.sm,
                   OmnisonicSpacing.gutter(context),
-                  0,
+                  OmnisonicSpacing.xs,
                 ),
                 sliver: SliverToBoxAdapter(
                   child: InlineBanner(
@@ -403,9 +403,9 @@ class _LibraryPageState extends State<LibraryPage> {
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        8,
+        OmnisonicLayout.headerGap,
         OmnisonicSpacing.gutter(context),
-        24,
+        OmnisonicLayout.pageBottom,
       ),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
@@ -440,61 +440,17 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Widget _buildSearchPill(LibraryTab tab, String hint) {
-    final scheme = Theme.of(context).colorScheme;
-    final controller = _searchControllers[tab]!;
+    final gutter = OmnisonicSpacing.gutter(context);
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        OmnisonicSpacing.gutter(context),
-        12,
-        OmnisonicSpacing.gutter(context),
-        0,
-      ),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        padding: const EdgeInsets.only(left: 16, right: 4),
-        child: Row(
-          children: [
-            Icon(
-              OmnisonicIcons.search,
-              size: OmnisonicIconSizes.smd,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                style: OmnisonicTypography.bodyMedium.copyWith(
-                  color: scheme.onSurface,
-                ),
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  hintText: hint,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onChanged: (value) => _searchDebouncer.run(() {
-                  if (!mounted) return;
-                  setState(() => _LibraryMemory.queries[tab] = value);
-                }),
-              ),
-            ),
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, child) => value.text.isEmpty
-                  ? const SizedBox(height: OmnisonicTouchTargets.minimum)
-                  // A full-size target: the old clear button was ~18px.
-                  : IconButton(
-                      icon: const Icon(OmnisonicIcons.close),
-                      iconSize: 18,
-                      tooltip: 'Clear search',
-                      onPressed: () => _setQuery(tab, ''),
-                    ),
-            ),
-          ],
-        ),
+      padding: EdgeInsets.fromLTRB(gutter, OmnisonicSpacing.xs, gutter, 0),
+      child: SearchField(
+        controller: _searchControllers[tab]!,
+        hint: hint,
+        onChanged: (value) => _searchDebouncer.run(() {
+          if (!mounted) return;
+          setState(() => _LibraryMemory.queries[tab] = value);
+        }),
+        onClear: () => _setQuery(tab, ''),
       ),
     );
   }
@@ -520,7 +476,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        10,
+        OmnisonicSpacing.ms,
         OmnisonicSpacing.gutter(context),
         0,
       ),
@@ -528,7 +484,7 @@ class _LibraryPageState extends State<LibraryPage> {
         liveRegion: true,
         child: Text(
           text,
-          style: OmnisonicTypography.metadata.copyWith(
+          style: OmnisonicTypography.technical.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -545,17 +501,20 @@ class _LibraryPageState extends State<LibraryPage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        8,
+        OmnisonicSpacing.sm,
         OmnisonicSpacing.gutter(context),
         0,
       ),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: OmnisonicSpacing.sm,
+        runSpacing: OmnisonicSpacing.sm,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilterChip(
-            avatar: const Icon(OmnisonicIcons.star, size: 16),
+            avatar: const Icon(
+              OmnisonicIcons.star,
+              size: OmnisonicIconSizes.sm,
+            ),
             label: const Text('Starred'),
             selected: viewModel.showStarredOnly,
             onSelected: (_) => viewModel.toggleStarredFilter(),
@@ -567,7 +526,10 @@ class _LibraryPageState extends State<LibraryPage> {
             MenuAnchor(
               reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => FilterChip(
-                avatar: const Icon(OmnisonicIcons.musicNote, size: 16),
+                avatar: const Icon(
+                  OmnisonicIcons.musicNote,
+                  size: OmnisonicIconSizes.sm,
+                ),
                 label: Text(genre ?? 'All genres'),
                 selected: genre != null,
                 onSelected: (_) =>
@@ -601,7 +563,10 @@ class _LibraryPageState extends State<LibraryPage> {
           if (filtered)
             TextButton.icon(
               onPressed: viewModel.clearFilters,
-              icon: const Icon(OmnisonicIcons.clear, size: 16),
+              icon: const Icon(
+                OmnisonicIcons.clear,
+                size: OmnisonicIconSizes.sm,
+              ),
               label: const Text('Clear filters'),
             ),
         ],

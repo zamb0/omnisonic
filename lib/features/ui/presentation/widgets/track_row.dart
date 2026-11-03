@@ -99,6 +99,7 @@ class TrackRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final gutter = PageGutter.of(context);
     final isCurrent = this.isCurrent ?? _isPlaying(context);
     final artSize = dense ? 40.0 : 48.0;
     final titleColor = isCurrent ? scheme.primary : scheme.onSurface;
@@ -121,7 +122,7 @@ class TrackRow extends StatelessWidget {
                 size: OmnisonicIconSizes.inline,
                 color: scheme.primary,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: OmnisonicSpacing.xs),
             ],
             Expanded(
               child: Text(
@@ -130,25 +131,22 @@ class TrackRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style:
                     (dense
-                            ? OmnisonicTypography.bodySmall
-                            : OmnisonicTypography.bodyMedium)
-                        .copyWith(
-                          color: titleColor,
-                          fontWeight: OmnisonicTypography.semiBold,
-                        ),
+                            ? OmnisonicTypography.cardTitle
+                            : OmnisonicTypography.titleSmall)
+                        .copyWith(color: titleColor),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: OmnisonicSpacing.xxs),
         Row(
           children: [
             if (sources != null && sources.length > 1) ...[
               ServerDotStack(serverIds: sources, dotSize: 8),
-              const SizedBox(width: 6),
+              const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
             ] else if (serverId != null) ...[
               ServerDot(serverId: serverId!, size: 8),
-              const SizedBox(width: 6),
+              const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
             ],
             Flexible(
               child: Text(
@@ -161,10 +159,10 @@ class TrackRow extends StatelessWidget {
               ),
             ),
             if (qualityLabel != null) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
               Text(
                 '· $qualityLabel',
-                style: OmnisonicTypography.metadata.copyWith(
+                style: OmnisonicTypography.technicalSmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
               ),
@@ -173,7 +171,7 @@ class TrackRow extends StatelessWidget {
         ),
         if (sourceNote != null)
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: OmnisonicSpacing.xxs),
             child: Text(
               sourceNote!,
               maxLines: 1,
@@ -212,7 +210,7 @@ class TrackRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: OmnisonicSpacing.sm),
           CoverArt(url: track.coverArtUrl, size: artSize),
         ],
       ),
@@ -225,69 +223,84 @@ class TrackRow extends StatelessWidget {
       if (isCurrent) 'now playing',
     ].join(', ');
 
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onShowActions,
-        onSecondaryTap: onShowActions,
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: dense ? 4 : OmnisonicSpacing.md,
-            vertical: dense ? 4 : 6,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  button: onTap != null,
-                  label: label,
-                  excludeSemantics: true,
-                  child: Row(
-                    children: [
-                      lead,
-                      SizedBox(width: dense ? 8 : 12),
-                      Expanded(child: info),
-                      if (showDuration) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          formatDuration(track.duration),
-                          style: OmnisonicTypography.duration.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+    // The row's content sits on the page gutter; its hover and press ink
+    // reaches a little past it on each side, as a rounded tile rather than a
+    // full-bleed band.
+    const inkBleed = OmnisonicSpacing.sm;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 0 : (gutter - inkBleed).clamp(0, gutter),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onShowActions,
+          onSecondaryTap: onShowActions,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: dense ? OmnisonicSpacing.xs : inkBleed,
+              vertical: dense
+                  ? OmnisonicSpacing.xs
+                  : OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    button: onTap != null,
+                    label: label,
+                    excludeSemantics: true,
+                    child: Row(
+                      children: [
+                        lead,
+                        SizedBox(
+                          width: dense
+                              ? OmnisonicSpacing.sm
+                              : OmnisonicSpacing.ms,
                         ),
+                        Expanded(child: info),
+                        if (showDuration) ...[
+                          const SizedBox(width: OmnisonicSpacing.sm),
+                          Text(
+                            formatDuration(track.duration),
+                            style: OmnisonicTypography.duration.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              ?trailing,
-              if (onShowActions != null)
-                IconButton(
-                  icon: const Icon(OmnisonicIcons.moreVert),
-                  iconSize: OmnisonicIconSizes.smd,
-                  tooltip: 'More actions for ${track.title}',
-                  onPressed: onShowActions,
-                ),
-              if (reorderIndex != null)
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: Semantics(
-                    label: 'Reorder ${track.title}',
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.grab,
-                      child: SizedBox.square(
-                        dimension: OmnisonicTouchTargets.minimum,
-                        child: Icon(
-                          OmnisonicIcons.dragHandle,
-                          color: scheme.onSurfaceVariant,
+                ?trailing,
+                if (onShowActions != null)
+                  IconButton(
+                    icon: const Icon(OmnisonicIcons.moreVert),
+                    iconSize: OmnisonicIconSizes.smd,
+                    tooltip: 'More actions for ${track.title}',
+                    onPressed: onShowActions,
+                  ),
+                if (reorderIndex != null)
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: Semantics(
+                      label: 'Reorder ${track.title}',
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.grab,
+                        child: SizedBox.square(
+                          dimension: OmnisonicTouchTargets.minimum,
+                          child: Icon(
+                            OmnisonicIcons.dragHandle,
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

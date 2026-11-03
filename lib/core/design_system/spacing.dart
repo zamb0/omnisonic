@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 
+import 'layout.dart';
+
 /// Spacing and layout grid system for Omnisonic UI Enhancement
 class OmnisonicSpacing {
   // Base spacing unit (8px)
   static const double baseUnit = 8.0;
 
-  // Spacing scale based on 8px grid
+  // Spacing scale on a 4px grid. `ms` (12) and `ml` (20) are the half
+  // steps the layouts kept reaching for as literals.
+  static const double xxs = 2.0;
   static const double xs = baseUnit * 0.5; // 4px
   static const double sm = baseUnit * 1; // 8px
+  static const double ms = baseUnit * 1.5; // 12px
   static const double md = baseUnit * 2; // 16px
+  static const double ml = baseUnit * 2.5; // 20px
   static const double lg = baseUnit * 3; // 24px
   static const double xl = baseUnit * 4; // 32px
   static const double xxl = baseUnit * 5; // 40px
@@ -61,16 +67,9 @@ class OmnisonicSpacing {
     }
   }
 
-  /// The page's horizontal gutter: 16 on phones, 24 on tablets, 32 wider.
-  ///
-  /// Pages used 4, 16 or 24 as each saw fit, so content edges jumped as the
-  /// user moved between tabs. One gutter, adapting to the width.
-  static double gutter(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    if (width < 600) return md;
-    if (width < 1200) return lg;
-    return xl;
-  }
+  /// The page's horizontal gutter. See [PageGutter]: the shell publishes it
+  /// so every page shares one content edge.
+  static double gutter(BuildContext context) => PageGutter.of(context);
 
   /// Get screen padding based on device size
   static EdgeInsets screenPaddingFor(BuildContext context) {
@@ -116,8 +115,21 @@ class OmnisonicRadius {
   /// radius, and rounding it to 12 or 16 visibly changes the artwork.
   static const double art = 14.0;
 
-  /// Nav pill / glass button corner in the sidebar chrome.
-  static const double pill = 13.0;
+  /// Nav pill corner in the sidebar chrome. Was 13 — a step off the scale
+  /// that no other element shared.
+  static const double pill = md;
+
+  /// Tiles, inputs, menu items: anything rectangular you can touch.
+  static const double control = md;
+
+  /// A tile inside a glass pane — stat tiles, server rows.
+  static const double tile = md;
+
+  /// Glass panes: sidebar, stats rail, player bar.
+  static const double panel = xl;
+
+  /// Dialogs, sheets and the hero cards on Home.
+  static const double overlay = xxl;
 
   // Not tokenized on purpose: the 1-2px rounding on drag handles, seek
   // handles, visualizer bars and status dots is half the element's own
@@ -126,9 +138,9 @@ class OmnisonicRadius {
   // round the shape rather than restyle it.
 
   static const double card = md; // 12px
-  static const double button = sm; // 8px
-  static const double input = sm; // 8px
-  static const double modal = lg; // 16px
+  static const double button = full; // buttons are always stadiums
+  static const double input = md; // 12px
+  static const double modal = overlay; // 24px
   static const double albumArt = md; // 12px
   static const double playerCard = lg; // 16px
 
@@ -152,6 +164,16 @@ class OmnisonicShadows {
       blurRadius: 24,
       spreadRadius: -14,
       offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Lift for an opaque overlay — dialog, sheet, menu.
+  static const List<BoxShadow> overlay = [
+    BoxShadow(
+      color: Color(0x59000000),
+      blurRadius: 48,
+      spreadRadius: -12,
+      offset: Offset(0, 24),
     ),
   ];
 

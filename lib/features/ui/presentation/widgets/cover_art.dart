@@ -81,6 +81,7 @@ class CoverArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     final borderRadius = _borderRadius;
     final edge = size;
 
@@ -88,14 +89,28 @@ class CoverArt extends StatelessWidget {
       builder: (context, constraints) {
         final shortest = constraints.biggest.shortestSide;
         final iconSize = shortest.isFinite
-            ? (shortest * 0.4).clamp(16.0, 48.0)
+            ? (shortest * 0.32).clamp(16.0, 48.0)
             : 32.0;
-        return ColoredBox(
-          color: scheme.surfaceContainerHighest,
+        // A soft top-left light on the placeholder, so a missing cover
+        // still reads as an object rather than a hole in the grid. Both
+        // stops opaque: a translucent one let the art's drop shadow show
+        // through as a square inside the square.
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(surfaces.wellHover, surfaces.placeholder),
+                surfaces.placeholder,
+              ],
+              stops: const [0, 0.7],
+            ),
+          ),
           child: Center(
             child: Icon(
               fallbackIcon,
-              color: scheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
               size: iconSize,
             ),
           ),

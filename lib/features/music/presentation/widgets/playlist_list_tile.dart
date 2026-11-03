@@ -27,15 +27,17 @@ class PlaylistListTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: PageGutter.of(context),
+        vertical: OmnisonicSpacing.xs,
+      ),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
         padding: EdgeInsets.zero,
         child: ListTile(
           leading: _buildPlaylistArt(scheme),
           title: Text(
             playlist.name,
-            style: const TextStyle(fontWeight: OmnisonicTypography.medium),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -44,10 +46,12 @@ class PlaylistListTile extends StatelessWidget {
             children: [
               Text(
                 '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: OmnisonicTypography.technicalSmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               if (playlist.description?.isNotEmpty == true) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: OmnisonicSpacing.xxs),
                 Text(
                   playlist.description!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -57,10 +61,10 @@ class PlaylistListTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 4),
+              const SizedBox(height: OmnisonicSpacing.xs),
               Wrap(
-                spacing: 4,
-                runSpacing: 2,
+                spacing: OmnisonicSpacing.xs,
+                runSpacing: OmnisonicSpacing.xxs,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Icon(
@@ -86,36 +90,30 @@ class PlaylistListTile extends StatelessWidget {
               ),
             ],
           ),
-          // Explicit icon: the default is adaptive, a horizontal "•••" on
-          // iOS beside the vertical one used everywhere else.
-          trailing: PopupMenuButton<String>(
-            icon: const Icon(OmnisonicIcons.moreVert),
-            onSelected: (value) => _handleMenuAction(value),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: ListTile(
-                  leading: Icon(OmnisonicIcons.edit),
-                  title: Text('Edit'),
-                  contentPadding: EdgeInsets.zero,
-                ),
+          // A MenuAnchor, like every other row's actions menu.
+          trailing: MenuAnchor(
+            builder: (context, controller, child) => IconButton(
+              icon: const Icon(OmnisonicIcons.moreVert),
+              tooltip: 'Actions for ${playlist.name}',
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+            ),
+            menuChildren: [
+              MenuItemButton(
+                leadingIcon: const Icon(OmnisonicIcons.edit),
+                onPressed: onEdit,
+                child: const Text('Edit'),
               ),
-              const PopupMenuItem(
-                value: 'duplicate',
-                child: ListTile(
-                  leading: Icon(OmnisonicIcons.copy),
-                  title: Text('Duplicate'),
-                  contentPadding: EdgeInsets.zero,
-                ),
+              MenuItemButton(
+                leadingIcon: const Icon(OmnisonicIcons.copy),
+                onPressed: onDuplicate,
+                child: const Text('Duplicate'),
               ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(OmnisonicIcons.delete, color: scheme.error),
-                  title: Text('Delete', style: TextStyle(color: scheme.error)),
-                  contentPadding: EdgeInsets.zero,
-                ),
+              const Divider(height: 1),
+              MenuItemButton(
+                leadingIcon: Icon(OmnisonicIcons.delete, color: scheme.error),
+                onPressed: onDelete,
+                child: Text('Delete', style: TextStyle(color: scheme.error)),
               ),
             ],
           ),
@@ -131,18 +129,4 @@ class PlaylistListTile extends StatelessWidget {
     size: 56,
     fallbackIcon: OmnisonicIcons.playlistPlay,
   );
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'edit':
-        onEdit?.call();
-        break;
-      case 'duplicate':
-        onDuplicate?.call();
-        break;
-      case 'delete':
-        onDelete?.call();
-        break;
-    }
-  }
 }

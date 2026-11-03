@@ -7,6 +7,7 @@ export 'media_actions.dart';
 export 'cover_art.dart';
 export 'server_dot.dart';
 export 'chips.dart';
+export 'search_field.dart';
 
 // Layout Components
 export 'responsive_grid.dart';

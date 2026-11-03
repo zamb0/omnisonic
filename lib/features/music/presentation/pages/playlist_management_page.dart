@@ -22,9 +22,16 @@ class PlaylistManagementPage extends StatefulWidget {
 }
 
 class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
+  final _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showPublicOnly = false;
   bool _showPrivateOnly = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,35 +77,22 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
   }
 
   Widget _buildSearchAndFilters(PlaylistViewModel viewModel) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    final gutter = PageGutter.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        gutter,
+        OmnisonicSpacing.xs,
+        gutter,
+        OmnisonicSpacing.ms,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search bar
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Search playlists...',
-              prefixIcon: const Icon(OmnisonicIcons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(OmnisonicIcons.clear),
-                      tooltip: 'Clear search',
-                      onPressed: () {
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                        viewModel.clearSearch();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              ),
-            ),
+          SearchField(
+            controller: _searchController,
+            hint: 'Search playlists',
             onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
+              setState(() => _searchQuery = value);
               if (value.trim().isNotEmpty) {
                 viewModel.searchPlaylists(value);
               } else {
@@ -106,11 +100,11 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               }
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: OmnisonicSpacing.ms),
           // Filter chips and the count, wrapping at large text sizes.
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.sm,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               FilterChip(
@@ -135,7 +129,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
               ),
               Text(
                 pluralize(_getFilteredPlaylists(viewModel).length, 'playlist'),
-                style: OmnisonicTypography.metadata.copyWith(
+                style: OmnisonicTypography.technical.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -184,6 +178,7 @@ class _PlaylistManagementPageState extends State<PlaylistManagementPage> {
       onRefresh: viewModel.refreshPlaylists,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: OmnisonicLayout.pageBottom),
         itemCount: playlists.length,
         itemBuilder: (context, index) {
           final playlist = playlists[index];

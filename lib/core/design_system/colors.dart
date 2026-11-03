@@ -193,6 +193,11 @@ class OmnisonicColors {
   );
 
   // Light Theme Color Scheme
+  //
+  // Neutrals are warm, to sit on the greige canvas: the cool Tailwind greys
+  // read as a different material. The surfaceContainer ladder is spelled out
+  // because Material's defaults collapse every level onto `surface`, which
+  // made inputs and artwork placeholders vanish into the canvas.
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
     primary: primaryLight,
@@ -213,23 +218,27 @@ class OmnisonicColors {
     onErrorContainer: onErrorContainerLight,
     surface: surfaceLight,
     onSurface: onSurfaceLight,
-    surfaceContainerHighest: neutralGray100,
-    onSurfaceVariant: neutralGray600,
-    outline: neutralGray300,
-    outlineVariant: neutralGray200,
+    surfaceContainerLowest: neutralWhite,
+    surfaceContainerLow: Color(0xFFF6F4F1),
+    surfaceContainer: Color(0xFFEAE7E3),
+    surfaceContainerHigh: Color(0xFFF7F5F2),
+    surfaceContainerHighest: Color(0xFFDEDAD4),
+    onSurfaceVariant: Color(0xFF5A554E), // 6.3:1 on the canvas
+    outline: Color(0xFF8A847B), // 3.2:1, the floor for an input's edge
+    outlineVariant: Color(0xFFD6D1CA),
     shadow: Color(0x1A000000),
     scrim: Color(0x80000000),
-    inverseSurface: neutralGray800,
-    onInverseSurface: neutralGray100,
-    inversePrimary: Color(0xFF9CA3FF),
-    surfaceTint: primaryLight,
+    inverseSurface: Color(0xFF1D1E22),
+    onInverseSurface: Color(0xFFF4F2EF),
+    inversePrimary: Color(0xFFA5A8FF),
+    surfaceTint: Colors.transparent,
   );
 
   // Dark Theme Color Scheme
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: Color(0xFF9CA3FF),
-    onPrimary: Color(0xFF1E1B3A),
+    primary: Color(0xFFA5A8FF),
+    onPrimary: Color(0xFF15163A), // 8.0:1 on primary
     primaryContainer: primaryContainerDark,
     onPrimaryContainer: onPrimaryContainerDark,
     secondary: Color(0xFF7C7CFF),
@@ -246,16 +255,20 @@ class OmnisonicColors {
     onErrorContainer: onErrorContainerDark,
     surface: surfaceDark,
     onSurface: onSurfaceDark,
-    surfaceContainerHighest: cardDark,
-    onSurfaceVariant: Color(0xFF9A9A9A),
-    outline: Color(0xFF2B2B2B),
-    outlineVariant: Color(0xFF3B3B3B),
+    surfaceContainerLowest: Color(0xFF08090A),
+    surfaceContainerLow: Color(0xFF121316),
+    surfaceContainer: Color(0xFF17181B),
+    surfaceContainerHigh: Color(0xFF1D1E22),
+    surfaceContainerHighest: Color(0xFF24252A),
+    onSurfaceVariant: Color(0xFFA8A49E), // 7.8:1 on the canvas
+    outline: Color(0xFF6A665F),
+    outlineVariant: Color(0xFF2A2B2F),
     shadow: Color(0x80000000),
     scrim: Color(0xCC000000),
-    inverseSurface: neutralGray100,
-    onInverseSurface: neutralGray800,
-    inversePrimary: primaryPurple,
-    surfaceTint: Color(0xFF9CA3FF),
+    inverseSurface: Color(0xFFF4F2EF),
+    onInverseSurface: Color(0xFF141414),
+    inversePrimary: primaryLight,
+    surfaceTint: Colors.transparent,
   );
 
   // Music-specific colors
@@ -279,6 +292,13 @@ class OmnisonicColors {
 
   /// Secondary text and icons on a [scrim].
   static const Color onScrimMuted = Color(0xCCFFFFFF);
+
+  /// Icons on a solid [onScrim] disc — the play button over a cover.
+  static const Color onScrimFill = Color(0xFF0D0E10);
+
+  /// A translucent control on a [scrim] — the secondary buttons over a
+  /// cover.
+  static const Color scrimControl = Color(0x33FFFFFF);
 
   /// Text on a [warning] or [success] fill. White on those was 2.1:1 and
   /// 2.5:1; these dark tones clear 7:1.

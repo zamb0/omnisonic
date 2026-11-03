@@ -120,7 +120,7 @@ void main() {
 
       expect(find.byType(TrackRow), findsNWidgets(5));
 
-      await tester.tap(find.text('See All').first);
+      await tester.tap(find.text('See all').first);
       await tester.pump();
 
       // Expanded, but still lazy: a SliverList only builds what fits, so the
@@ -133,9 +133,9 @@ void main() {
     testWidgets('collapsing returns to the preview count', (tester) async {
       await pumpSearch(tester, state: manyResults);
 
-      await tester.tap(find.text('See All').first);
+      await tester.tap(find.text('See all').first);
       await tester.pump();
-      await tester.tap(find.text('Show Less').first);
+      await tester.tap(find.text('Show less').first);
       await tester.pump();
 
       expect(find.byType(TrackRow), findsNWidgets(5));
@@ -152,7 +152,7 @@ void main() {
       );
       expect(engine.detectCalls, 1);
 
-      await tester.tap(find.text('See All').first);
+      await tester.tap(find.text('See all').first);
       await tester.pump();
 
       expect(engine.detectCalls, 1);

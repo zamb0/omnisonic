@@ -11,6 +11,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../widgets/widgets.dart';
+import '../../../servers/presentation/widgets/server_form_dialog.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -111,9 +112,10 @@ class _HomePageState extends State<HomePage> {
   static const double _statsRailBreakpoint = 1100;
 
   Widget _buildAppBar() {
+    final gutter = OmnisonicSpacing.gutter(context);
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+        padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 8),
         child: Row(
           children: [
             Expanded(
@@ -167,10 +169,15 @@ class _HomePageState extends State<HomePage> {
                 child: ServerDot(serverId: server.id, size: 8),
               ),
             const SizedBox(width: 4),
-            Text(
-              '${servers.length} $serverWord · $status',
-              style: OmnisonicTypography.metadata.copyWith(
-                color: scheme.onSurfaceVariant,
+            // Flexible: at large text sizes the line overflowed the row.
+            Flexible(
+              child: Text(
+                '${servers.length} $serverWord · $status',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -179,7 +186,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// "Pick up where you left" card: the single most recently played track,
+  /// "Pick up where you left off" card: the single most recently played track,
   /// presented as a glass panel over its own art. Purely a shortcut into
   /// existing playback — there's no persisted resume position to restore.
   /// What a section shows when it has nothing in it.
@@ -218,7 +225,12 @@ class _HomePageState extends State<HomePage> {
         final scheme = Theme.of(context).colorScheme;
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(bottom: OmnisonicSpacing.md),
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              0,
+              OmnisonicSpacing.gutter(context),
+              OmnisonicSpacing.md,
+            ),
             child: GlassPanel(
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: Row(
@@ -254,28 +266,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildContinueListeningSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer2<MusicLibraryViewModel, PlaybackViewModel>(
+      builder: (context, viewModel, playback, child) {
         final recent = viewModel.recentlyPlayed;
-        if (recent.isEmpty) {
+        // The deck first: a restored queue (or whatever is playing now) is
+        // where the user left off. The play history lags it, so the card
+        // said "Opening" while the mini player showed "Midnight Drive".
+        final current = playback.currentTrack;
+        if (current == null && recent.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
-        final track = recent.first;
+        final track = current ?? recent.first;
         final scheme = Theme.of(context).colorScheme;
 
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              8,
+              OmnisonicSpacing.gutter(context),
+              8,
+            ),
             child: GlassSurface(
               borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: InkWell(
                 borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
-                onTap: () => context.read<PlaybackViewModel>().playTrack(
-                  track,
-                  queue: recent,
-                  startIndex: 0,
-                ),
+                // Resumes a paused deck; while it plays, opens the player.
+                onTap: current != null
+                    ? () => playback.isPlaying
+                          ? context.push(AppRouter.nowPlaying)
+                          : playback.resume()
+                    : () => playback.playTrack(
+                        track,
+                        queue: recent,
+                        startIndex: 0,
+                      ),
                 child: Row(
                   children: [
                     ClipRRect(
@@ -292,7 +318,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pick up where you left',
+                            'Pick up where you left off',
                             style: OmnisonicTypography.glassButton.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -387,6 +413,11 @@ class _HomePageState extends State<HomePage> {
                   behavior: const CarouselScrollBehavior(),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
+                    // Each tile carries 4 on both sides; together they line
+                    // the first tile up with the page gutter.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.gutter(context) - 4,
+                    ),
                     itemCount: randomTracks.length,
                     itemBuilder: (context, index) => Padding(
                       // Keyed by track so a reshuffle cannot hand one tile's
@@ -438,7 +469,12 @@ class _HomePageState extends State<HomePage> {
     title: title,
     meta: meta,
     size: SectionHeaderSize.large,
-    padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+    padding: EdgeInsets.fromLTRB(
+      OmnisonicSpacing.gutter(context),
+      24,
+      OmnisonicSpacing.gutter(context),
+      12,
+    ),
     seeAllLabel: actionLabel ?? 'See all',
     onSeeAllPressed: onAction,
   );
@@ -460,10 +496,12 @@ class _HomePageState extends State<HomePage> {
             subtitle:
                 'Add a Subsonic-compatible server to start browsing and '
                 'playing your library.',
+            // Straight to the form: the Servers list it used to open was
+            // empty and had its own "Add server" button, two taps for one.
             action: FilledButton.icon(
-              onPressed: () => context.push(AppRouter.servers),
+              onPressed: () => showServerFormDialog(context),
               icon: const Icon(OmnisonicIcons.add),
-              label: const Text('Add a server'),
+              label: const Text('Add server'),
             ),
           ),
         );
@@ -540,7 +578,9 @@ class _HomePageState extends State<HomePage> {
               behavior: const CarouselScrollBehavior(),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.gutter(context),
+                ),
                 itemCount: albums.length,
                 itemBuilder: (context, index) {
                   final album = albums[index];

@@ -82,87 +82,92 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         // of the app's light/dark setting — every descendant reading
         // Theme.of(context).colorScheme (this file, LyricsPanel, the queue
         // list) picks up dark-appropriate colors automatically.
-        return Theme(
-          data: Theme.of(context).copyWith(
-            brightness: Brightness.dark,
-            colorScheme: darkScheme,
-            textTheme: OmnisonicTypography.textTheme.apply(
-              bodyColor: darkScheme.onSurface,
-              displayColor: darkScheme.onSurface,
+        // The surface is always dark, so the status bar icons have to be
+        // light whatever the app theme is.
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              brightness: Brightness.dark,
+              colorScheme: darkScheme,
+              textTheme: OmnisonicTypography.textTheme.apply(
+                bodyColor: darkScheme.onSurface,
+                displayColor: darkScheme.onSurface,
+              ),
             ),
-          ),
-          // A fresh context, positioned below the Theme above, so every
-          // Theme.of(context) call made further down (including inside this
-          // class's own helper methods, which aren't separate widgets and
-          // would otherwise see the ambient app theme instead) resolves to
-          // the dark scheme.
-          child: Builder(
-            builder: (context) {
-              // Esc closes the player, like any modal on desktop.
-              return CallbackShortcuts(
-                bindings: {
-                  const SingleActivator(LogicalKeyboardKey.escape):
-                      _closePlayer,
-                },
-                child: Focus(
-                  autofocus: true,
-                  child: AnimatedSlide(
-                    offset: Offset(
-                      0,
-                      _dismissDragExtent /
-                          MediaQuery.sizeOf(context).height.clamp(1, 1e9),
-                    ),
-                    duration: _dismissDragExtent == 0
-                        ? AnimationUtils.adjustedDuration(
-                            context,
-                            AnimationManager.fastDuration,
-                          )
-                        : Duration.zero,
-                    child: Scaffold(
-                      backgroundColor: darkScheme.surface,
-                      body: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(0, -0.4),
-                            radius: 1.3,
-                            colors: [
-                              tint.withValues(alpha: 0.55),
-                              darkScheme.surface,
-                            ],
+            // A fresh context, positioned below the Theme above, so every
+            // Theme.of(context) call made further down (including inside this
+            // class's own helper methods, which aren't separate widgets and
+            // would otherwise see the ambient app theme instead) resolves to
+            // the dark scheme.
+            child: Builder(
+              builder: (context) {
+                // Esc closes the player, like any modal on desktop.
+                return CallbackShortcuts(
+                  bindings: {
+                    const SingleActivator(LogicalKeyboardKey.escape):
+                        _closePlayer,
+                  },
+                  child: Focus(
+                    autofocus: true,
+                    child: AnimatedSlide(
+                      offset: Offset(
+                        0,
+                        _dismissDragExtent /
+                            MediaQuery.sizeOf(context).height.clamp(1, 1e9),
+                      ),
+                      duration: _dismissDragExtent == 0
+                          ? AnimationUtils.adjustedDuration(
+                              context,
+                              AnimationManager.fastDuration,
+                            )
+                          : Duration.zero,
+                      child: Scaffold(
+                        backgroundColor: darkScheme.surface,
+                        body: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: const Alignment(0, -0.4),
+                              radius: 1.3,
+                              colors: [
+                                tint.withValues(alpha: 0.55),
+                                darkScheme.surface,
+                              ],
+                            ),
                           ),
-                        ),
-                        child: SafeArea(
-                          // Two columns from the shell's tablet breakpoint (768),
-                          // not ResponsiveLayout's 480: between the two, the side
-                          // panel was 85–200px wide and its tabs overflowed.
-                          child: LayoutBuilder(
-                            builder: (context, constraints) =>
-                                constraints.maxWidth >=
-                                    ResponsiveBreakpoints.tablet
-                                ? _buildDesktopLayout(
-                                    context,
-                                    currentTrack,
-                                    playbackViewModel,
-                                    position,
-                                    duration,
-                                    progress,
-                                  )
-                                : _buildMobileLayout(
-                                    context,
-                                    currentTrack,
-                                    playbackViewModel,
-                                    position,
-                                    duration,
-                                    progress,
-                                  ),
+                          child: SafeArea(
+                            // Two columns from the shell's tablet breakpoint (768),
+                            // not ResponsiveLayout's 480: between the two, the side
+                            // panel was 85–200px wide and its tabs overflowed.
+                            child: LayoutBuilder(
+                              builder: (context, constraints) =>
+                                  constraints.maxWidth >=
+                                      ResponsiveBreakpoints.tablet
+                                  ? _buildDesktopLayout(
+                                      context,
+                                      currentTrack,
+                                      playbackViewModel,
+                                      position,
+                                      duration,
+                                      progress,
+                                    )
+                                  : _buildMobileLayout(
+                                      context,
+                                      currentTrack,
+                                      playbackViewModel,
+                                      position,
+                                      duration,
+                                      progress,
+                                    ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },
@@ -181,33 +186,42 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         _buildHeader(context, title: 'Now Playing'),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(OmnisonicSpacing.lg),
-            child: Column(
-              children: [
-                _buildArtwork(context, track),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                _buildTrackInfo(context, track),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                _buildSeekBar(
-                  context,
-                  playbackViewModel,
-                  position,
-                  duration,
-                  progress,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildPrimaryControls(context, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildSecondaryControls(context, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.md),
-                _buildSourceInfoPanel(context, track, playbackViewModel),
-                const SizedBox(height: OmnisonicSpacing.lg),
-                // The queue, lyrics and visualizer open in a sheet: embedded
-                // here, the lyrics list scrolled inside this scroll view and
-                // the two fought over every vertical drag.
-                _buildPanelLauncher(context),
-              ],
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.all(OmnisonicSpacing.lg),
+              child: Column(
+                children: [
+                  // Sized against the height too: at a fixed 360 the cover
+                  // pushed shuffle, repeat and the panel launcher below the
+                  // fold on a 390x844 phone.
+                  _buildArtwork(
+                    context,
+                    track,
+                    maxSize: (constraints.maxHeight * 0.42).clamp(160.0, 360.0),
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  _buildTrackInfo(context, track),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  _buildSeekBar(
+                    context,
+                    playbackViewModel,
+                    position,
+                    duration,
+                    progress,
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildPrimaryControls(context, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildSecondaryControls(context, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  _buildSourceInfoPanel(context, track, playbackViewModel),
+                  const SizedBox(height: OmnisonicSpacing.lg),
+                  // The queue, lyrics and visualizer open in a sheet: embedded
+                  // here, the lyrics list scrolled inside this scroll view and
+                  // the two fought over every vertical drag.
+                  _buildPanelLauncher(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -383,14 +397,18 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     );
   }
 
-  Widget _buildArtwork(BuildContext context, Track track) {
+  Widget _buildArtwork(
+    BuildContext context,
+    Track track, {
+    double maxSize = 360,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     return _artworkSwipe(
       child: Center(
         child: Hero(
           tag: 'now-playing-artwork-${track.id}',
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+            constraints: BoxConstraints(maxWidth: maxSize, maxHeight: maxSize),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
               color: scheme.surfaceContainerHighest,
@@ -518,6 +536,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             trackHeight: 4,
           ),
           child: Slider(
+            // No inset of its own, so the track spans the same width as the
+            // time labels above it.
+            padding: EdgeInsets.zero,
             value: activeValue,
             // Read as a time, not as "37%".
             semanticFormatterCallback: (value) =>
@@ -715,6 +736,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     _panel = panel;
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
@@ -881,12 +903,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
               context,
             ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
+          // A "now playing" marker, not a control: the pause glyph that was
+          // here looked like a button that did something.
           trailing: isCurrent
               ? Icon(
-                  playbackViewModel.isPlaying
-                      ? OmnisonicIcons.pause
-                      : OmnisonicIcons.playArrow,
+                  OmnisonicIcons.graphicEq,
                   color: scheme.primary,
+                  semanticLabel: 'Now playing',
                 )
               : null,
           onTap: () => playbackViewModel.playTrack(

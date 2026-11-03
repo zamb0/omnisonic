@@ -24,6 +24,8 @@ void main() {
 
   test('formatTotalDuration', () {
     expect(formatTotalDuration(const Duration(minutes: 42)), '42 min');
+    expect(formatTotalDuration(const Duration(seconds: 55)), '<1 min');
+    expect(formatTotalDuration(Duration.zero), '0 min');
     expect(formatTotalDuration(const Duration(minutes: 72)), '1 h 12 min');
     expect(formatTotalDuration(const Duration(hours: 2)), '2 h');
   });

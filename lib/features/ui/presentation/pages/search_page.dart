@@ -15,6 +15,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/deduplication_engine.dart';
 import '../../../../core/utils/album_grouping.dart';
+import '../../../../core/utils/artist_grouping.dart';
 
 typedef _MergedTrack = ({
   Track representative,
@@ -158,11 +159,27 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // Same title treatment as PageHeaderAppBar on the other tabs; it
+          // was the one centred, regular-weight title.
           SliverAppBar(
-            title: const Text('Search'),
+            centerTitle: false,
+            titleSpacing: OmnisonicSpacing.gutter(context),
+            title: Semantics(
+              header: true,
+              child: Text(
+                'Search',
+                style:
+                    (MediaQuery.sizeOf(context).width <
+                                ResponsiveBreakpoints.mobile
+                            ? OmnisonicTypography.sectionTitle
+                            : OmnisonicTypography.pageTitle)
+                        .copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+              ),
+            ),
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.transparent,
             foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
           ),
           // Pinned and non-collapsing: the field is the page's entire
@@ -420,7 +437,7 @@ class _SearchPageState extends State<SearchPage> {
   String _resultCountLabel(int mergedCount, int rawTotal, String noun) {
     final word = mergedCount == 1 ? noun : '${noun}s';
     if (rawTotal > mergedCount) {
-      return '$mergedCount $word merged from $rawTotal results';
+      return '$mergedCount $word · merged from $rawTotal';
     }
     return '$mergedCount $word';
   }
@@ -517,7 +534,11 @@ class _SearchPageState extends State<SearchPage> {
   List<Widget> _buildSearchResultsList(SearchState state) {
     final tracks = _filterByServer(state.tracks);
     final albums = _filterAlbumsByServer(state.albums);
-    final artists = _filterArtistsByServer(state.artists);
+    // One row per artist name: each server returns its own copy.
+    final artists = dedupeArtists(
+      _filterArtistsByServer(state.artists),
+      const [],
+    ).artists;
 
     final hasResults =
         tracks.isNotEmpty || albums.isNotEmpty || artists.isNotEmpty;
@@ -585,14 +606,18 @@ class _SearchPageState extends State<SearchPage> {
         child: SectionHeader(
           title: 'Tracks',
           subtitle: _resultCountLabel(items.length, rawTotal, 'result'),
-          seeAllLabel: expanded ? 'Show Less' : 'See All',
+          seeAllLabel: expanded ? 'Show less' : 'See all',
           onSeeAllPressed: items.length > _trackPreviewCount
               ? () => _toggleSection(_ResultSection.tracks)
               : null,
         ),
       ),
+      // TrackRow pads its content by md itself; on top of a full gutter the
+      // rows sat at 32 under headers at 16.
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+        padding: EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.gutter(context) - OmnisonicSpacing.md,
+        ),
         sliver: SliverList.builder(
           itemCount: visibleCount,
           itemBuilder: (context, index) {
@@ -631,7 +656,7 @@ class _SearchPageState extends State<SearchPage> {
           SectionHeader(
             title: 'Albums',
             subtitle: _resultCountLabel(albums.length, rawTotal, 'result'),
-            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            seeAllLabel: expanded ? 'Show less' : 'See all',
             onSeeAllPressed: albums.length > _carouselPreviewCount
                 ? () => _toggleSection(_ResultSection.albums)
                 : null,
@@ -685,7 +710,7 @@ class _SearchPageState extends State<SearchPage> {
             title: 'Artists',
             subtitle:
                 '${artists.length} result${artists.length != 1 ? 's' : ''}',
-            seeAllLabel: expanded ? 'Show Less' : 'See All',
+            seeAllLabel: expanded ? 'Show less' : 'See all',
             onSeeAllPressed: artists.length > _carouselPreviewCount
                 ? () => _toggleSection(_ResultSection.artists)
                 : null,
@@ -793,8 +818,13 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    // Same rule as the shell's AppBar theme: transparent at rest, a surface
+    // once results scroll under the field.
+    final scrolled = overlapsContent || shrinkOffset > 0;
     return Material(
-      type: MaterialType.transparency,
+      color: scrolled
+          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.94)
+          : Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [searchBar, ?chips],

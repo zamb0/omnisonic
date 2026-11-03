@@ -236,6 +236,7 @@ class SettingsPage extends StatelessWidget {
     ];
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: RadioGroup<AudioQuality?>(

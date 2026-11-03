@@ -110,11 +110,22 @@ class _LibraryPageState extends State<LibraryPage> {
       appBar: PageHeaderAppBar(
         title: showTabBar ? 'Library' : activeTab.label,
         actions: [
-          IconButton(
-            icon: const Icon(OmnisonicIcons.sync),
-            onPressed: _syncLibrary,
-            tooltip: 'Sync library',
-          ),
+          // A spinner while it runs: the icon gave no sign of a ~10s sync.
+          if (context.select<MusicLibraryViewModel, bool>((vm) => vm.isSyncing))
+            const IconButton(
+              onPressed: null,
+              tooltip: 'Syncing library…',
+              icon: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(OmnisonicIcons.sync),
+              onPressed: _syncLibrary,
+              tooltip: 'Sync library',
+            ),
           IconButton(
             icon: const Icon(OmnisonicIcons.sort),
             onPressed: () => _showSortOptions(activeTab),
@@ -343,7 +354,7 @@ class _LibraryPageState extends State<LibraryPage> {
             _buildCountLine(
               shown: shown.length,
               total: sorted.length,
-              before: sorted.length,
+              before: viewModel.allArtists.length,
               noun: 'artist',
             ),
           ],
@@ -554,6 +565,7 @@ class _LibraryPageState extends State<LibraryPage> {
             // no value, and PopupMenuButton treats a null selection as a
             // dismissal, so that item did nothing.
             MenuAnchor(
+              reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => FilterChip(
                 avatar: const Icon(OmnisonicIcons.musicNote, size: 16),
                 label: Text(genre ?? 'All genres'),
@@ -618,6 +630,7 @@ class _LibraryPageState extends State<LibraryPage> {
   void _showSortOptions(LibraryTab tab) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (context) => SortOptionsSheet(
         currentOption: _sortState.getOption(tab),

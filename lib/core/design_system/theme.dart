@@ -104,7 +104,9 @@ class OmnisonicTheme {
 
       // List Tile Theme
       listTileTheme: ListTileThemeData(
-        contentPadding: OmnisonicInsets.listItem,
+        // Horizontal only: ListTile already enforces its own minimum height,
+        // and vertical padding here added 32pt on top of it.
+        contentPadding: OmnisonicInsets.horizontalMd,
         minVerticalPadding: OmnisonicSpacing.sm,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
@@ -171,8 +173,14 @@ class OmnisonicTheme {
           ),
         ),
         backgroundColor: OmnisonicColors.surfaceLight,
-        titleTextStyle: OmnisonicTypography.headlineSmall,
-        contentTextStyle: OmnisonicTypography.bodyMedium,
+        // Explicit colours: without them the title inherits the ambient
+        // DefaultTextStyle, which is light-on-light in the light theme.
+        titleTextStyle: OmnisonicTypography.headlineSmall.copyWith(
+          color: OmnisonicColors.lightColorScheme.onSurface,
+        ),
+        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: OmnisonicColors.lightColorScheme.onSurfaceVariant,
+        ),
       ),
 
       // Bottom Sheet Theme
@@ -378,7 +386,9 @@ class OmnisonicTheme {
 
       // List Tile Theme
       listTileTheme: ListTileThemeData(
-        contentPadding: OmnisonicInsets.listItem,
+        // Horizontal only: ListTile already enforces its own minimum height,
+        // and vertical padding here added 32pt on top of it.
+        contentPadding: OmnisonicInsets.horizontalMd,
         minVerticalPadding: OmnisonicSpacing.sm,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
@@ -445,8 +455,14 @@ class OmnisonicTheme {
           ),
         ),
         backgroundColor: OmnisonicColors.surfaceDark,
-        titleTextStyle: OmnisonicTypography.headlineSmall,
-        contentTextStyle: OmnisonicTypography.bodyMedium,
+        // Explicit colours: without them the title inherits the ambient
+        // DefaultTextStyle, which is light-on-light in the light theme.
+        titleTextStyle: OmnisonicTypography.headlineSmall.copyWith(
+          color: OmnisonicColors.darkColorScheme.onSurface,
+        ),
+        contentTextStyle: OmnisonicTypography.bodyMedium.copyWith(
+          color: OmnisonicColors.darkColorScheme.onSurfaceVariant,
+        ),
       ),
 
       // Bottom Sheet Theme

@@ -52,14 +52,30 @@ Future<void> showTrackActions(
     actions: [
       if (onPlay != null)
         MediaAction('Play', OmnisonicIcons.playArrow, (_) => onPlay()),
+      // Both undoable: a stray tap on the sheet changed the queue with no way
+      // back but finding the track in it.
       MediaAction('Play next', OmnisonicIcons.playNext, (context) {
         final at = playback.hasCurrentTrack ? playback.currentIndex + 1 : 0;
         playback.insertInQueue(track, at);
-        showFeedback(context, 'Plays next', kind: FeedbackKind.success);
+        showFeedback(
+          context,
+          'Plays next',
+          kind: FeedbackKind.success,
+          actionLabel: 'Undo',
+          onAction: () => playback.removeFromQueue(at),
+        );
       }),
-      MediaAction('Add to queue', OmnisonicIcons.addToQueue, (context) {
-        playback.addToQueue(track);
-        showFeedback(context, 'Added to queue', kind: FeedbackKind.success);
+      MediaAction('Add to queue', OmnisonicIcons.addToQueue, (context) async {
+        await playback.addToQueue(track);
+        if (!context.mounted) return;
+        final at = playback.queueLength - 1;
+        showFeedback(
+          context,
+          'Added to queue',
+          kind: FeedbackKind.success,
+          actionLabel: 'Undo',
+          onAction: () => playback.removeFromQueue(at),
+        );
       }),
       MediaAction(
         'Add to playlist',

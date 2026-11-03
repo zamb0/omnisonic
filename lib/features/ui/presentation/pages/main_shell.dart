@@ -58,6 +58,17 @@ class ShellLayout extends InheritedWidget {
   bool updateShouldNotify(ShellLayout oldWidget) => oldWidget.mode != mode;
 }
 
+/// Background for pinned headers inside the shell: transparent over the art
+/// wash at rest, a near-opaque surface once content scrolls under it.
+WidgetStateColor scrolledUnderSurface(BuildContext context) {
+  final surface = Theme.of(context).colorScheme.surface;
+  return WidgetStateColor.resolveWith(
+    (states) => states.contains(WidgetState.scrolledUnder)
+        ? surface.withValues(alpha: 0.94)
+        : Colors.transparent,
+  );
+}
+
 /// Main shell widget that provides the bottom navigation structure
 class MainShell extends StatelessWidget {
   final Widget child;
@@ -78,8 +89,12 @@ class MainShell extends StatelessWidget {
           // The theme's AppBar is opaque, which paints a solid band over the
           // wash on every in-shell page that has one. Overriding it here fixes
           // all of them at once instead of page by page.
+          //
+          // Transparent only while nothing is under it: once content scrolls
+          // beneath a pinned bar it gets a near-opaque surface, otherwise
+          // titles and controls draw on top of the rows.
           appBarTheme: Theme.of(context).appBarTheme.copyWith(
-            backgroundColor: Colors.transparent,
+            backgroundColor: scrolledUnderSurface(context),
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             scrolledUnderElevation: 0,

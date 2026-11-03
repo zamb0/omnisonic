@@ -30,8 +30,10 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
     return;
   }
 
+  final rootContext = Navigator.of(context, rootNavigator: true).context;
   final playlistId = await showModalBottomSheet<String>(
     context: context,
+    useRootNavigator: true,
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -39,7 +41,7 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
           const Padding(
             padding: EdgeInsets.all(16),
             child: SectionHeader(
-              title: 'Add to Playlist',
+              title: 'Add to playlist',
               padding: EdgeInsets.zero,
             ),
           ),
@@ -65,12 +67,25 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
 
   if (playlistId == null) return;
 
+  // The root navigator outlives the row that opened the sheet. Confirming
+  // through the row's own context dropped the snackbar whenever that row had
+  // been rebuilt away by the time the server answered.
+  final feedbackContext = rootContext.mounted ? rootContext : context;
+  final name = playlists.where((p) => p.id == playlistId).firstOrNull?.name;
+
   final added = await playlistViewModel.addTrackToPlaylist(
     playlistId,
     track.id,
   );
   // A failure is reported by the app-wide ActionErrorListener.
-  if (added && context.mounted) {
-    showFeedback(context, 'Added to playlist', kind: FeedbackKind.success);
+  if (added && feedbackContext.mounted) {
+    showFeedback(
+      feedbackContext,
+      name != null ? 'Added to $name' : 'Added to playlist',
+      kind: FeedbackKind.success,
+      actionLabel: 'Undo',
+      onAction: () =>
+          playlistViewModel.removeTrackFromPlaylist(playlistId, track.id),
+    );
   }
 }

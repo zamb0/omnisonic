@@ -94,7 +94,12 @@ class MetadataChip extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: OmnisonicIconSizes.sm,
+            // Follows the label: a fixed 16 sat beside 3x text.
+            size: OmnisonicTextScale.textExtent(
+              context,
+              OmnisonicIconSizes.sm,
+              max: OmnisonicIconSizes.sm * 2,
+            ),
             color: scheme.onSurfaceVariant,
           ),
           const SizedBox(width: 6),

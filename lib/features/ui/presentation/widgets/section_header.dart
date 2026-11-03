@@ -71,34 +71,34 @@ class SectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                // A Wrap, not a Row: with both in one row the meta took
+                // half the width and the title truncated to "Recently Ad…".
+                // Now the title keeps the line and the meta drops below it.
+                Wrap(
+                  spacing: OmnisonicSpacing.sm,
+                  crossAxisAlignment: WrapCrossAlignment.end,
                   children: [
-                    Flexible(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: style.copyWith(color: scheme.onSurface),
-                        ),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: style.copyWith(color: scheme.onSurface),
                       ),
                     ),
-                    if (meta != null) ...[
-                      const SizedBox(width: OmnisonicSpacing.sm),
-                      Flexible(
+                    if (meta != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
                         child: Text(
                           meta!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: OmnisonicTypography.technical.copyWith(
+                          style: OmnisonicTypography.bodySmall.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
                 if (subtitle != null) ...[

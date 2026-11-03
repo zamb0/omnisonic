@@ -12,6 +12,11 @@ import '../../../../core/design_system/design_system.dart';
 ///   lines on the smallest screens.
 /// - Actions sit in a [Wrap]: Play, Shuffle and Download in a Row needed
 ///   ~360px and overflowed a 360dp phone.
+/// - Narrow and not [forceNarrow] (a phone): a 120px cover beside the title,
+///   the actions on one full-width row below. Stacked, the 160px cover and
+///   the wrapped actions pushed the first track below the fold. Icon-only
+///   actions ([IconButton]) keep their size; the others share the row.
+/// - Short windows (landscape phones) get a smaller cover when wide.
 class DetailHeader extends StatelessWidget {
   const DetailHeader({
     super.key,
@@ -58,7 +63,11 @@ class DetailHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final narrow = forceNarrow || constraints.maxWidth < narrowBreakpoint;
-        final size = artworkSize ?? (narrow ? 160.0 : 200.0);
+        final short = MediaQuery.sizeOf(context).height < 500;
+        if (narrow && !forceNarrow) {
+          return _buildCompact(context, artworkSize ?? 120);
+        }
+        final size = artworkSize ?? (narrow ? 160.0 : (short ? 140.0 : 200.0));
         final art = SizedBox.square(dimension: size, child: artwork);
         final text = _buildText(context, narrow: narrow);
         if (narrow) {
@@ -83,7 +92,47 @@ class DetailHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildText(BuildContext context, {required bool narrow}) {
+  Widget _buildCompact(BuildContext context, double size) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox.square(dimension: size, child: artwork),
+            const SizedBox(width: OmnisonicSpacing.md),
+            Expanded(
+              child: _buildText(context, narrow: true, withActions: false),
+            ),
+          ],
+        ),
+        if (actions.isNotEmpty) ...[
+          const SizedBox(height: OmnisonicSpacing.md),
+          Row(
+            children: [
+              for (var i = 0; i < actions.length; i++) ...[
+                if (i > 0) const SizedBox(width: OmnisonicSpacing.sm),
+                if (actions[i] is IconButton)
+                  actions[i]
+                else
+                  Expanded(child: actions[i]),
+              ],
+            ],
+          ),
+        ],
+        if (below != null) ...[
+          const SizedBox(height: OmnisonicSpacing.md),
+          below!,
+        ],
+      ],
+    );
+  }
+
+  Widget _buildText(
+    BuildContext context, {
+    required bool narrow,
+    bool withActions = true,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     final titleStyle =
         (narrow
@@ -127,11 +176,11 @@ class DetailHeader extends StatelessWidget {
           const SizedBox(height: OmnisonicSpacing.md),
           Wrap(spacing: 8, runSpacing: 8, children: chips),
         ],
-        if (actions.isNotEmpty) ...[
+        if (withActions && actions.isNotEmpty) ...[
           const SizedBox(height: OmnisonicSpacing.md),
           Wrap(spacing: 12, runSpacing: 8, children: actions),
         ],
-        if (below != null) ...[
+        if (withActions && below != null) ...[
           const SizedBox(height: OmnisonicSpacing.md),
           below!,
         ],

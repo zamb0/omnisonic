@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../../core/utils/formatters.dart';
 
 /// Desktop side rail: what the aggregated collection actually contains, what
@@ -60,7 +61,9 @@ class LibraryStatsRail extends StatelessWidget {
                           // "Up to date" only when that is true: it used to
                           // say so with no sync ever run, or right after a
                           // failed one.
-                          viewModel.isSyncing
+                          !context.watch<ServerManagementViewModel>().hasServers
+                              ? 'No servers yet'
+                              : viewModel.isSyncing
                               ? 'Syncing servers'
                               : viewModel.errorMessage != null
                               ? 'Last sync failed'

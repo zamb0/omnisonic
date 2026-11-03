@@ -86,7 +86,10 @@ class PlaylistListTile extends StatelessWidget {
               ),
             ],
           ),
+          // Explicit icon: the default is adaptive, a horizontal "•••" on
+          // iOS beside the vertical one used everywhere else.
           trailing: PopupMenuButton<String>(
+            icon: const Icon(OmnisonicIcons.moreVert),
             onSelected: (value) => _handleMenuAction(value),
             itemBuilder: (context) => [
               const PopupMenuItem(

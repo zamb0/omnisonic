@@ -45,6 +45,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   /// call, which made scrolling cost O(variants x tracks) per row.
   Map<String, String>? _sourceNotes;
 
+  /// Servers each on-screen track is actually on, keyed by track ID. Every
+  /// row used to carry its own copy's dot only, so a track on both servers
+  /// looked like it was on one.
+  Map<String, List<String>> _trackSources = const {};
+
   /// Server ID to display name, so per-row lookups do not read the provider
   /// and scan the server list again for every visible track.
   Map<String, String> _serverNames = const {};
@@ -293,7 +298,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           key: ValueKey(track.id),
           track: track,
           leading: TrackRowLeading.trackNumber,
-          serverId: _albumVariants.length > 1 ? track.serverId : null,
+          sourceServerIds: _albumVariants.length > 1
+              ? _trackSources[track.id] ?? [track.serverId]
+              : null,
           qualityLabel: track.quality.format,
           sourceNote: _sourceNotes?[track.id],
           onTap: () => _onTrackTapped(track, index),
@@ -714,10 +721,25 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
             ),
           ),
-        MetadataChip(
-          icon: OmnisonicIcons.dns,
-          label: _getServerNameForAlbum(context, _album),
-        ),
+        // Merged albums name the server count, with the list on tap: one
+        // server's name under a "merged from 2 servers" eyebrow contradicted it.
+        if (_albumVariants.length > 1)
+          Tooltip(
+            triggerMode: TooltipTriggerMode.tap,
+            message: [
+              for (final variant in _albumVariants)
+                _getServerNameForAlbum(context, variant),
+            ].join('\n'),
+            child: MetadataChip(
+              icon: OmnisonicIcons.dns,
+              label: '${_albumVariants.length} servers',
+            ),
+          )
+        else
+          MetadataChip(
+            icon: OmnisonicIcons.dns,
+            label: _getServerNameForAlbum(context, _album),
+          ),
       ],
       actions: [
         FilledButton.icon(
@@ -782,6 +804,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         .reduce((a, b) => a.qualityScore >= b.qualityScore ? a : b);
   }
 
+  bool get _variantQualitiesDiffer {
+    final scores = {
+      for (final variant in _albumVariants)
+        _bestQualityFor(variant.id)?.qualityScore,
+    }..remove(null);
+    return scores.length > 1;
+  }
+
   /// The variant with the best overall quality among the sources we've
   /// fetched tracks for so far; null until at least one has loaded.
   Album? get _bestVariant {
@@ -811,12 +841,28 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     };
     _serverNames = serverNames;
 
+    final sources = <String, List<String>>{};
     for (final track in _tracks) {
       final note = _sourceNoteFor(track, serverNames);
       if (note != null) notes[track.id] = note;
+      sources[track.id] = _sourcesFor(track);
     }
 
     _sourceNotes = notes;
+    _trackSources = sources;
+  }
+
+  List<String> _sourcesFor(Track track) {
+    if (track.trackNumber == null) return [track.serverId];
+    final serverIds = <String>{track.serverId};
+    for (final tracks in _variantTracksCache.values) {
+      for (final other in tracks) {
+        if (other.trackNumber == track.trackNumber) {
+          serverIds.add(other.serverId);
+        }
+      }
+    }
+    return serverIds.toList();
   }
 
   String? _sourceNoteFor(Track track, Map<String, String> serverNames) {
@@ -887,7 +933,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             ],
           ),
         ),
-        if (best != null) ...[
+        // Only when the copies differ: "highest quality available" over two
+        // identical MP3 128 copies claimed a choice that was not there.
+        if (best != null && _variantQualitiesDiffer) ...[
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),

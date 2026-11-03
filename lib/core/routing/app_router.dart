@@ -165,8 +165,7 @@ class AppRouter {
                 child: EntityRoute<Artist>(
                   entity: artist,
                   entityId: artist?.id ?? _idParam(state),
-                  lookup: (library, id) =>
-                      library.artists.where((a) => a.id == id).firstOrNull,
+                  lookup: (library, id) => library.artistById(id),
                   builder: (artist) => ArtistDetailPage(artist: artist),
                   missingTitle: 'Artist not found',
                   missingSubtitle:

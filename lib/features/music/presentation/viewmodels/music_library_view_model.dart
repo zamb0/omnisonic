@@ -6,7 +6,9 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/errors.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/usecases/usecases.dart';
+import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/artist_grouping.dart';
 
 /// ViewModel for managing music library collection state
 ///
@@ -96,7 +98,39 @@ class MusicLibraryViewModel extends ChangeNotifier {
     }).toList();
   }
 
-  List<Artist> get artists => _collection?.artists ?? [];
+  /// One entry per artist across servers (see [dedupeArtists]).
+  List<Artist> get artists => _artistDedupe.artists;
+
+  /// Every per-server artist before deduplication.
+  List<Artist> get allArtists => _collection?.artists ?? [];
+
+  UnifiedCollection? _artistDedupeSource;
+  ArtistDedupeResult _artistDedupeCache = (artists: [], memberIds: {});
+
+  ArtistDedupeResult get _artistDedupe {
+    final collection = _collection;
+    if (collection == null) return (artists: <Artist>[], memberIds: {});
+    if (!identical(collection, _artistDedupeSource)) {
+      _artistDedupeCache = dedupeArtists(collection.artists, collection.albums);
+      _artistDedupeSource = collection;
+    }
+    return _artistDedupeCache;
+  }
+
+  /// IDs of every server's copy of the artist [artistId] belongs to.
+  List<String> artistMemberIds(String artistId) {
+    for (final ids in _artistDedupe.memberIds.values) {
+      if (ids.contains(artistId)) return ids;
+    }
+    return [artistId];
+  }
+
+  /// The deduplicated artist for any copy's ID, so links built from a
+  /// non-representative copy still resolve.
+  Artist? artistById(String id) {
+    final memberIds = artistMemberIds(id);
+    return artists.where((a) => memberIds.contains(a.id)).firstOrNull;
+  }
   List<Track> get recentlyPlayed => _recentlyPlayed;
   List<Track> get recentlyAdded => _recentlyAdded;
   List<Track> get mostPlayed => _mostPlayed;
@@ -365,12 +399,20 @@ class MusicLibraryViewModel extends ChangeNotifier {
   }
 
   /// Gets albums for a specific artist
+  ///
+  /// Across every server's copy of the artist, with an album shared by two
+  /// servers listed once.
   Future<List<Album>> getArtistAlbums(String artistId) async {
-    final result = await _musicRepository.getArtistAlbums(artistId);
-    return result.fold((failure) {
-      _setError(describeFailure(failure, action: 'load artist albums'));
-      return <Album>[];
-    }, (albums) => albums);
+    final albums = <Album>[];
+    for (final id in artistMemberIds(artistId)) {
+      final result = await _musicRepository.getArtistAlbums(id);
+      result.fold(
+        (failure) =>
+            _setError(describeFailure(failure, action: 'load artist albums')),
+        albums.addAll,
+      );
+    }
+    return dedupeAlbumsByServer(albums).albums;
   }
 
   /// Gets tracks for a specific artist.
@@ -378,11 +420,15 @@ class MusicLibraryViewModel extends ChangeNotifier {
   /// Falls back to walking the artist's albums for servers that do not tag
   /// songs with an artist ID.
   Future<List<Track>> getArtistTracks(String artistId) async {
-    final result = await _musicRepository.getArtistTracks(artistId);
-    final tracks = result.fold((failure) {
-      _setError(describeFailure(failure, action: 'load artist tracks'));
-      return <Track>[];
-    }, (tracks) => tracks);
+    final tracks = <Track>[];
+    for (final id in artistMemberIds(artistId)) {
+      final result = await _musicRepository.getArtistTracks(id);
+      result.fold(
+        (failure) =>
+            _setError(describeFailure(failure, action: 'load artist tracks')),
+        tracks.addAll,
+      );
+    }
 
     if (tracks.isNotEmpty) return tracks;
 

@@ -28,6 +28,8 @@ Map<String, List<Track>> referenceDetectDuplicates(
     for (var j = i + 1; j < tracks.length; j++) {
       final candidate = tracks[j];
       if (processed.contains(candidate.id)) continue;
+      // One copy per server in a group.
+      if (duplicates.any((t) => t.serverId == candidate.serverId)) continue;
 
       final durationDelta =
           (current.duration.inSeconds - candidate.duration.inSeconds).abs();

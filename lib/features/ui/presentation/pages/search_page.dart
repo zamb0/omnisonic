@@ -15,6 +15,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/deduplication_engine.dart';
 import '../../../../core/utils/album_grouping.dart';
+import '../../../../core/utils/artist_grouping.dart';
 
 typedef _MergedTrack = ({
   Track representative,
@@ -419,7 +420,7 @@ class _SearchPageState extends State<SearchPage> {
   String _resultCountLabel(int mergedCount, int rawTotal, String noun) {
     final word = mergedCount == 1 ? noun : '${noun}s';
     if (rawTotal > mergedCount) {
-      return '$mergedCount $word merged from $rawTotal results';
+      return '$mergedCount $word · merged from $rawTotal';
     }
     return '$mergedCount $word';
   }
@@ -516,7 +517,11 @@ class _SearchPageState extends State<SearchPage> {
   List<Widget> _buildSearchResultsList(SearchState state) {
     final tracks = _filterByServer(state.tracks);
     final albums = _filterAlbumsByServer(state.albums);
-    final artists = _filterArtistsByServer(state.artists);
+    // One row per artist name: each server returns its own copy.
+    final artists = dedupeArtists(
+      _filterArtistsByServer(state.artists),
+      const [],
+    ).artists;
 
     final hasResults =
         tracks.isNotEmpty || albums.isNotEmpty || artists.isNotEmpty;

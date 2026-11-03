@@ -6,10 +6,9 @@ import '../../../../core/services/offline_mode_service.dart';
 import '../../../ui/presentation/widgets/chips.dart';
 import '../viewmodels/offline_mode_view_model.dart';
 
-/// Online/offline status as a small pill.
-///
-/// The fills are the vivid warning/success hues, so the text and icon on
-/// them are the dark on-colours: white on these was 2.1:1 and 2.5:1.
+/// Online/offline status as a [TintedChip], the same pill server status
+/// uses. It used to be a solid warning/success fill, the one badge in the
+/// app that shouted.
 class OfflineIndicator extends StatelessWidget {
   const OfflineIndicator({
     super.key,
@@ -27,12 +26,17 @@ class OfflineIndicator extends StatelessWidget {
         final offline = viewModel.isOffline;
         if (!offline && !showWhenOnline) return const SizedBox.shrink();
 
-        final fill = offline
-            ? OmnisonicColors.warning
-            : OmnisonicColors.success;
-        final on = offline
-            ? OmnisonicColors.onWarning
-            : OmnisonicColors.onSuccess;
+        final light = Theme.of(context).brightness == Brightness.light;
+        final color = offline
+            ? (light
+                  ? OmnisonicColors.warningAccessible
+                  : OmnisonicColors.warning)
+            : (light
+                  ? OmnisonicColors.successAccessible
+                  : OmnisonicColors.success);
+        final icon = offline
+            ? OmnisonicIcons.cloudOff
+            : OmnisonicIcons.cloudDone;
         final label = offline ? 'Offline' : 'Online';
 
         return Semantics(
@@ -41,39 +45,9 @@ class OfflineIndicator extends StatelessWidget {
           child: Tooltip(
             message: label,
             excludeFromSemantics: true,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 8 : 12,
-                vertical: compact ? 4 : 6,
-              ),
-              decoration: BoxDecoration(
-                color: fill,
-                borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    offline
-                        ? OmnisonicIcons.cloudOff
-                        : OmnisonicIcons.cloudDone,
-                    size: compact
-                        ? OmnisonicIconSizes.inline
-                        : OmnisonicIconSizes.sm,
-                    color: on,
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      label,
-                      style: OmnisonicTypography.labelMedium.copyWith(
-                        color: on,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            child: compact
+                ? Icon(icon, size: OmnisonicIconSizes.sm, color: color)
+                : TintedChip(color: color, icon: icon, label: label),
           ),
         );
       },
@@ -81,7 +55,7 @@ class OfflineIndicator extends StatelessWidget {
   }
 }
 
-/// Network quality as an outlined chip.
+/// Network quality as a tinted chip.
 class NetworkQualityIndicator extends StatelessWidget {
   const NetworkQualityIndicator({super.key, this.showLabel = true});
 
@@ -98,33 +72,17 @@ class NetworkQualityIndicator extends StatelessWidget {
 
         return Tooltip(
           message: 'Network: ${quality.description}',
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-              border: Border.all(color: color.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
+          child: showLabel
+              ? TintedChip(
+                  color: color,
+                  icon: _qualityIcon(quality),
+                  label: quality.description,
+                )
+              : Icon(
                   _qualityIcon(quality),
-                  size: OmnisonicIconSizes.inline,
+                  size: OmnisonicIconSizes.sm,
                   color: color,
                 ),
-                if (showLabel) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    quality.description,
-                    style: OmnisonicTypography.labelMedium.copyWith(
-                      color: color,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
         );
       },
     );

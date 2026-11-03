@@ -19,44 +19,62 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: OmnisonicIconSizes.xxl,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: OmnisonicTypography.semiBold,
-                color: scheme.onSurface,
+        padding: const EdgeInsets.all(OmnisonicSpacing.xl),
+        child: ConstrainedBox(
+          // A sentence of copy, not a banner: wide empty states read as
+          // errors stretched across the window.
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: surfaces.well,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: surfaces.hairline),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: OmnisonicIconSizes.lg,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: OmnisonicSpacing.ml),
               Text(
-                subtitle!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+                title,
+                style: OmnisonicTypography.overlayTitle.copyWith(
+                  color: scheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
+              if (subtitle != null) ...[
+                const SizedBox(height: OmnisonicSpacing.sm),
+                Text(
+                  subtitle!,
+                  style: OmnisonicTypography.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (action != null) ...[
+                const SizedBox(height: OmnisonicSpacing.lg),
+                action!,
+              ],
             ],
-            if (action != null) ...[const SizedBox(height: 16), action!],
-          ],
+          ),
         ),
       ),
     );

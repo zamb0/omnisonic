@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/full_screen_player.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/track_row.dart';
 
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
@@ -24,10 +25,10 @@ void main() {
 
     final list = find.byType(ListView).last;
     final titles = tester
-        .widgetList<ListTile>(
-          find.descendant(of: list, matching: find.byType(ListTile)),
+        .widgetList<TrackRow>(
+          find.descendant(of: list, matching: find.byType(TrackRow)),
         )
-        .map((tile) => (tile.title as Text?)?.data)
+        .map((row) => row.track.title)
         .toList();
 
     expect(titles.first, queue[7].title);
@@ -52,7 +53,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     final list = tester.widget<ListView>(find.byType(ListView).last);
-    expect(list.childrenDelegate.estimatedChildCount, 39); // 20 rows + gaps
+    expect(list.childrenDelegate.estimatedChildCount, 20);
     expect(find.textContaining('Open full queue'), findsNothing);
   });
 }

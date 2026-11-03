@@ -102,7 +102,7 @@ class DetailHeader extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: OmnisonicSpacing.sm),
+          const SizedBox(height: OmnisonicSpacing.ms),
         ],
         Semantics(
           header: true,
@@ -125,11 +125,20 @@ class DetailHeader extends StatelessWidget {
         ],
         if (chips.isNotEmpty) ...[
           const SizedBox(height: OmnisonicSpacing.md),
-          Wrap(spacing: 8, runSpacing: 8, children: chips),
+          Wrap(
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.sm,
+            children: chips,
+          ),
         ],
         if (actions.isNotEmpty) ...[
-          const SizedBox(height: OmnisonicSpacing.md),
-          Wrap(spacing: 12, runSpacing: 8, children: actions),
+          const SizedBox(height: OmnisonicSpacing.ml),
+          Wrap(
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.sm,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: actions,
+          ),
         ],
         if (below != null) ...[
           const SizedBox(height: OmnisonicSpacing.md),

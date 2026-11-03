@@ -8,6 +8,7 @@ import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 import '../widgets/account_menu.dart';
 import '../widgets/feishin_shell.dart';
 import '../widgets/shell_art_tint.dart';
+import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/haptics.dart';
 
 /// Which chrome the shell decided to render.
@@ -119,10 +120,23 @@ class MainShell extends StatelessWidget {
 
   Widget _buildMobileShell(BuildContext context) {
     return Scaffold(
-      body: SafeArea(bottom: false, child: child),
+      body: SafeArea(
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) => PageGutter(
+            value: PageGutter.forWidth(constraints.maxWidth),
+            child: child,
+          ),
+        ),
+      ),
       bottomNavigationBar: SafeArea(
         top: false,
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        minimum: const EdgeInsets.fromLTRB(
+          OmnisonicLayout.chromeInset,
+          0,
+          OmnisonicLayout.chromeInset,
+          OmnisonicLayout.chromeInset,
+        ),
         // The bar and the nav pills are fixed furniture with nowhere to
         // reflow: past ~1.3x they would take the screen away from the
         // content the user enlarged the text to read. The page itself is
@@ -159,8 +173,8 @@ class MainShell extends StatelessWidget {
 
     return GlassPanel(
       padding: const EdgeInsets.symmetric(
-        horizontal: OmnisonicSpacing.sm,
-        vertical: OmnisonicSpacing.xs,
+        horizontal: OmnisonicSpacing.xs,
+        vertical: OmnisonicSpacing.sm,
       ),
       // Expanded rather than fixed: five slots on a 375px phone at the
       // largest chrome text size do not fit side by side, and the labels
@@ -203,7 +217,10 @@ class _NavPillItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final surfaces = OmnisonicSurfaces.of(context);
+    final color = selected
+        ? colorScheme.onSurface
+        : colorScheme.onSurfaceVariant;
 
     return Semantics(
       button: true,
@@ -212,29 +229,37 @@ class _NavPillItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.sm,
-            vertical: OmnisonicSpacing.xs,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                selected ? destination.activeIcon : destination.icon,
-                color: color,
-                size: OmnisonicIconSizes.md,
+              // The "you are here" marker is the ink pill everywhere — the
+              // sidebar, the rail and this bar — rather than an accent tint
+              // here and an inverted row there.
+              AnimatedContainer(
+                duration: AnimationUtils.adjustedDuration(
+                  context,
+                  AnimationManager.fastDuration,
+                ),
+                curve: AnimationManager.fastCurve,
+                width: 52,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: selected ? surfaces.ink : Colors.transparent,
+                  borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                ),
+                child: Icon(
+                  selected ? destination.activeIcon : destination.icon,
+                  color: selected ? surfaces.onInk : color,
+                  size: OmnisonicIconSizes.smd,
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: OmnisonicSpacing.xxs),
               Text(
                 destination.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: OmnisonicTypography.labelSmall.copyWith(
-                  color: color,
-                  fontWeight: selected
-                      ? OmnisonicTypography.semiBold
-                      : OmnisonicTypography.medium,
-                ),
+                style: OmnisonicTypography.labelSmall.copyWith(color: color),
               ),
             ],
           ),

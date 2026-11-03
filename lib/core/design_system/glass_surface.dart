@@ -185,9 +185,12 @@ class GlassInkButton extends StatelessWidget {
     required this.child,
     required this.onTap,
     this.borderRadius = const BorderRadius.all(
-      Radius.circular(OmnisonicRadius.md),
+      Radius.circular(OmnisonicRadius.full),
     ),
-    this.padding = const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: OmnisonicSpacing.md,
+      vertical: OmnisonicSpacing.sm + OmnisonicSpacing.xxs,
+    ),
     this.intensity = GlassIntensity.card,
     this.tooltip,
     this.semanticLabel,

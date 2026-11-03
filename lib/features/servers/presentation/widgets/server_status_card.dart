@@ -24,7 +24,7 @@ class ServerStatusCard extends StatelessWidget {
       label: '$title: $count',
       excludeSemantics: true,
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
         padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

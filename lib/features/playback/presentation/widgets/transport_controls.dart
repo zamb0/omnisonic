@@ -152,11 +152,11 @@ class SkipNextButton extends StatelessWidget {
   );
 }
 
-/// The round play/pause button.
+/// The round play/pause button: solid ink, the primary action wherever it
+/// appears. [prominent] is the full player's large one.
 ///
-/// [prominent] is the full player's large primary-coloured button; otherwise
-/// it is the bar's solid-ink one, the one element allowed to be fully
-/// opaque against the glass.
+/// The full player's used to be accent-coloured and the bar's ink, so the
+/// same control changed colour as the player opened.
 class PlayPauseButton extends StatelessWidget {
   const PlayPauseButton({
     super.key,
@@ -169,11 +169,9 @@ class PlayPauseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final playing = playback.isPlaying;
     final diameter = prominent ? 72.0 : OmnisonicTouchTargets.iconButton;
-    final background = prominent ? scheme.primary : scheme.onSurface;
-    final foreground = prominent ? scheme.onPrimary : scheme.surface;
+    final surfaces = OmnisonicSurfaces.of(context);
 
     return SizedBox.square(
       dimension: diameter,
@@ -186,10 +184,12 @@ class PlayPauseButton extends StatelessWidget {
         icon: Icon(playing ? OmnisonicIcons.pause : OmnisonicIcons.playArrow),
         iconSize: prominent ? OmnisonicIconSizes.lg : OmnisonicIconSizes.md,
         style: IconButton.styleFrom(
-          backgroundColor: background,
-          foregroundColor: foreground,
+          backgroundColor: surfaces.ink,
+          foregroundColor: surfaces.onInk,
+          hoverColor: surfaces.onInk.withValues(alpha: 0.08),
           shape: const CircleBorder(),
-          elevation: prominent ? 0 : 6,
+          side: BorderSide.none,
+          elevation: 4,
           shadowColor: OmnisonicColors.scrimStrong,
           fixedSize: Size.square(diameter),
         ),

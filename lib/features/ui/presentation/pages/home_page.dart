@@ -83,7 +83,9 @@ class _HomePageState extends State<HomePage> {
           _buildRecentlyAddedSection(),
           _buildRecentlyPlayedSection(),
           _buildMostPlayedSection(),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: OmnisonicLayout.pageBottom),
+          ),
         ],
       ),
     );
@@ -95,12 +97,15 @@ class _HomePageState extends State<HomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < _statsRailBreakpoint) return scroll;
+          // The feed keeps its own right gutter as the gap to the rail; the
+          // rail is chrome-like and keeps the chrome inset to the window,
+          // lining up with the player bar below it.
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(child: scroll),
-              const SizedBox(width: 16),
               const SizedBox(width: 300, child: LibraryStatsRail()),
+              const SizedBox(width: OmnisonicLayout.chromeInset),
             ],
           );
         },
@@ -111,26 +116,37 @@ class _HomePageState extends State<HomePage> {
   static const double _statsRailBreakpoint = 1100;
 
   Widget _buildAppBar() {
+    final gutter = PageGutter.of(context);
+    // Same title scale as PageHeaderAppBar, so Home does not shout louder
+    // than the tabs beside it.
+    final compact =
+        MediaQuery.sizeOf(context).width < ResponsiveBreakpoints.mobile;
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-        child: Row(
+        padding: EdgeInsets.fromLTRB(
+          gutter,
+          OmnisonicLayout.pageTop(context),
+          gutter,
+          OmnisonicLayout.headerGap,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Home',
-                    style: OmnisonicTypography.pageTitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildServerSummaryLine(),
-                ],
+            Semantics(
+              header: true,
+              child: Text(
+                'Home',
+                style:
+                    (compact
+                            ? OmnisonicTypography.sectionTitle
+                            : OmnisonicTypography.pageTitle)
+                        .copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
               ),
             ),
+            const SizedBox(height: OmnisonicSpacing.sm),
+            _buildServerSummaryLine(),
           ],
         ),
       ),
@@ -163,14 +179,18 @@ class _HomePageState extends State<HomePage> {
             for (final server in servers.take(6))
               Padding(
                 key: ValueKey(server.id),
-                padding: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.only(right: OmnisonicSpacing.xs),
                 child: ServerDot(serverId: server.id, size: 8),
               ),
-            const SizedBox(width: 4),
-            Text(
-              '${servers.length} $serverWord · $status',
-              style: OmnisonicTypography.metadata.copyWith(
-                color: scheme.onSurfaceVariant,
+            const SizedBox(width: OmnisonicSpacing.xs),
+            Flexible(
+              child: Text(
+                '${servers.length} $serverWord · $status',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: OmnisonicTypography.technical.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
@@ -215,36 +235,24 @@ class _HomePageState extends State<HomePage> {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
-        final scheme = Theme.of(context).colorScheme;
+        final gutter = PageGutter.of(context);
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(bottom: OmnisonicSpacing.md),
-            child: GlassPanel(
-              padding: const EdgeInsets.all(OmnisonicSpacing.md),
-              child: Row(
-                children: [
-                  Icon(
-                    OmnisonicIcons.errorOutline,
-                    size: OmnisonicIconSizes.smd,
-                    color: scheme.error,
-                  ),
-                  const SizedBox(width: OmnisonicSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      message,
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      viewModel.clearError();
-                      _onRefresh();
-                    },
-                    child: const Text('Try again'),
-                  ),
-                ],
+            padding: EdgeInsets.fromLTRB(
+              gutter,
+              OmnisonicSpacing.sm,
+              gutter,
+              OmnisonicSpacing.sm,
+            ),
+            child: InlineBanner(
+              kind: BannerKind.error,
+              message: message,
+              action: TextButton(
+                onPressed: () {
+                  viewModel.clearError();
+                  _onRefresh();
+                },
+                child: const Text('Try again'),
               ),
             ),
           ),
@@ -263,89 +271,97 @@ class _HomePageState extends State<HomePage> {
         final track = recent.first;
         final scheme = Theme.of(context).colorScheme;
 
+        final surfaces = OmnisonicSurfaces.of(context);
+        final gutter = PageGutter.of(context);
+        void play() => context.read<PlaybackViewModel>().playTrack(
+          track,
+          queue: recent,
+          startIndex: 0,
+        );
+
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+            padding: EdgeInsets.fromLTRB(
+              gutter,
+              OmnisonicSpacing.sm,
+              gutter,
+              0,
+            ),
             child: GlassSurface(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
-              padding: const EdgeInsets.all(OmnisonicSpacing.md),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
               child: InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
-                onTap: () => context.read<PlaybackViewModel>().playTrack(
-                  track,
-                  queue: recent,
-                  startIndex: 0,
-                ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-                      child: SizedBox(
-                        width: 62,
-                        height: 62,
-                        child: CoverArt(url: track.coverArtUrl, radius: 0),
+                borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+                onTap: play,
+                child: Padding(
+                  padding: const EdgeInsets.all(OmnisonicSpacing.md),
+                  child: Row(
+                    children: [
+                      CoverArt(
+                        url: track.coverArtUrl,
+                        size: 64,
+                        elevated: true,
                       ),
-                    ),
-                    const SizedBox(width: OmnisonicSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pick up where you left',
-                            style: OmnisonicTypography.glassButton.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            track.title,
-                            style: OmnisonicTypography.titleSmall.copyWith(
-                              fontWeight: OmnisonicTypography.bold,
-                              color: scheme.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            track.artist,
-                            style: OmnisonicTypography.bodySmall.copyWith(
-                              fontWeight: OmnisonicTypography.medium,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              ServerDot(serverId: track.serverId, size: 6),
-                              const SizedBox(width: 6),
-                              Text(
-                                track.quality.displayName,
-                                style: OmnisonicTypography.technicalSmall
-                                    .copyWith(color: scheme.onSurfaceVariant),
+                      const SizedBox(width: OmnisonicSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'PICK UP WHERE YOU LEFT',
+                              style: OmnisonicTypography.eyebrow.copyWith(
+                                color: scheme.onSurfaceVariant,
                               ),
-                            ],
+                            ),
+                            const SizedBox(height: OmnisonicSpacing.xs),
+                            Text(
+                              track.title,
+                              style: OmnisonicTypography.titleMedium.copyWith(
+                                color: scheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Row(
+                              children: [
+                                ServerDot(serverId: track.serverId, size: 6),
+                                const SizedBox(
+                                  width:
+                                      OmnisonicSpacing.xs +
+                                      OmnisonicSpacing.xxs,
+                                ),
+                                Flexible(
+                                  child: Text(
+                                    '${track.artist} · ${track.quality.displayName}',
+                                    style: OmnisonicTypography.bodySmall
+                                        .copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: OmnisonicSpacing.sm),
+                      IconButton(
+                        tooltip: 'Play ${track.title}',
+                        onPressed: play,
+                        icon: const Icon(OmnisonicIcons.playArrow),
+                        iconSize: OmnisonicIconSizes.md,
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size.square(
+                            OmnisonicTouchTargets.comfortable,
                           ),
-                        ],
+                          backgroundColor: surfaces.ink,
+                          foregroundColor: surfaces.onInk,
+                          hoverColor: surfaces.onInk.withValues(alpha: 0.08),
+                        ),
                       ),
-                    ),
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: scheme.onSurface,
-                        boxShadow: OmnisonicShadows.artCompact,
-                      ),
-                      child: Icon(
-                        OmnisonicIcons.playArrow,
-                        color: scheme.surface,
-                        size: OmnisonicIconSizes.md,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -387,12 +403,15 @@ class _HomePageState extends State<HomePage> {
                   behavior: const CarouselScrollBehavior(),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
+                    padding: PageGutter.horizontal(context),
                     itemCount: randomTracks.length,
                     itemBuilder: (context, index) => Padding(
                       // Keyed by track so a reshuffle cannot hand one tile's
                       // state (hover, artwork fade-in) to another track.
                       key: ValueKey(randomTracks[index].id),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.only(
+                        right: OmnisonicSpacing.sm,
+                      ),
                       child: _buildTrackTile(randomTracks, index),
                     ),
                   ),
@@ -414,7 +433,7 @@ class _HomePageState extends State<HomePage> {
       startIndex: index,
     );
     return SizedBox(
-      width: 220,
+      width: 240,
       child: TrackRow(
         track: track,
         dense: true,
@@ -438,7 +457,12 @@ class _HomePageState extends State<HomePage> {
     title: title,
     meta: meta,
     size: SectionHeaderSize.large,
-    padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+    padding: EdgeInsets.fromLTRB(
+      PageGutter.of(context),
+      OmnisonicLayout.sectionGap(context),
+      PageGutter.of(context),
+      OmnisonicLayout.headerGap,
+    ),
     seeAllLabel: actionLabel ?? 'See all',
     onSeeAllPressed: onAction,
   );
@@ -540,13 +564,17 @@ class _HomePageState extends State<HomePage> {
               behavior: const CarouselScrollBehavior(),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                // Starts on the gutter, under the section title, and scrolls
+                // out to the edge of the column.
+                padding: PageGutter.horizontal(context),
                 itemCount: albums.length,
                 itemBuilder: (context, index) {
                   final album = albums[index];
                   return Padding(
                     key: ValueKey(album.id),
-                    padding: const EdgeInsets.only(right: 14),
+                    padding: const EdgeInsets.only(
+                      right: MediaGridPreset.spacing,
+                    ),
                     child: _buildAlbumCard(
                       album,
                       showServerDot: showServerDots,

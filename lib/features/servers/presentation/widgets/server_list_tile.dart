@@ -36,9 +36,9 @@ class ServerListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
         padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -70,10 +70,10 @@ class ServerListTile extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: OmnisonicSpacing.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StatusChip(status: server.status),
@@ -126,10 +126,15 @@ class ServerListTile extends StatelessWidget {
   /// continuously polled, so it reads "not tested" until the user runs one.
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        OmnisonicSpacing.md,
+        0,
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.ms,
+      ),
       child: Wrap(
-        spacing: 16,
-        runSpacing: 4,
+        spacing: OmnisonicSpacing.md,
+        runSpacing: OmnisonicSpacing.xs,
         children: [
           _buildStat(
             context,
@@ -163,10 +168,10 @@ class ServerListTile extends StatelessWidget {
           size: OmnisonicIconSizes.inline,
           color: scheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: OmnisonicSpacing.xs),
         Text(
           label,
-          style: OmnisonicTypography.metadata.copyWith(
+          style: OmnisonicTypography.technicalSmall.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -180,10 +185,15 @@ class ServerListTile extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
-      child: Icon(OmnisonicIcons.dns, color: color, size: 24),
+      child: Icon(
+        OmnisonicIcons.dns,
+        color: color,
+        size: OmnisonicIconSizes.smd,
+      ),
     );
   }
 }

@@ -36,8 +36,10 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showFeedback(
     SnackBar(
       content: Row(
         children: [
-          ExcludeSemantics(child: Icon(icon, color: color, size: 20)),
-          const SizedBox(width: OmnisonicSpacing.sm),
+          ExcludeSemantics(
+            child: Icon(icon, color: color, size: OmnisonicIconSizes.smd),
+          ),
+          const SizedBox(width: OmnisonicSpacing.ms),
           Expanded(child: Text(message)),
         ],
       ),

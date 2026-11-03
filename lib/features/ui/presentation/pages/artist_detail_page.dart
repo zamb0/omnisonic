@@ -116,24 +116,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             ),
             SliverToBoxAdapter(child: _buildArtistHeader(context)),
 
-            // Albums section header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  children: [
-                    Text(
-                      'Albums',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: OmnisonicTypography.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Albums content
+            const SliverToBoxAdapter(child: SectionHeader(title: 'Albums')),
             _buildAlbumsContent(),
           ],
         ),
@@ -168,7 +151,12 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        0,
+        PageGutter.of(context),
+        OmnisonicLayout.pageBottom,
+      ),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.crossAxisExtent;
@@ -208,7 +196,12 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     final hasAlbums = _albums.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.sm,
+        PageGutter.of(context),
+        0,
+      ),
       child: DetailHeader(
         eyebrow: 'Artist',
         title: widget.artist.name,
@@ -253,21 +246,12 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
   ) {
     return Hero(
       tag: 'artist-${widget.artist.id}',
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: scheme.surfaceContainerHighest,
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: ClipOval(
-          child: CoverArt(
-            url: widget.artist.imageUrl,
-            shape: CoverArtShape.circle,
-            fallbackIcon: OmnisonicIcons.person,
-          ),
-        ),
+      child: CoverArt(
+        url: widget.artist.imageUrl,
+        size: size,
+        shape: CoverArtShape.circle,
+        elevated: true,
+        fallbackIcon: OmnisonicIcons.person,
       ),
     );
   }

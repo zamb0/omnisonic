@@ -19,10 +19,10 @@ class LibraryStatsRail extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.md),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
-        padding: const EdgeInsets.all(16),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Consumer<MusicLibraryViewModel>(
           builder: (context, viewModel, child) {
             return SingleChildScrollView(
@@ -30,7 +30,7 @@ class LibraryStatsRail extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _eyebrow(context, 'COLLECTION'),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: OmnisonicSpacing.ms),
                   _StatGrid(
                     stats: [
                       _Stat(_compact(viewModel.albumCount), 'albums'),
@@ -39,19 +39,17 @@ class LibraryStatsRail extends StatelessWidget {
                       _Stat(_compact(viewModel.duplicateGroupCount), 'merged'),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: OmnisonicSpacing.lg),
                   _eyebrow(context, 'TOP ARTISTS'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: OmnisonicSpacing.ms),
                   _TopArtists(viewModel: viewModel),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: OmnisonicSpacing.ms),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 11,
-                    ),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(OmnisonicSpacing.ms),
                     decoration: BoxDecoration(
-                      color: scheme.onSurface.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+                      color: OmnisonicSurfaces.of(context).well,
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,11 +65,11 @@ class LibraryStatsRail extends StatelessWidget {
                               : viewModel.lastUpdated == null
                               ? 'Not synced yet'
                               : 'Synced ${formatRelativeTime(viewModel.lastUpdated!)}',
-                          style: OmnisonicTypography.glassButton.copyWith(
+                          style: OmnisonicTypography.titleSmall.copyWith(
                             color: scheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: OmnisonicSpacing.xxs),
                         Text(
                           viewModel.duplicateGroupCount > 0
                               ? '${viewModel.duplicateGroupCount} duplicate '
@@ -128,7 +126,6 @@ class _StatGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // The tile is two lines of text in a fixed-aspect cell, so its height
     // has to follow the text size — at 2x the label fell out of the bottom.
@@ -138,18 +135,16 @@ class _StatGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 9,
-      crossAxisSpacing: 9,
+      mainAxisSpacing: OmnisonicSpacing.sm,
+      crossAxisSpacing: OmnisonicSpacing.sm,
       childAspectRatio: 1.85 / textScale,
       children: [
         for (final stat in stats)
           Container(
-            padding: const EdgeInsets.all(11),
+            padding: const EdgeInsets.all(OmnisonicSpacing.ms),
             decoration: BoxDecoration(
-              color: OmnisonicColors.glassFill(
-                isDark ? Brightness.dark : Brightness.light,
-              ),
-              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              color: OmnisonicSurfaces.of(context).well,
+              borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +158,7 @@ class _StatGrid extends StatelessWidget {
                     color: scheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: OmnisonicSpacing.xxs),
                 Text(
                   stat.label,
                   maxLines: 1,
@@ -205,7 +200,7 @@ class _TopArtists extends StatelessWidget {
       children: [
         for (final entry in ranked)
           Padding(
-            padding: const EdgeInsets.only(bottom: 9),
+            padding: const EdgeInsets.only(bottom: OmnisonicSpacing.ms),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -222,7 +217,7 @@ class _TopArtists extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: OmnisonicSpacing.sm),
                     Text(
                       '${entry.value}',
                       style: OmnisonicTypography.technicalSmall.copyWith(
@@ -231,12 +226,14 @@ class _TopArtists extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(
+                  height: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                ),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
                   child: LinearProgressIndicator(
                     value: top == 0 ? 0 : entry.value / top,
-                    minHeight: 5,
+                    minHeight: 4,
                     backgroundColor: scheme.onSurface.withValues(alpha: 0.09),
                     valueColor: AlwaysStoppedAnimation<Color>(scheme.onSurface),
                   ),

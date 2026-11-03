@@ -7,7 +7,7 @@ import 'playlist_form_dialog.dart';
 import '../../../../core/design_system/design_system.dart';
 
 import '../../../../core/entities/entities.dart';
-import '../../../ui/presentation/widgets/section_header.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../../../../core/utils/formatters.dart';
 
@@ -36,11 +36,21 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: SectionHeader(
-              title: 'Add to Playlist',
-              padding: EdgeInsets.zero,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              OmnisonicSpacing.lg,
+              0,
+              OmnisonicSpacing.lg,
+              OmnisonicSpacing.sm,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Add to playlist',
+                style: OmnisonicTypography.overlayTitle.copyWith(
+                  color: Theme.of(sheetContext).colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
           Flexible(
@@ -50,7 +60,14 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
               itemBuilder: (context, index) {
                 final playlist = playlists[index];
                 return ListTile(
-                  leading: const Icon(OmnisonicIcons.playlistPlay),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: OmnisonicSpacing.lg,
+                  ),
+                  leading: CoverArt(
+                    url: playlist.coverArtUrl,
+                    size: 40,
+                    fallbackIcon: OmnisonicIcons.playlistPlay,
+                  ),
                   title: Text(playlist.name),
                   subtitle: Text(pluralize(playlist.trackCount, 'track')),
                   onTap: () => Navigator.pop(sheetContext, playlist.id),

@@ -61,6 +61,23 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     }
   }
 
+  /// Opens the queue page from the inline panel or its sheet ([from]).
+  ///
+  /// The queue lives inside the shell, which sits under this full-screen
+  /// route: pushing it from here put a second copy of the shell page on the
+  /// root navigator and failed on duplicate page keys (red screen). So the
+  /// sheet and the player close first, and the queue opens in the shell.
+  void _openFullQueue(BuildContext from) {
+    final router = GoRouter.of(context);
+    if (ModalRoute.of(from) is PopupRoute) Navigator.of(from).pop();
+    if (router.canPop()) {
+      router.pop();
+      router.push(AppRouter.queue);
+    } else {
+      router.go(AppRouter.queue);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlaybackViewModel>(
@@ -907,7 +924,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         const SizedBox(height: OmnisonicSpacing.sm),
         InkWell(
           borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-          onTap: () => GoRouter.of(context).push(AppRouter.queue),
+          onTap: () => _openFullQueue(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(

@@ -63,7 +63,9 @@ class ServerRepositoryImpl implements ServerRepository {
         return ResultHelper.failure(insertResult.failureOrNull!);
       }
 
-      _statusMonitor.startMonitoring(server);
+      // Monitoring starts in storeCredentials, not here: the monitor checks
+      // straight away, and before the password is stored that check failed
+      // with "No stored credentials" and marked every new server as error.
 
       return ResultHelper.success(null);
     } catch (e) {
@@ -208,7 +210,10 @@ class ServerRepositoryImpl implements ServerRepository {
             serverInfo: ServerInfo(
               version: updatedServer.serverVersion ?? 'Unknown',
               apiVersion: updatedServer.apiVersion ?? 'Unknown',
-              serverName: updatedServer.name,
+              // A ping carries no server name, and updatedServer.name is the
+              // placeholder of the temporary record above: reporting it named
+              // every new server "Test Server".
+              serverName: null,
               serverType: 'Subsonic',
             ),
             responseTime: responseTime,
@@ -316,6 +321,12 @@ class ServerRepositoryImpl implements ServerRepository {
     if (storeResult.isFailure) {
       return ResultHelper.failure(storeResult.failureOrNull!);
     }
+
+    // A new server can only be checked once its password is stored. For one
+    // already monitored this just refreshes the record.
+    final server = (await _localDataSource.getServerById(serverId)).valueOrNull;
+    if (server != null) _statusMonitor.startMonitoring(server);
+
     return ResultHelper.success(null);
   }
 

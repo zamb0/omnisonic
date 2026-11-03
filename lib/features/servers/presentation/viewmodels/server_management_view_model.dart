@@ -72,6 +72,12 @@ class ServerManagementViewModel extends ChangeNotifier {
   int get onlineServerCount => onlineServers.length;
   int get offlineServerCount => offlineServers.length;
 
+  /// The name a server gets when the user leaves Name empty: its host.
+  static String defaultServerName(String url) {
+    final host = Uri.tryParse(url)?.host ?? '';
+    return host.isEmpty ? url : host;
+  }
+
   void _initialize() {
     _subscribeToServers();
     _loadServers();
@@ -148,7 +154,7 @@ class ServerManagementViewModel extends ChangeNotifier {
       final server = MusicServer(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: name.isEmpty
-            ? (connection.serverInfo?.serverName ?? Uri.parse(url).host)
+            ? (connection.serverInfo?.serverName ?? defaultServerName(url))
             : name,
         url: url,
         username: username,
@@ -337,6 +343,16 @@ class ServerManagementViewModel extends ChangeNotifier {
         return null;
       }, (connectionResult) => connectionResult);
 
+      // A passing test is the user's way out of a stale error badge; it used
+      // to report "reachable" and leave the server marked error.
+      if (_lastConnectionTest?.isSuccessful == true &&
+          server.status != ServerStatus.online) {
+        await _serverRepository.updateServerStatus(
+          server.id,
+          ServerStatus.online,
+        );
+      }
+
       return _lastConnectionTest;
     } catch (e) {
       AppLog.error('Connection test failed: $e');
@@ -467,6 +483,7 @@ class ServerManagementViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       AppLog.info('Manual sync from all servers');
+      await _recheckUnavailableServers();
       final result = await _syncMusicCollectionUseCase(
         SyncMusicCollectionParams(serverId: null, forceRefresh: true),
       );
@@ -492,6 +509,25 @@ class ServerManagementViewModel extends ChangeNotifier {
       _isSyncingAll = false;
       notifyListeners();
     }
+  }
+
+  /// Re-tests every server not marked online and marks the ones that answer.
+  ///
+  /// The sync only reads online servers, so a server whose status was stale
+  /// made Retry fail forever with "No online servers available".
+  Future<void> _recheckUnavailableServers() async {
+    final unavailable = _servers.where((s) => s.status != ServerStatus.online);
+    await Future.wait([
+      for (final server in unavailable)
+        _serverRepository.testConnection(server).then((result) async {
+          if (result.valueOrNull?.isSuccessful == true) {
+            await _serverRepository.updateServerStatus(
+              server.id,
+              ServerStatus.online,
+            );
+          }
+        }),
+    ]);
   }
 
   /// Gets server statistics

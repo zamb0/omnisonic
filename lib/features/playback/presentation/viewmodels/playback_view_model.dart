@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/errors.dart';
 import '../../../../core/repositories/repositories.dart';
 import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/usecases/usecases.dart';
@@ -192,7 +193,10 @@ class PlaybackViewModel extends ChangeNotifier {
             notifyListeners();
           },
           onError: (error) {
-            _setError('Playback state error: $error');
+            AppLog.error('Playback state stream error: $error');
+            _setError(
+              "Playback stopped unexpectedly. Try playing the track again.",
+            );
           },
         );
   }
@@ -425,7 +429,8 @@ class PlaybackViewModel extends ChangeNotifier {
 
         final playResult = await _playbackRepository.play(track);
         playResult.fold(
-          (failure) => _setError('Failed to play track: ${failure.message}'),
+          (failure) =>
+              _setError(describeFailure(failure, action: 'play track')),
           (_) => AppLog.info('Track playback started successfully'),
         );
         return;
@@ -441,11 +446,12 @@ class PlaybackViewModel extends ChangeNotifier {
 
       final result = await _playTrackUseCase(params);
       result.fold(
-        (failure) => _setError('Failed to play track: ${failure.message}'),
+        (failure) => _setError(describeFailure(failure, action: 'play track')),
         (_) => AppLog.info('Track playback started successfully'),
       );
     } catch (e) {
-      _setError('Unexpected error playing track: $e');
+      AppLog.error('Playing a track failed: $e');
+      _setError(describeUnexpected(action: 'play this track'));
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -456,7 +462,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> pause() async {
     final result = await _playbackRepository.pause();
     result.fold(
-      (failure) => _setError('Failed to pause: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'pause')),
       (_) => AppLog.info('Playback paused'),
     );
   }
@@ -465,7 +471,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> resume() async {
     final result = await _playbackRepository.resume();
     result.fold(
-      (failure) => _setError('Failed to resume: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'resume')),
       (_) => AppLog.info('Playback resumed'),
     );
   }
@@ -483,7 +489,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> stop() async {
     final result = await _playbackRepository.stop();
     result.fold(
-      (failure) => _setError('Failed to stop: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'stop')),
       (_) => AppLog.info('Playback stopped'),
     );
   }
@@ -492,7 +498,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> seek(Duration position) async {
     final result = await _playbackRepository.seek(position);
     result.fold(
-      (failure) => _setError('Failed to seek: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'seek')),
       (_) => AppLog.debug('Seeked to ${position.inSeconds}s'),
     );
   }
@@ -512,7 +518,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> skipToNext() async {
     final result = await _playbackRepository.skipToNext();
     result.fold(
-      (failure) => _setError('Failed to skip to next: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'skip to next')),
       (_) => AppLog.info('Skipped to next track'),
     );
   }
@@ -521,7 +527,8 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> skipToPrevious() async {
     final result = await _playbackRepository.skipToPrevious();
     result.fold(
-      (failure) => _setError('Failed to skip to previous: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'skip to previous')),
       (_) => AppLog.info('Skipped to previous track'),
     );
   }
@@ -533,7 +540,7 @@ class PlaybackViewModel extends ChangeNotifier {
       startIndex: startIndex,
     );
     result.fold(
-      (failure) => _setError('Failed to set queue: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'set queue')),
       (_) => AppLog.info('Queue set with ${tracks.length} tracks'),
     );
   }
@@ -542,7 +549,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> addToQueue(Track track) async {
     final result = await _playbackRepository.addToQueue(track);
     result.fold(
-      (failure) => _setError('Failed to add to queue: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'add to queue')),
       (_) => AppLog.info('Track added to queue'),
     );
   }
@@ -551,7 +558,8 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> insertInQueue(Track track, int index) async {
     final result = await _playbackRepository.insertInQueue(track, index);
     result.fold(
-      (failure) => _setError('Failed to insert in queue: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'insert in queue')),
       (_) => AppLog.debug('Track inserted in queue at index $index'),
     );
   }
@@ -560,7 +568,8 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> removeFromQueue(int index) async {
     final result = await _playbackRepository.removeFromQueue(index);
     result.fold(
-      (failure) => _setError('Failed to remove from queue: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'remove from queue')),
       (_) => AppLog.debug('Track removed from queue at index $index'),
     );
   }
@@ -591,7 +600,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> clearQueue() async {
     final result = await _playbackRepository.clearQueue();
     result.fold(
-      (failure) => _setError('Failed to clear queue: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'clear queue')),
       (_) => AppLog.info('Queue cleared'),
     );
   }
@@ -600,7 +609,7 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> shuffleQueue() async {
     final result = await _playbackRepository.shuffleQueue();
     result.fold(
-      (failure) => _setError('Failed to shuffle queue: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'shuffle queue')),
       (_) => AppLog.info('Queue shuffled'),
     );
   }
@@ -609,7 +618,8 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> setRepeatMode(RepeatMode mode) async {
     final result = await _playbackRepository.setRepeatMode(mode);
     result.fold(
-      (failure) => _setError('Failed to set repeat mode: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'set repeat mode')),
       (_) => AppLog.debug('Repeat mode set to $mode'),
     );
   }
@@ -635,7 +645,8 @@ class PlaybackViewModel extends ChangeNotifier {
   Future<void> setShuffleMode(bool enabled) async {
     final result = await _playbackRepository.setShuffleMode(enabled);
     result.fold(
-      (failure) => _setError('Failed to set shuffle mode: ${failure.message}'),
+      (failure) =>
+          _setError(describeFailure(failure, action: 'set shuffle mode')),
       (_) => AppLog.debug('Shuffle mode set to $enabled'),
     );
   }
@@ -650,7 +661,7 @@ class PlaybackViewModel extends ChangeNotifier {
     final clampedVolume = volume.clamp(0.0, 1.0);
     final result = await _playbackRepository.setVolume(clampedVolume);
     result.fold(
-      (failure) => _setError('Failed to set volume: ${failure.message}'),
+      (failure) => _setError(describeFailure(failure, action: 'set volume')),
       (_) => AppLog.debug('Volume set to ${(clampedVolume * 100).round()}%'),
     );
   }
@@ -693,134 +704,93 @@ class PlaybackViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Toggles the favorite (starred) status of a track
+  /// Track ids with a star/unstar request in flight. The heart is disabled
+  /// for these so a double tap cannot send two opposing requests.
+  final Set<String> _pendingFavorites = {};
+
+  /// Whether a favorite toggle for [trackId] is still waiting on its server.
+  bool isFavoritePending(String trackId) => _pendingFavorites.contains(trackId);
+
+  /// Toggles the favorite (starred) status of a track.
+  ///
+  /// The request goes to the server the track actually lives on — a track's
+  /// Subsonic id means nothing to any other server. The UI flips immediately
+  /// and rolls back if the server refuses.
   Future<void> toggleFavorite(Track track) async {
-    try {
-      AppLog.info(
-        '🌟 Toggle favorite for track: ${track.title} (current: ${track.isStarred})',
-      );
+    if (_pendingFavorites.contains(track.id)) return;
 
-      // Get server credentials
-      final serversResult = await _serverRepository.getOnlineServers();
+    final target = !track.isStarred;
+    _pendingFavorites.add(track.id);
+    _applyStarred(track.id, target);
+    notifyListeners();
 
-      MusicServer? server;
-      serversResult.fold(
-        (failure) {
-          AppLog.warn('Failed to get online servers: ${failure.message}');
-          _setError('No server connection available');
-        },
-        (servers) {
-          if (servers.isEmpty) {
-            AppLog.warn('No online servers available');
-            _setError('No server connection available');
-          } else {
-            server = servers.first;
-            AppLog.debug('Using server: ${server!.name}');
-          }
-        },
-      );
+    final failure = await _sendFavorite(track, target);
 
-      if (server == null) return;
-
-      final passwordResult = await _serverRepository.getCredentials(server!.id);
-
-      String? password;
-      passwordResult.fold(
-        (failure) {
-          AppLog.warn('Failed to get server credentials: ${failure.message}');
-          _setError('Server credentials not available');
-        },
-        (pwd) {
-          password = pwd;
-        },
-      );
-
-      if (password == null) return;
-
-      // Extract subsonic ID from composite ID
-      final subsonicId = IdGenerator.extractSubsonicId(track.id);
-      AppLog.info('📋 Track ID extraction:');
-      AppLog.info('  - Composite ID: ${track.id}');
-      AppLog.info('  - Extracted Subsonic ID: $subsonicId');
-      AppLog.info('  - Server ID: ${IdGenerator.extractServerId(track.id)}');
-
-      // Toggle favorite status
-      if (track.isStarred) {
-        AppLog.info('📤 Sending unstar request to server...');
-        final response = await _apiClient.unstar(
-          server!,
-          password!,
-          id: subsonicId,
-        );
-        AppLog.info(
-          '✓ Unstar response status: ${response.subsonicResponse.status}, isSuccess: ${response.isSuccess}',
-        );
-        if (!response.isSuccess) {
-          AppLog.error(
-            '❌ Server returned error: ${response.error?.message ?? "Unknown error"}',
-          );
-          _setError(
-            'Failed to unstar track: ${response.error?.message ?? "Unknown error"}',
-          );
-          return;
-        }
-        AppLog.info('✓ Unstarred track: ${track.title}');
-      } else {
-        AppLog.info('📤 Sending star request to server...');
-        final response = await _apiClient.star(
-          server!,
-          password!,
-          id: subsonicId,
-        );
-        AppLog.info(
-          '✓ Star response status: ${response.subsonicResponse.status}, isSuccess: ${response.isSuccess}',
-        );
-        if (!response.isSuccess) {
-          AppLog.error(
-            '❌ Server returned error: ${response.error?.message ?? "Unknown error"}',
-          );
-          _setError(
-            'Failed to star track: ${response.error?.message ?? "Unknown error"}',
-          );
-          return;
-        }
-        AppLog.info('✓ Starred track: ${track.title}');
-      }
-
-      // Update track in current state
-      final updatedTrack = track.copyWith(isStarred: !track.isStarred);
-      AppLog.debug('Updated track isStarred: ${updatedTrack.isStarred}');
-
-      // Update queue if this track is in it
-      final updatedQueue = queue
-          .map((t) => t.id == track.id ? updatedTrack : t)
-          .toList();
-
-      // Update playback state
-      _playbackState = _playbackState.copyWith(
-        currentTrack: currentTrack?.id == track.id
-            ? updatedTrack
-            : currentTrack,
-        queue: updatedQueue,
-      );
-
-      // Persist to local database
-      try {
-        await _database.musicDao.updateTrack(updatedTrack);
-        AppLog.info(
-          '💾 Updated track in local database: ${updatedTrack.title}',
-        );
-      } catch (e) {
-        AppLog.warn('Failed to update track in local database: $e');
-        // Don't fail the whole operation if local update fails
-      }
-
-      notifyListeners();
-      AppLog.info('✨ UI notified of favorite change');
-    } catch (e) {
-      AppLog.error('❌ Failed to toggle favorite: $e');
-      _setError('Failed to update favorite status');
+    _pendingFavorites.remove(track.id);
+    if (failure != null) {
+      _applyStarred(track.id, !target);
+      _setError(failure);
+      return;
     }
+
+    try {
+      await _database.musicDao.updateTrack(track.copyWith(isStarred: target));
+    } catch (e) {
+      // The server is the source of truth; a stale local row is fixed by the
+      // next sync, so this is not worth surfacing.
+      AppLog.warn('Failed to update track in local database: $e');
+    }
+    notifyListeners();
+  }
+
+  /// Sends the star/unstar request and returns a user-facing message on
+  /// failure, or `null` on success.
+  Future<String?> _sendFavorite(Track track, bool starred) async {
+    final verb = starred ? 'add' : 'remove';
+    try {
+      final serverId = track.serverId.isNotEmpty
+          ? track.serverId
+          : IdGenerator.extractServerId(track.id);
+      final serverResult = await _serverRepository.getServerById(serverId);
+      final server = serverResult.valueOrNull;
+      if (server == null) {
+        AppLog.warn('No server $serverId for favorite toggle');
+        return "Couldn't $verb favorite: the track's server is unavailable";
+      }
+
+      final password = (await _serverRepository.getCredentials(
+        server.id,
+      )).valueOrNull;
+      if (password == null) {
+        return "Couldn't $verb favorite: sign in to ${server.name} again";
+      }
+
+      final subsonicId = IdGenerator.extractSubsonicId(track.id);
+      final response = starred
+          ? await _apiClient.star(server, password, id: subsonicId)
+          : await _apiClient.unstar(server, password, id: subsonicId);
+      if (!response.isSuccess) {
+        AppLog.error(
+          'Favorite toggle rejected by ${server.name}: '
+          '${response.error?.message ?? 'unknown error'}',
+        );
+        return "Couldn't $verb favorite on ${server.name}";
+      }
+      return null;
+    } catch (e) {
+      AppLog.error('Failed to toggle favorite: $e');
+      return "Couldn't $verb favorite. Check your connection and try again.";
+    }
+  }
+
+  /// Rewrites the starred flag of [trackId] in the current track and queue.
+  void _applyStarred(String trackId, bool starred) {
+    Track update(Track t) =>
+        t.id == trackId ? t.copyWith(isStarred: starred) : t;
+    _playbackState = _playbackState.copyWith(
+      currentTrack: currentTrack == null ? null : update(currentTrack!),
+      queue: queue.map(update).toList(),
+    );
   }
 
   @override

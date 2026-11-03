@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,11 +10,7 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/utils/animation_utils.dart';
-import '../../../../core/utils/haptics.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../widgets/widgets.dart';
-import 'main_shell.dart';
 
 /// Home page displaying Feishin-style featured content and genres
 class HomePage extends StatefulWidget {
@@ -169,14 +164,7 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 key: ValueKey(server.id),
                 padding: const EdgeInsets.only(right: 4),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: OmnisonicColors.serverColorFor(server.id),
-                  ),
-                ),
+                child: ServerDot(serverId: server.id, size: 8),
               ),
             const SizedBox(width: 4),
             Text(
@@ -295,23 +283,7 @@ class _HomePageState extends State<HomePage> {
                       child: SizedBox(
                         width: 62,
                         height: 62,
-                        child: track.coverArtUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: SubsonicCoverArt.of(
-                                  track.coverArtUrl!,
-                                  128,
-                                ).url,
-                                cacheKey: SubsonicCoverArt.of(
-                                  track.coverArtUrl!,
-                                  128,
-                                ).cacheKey,
-                                cacheManager:
-                                    OmnisonicImageCacheManager.instance,
-                                fit: BoxFit.cover,
-                                memCacheWidth: 128,
-                                memCacheHeight: 128,
-                              )
-                            : _buildPlaceholderArt(),
+                        child: CoverArt(url: track.coverArtUrl, radius: 0),
                       ),
                     ),
                     const SizedBox(width: OmnisonicSpacing.md),
@@ -322,15 +294,13 @@ class _HomePageState extends State<HomePage> {
                           Text(
                             'Pick up where you left',
                             style: OmnisonicTypography.glassButton.copyWith(
-                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             track.title,
-                            style: OmnisonicTypography.bodyMedium.copyWith(
-                              fontSize: 15,
+                            style: OmnisonicTypography.titleSmall.copyWith(
                               fontWeight: OmnisonicTypography.bold,
                               color: scheme.onSurface,
                             ),
@@ -352,11 +322,9 @@ class _HomePageState extends State<HomePage> {
                               ServerDot(serverId: track.serverId, size: 6),
                               const SizedBox(width: 6),
                               Text(
-                                track.quality.toString(),
-                                style: OmnisonicTypography.technical.copyWith(
-                                  fontSize: 9.5,
-                                  color: scheme.onSurfaceVariant,
-                                ),
+                                track.quality.displayName,
+                                style: OmnisonicTypography.technicalSmall
+                                    .copyWith(color: scheme.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -401,18 +369,32 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Random Tracks', meta: 'shuffle all'),
+              // "shuffle all" used to sit here as plain text that looked
+              // like an action; it is one now.
+              _buildSectionHeader(
+                'Random Tracks',
+                actionLabel: 'Shuffle all',
+                onAction: () => _shuffleAll(viewModel.tracks),
+              ),
               SizedBox(
-                height: 72,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: randomTracks.length,
-                  itemBuilder: (context, index) => Padding(
-                    // Keyed by track so a reshuffle cannot hand one tile's
-                    // state (hover, artwork fade-in) to another track.
-                    key: ValueKey(randomTracks[index].id),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _buildTrackTile(randomTracks, index),
+                // Two lines of text in a dense row, at the user's text size.
+                height: OmnisonicTextScale.boxExtent(
+                  context,
+                  fixed: 24,
+                  text: 48,
+                ),
+                child: ScrollConfiguration(
+                  behavior: const CarouselScrollBehavior(),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: randomTracks.length,
+                    itemBuilder: (context, index) => Padding(
+                      // Keyed by track so a reshuffle cannot hand one tile's
+                      // state (hover, artwork fade-in) to another track.
+                      key: ValueKey(randomTracks[index].id),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: _buildTrackTile(randomTracks, index),
+                    ),
                   ),
                 ),
               ),
@@ -425,82 +407,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTrackTile(List<Track> queue, int index) {
     final track = queue[index];
-    final scheme = Theme.of(context).colorScheme;
+    // Playing the whole row, not just this track, so the queue keeps going.
+    void play() => context.read<PlaybackViewModel>().playTrack(
+      track,
+      queue: queue,
+      startIndex: index,
+    );
     return SizedBox(
       width: 220,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-        // Playing the whole row, not just this track, so the queue keeps going.
-        onTap: () => context.read<PlaybackViewModel>().playTrack(
-          track,
-          queue: queue,
-          startIndex: index,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: track.coverArtUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: SubsonicCoverArt.of(
-                                track.coverArtUrl!,
-                                88,
-                              ).url,
-                              cacheKey: SubsonicCoverArt.of(
-                                track.coverArtUrl!,
-                                88,
-                              ).cacheKey,
-                              cacheManager: OmnisonicImageCacheManager.instance,
-                              memCacheWidth: 88,
-                              memCacheHeight: 88,
-                              fit: BoxFit.cover,
-                            )
-                          : _buildPlaceholderArt(),
-                    ),
-                  ),
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: ServerDot(serverId: track.serverId),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      track.title,
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: OmnisonicTypography.medium,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      track.artist,
-                      style: OmnisonicTypography.caption.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: TrackRow(
+        track: track,
+        dense: true,
+        showDuration: false,
+        serverId: track.serverId,
+        onTap: play,
+        onShowActions: () => showTrackActions(context, track, onPlay: play),
       ),
     );
   }
@@ -508,39 +429,19 @@ class _HomePageState extends State<HomePage> {
   /// Section heading: an oversized Gabarito title with an optional mono
   /// counter aligned to its baseline. No icon chip — the redesign carries
   /// hierarchy in the type, not in decoration beside it.
-  Widget _buildSectionHeader(String title, {String? meta}) {
-    final scheme = Theme.of(context).colorScheme;
-    final wide = ShellLayout.hasSidebar(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style:
-                  (wide
-                          ? OmnisonicTypography.sectionTitle
-                          : OmnisonicTypography.sectionTitleSmall)
-                      .copyWith(color: scheme.onSurface),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (meta != null)
-            Text(
-              meta,
-              style: OmnisonicTypography.technical.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget _buildSectionHeader(
+    String title, {
+    String? meta,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) => SectionHeader(
+    title: title,
+    meta: meta,
+    size: SectionHeaderSize.large,
+    padding: const EdgeInsets.fromLTRB(4, 24, 4, 12),
+    seeAllLabel: actionLabel ?? 'See all',
+    onSeeAllPressed: onAction,
+  );
 
   /// First-run state: with no server configured every section below collapses,
   /// so Home would otherwise be a title over a blank screen.
@@ -627,21 +528,32 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title, meta: meta),
+          // Carousels show a preview; "See all" leads to the full list.
+          _buildSectionHeader(
+            title,
+            meta: meta,
+            onAction: () => context.go('${AppRouter.library}?tab=albums'),
+          ),
           SizedBox(
-            height: 244,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: albums.length,
-              itemBuilder: (context, index) {
-                final album = albums[index];
-                return Padding(
-                  key: ValueKey(album.id),
-                  padding: const EdgeInsets.only(right: 14),
-                  child: _buildAlbumCard(album, showServerDot: showServerDots),
-                );
-              },
+            height: AlbumCard.extentFor(context, 160, showMeta: false),
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                itemCount: albums.length,
+                itemBuilder: (context, index) {
+                  final album = albums[index];
+                  return Padding(
+                    key: ValueKey(album.id),
+                    padding: const EdgeInsets.only(right: 14),
+                    child: _buildAlbumCard(
+                      album,
+                      showServerDot: showServerDots,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -649,333 +561,26 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAlbumCard(Album album, {bool showServerDot = false}) {
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 160,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: _HoverAlbumCard(
-          album: album,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                // Expand, or the art box shrinks to its child and the
-                // placeholder sits small in the corner of an empty square.
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          OmnisonicRadius.art,
-                        ),
-                        color: scheme.surfaceContainerHighest,
-                        boxShadow: OmnisonicShadows.art,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          OmnisonicRadius.art,
-                        ),
-                        child: album.coverArtUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: SubsonicCoverArt.of(
-                                  album.coverArtUrl!,
-                                  320,
-                                ).url,
-                                cacheKey: SubsonicCoverArt.of(
-                                  album.coverArtUrl!,
-                                  320,
-                                ).cacheKey,
-                                cacheManager:
-                                    OmnisonicImageCacheManager.instance,
-                                fit: BoxFit.cover,
-                                memCacheWidth: 320,
-                                memCacheHeight: 320,
-                                fadeInDuration: const Duration(
-                                  milliseconds: 150,
-                                ),
-                                placeholder: (context, url) =>
-                                    _buildPlaceholderArt(),
-                                errorWidget: (context, url, error) =>
-                                    coverArtErrorWidget(
-                                      _buildPlaceholderArt(),
-                                      url,
-                                      error,
-                                    ),
-                              )
-                            : _buildPlaceholderArt(),
-                      ),
-                    ),
-                    // Source badge sits on a small glass chip rather than
-                    // bare on the art, so it stays legible over any cover.
-                    if (showServerDot)
-                      Positioned(
-                        left: 6,
-                        bottom: 6,
-                        child: GlassSurface(
-                          borderRadius: BorderRadius.circular(
-                            OmnisonicRadius.sm,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 4,
-                          ),
-                          child: ServerDot(serverId: album.serverId, size: 6),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                album.title,
-                style: OmnisonicTypography.bodySmall.copyWith(
-                  fontSize: 12.5,
-                  fontWeight: OmnisonicTypography.bold,
-                  color: scheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                album.artist,
-                style: OmnisonicTypography.bodySmall.copyWith(
-                  fontSize: 11,
-                  fontWeight: OmnisonicTypography.medium,
-                  color: scheme.onSurfaceVariant,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _buildAlbumCard(Album album, {bool showServerDot = false}) =>
+      AlbumCard(
+        album: album,
+        width: 160,
+        showMeta: false,
+        sourceServerIds: showServerDot ? [album.serverId] : null,
+      );
 
-  Widget _buildPlaceholderArt() {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      color: scheme.surfaceContainerHighest,
-      child: Icon(
-        OmnisonicIcons.album,
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.3),
-        size: OmnisonicIconSizes.xxl,
-      ),
+  void _shuffleAll(List<Track> tracks) {
+    if (tracks.isEmpty) return;
+    final queue = List<Track>.of(tracks)..shuffle();
+    context.read<PlaybackViewModel>().playTrack(
+      queue.first,
+      queue: queue,
+      startIndex: 0,
     );
   }
 
   Future<void> _onRefresh() async {
     final viewModel = context.read<MusicLibraryViewModel>();
     await viewModel.refreshSmartCollections();
-  }
-}
-
-/// Hover card widget with play button overlay
-class _HoverAlbumCard extends StatefulWidget {
-  const _HoverAlbumCard({required this.album, required this.child});
-
-  final Album album;
-  final Widget child;
-
-  @override
-  State<_HoverAlbumCard> createState() => _HoverAlbumCardState();
-}
-
-class _HoverAlbumCardState extends State<_HoverAlbumCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      // InkWell rather than GestureDetector, for press feedback on touch.
-      // Touch has no hover, so the overlay's actions are offered on long
-      // press (and right-click) as a sheet instead.
-      child: InkWell(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-        onTap: () => _openAlbum(context),
-        onLongPress: () => _showActions(context),
-        onSecondaryTap: () => _showActions(context),
-        child: Stack(
-          children: [
-            widget.child,
-            Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !_isHovered,
-                child: AnimatedOpacity(
-                  opacity: _isHovered ? 1 : 0,
-                  duration: AnimationUtils.adjustedDuration(
-                    context,
-                    AnimationManager.fastDuration,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-                      color: Colors.black.withValues(alpha: 0.6),
-                    ),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _HoverButton(
-                            icon: OmnisonicIcons.shuffle,
-                            onPressed: () => _shuffleAlbum(context),
-                          ),
-                          const SizedBox(width: 8),
-                          _HoverButton(
-                            icon: OmnisonicIcons.playArrow,
-                            onPressed: () => _playAlbum(context),
-                            isPrimary: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openAlbum(BuildContext context) => context.push(
-    AppRouter.albumDetailLocation(widget.album.id),
-    extra: widget.album,
-  );
-
-  Future<void> _showActions(BuildContext context) async {
-    Haptics.selection();
-    final action = await showModalBottomSheet<_AlbumAction>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                widget.album.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                widget.album.artist,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Divider(height: 1),
-            for (final action in _AlbumAction.values)
-              ListTile(
-                leading: Icon(action.icon),
-                title: Text(action.label),
-                onTap: () => Navigator.pop(sheetContext, action),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (action == null || !context.mounted) return;
-
-    switch (action) {
-      case _AlbumAction.play:
-        _playAlbum(context);
-      case _AlbumAction.shuffle:
-        _shuffleAlbum(context);
-      case _AlbumAction.open:
-        _openAlbum(context);
-    }
-  }
-
-  void _playAlbum(BuildContext context) {
-    final viewModel = context.read<MusicLibraryViewModel>();
-    final playback = context.read<PlaybackViewModel>();
-    viewModel.getAlbumTracks(widget.album.id).then((tracks) {
-      if (tracks.isNotEmpty) {
-        playback.playTrack(tracks.first, queue: tracks, startIndex: 0);
-      }
-    });
-  }
-
-  void _shuffleAlbum(BuildContext context) {
-    final viewModel = context.read<MusicLibraryViewModel>();
-    final playback = context.read<PlaybackViewModel>();
-    viewModel.getAlbumTracks(widget.album.id).then((tracks) {
-      if (tracks.isNotEmpty) {
-        final shuffled = List<Track>.from(tracks)..shuffle();
-        playback.playTrack(shuffled.first, queue: shuffled, startIndex: 0);
-      }
-    });
-  }
-}
-
-/// What the album card offers on long press, mirroring its hover overlay.
-enum _AlbumAction {
-  play('Play', OmnisonicIcons.playArrow),
-  shuffle('Shuffle', OmnisonicIcons.shuffle),
-  open('Go to album', OmnisonicIcons.album);
-
-  const _AlbumAction(this.label, this.icon);
-
-  final String label;
-  final IconData icon;
-}
-
-/// Hover button widget
-class _HoverButton extends StatefulWidget {
-  const _HoverButton({
-    required this.icon,
-    required this.onPressed,
-    this.isPrimary = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final bool isPrimary;
-
-  @override
-  State<_HoverButton> createState() => _HoverButtonState();
-}
-
-class _HoverButtonState extends State<_HoverButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onPressed,
-        borderRadius: BorderRadius.circular(widget.isPrimary ? 24 : 20),
-        child: Container(
-          width: widget.isPrimary ? 48 : 40,
-          height: widget.isPrimary ? 48 : 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.isPrimary
-                ? scheme.primary.withValues(alpha: _isHovered ? 1.0 : 0.9)
-                : scheme.surfaceContainerHighest.withValues(
-                    alpha: _isHovered ? 0.8 : 0.6,
-                  ),
-          ),
-          child: Icon(
-            widget.icon,
-            color: widget.isPrimary
-                ? scheme.onPrimary
-                : scheme.onSurfaceVariant,
-            size: widget.isPrimary ? 28 : 20,
-          ),
-        ),
-      ),
-    );
   }
 }

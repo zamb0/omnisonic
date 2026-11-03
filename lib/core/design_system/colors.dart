@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../entities/server_status.dart';
-
 /// Comprehensive color palette system for Omnisonic UI Enhancement
 class OmnisonicColors {
   // Primary Brand Colors
@@ -266,6 +264,27 @@ class OmnisonicColors {
   static const Color queueIndicator = Color(0xFF8B5CF6);
   static const Color favoriteIndicator = Color(0xFFEC4899);
 
+  // Scrims and the colours that sit on them. Artwork can be any colour, so
+  // anything drawn over it goes on a dark scrim and uses the on-scrim
+  // colours, in both themes.
+
+  /// Behind controls over artwork — the card hover overlay.
+  static const Color scrim = Color(0x8C000000);
+
+  /// Under text over artwork — the bottom of a hero image.
+  static const Color scrimStrong = Color(0xB3000000);
+
+  /// Text and icons on a [scrim].
+  static const Color onScrim = Color(0xFFFFFFFF);
+
+  /// Secondary text and icons on a [scrim].
+  static const Color onScrimMuted = Color(0xCCFFFFFF);
+
+  /// Text on a [warning] or [success] fill. White on those was 2.1:1 and
+  /// 2.5:1; these dark tones clear 7:1.
+  static const Color onWarning = Color(0xFF241500);
+  static const Color onSuccess = Color(0xFF00210F);
+
   // Status colors with opacity variants
   static const Color successLight = Color(0xFFD1FAE5);
   static const Color warningLight = Color(0xFFFEF3C7);
@@ -288,6 +307,16 @@ class OmnisonicColors {
   /// White-overlay alpha stops for dark-mode glass surfaces. Far fainter
   /// than the light stack since it sits on a near-black base.
   static const List<double> glassAlphasDark = [0.05, 0.09, 0.13, 0.18];
+
+  /// A flat glass-like fill for a tile inside a glass pane: a white wash
+  /// at [light] alpha in light mode and [dark] alpha in dark mode.
+  static Color glassFill(
+    Brightness brightness, {
+    double light = 0.55,
+    double dark = 0.06,
+  }) => neutralWhite.withValues(
+    alpha: brightness == Brightness.dark ? dark : light,
+  );
 
   static Color glassLight(int stop) =>
       Colors.white.withValues(alpha: glassAlphasLight[stop]);
@@ -322,29 +351,18 @@ class OmnisonicColors {
   /// `serverId`'s code units directly (rather than `String.hashCode`, which
   /// is not guaranteed stable across platforms/isolates) so the same server
   /// always gets the same dot everywhere.
-  static Color serverColorFor(String serverId) {
+  ///
+  /// Pass [index] — the server's position in the user's server list — where
+  /// it is known: hashing ~12 swatches collides as soon as there are a few
+  /// servers, and two servers with the same dot defeat the point of it.
+  static Color serverColorFor(String serverId, {int? index}) {
+    if (index != null && index >= 0) {
+      return serverHueSwatches[index % serverHueSwatches.length];
+    }
     var hash = 0;
     for (final unit in serverId.codeUnits) {
       hash = (hash * 31 + unit) & 0x7fffffff;
     }
     return serverHueSwatches[hash % serverHueSwatches.length];
-  }
-
-  /// Palette colour for a server's connection state, so status chips do not
-  /// each pick their own `Colors.green` / `Colors.red`.
-  static Color statusColorFor(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return success;
-      case ServerStatus.offline:
-      case ServerStatus.error:
-        return error;
-      case ServerStatus.connecting:
-        return warning;
-      case ServerStatus.authenticating:
-        return info;
-      case ServerStatus.syncing:
-        return primaryPurple;
-    }
   }
 }

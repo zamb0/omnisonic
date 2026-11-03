@@ -4,6 +4,29 @@ import '../errors/failures.dart';
 
 /// Utility class for validating server configurations
 class ServerValidator {
+  /// Turns what people type into the base URL the app needs.
+  ///
+  /// `music.example.com` was rejected for having no scheme; now it gets
+  /// `https://`. A trailing slash and a trailing `/rest` — the Subsonic API
+  /// path, which the client adds itself — are dropped.
+  static String normalizeUrl(String input) {
+    var url = input.trim();
+    if (url.isEmpty) return url;
+    if (!RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*://').hasMatch(url)) {
+      url = 'https://$url';
+    }
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    if (url.toLowerCase().endsWith('/rest')) {
+      url = url.substring(0, url.length - '/rest'.length);
+    }
+    while (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    return url;
+  }
+
   /// Validates a server configuration
   static Result<void> validateServerConfig(MusicServer server) {
     // Check required fields
@@ -117,22 +140,5 @@ class ServerValidator {
     }
 
     return ResultHelper.success(null);
-  }
-
-  /// Normalizes URL by removing trailing slashes and ensuring proper format
-  static String normalizeUrl(String url) {
-    if (url.isEmpty) return url;
-
-    // Remove trailing slash
-    if (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
-    }
-
-    // Add protocol if missing
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://$url';
-    }
-
-    return url;
   }
 }

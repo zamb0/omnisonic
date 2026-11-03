@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/utils/animation_utils.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart' as playback;
-import '../../../../core/services/cover_palette_service.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../viewmodels/playback_view_model.dart';
-import 'audio_visualizer.dart';
 import '../../../lyrics/presentation/widgets/lyrics_panel.dart';
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/formatters.dart';
+import '../pages/player_page.dart';
+import 'transport_controls.dart';
+import 'package:flutter/services.dart';
 
 /// Full-screen player with a clean Feishin-inspired layout
 class FullScreenPlayer extends StatefulWidget {
@@ -31,7 +30,7 @@ class FullScreenPlayer extends StatefulWidget {
   State<FullScreenPlayer> createState() => _FullScreenPlayerState();
 }
 
-class _FullScreenPlayerState extends State<FullScreenPlayer> {
+class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
   bool _isDraggingSeek = false;
   double _seekValue = 0.0;
   late NowPlayingPanel _panel;
@@ -39,12 +38,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   /// Accumulated downward drag on the header, used to swipe-dismiss the
   /// player the way a full-screen modal is expected to close on iOS/Android.
   double _dismissDragExtent = 0.0;
-
-  /// Dominant color extracted from the current track's cover art, used to
-  /// tint the background. Null until extraction finishes (or if it fails),
-  /// in which case [OmnisonicColors.nowPlayingGradient] is used instead.
-  Color? _tintColor;
-  String? _tintedCoverUrl;
 
   /// Set when the player was opened on a specific panel; on the mobile
   /// layout that panel lives in a sheet, which is opened after first build.
@@ -55,16 +48,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     super.initState();
     _panel = widget.initialPanel ?? NowPlayingPanel.queue;
     _pendingPanel = widget.initialPanel;
-  }
-
-  void _updateTint(String? coverArtUrl) {
-    if (coverArtUrl == _tintedCoverUrl) return;
-    _tintedCoverUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _tintedCoverUrl == coverArtUrl) {
-        setState(() => _tintColor = color);
-      }
-    });
   }
 
   /// Closes the player. Falls back to Home when there's nothing to pop
@@ -78,12 +61,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     }
   }
 
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<PlaybackViewModel>(
@@ -94,18 +71,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         final progress = playbackViewModel.progress;
 
         if (currentTrack == null) {
-          return const Scaffold(
-            body: EmptyState(
-              icon: OmnisonicIcons.musicNoteOutline,
-              title: 'Nothing playing',
-              subtitle: 'Pick a track and it will show up here.',
-            ),
-          );
+          return const NothingPlayingView();
         }
 
-        _updateTint(currentTrack.coverArtUrl);
-        final tint =
-            _tintColor ?? OmnisonicColors.nowPlayingGradient.colors.first;
+        updateArtTint(currentTrack.coverArtUrl);
+        final tint = artTint ?? OmnisonicColors.nowPlayingGradient.colors.first;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -128,44 +98,65 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           // the dark scheme.
           child: Builder(
             builder: (context) {
-              return Scaffold(
-                backgroundColor: darkScheme.surface,
-                body: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, -0.4),
-                      radius: 1.3,
-                      colors: [
-                        tint.withValues(alpha: 0.55),
-                        darkScheme.surface,
-                      ],
+              // Esc closes the player, like any modal on desktop.
+              return CallbackShortcuts(
+                bindings: {
+                  const SingleActivator(LogicalKeyboardKey.escape):
+                      _closePlayer,
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: AnimatedSlide(
+                    offset: Offset(
+                      0,
+                      _dismissDragExtent /
+                          MediaQuery.sizeOf(context).height.clamp(1, 1e9),
                     ),
-                  ),
-                  child: SafeArea(
-                    child: ResponsiveLayout(
-                      mobile: _buildMobileLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
-                      ),
-                      tablet: _buildDesktopLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
-                      ),
-                      desktop: _buildDesktopLayout(
-                        context,
-                        currentTrack,
-                        playbackViewModel,
-                        position,
-                        duration,
-                        progress,
+                    duration: _dismissDragExtent == 0
+                        ? AnimationUtils.adjustedDuration(
+                            context,
+                            AnimationManager.fastDuration,
+                          )
+                        : Duration.zero,
+                    child: Scaffold(
+                      backgroundColor: darkScheme.surface,
+                      body: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(0, -0.4),
+                            radius: 1.3,
+                            colors: [
+                              tint.withValues(alpha: 0.55),
+                              darkScheme.surface,
+                            ],
+                          ),
+                        ),
+                        child: SafeArea(
+                          // Two columns from the shell's tablet breakpoint (768),
+                          // not ResponsiveLayout's 480: between the two, the side
+                          // panel was 85–200px wide and its tabs overflowed.
+                          child: LayoutBuilder(
+                            builder: (context, constraints) =>
+                                constraints.maxWidth >=
+                                    ResponsiveBreakpoints.tablet
+                                ? _buildDesktopLayout(
+                                    context,
+                                    currentTrack,
+                                    playbackViewModel,
+                                    position,
+                                    duration,
+                                    progress,
+                                  )
+                                : _buildMobileLayout(
+                                    context,
+                                    currentTrack,
+                                    playbackViewModel,
+                                    position,
+                                    duration,
+                                    progress,
+                                  ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -294,23 +285,34 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
   /// Applied to the header and the artwork, and deliberately not to the
   /// content between them: the seek bar, lyrics panel and queue list all
   /// want the vertical drag for themselves.
+  /// Wraps [child] — the header — in the swipe-down-to-dismiss gesture.
+  ///
+  /// Only the header: on the artwork, inside the page's scroll view, it
+  /// blocked vertical scrolling, and a downward swipe after scrolling closed
+  /// the player. The whole player now follows the finger, so the gesture is
+  /// visible before it commits.
   Widget _dismissible({required Widget child}) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: (details) {
-        final delta = details.primaryDelta;
-        if (delta != null && delta > 0) {
-          _dismissDragExtent += delta;
-        }
+        final delta = details.primaryDelta ?? 0;
+        setState(
+          () => _dismissDragExtent = (_dismissDragExtent + delta).clamp(
+            0.0,
+            double.infinity,
+          ),
+        );
       },
       onVerticalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
-        if (_dismissDragExtent > 80 || velocity > 600) {
+        if (_dismissDragExtent > 120 || velocity > 700) {
           Haptics.impact();
           _closePlayer();
+        } else {
+          setState(() => _dismissDragExtent = 0);
         }
-        _dismissDragExtent = 0;
       },
+      onVerticalDragCancel: () => setState(() => _dismissDragExtent = 0),
       child: child,
     );
   }
@@ -337,13 +339,14 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
               children: [
                 IconButton(
                   onPressed: _closePlayer,
+                  tooltip: 'Close player',
                   icon: const Icon(OmnisonicIcons.keyboardArrowDown),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: OmnisonicTypography.semiBold,
                   ),
                 ),
                 const Spacer(),
@@ -353,10 +356,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                     final isStarred = track?.isStarred ?? false;
 
                     return IconButton(
-                      onPressed: track != null
-                          ? () {
-                              viewModel.toggleFavorite(track);
-                            }
+                      onPressed:
+                          track != null &&
+                              !viewModel.isFavoritePending(track.id)
+                          ? () => viewModel.toggleFavorite(track)
                           : null,
                       icon: Icon(
                         isStarred
@@ -382,51 +385,22 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
 
   Widget _buildArtwork(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
-    return _dismissible(
-      child: _artworkSwipe(
-        child: Center(
-          child: Hero(
-            tag: 'now-playing-artwork-${track.id}',
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-                color: scheme.surfaceContainerHighest,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            800,
-                          ).url,
-                          cacheKey: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            800,
-                          ).cacheKey,
-                          cacheManager: OmnisonicImageCacheManager.instance,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 800,
-                          memCacheHeight: 800,
-                          fadeInDuration: const Duration(milliseconds: 120),
-                          useOldImageOnUrlChange: true,
-                          placeholder: (context, url) =>
-                              _buildFallbackArtwork(context),
-                          errorWidget: (context, url, error) =>
-                              _buildFallbackArtwork(context),
-                        )
-                      : _buildFallbackArtwork(context),
-                ),
+    return _artworkSwipe(
+      child: Center(
+        child: Hero(
+          tag: 'now-playing-artwork-${track.id}',
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 360),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              color: scheme.surfaceContainerHighest,
+              boxShadow: OmnisonicShadows.art,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: CoverArt(url: track.coverArtUrl, radius: 0),
               ),
             ),
           ),
@@ -459,18 +433,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
-  Widget _buildFallbackArtwork(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      color: scheme.surfaceContainerHighest,
-      child: Icon(
-        OmnisonicIcons.musicNote,
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-        size: OmnisonicIconSizes.xxxl,
-      ),
-    );
-  }
-
   Widget _buildTrackInfo(BuildContext context, Track track) {
     final scheme = Theme.of(context).colorScheme;
     return Column(
@@ -478,9 +440,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       children: [
         Text(
           track.title,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: OmnisonicTypography.bold,
+          ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -533,13 +495,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _formatDuration(elapsed),
+              formatDuration(elapsed),
               style: OmnisonicTypography.duration.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
             Text(
-              _formatDuration(duration),
+              formatDuration(duration),
               style: OmnisonicTypography.duration.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -557,6 +519,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           ),
           child: Slider(
             value: activeValue,
+            // Read as a time, not as "37%".
+            semanticFormatterCallback: (value) =>
+                '${formatDuration(duration * value)} of '
+                '${formatDuration(duration)}',
             onChanged: (value) {
               setState(() {
                 _isDraggingSeek = true;
@@ -577,6 +543,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     );
   }
 
+  /// What is streaming, without numbers: the tiers' bitrates are nominal,
+  /// not what the file or the stream actually has, so showing them
+  /// presented invented figures as fact.
   Widget _buildQualityIndicator(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
@@ -584,14 +553,16 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     final scheme = Theme.of(context).colorScheme;
     final quality = playbackViewModel.currentQuality;
     final maxQuality = playbackViewModel.maxQuality;
-    final ratio = (playbackViewModel.streamingQualityRatio * 100)
-        .clamp(0, 100)
-        .round();
+    final reduced = quality.qualityScore < maxQuality.qualityScore;
 
     return Align(
       alignment: Alignment.centerRight,
       child: Text(
-        '${quality.format} ${quality.bitrate} kbps • $ratio% of max ${maxQuality.bitrate}',
+        reduced
+            ? '${quality.displayName} · reduced from ${maxQuality.displayName}'
+            : quality.displayName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: OmnisonicTypography.metadata.copyWith(
           color: scheme.onSurfaceVariant,
         ),
@@ -603,135 +574,43 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     BuildContext context,
     PlaybackViewModel playbackViewModel,
   ) {
-    final scheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _glassCircleButton(
-          context,
-          icon: OmnisonicIcons.skipPrevious,
-          onPressed: playbackViewModel.hasPrevious
-              ? () => playbackViewModel.skipToPrevious()
-              : null,
-        ),
+        _glassCircle(SkipPreviousButton(playback: playbackViewModel, size: 28)),
         const SizedBox(width: 16),
-        FilledButton(
-          onPressed: () => playbackViewModel.togglePlayPause(),
-          style: FilledButton.styleFrom(
-            shape: const CircleBorder(),
-            padding: const EdgeInsets.all(18),
-            backgroundColor: scheme.primary,
-          ),
-          child: Icon(
-            playbackViewModel.isPlaying
-                ? OmnisonicIcons.pause
-                : OmnisonicIcons.playArrow,
-            size: OmnisonicIconSizes.lg,
-          ),
-        ),
+        PlayPauseButton(playback: playbackViewModel, prominent: true),
         const SizedBox(width: 16),
-        _glassCircleButton(
-          context,
-          icon: OmnisonicIcons.skipNext,
-          onPressed: playbackViewModel.hasNext
-              ? () => playbackViewModel.skipToNext()
-              : null,
-        ),
+        _glassCircle(SkipNextButton(playback: playbackViewModel, size: 28)),
       ],
     );
   }
 
-  /// Circular glass transport button, used for prev/next around the solid
-  /// primary-colored play/pause button.
-  Widget _glassCircleButton(
-    BuildContext context, {
-    required IconData icon,
-    required VoidCallback? onPressed,
-    double size = 56,
-    double iconSize = 28,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
+  /// Circular glass backing for the prev/next buttons either side of the
+  /// solid play/pause button.
+  Widget _glassCircle(Widget button, {double size = 56}) {
     return GlassSurface(
       borderRadius: BorderRadius.circular(size / 2),
       padding: EdgeInsets.zero,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: iconSize),
-          color: onPressed != null
-              ? scheme.onSurface
-              : scheme.onSurfaceVariant.withValues(alpha: 0.4),
-        ),
+      child: SizedBox.square(
+        dimension: size,
+        child: Center(child: button),
       ),
     );
-  }
-
-  IconData _getRepeatIcon(playback.RepeatMode repeatMode) {
-    switch (repeatMode) {
-      case playback.RepeatMode.none:
-        return OmnisonicIcons.repeat;
-      case playback.RepeatMode.all:
-        return OmnisonicIcons.repeat;
-      case playback.RepeatMode.one:
-        return OmnisonicIcons.repeatOne;
-    }
   }
 
   Widget _buildSecondaryControls(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
   ) {
-    final scheme = Theme.of(context).colorScheme;
+    // The favourite toggle lives in the header only; it used to be here as
+    // well, so the same action showed twice on one screen.
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          onPressed: () => playbackViewModel.toggleShuffleMode(),
-          icon: Icon(
-            OmnisonicIcons.shuffle,
-            color: playbackViewModel.shuffleEnabled
-                ? scheme.primary
-                : scheme.onSurfaceVariant,
-          ),
-          tooltip: 'Shuffle',
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: () => playbackViewModel.toggleRepeatMode(),
-          icon: Icon(
-            _getRepeatIcon(playbackViewModel.repeatMode),
-            color: playbackViewModel.repeatMode != playback.RepeatMode.none
-                ? scheme.primary
-                : scheme.onSurfaceVariant,
-          ),
-          tooltip: 'Repeat',
-        ),
-        const SizedBox(width: 8),
-        Consumer<PlaybackViewModel>(
-          builder: (context, viewModel, child) {
-            final track = viewModel.currentTrack;
-            final isStarred = track?.isStarred ?? false;
-
-            return IconButton(
-              onPressed: track != null
-                  ? () {
-                      viewModel.toggleFavorite(track);
-                    }
-                  : null,
-              icon: Icon(
-                isStarred
-                    ? OmnisonicIcons.favorite
-                    : OmnisonicIcons.favoriteOutline,
-                color: isStarred
-                    ? OmnisonicColors.favoriteIndicator
-                    : scheme.onSurfaceVariant,
-              ),
-              tooltip: isStarred ? 'Remove from favorites' : 'Add to favorites',
-            );
-          },
-        ),
+        ShuffleModeButton(playback: playbackViewModel, size: 24),
+        const SizedBox(width: 16),
+        RepeatModeButton(playback: playbackViewModel, size: 24),
       ],
     );
   }
@@ -745,11 +624,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
     PlaybackViewModel playbackViewModel,
   ) {
     final scheme = Theme.of(context).colorScheme;
-    final serverViewModel = context.watch<ServerManagementViewModel>();
-    final matches = serverViewModel.servers.where(
-      (s) => s.id == track.serverId,
+    final serverName = context.watch<ServerManagementViewModel>().serverNameFor(
+      track.serverId,
     );
-    final serverName = matches.isEmpty ? track.serverId : matches.first.name;
 
     final quality = playbackViewModel.currentQuality;
     final maxQuality = playbackViewModel.maxQuality;
@@ -767,7 +644,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$serverName · ${quality.format} ${quality.bitrate}kbps · '
+              '$serverName · ${quality.displayName} · '
               '${isDirect ? 'Direct' : 'Transcoded'}',
               style: OmnisonicTypography.metadata.copyWith(
                 color: scheme.onSurfaceVariant,
@@ -874,25 +751,30 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SegmentedButton<NowPlayingPanel>(
-            segments: const [
-              ButtonSegment(value: NowPlayingPanel.queue, label: Text('Queue')),
-              ButtonSegment(
-                value: NowPlayingPanel.lyrics,
-                label: Text('Lyrics'),
-              ),
-              ButtonSegment(
-                value: NowPlayingPanel.visualizer,
-                label: Text('Visualizer'),
-              ),
-            ],
-            selected: {_panel},
-            onSelectionChanged: (value) {
-              if (onPanelChanged != null) {
-                onPanelChanged(value.first);
-              } else {
-                setState(() => _panel = value.first);
-              }
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Icons alone where the labels would not fit.
+              final iconsOnly = constraints.maxWidth < 220;
+              return SegmentedButton<NowPlayingPanel>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final panel in NowPlayingPanel.values)
+                    ButtonSegment(
+                      value: panel,
+                      icon: Icon(panel.icon),
+                      tooltip: iconsOnly ? panel.label : null,
+                      label: iconsOnly ? null : Text(panel.label),
+                    ),
+                ],
+                selected: {_panel},
+                onSelectionChanged: (value) {
+                  if (onPanelChanged != null) {
+                    onPanelChanged(value.first);
+                  } else {
+                    setState(() => _panel = value.first);
+                  }
+                },
+              );
             },
           ),
           const SizedBox(height: OmnisonicSpacing.md),
@@ -924,8 +806,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
         return _buildQueuePanel(context, playbackViewModel);
       case NowPlayingPanel.lyrics:
         return _buildLyricsPanel(context, playbackViewModel);
-      case NowPlayingPanel.visualizer:
-        return _buildVisualizerPanel(context, playbackViewModel);
     }
   }
 
@@ -952,7 +832,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       );
     }
 
-    final previewCount = queue.length.clamp(0, _queuePreviewCount);
+    // The current track and what plays after it — not the head of the
+    // queue, which is mostly tracks that have already played.
+    final start = currentIndex.clamp(0, queue.length - 1);
+    final previewCount = (queue.length - start).clamp(0, _queuePreviewCount);
 
     return Column(
       children: [
@@ -960,7 +843,8 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
           child: ListView.separated(
             itemCount: previewCount,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
+            itemBuilder: (context, i) {
+              final index = start + i;
               final track = queue[index];
               final isCurrent = index == currentIndex;
 
@@ -982,28 +866,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                    child: track.coverArtUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).url,
-                            cacheKey: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).cacheKey,
-                            cacheManager: OmnisonicImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 80,
-                            memCacheHeight: 80,
-                            fadeInDuration: const Duration(milliseconds: 120),
-                            useOldImageOnUrlChange: true,
-                          )
-                        : Icon(
-                            OmnisonicIcons.musicNote,
-                            color: scheme.onSurfaceVariant,
-                            size: OmnisonicIconSizes.smd,
-                          ),
+                    child: CoverArt(url: track.coverArtUrl, radius: 0),
                   ),
                 ),
                 title: Text(
@@ -1011,7 +874,9 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isCurrent
+                        ? OmnisonicTypography.semiBold
+                        : OmnisonicTypography.medium,
                   ),
                 ),
                 subtitle: Text(
@@ -1077,27 +942,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> {
       position: playbackViewModel.position,
     );
   }
-
-  Widget _buildVisualizerPanel(
-    BuildContext context,
-    PlaybackViewModel playbackViewModel,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: AudioVisualizer(
-        isPlaying: playbackViewModel.isPlaying,
-        type: AudioVisualizerType.equalizer,
-        height: 120,
-        color: scheme.primary,
-      ),
-    );
-  }
 }
 
+/// The panels beside (or, on phones, below) the player.
+///
+/// There used to be a third, "Visualizer": a random animation with no
+/// connection to the audio, presented as a feature. It is gone.
 enum NowPlayingPanel {
   queue('Queue', OmnisonicIcons.queueMusic),
-  lyrics('Lyrics', OmnisonicIcons.lyrics),
-  visualizer('Visualizer', OmnisonicIcons.graphicEq);
+  lyrics('Lyrics', OmnisonicIcons.lyrics);
 
   const NowPlayingPanel(this.label, this.icon);
 

@@ -107,7 +107,17 @@ class GlassSurface extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                Padding(padding: padding ?? EdgeInsets.zero, child: child),
+                // A Material of its own, so hover, press and focus ink from
+                // controls inside the glass paints on top of the frosted fill.
+                // Without it the ink drew on the nearest Material further up
+                // — under the blur — and was all but invisible.
+                Material(
+                  type: MaterialType.transparency,
+                  child: Padding(
+                    padding: padding ?? EdgeInsets.zero,
+                    child: child,
+                  ),
+                ),
                 if (highlight)
                   Positioned(
                     left: borderRadius.topLeft.x,
@@ -161,6 +171,66 @@ class GlassSurface extends StatelessWidget {
       1,
       0,
     ];
+  }
+}
+
+/// A tappable [GlassSurface]: the glass pane is the button.
+///
+/// The ink sits inside the pane, over the frosted fill, with the padding
+/// inside the ink so the whole pane is the hit target. Wrapping a
+/// [GlassSurface] in an `InkWell` instead draws the ink underneath the blur.
+class GlassInkButton extends StatelessWidget {
+  const GlassInkButton({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.borderRadius = const BorderRadius.all(
+      Radius.circular(OmnisonicRadius.md),
+    ),
+    this.padding = const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+    this.intensity = GlassIntensity.card,
+    this.tooltip,
+    this.semanticLabel,
+    this.selected,
+    this.focusNode,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final BorderRadius borderRadius;
+  final EdgeInsetsGeometry padding;
+  final GlassIntensity intensity;
+  final String? tooltip;
+  final String? semanticLabel;
+  final bool? selected;
+  final FocusNode? focusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget button = GlassSurface(
+      borderRadius: borderRadius,
+      intensity: intensity,
+      child: InkWell(
+        onTap: onTap,
+        focusNode: focusNode,
+        borderRadius: borderRadius,
+        hoverColor: scheme.onSurface.withValues(alpha: 0.06),
+        focusColor: scheme.primary.withValues(alpha: 0.18),
+        highlightColor: scheme.onSurface.withValues(alpha: 0.08),
+        child: Padding(padding: padding, child: child),
+      ),
+    );
+    if (semanticLabel != null || selected != null) {
+      button = Semantics(
+        button: true,
+        selected: selected,
+        label: semanticLabel,
+        child: button,
+      );
+    }
+    if (tooltip != null) button = Tooltip(message: tooltip!, child: button);
+    return button;
   }
 }
 

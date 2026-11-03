@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../ui/presentation/widgets/feedback.dart';
+import 'playlist_form_dialog.dart';
+
 import '../../../../core/design_system/design_system.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../ui/presentation/widgets/section_header.dart';
 import '../viewmodels/playlist_view_model.dart';
+import '../../../../core/utils/formatters.dart';
 
 /// Playlist picker for "Add to Playlist", shared by every surface that offers
 /// the action so they cannot drift apart.
@@ -14,12 +18,14 @@ import '../viewmodels/playlist_view_model.dart';
 /// to, so the entry point is never a dead end.
 Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
   final playlistViewModel = context.read<PlaylistViewModel>();
-  final messenger = ScaffoldMessenger.of(context);
   final playlists = playlistViewModel.playlists;
 
   if (playlists.isEmpty) {
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Create a playlist first')),
+    showFeedback(
+      context,
+      'Create a playlist first',
+      actionLabel: 'New playlist',
+      onAction: () => showPlaylistFormDialog(context),
     );
     return;
   }
@@ -46,7 +52,7 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
                 return ListTile(
                   leading: const Icon(OmnisonicIcons.playlistPlay),
                   title: Text(playlist.name),
-                  subtitle: Text('${playlist.trackCount} tracks'),
+                  subtitle: Text(pluralize(playlist.trackCount, 'track')),
                   onTap: () => Navigator.pop(sheetContext, playlist.id),
                 );
               },
@@ -63,11 +69,8 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
     playlistId,
     track.id,
   );
-  messenger.showSnackBar(
-    SnackBar(
-      content: Text(
-        added ? 'Added to playlist' : 'Could not add track to playlist',
-      ),
-    ),
-  );
+  // A failure is reported by the app-wide ActionErrorListener.
+  if (added && context.mounted) {
+    showFeedback(context, 'Added to playlist', kind: FeedbackKind.success);
+  }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
 
 /// A list tile widget for displaying playlist information in management views
 class PlaylistListTile extends StatelessWidget {
@@ -35,7 +35,7 @@ class PlaylistListTile extends StatelessWidget {
           leading: _buildPlaylistArt(scheme),
           title: Text(
             playlist.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: const TextStyle(fontWeight: OmnisonicTypography.medium),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -58,7 +58,10 @@ class PlaylistListTile extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 4),
-              Row(
+              Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Icon(
                     playlist.isPublic
@@ -67,20 +70,16 @@ class PlaylistListTile extends StatelessWidget {
                     size: OmnisonicIconSizes.xs,
                     color: scheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 4),
                   Text(
                     playlist.isPublic ? 'Public' : 'Private',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
-                      fontSize: 11,
                     ),
                   ),
-                  const SizedBox(width: 12),
                   Text(
-                    _formatDate(playlist.updatedAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    '· ${formatRelativeTime(playlist.updatedAt)}',
+                    style: OmnisonicTypography.bodySmall.copyWith(
                       color: scheme.onSurfaceVariant,
-                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -124,54 +123,11 @@ class PlaylistListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaylistArt(ColorScheme scheme) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        color: scheme.surfaceContainerHighest,
-      ),
-      child: playlist.coverArtUrl != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              child: CachedNetworkImage(
-                imageUrl: SubsonicCoverArt.of(playlist.coverArtUrl!, 112).url,
-                cacheKey: SubsonicCoverArt.of(
-                  playlist.coverArtUrl!,
-                  112,
-                ).cacheKey,
-                cacheManager: OmnisonicImageCacheManager.instance,
-                fit: BoxFit.cover,
-                memCacheWidth: 112,
-                memCacheHeight: 112,
-                fadeInDuration: const Duration(milliseconds: 120),
-                useOldImageOnUrlChange: true,
-                placeholder: (context, url) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.playlistPlay,
-                    color: scheme.onSurfaceVariant,
-                    size: OmnisonicIconSizes.md,
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: scheme.surfaceContainerHighest,
-                  child: Icon(
-                    OmnisonicIcons.playlistPlay,
-                    color: scheme.onSurfaceVariant,
-                    size: OmnisonicIconSizes.md,
-                  ),
-                ),
-              ),
-            )
-          : Icon(
-              OmnisonicIcons.playlistPlay,
-              color: scheme.onSurfaceVariant,
-              size: 24,
-            ),
-    );
-  }
+  Widget _buildPlaylistArt(ColorScheme scheme) => CoverArt(
+    url: playlist.coverArtUrl,
+    size: 56,
+    fallbackIcon: OmnisonicIcons.playlistPlay,
+  );
 
   void _handleMenuAction(String action) {
     switch (action) {
@@ -184,23 +140,6 @@ class PlaylistListTile extends StatelessWidget {
       case 'delete':
         onDelete?.call();
         break;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays > 7) {
-      return '${date.day}/${date.month}/${date.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
     }
   }
 }

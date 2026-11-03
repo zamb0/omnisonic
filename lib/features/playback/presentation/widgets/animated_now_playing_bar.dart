@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/repositories/playback_repository.dart' as playback;
 import '../../../../core/routing/app_router.dart';
-import '../../../../core/services/cover_palette_service.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../ui/presentation/pages/main_shell.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
+import 'transport_controls.dart';
+import '../../../ui/presentation/widgets/art_tint.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
 ///
@@ -31,11 +31,9 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 }
 
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
-    with TickerProviderStateMixin {
-  /// Material's disabled-content opacity. Lower reads as decoration rather
-  /// than as a control that is merely unavailable right now.
-  static const double _disabledAlpha = 0.38;
-
+    with TickerProviderStateMixin, ArtTintMixin {
+  bool _hoveringSeek = false;
+  bool _hoveringVolume = false;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
@@ -86,32 +84,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     }
   }
 
-  /// Dominant color extracted from the current track's cover art, used to
-  /// tint the progress indicator. Null (falls back to `scheme.primary`)
-  /// until extraction finishes or if it fails.
-  Color? _tintColor;
-  String? _tintedCoverUrl;
-
-  void _updateTint(String? coverArtUrl) {
-    if (coverArtUrl == _tintedCoverUrl) return;
-    _tintedCoverUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _tintedCoverUrl == coverArtUrl) {
-        setState(() => _tintColor = color);
-      }
-    });
-  }
-
   @override
   void dispose() {
     _slideController.dispose();
     super.dispose();
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -130,8 +106,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           return const SizedBox.shrink();
         }
 
-        _updateTint(track.coverArtUrl);
-        final tint = _tintColor ?? scheme.primary;
+        updateArtTint(track.coverArtUrl);
+        final tint = artTint ?? scheme.primary;
 
         final position = vm.position;
         final duration = vm.duration;
@@ -183,9 +159,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     // Below this width four 44px targets plus artwork leave the title unreadable.
     final showFavorite = MediaQuery.of(context).size.width >= 380;
 
-    // The whole bar is tappable, so it needs to announce itself as one
-    // control rather than as an unlabelled region containing others — a
-    // screen reader otherwise reads "0", the progress indicator's value.
+    // The whole bar is tappable, so it announces itself as one control
+    // rather than as an unlabelled region — a screen reader otherwise reads
+    // "0", the progress indicator's value. The track info inside used to be
+    // a second button with the same label, so the bar was announced twice;
+    // it is now plain, excluded text.
     return Semantics(
       button: true,
       label:
@@ -258,42 +236,17 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                               borderRadius: BorderRadius.circular(
                                 OmnisonicRadius.xs,
                               ),
-                              child: track.coverArtUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: SubsonicCoverArt.of(
-                                        track.coverArtUrl!,
-                                        128,
-                                      ).url,
-                                      cacheKey: SubsonicCoverArt.of(
-                                        track.coverArtUrl!,
-                                        128,
-                                      ).cacheKey,
-                                      cacheManager:
-                                          OmnisonicImageCacheManager.instance,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 88,
-                                      memCacheHeight: 88,
-                                      fadeInDuration: const Duration(
-                                        milliseconds: 120,
-                                      ),
-                                      useOldImageOnUrlChange: true,
-                                      placeholder: (context, url) =>
-                                          _buildFallbackArtwork(),
-                                      errorWidget: (context, url, error) =>
-                                          _buildFallbackArtwork(),
-                                    )
-                                  : _buildFallbackArtwork(),
+                              child: CoverArt(
+                                url: track.coverArtUrl,
+                                radius: 0,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
                         // Title + Artist
                         Expanded(
-                          child: Semantics(
-                            button: true,
-                            onTap: widget.onTap,
-                            label: _nowPlayingLabel(track),
-                            excludeSemantics: true,
+                          child: ExcludeSemantics(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +255,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                   track.title,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight:
+                                            OmnisonicTypography.semiBold,
                                         color: scheme.onSurface,
                                       ),
                                   maxLines: 1,
@@ -311,11 +265,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 const SizedBox(height: 2),
                                 Text(
                                   track.artist,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                        fontSize: 12,
-                                      ),
+                                  style: OmnisonicTypography.bodySmall.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -329,7 +281,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         if (showFavorite) ...[
                           Consumer<PlaybackViewModel>(
                             builder: (context, vm, child) {
-                              final isStarred = track.isStarred;
+                              // Read the live track: the one captured above
+                              // predates the optimistic flip.
+                              final live = vm.currentTrack ?? track;
+                              final isStarred = live.isStarred;
+                              final pending = vm.isFavoritePending(live.id);
                               return _iconBtn(
                                 isStarred
                                     ? OmnisonicIcons.favorite
@@ -338,10 +294,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                 isStarred
                                     ? OmnisonicColors.favoriteIndicator
                                     : scheme.onSurface.withValues(alpha: 0.7),
-                                () {
-                                  Haptics.success();
-                                  vm.toggleFavorite(track);
-                                },
+                                pending
+                                    ? null
+                                    : () {
+                                        Haptics.success();
+                                        vm.toggleFavorite(live);
+                                      },
                                 label: isStarred
                                     ? 'Remove from favorites'
                                     : 'Add to favorites',
@@ -351,28 +309,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ),
                           const SizedBox(width: 8),
                         ],
-                        _iconBtn(
-                          OmnisonicIcons.skipPrevious,
-                          22,
-                          vm.hasPrevious
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(
-                                  alpha: _disabledAlpha,
-                                ),
-                          vm.hasPrevious ? () => vm.skipToPrevious() : null,
-                          label: 'Previous track',
-                        ),
+                        SkipPreviousButton(playback: vm, size: 22),
                         const SizedBox(width: 8),
-                        _playPauseBtn(vm, scheme),
+                        PlayPauseButton(playback: vm),
                         if (showFavorite) ...[
                           const SizedBox(width: 6),
                           SizedBox(
                             width: 18,
                             height: 16,
-                            // AudioVisualizer's equalizer bars assume a ~300px
-                            // wide layout (fixed bar-width formula), so at
-                            // this icon size it overflows badly — a small
-                            // dedicated widget instead.
+                            // A small equalizer sized for an icon slot.
                             child: Center(
                               child: _MiniEqualizer(
                                 isPlaying: vm.isPlaying,
@@ -382,17 +327,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                           ),
                         ],
                         const SizedBox(width: 8),
-                        _iconBtn(
-                          OmnisonicIcons.skipNext,
-                          22,
-                          vm.hasNext
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(
-                                  alpha: _disabledAlpha,
-                                ),
-                          vm.hasNext ? () => vm.skipToNext() : null,
-                          label: 'Next track',
-                        ),
+                        SkipNextButton(playback: vm, size: 22),
                       ],
                     ),
                   ),
@@ -510,39 +445,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.art),
                     color: scheme.surfaceContainerHighest,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 18,
-                        spreadRadius: -8,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    boxShadow: OmnisonicShadows.art,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(OmnisonicRadius.art),
-                    child: track.coverArtUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).url,
-                            cacheKey: SubsonicCoverArt.of(
-                              track.coverArtUrl!,
-                              128,
-                            ).cacheKey,
-                            cacheManager: OmnisonicImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 116,
-                            memCacheHeight: 116,
-                            fadeInDuration: const Duration(milliseconds: 120),
-                            useOldImageOnUrlChange: true,
-                            placeholder: (context, url) =>
-                                _buildFallbackArtwork(),
-                            errorWidget: (context, url, error) =>
-                                _buildFallbackArtwork(),
-                          )
-                        : _buildFallbackArtwork(),
+                    child: CoverArt(url: track.coverArtUrl, radius: 0),
                   ),
                 ),
               ),
@@ -556,7 +463,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     Text(
                       track.title,
                       style: OmnisonicTypography.bodyMedium.copyWith(
-                        fontSize: 14,
                         fontWeight: OmnisonicTypography.bold,
                         color: scheme.onSurface,
                       ),
@@ -581,11 +487,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            track.quality.toString(),
+                            track.quality.displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmnisonicTypography.technical.copyWith(
-                              fontSize: 12,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -611,7 +516,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     Color tint,
   ) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
-      fontSize: 12,
       color: scheme.onSurfaceVariant,
     );
 
@@ -629,48 +533,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _iconBtn(
-                  OmnisonicIcons.shuffle,
-                  18,
-                  vm.shuffleEnabled
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant,
-                  () => vm.toggleShuffleMode(),
-                  label: vm.shuffleEnabled ? 'Shuffle on' : 'Shuffle off',
-                ),
+                ShuffleModeButton(playback: vm, size: 18),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  OmnisonicIcons.skipPrevious,
-                  24,
-                  vm.hasPrevious
-                      ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
-                  vm.hasPrevious ? () => vm.skipToPrevious() : null,
-                  label: 'Previous track',
-                ),
+                SkipPreviousButton(playback: vm),
                 const SizedBox(width: 6),
-                // Play/Pause - prominent circular button
-                _playPauseBtn(vm, scheme),
+                PlayPauseButton(playback: vm),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  OmnisonicIcons.skipNext,
-                  24,
-                  vm.hasNext
-                      ? scheme.onSurface
-                      : scheme.onSurface.withValues(alpha: _disabledAlpha),
-                  vm.hasNext ? () => vm.skipToNext() : null,
-                  label: 'Next track',
-                ),
+                SkipNextButton(playback: vm),
                 const SizedBox(width: 6),
-                _iconBtn(
-                  _repeatIcon(vm.repeatMode),
-                  18,
-                  vm.repeatMode != playback.RepeatMode.none
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant,
-                  () => vm.toggleRepeatMode(),
-                  label: _repeatLabel(vm.repeatMode),
-                ),
+                RepeatModeButton(playback: vm, size: 18),
               ],
             ),
           ),
@@ -687,7 +558,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               // Expanded slider.
               Flexible(
                 child: Text(
-                  _formatDuration(
+                  formatDuration(
                     _draggingProgress == null
                         ? position
                         : duration * _draggingProgress!,
@@ -699,31 +570,38 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: SliderTheme(
-                  data: _hairlineSliderTheme(
-                    context,
-                    activeColor: tint,
-                    inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
-                  ),
-                  child: Slider(
-                    value: _draggingProgress ?? progress.clamp(0.0, 1.0),
-                    label: _formatDuration(
-                      duration * (_draggingProgress ?? progress),
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _hoveringSeek = true),
+                  onExit: (_) => setState(() => _hoveringSeek = false),
+                  child: SliderTheme(
+                    data: _hairlineSliderTheme(
+                      context,
+                      activeColor: tint,
+                      inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
+                      active: _hoveringSeek || _draggingProgress != null,
                     ),
-                    onChanged: (value) {
-                      setState(() => _draggingProgress = value);
-                    },
-                    onChangeEnd: (value) {
-                      setState(() => _draggingProgress = null);
-                      vm.seekToProgress(value);
-                    },
+                    child: Slider(
+                      value: _draggingProgress ?? progress.clamp(0.0, 1.0),
+                      // Read as a time, not as "37%". (A `label` was set here
+                      // too; without divisions a Slider never shows it.)
+                      semanticFormatterCallback: (value) =>
+                          '${formatDuration(duration * value)} of '
+                          '${formatDuration(duration)}',
+                      onChanged: (value) {
+                        setState(() => _draggingProgress = value);
+                      },
+                      onChangeEnd: (value) {
+                        setState(() => _draggingProgress = null);
+                        vm.seekToProgress(value);
+                      },
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  _formatDuration(duration),
+                  formatDuration(duration),
                   overflow: TextOverflow.clip,
                   softWrap: false,
                   style: timeStyle,
@@ -739,21 +617,28 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   /// Thumbless 4px track — the redesign treats progress and volume as
   /// hairlines, not as Material sliders. The thumb is sized to zero rather
   /// than removed so [Slider]'s drag handling and semantics stay intact.
+  /// 4px hairline track. The thumb only appears while the pointer is over
+  /// the slider or dragging it — at rest it is a line, as the redesign
+  /// wants, but it was a line with no affordance at all and a ~20px hit
+  /// area. The overlay keeps the hit area at 28px either way.
   SliderThemeData _hairlineSliderTheme(
     BuildContext context, {
     required Color activeColor,
     required Color inactiveColor,
+    bool active = false,
   }) {
+    final radius = active ? 6.0 : 0.0;
     return SliderTheme.of(context).copyWith(
       trackHeight: 4,
       trackShape: const RoundedRectSliderTrackShape(),
-      thumbShape: const RoundSliderThumbShape(
-        enabledThumbRadius: 0,
-        disabledThumbRadius: 0,
+      thumbShape: RoundSliderThumbShape(
+        enabledThumbRadius: radius,
+        disabledThumbRadius: radius,
         pressedElevation: 0,
         elevation: 0,
       ),
-      overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+      overlayColor: activeColor.withValues(alpha: 0.12),
       activeTrackColor: activeColor,
       inactiveTrackColor: inactiveColor,
       thumbColor: activeColor,
@@ -773,21 +658,28 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        // Words where there is room, icons where there is not — they used to
+        // disappear below 900px with no other way in from the bar.
         if (showTextActions) ...[
-          _textBtn(
-            'Lyrics',
-            scheme,
-            () => GoRouter.of(
-              context,
-            ).push(AppRouter.nowPlaying, extra: NowPlayingPanel.lyrics),
-          ),
+          _textBtn('Lyrics', scheme, () => _openLyrics(context)),
           const SizedBox(width: 4),
-          _textBtn(
-            'Queue',
-            scheme,
-            () => GoRouter.of(context).push(AppRouter.queue),
-          ),
+          _textBtn('Queue', scheme, () => _openQueue(context)),
           const SizedBox(width: 4),
+        ] else ...[
+          _iconBtn(
+            OmnisonicIcons.lyrics,
+            17,
+            scheme.onSurfaceVariant,
+            () => _openLyrics(context),
+            label: 'Lyrics',
+          ),
+          _iconBtn(
+            OmnisonicIcons.queueMusic,
+            17,
+            scheme.onSurfaceVariant,
+            () => _openQueue(context),
+            label: 'Queue',
+          ),
         ],
         Consumer<PlaybackViewModel>(
           builder: (context, vm, child) {
@@ -802,7 +694,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               isStarred
                   ? OmnisonicColors.favoriteIndicator
                   : scheme.onSurfaceVariant,
-              track != null ? () => vm.toggleFavorite(track) : null,
+              track != null && !vm.isFavoritePending(track.id)
+                  ? () => vm.toggleFavorite(track)
+                  : null,
               label: isStarred ? 'Remove from favorites' : 'Add to favorites',
               toggled: isStarred,
             );
@@ -826,18 +720,24 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 if (showVolumeSlider)
                   SizedBox(
                     width: 70,
-                    child: SliderTheme(
-                      data: _hairlineSliderTheme(
-                        context,
-                        activeColor: scheme.onSurface,
-                        inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
-                      ),
-                      child: Slider(
-                        value: volume,
-                        label: '${(volume * 100).round()}%',
-                        semanticFormatterCallback: (value) =>
-                            'Volume ${(value * 100).round()}%',
-                        onChanged: (value) => vm.setVolume(value),
+                    child: MouseRegion(
+                      onEnter: (_) => setState(() => _hoveringVolume = true),
+                      onExit: (_) => setState(() => _hoveringVolume = false),
+                      child: SliderTheme(
+                        data: _hairlineSliderTheme(
+                          context,
+                          activeColor: scheme.onSurface,
+                          inactiveColor: scheme.onSurface.withValues(
+                            alpha: 0.14,
+                          ),
+                          active: _hoveringVolume,
+                        ),
+                        child: Slider(
+                          value: volume,
+                          semanticFormatterCallback: (value) =>
+                              'Volume ${(value * 100).round()}%',
+                          onChanged: (value) => vm.setVolume(value),
+                        ),
                       ),
                     ),
                   ),
@@ -847,30 +747,37 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         ),
         const SizedBox(width: 8),
         // Expand: a soft-square chip rather than a bare icon, matching the
-        // design's trailing control.
-        Tooltip(
-          message: 'Expand player',
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: scheme.onSurface.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-              ),
-              child: Icon(
-                OmnisonicIcons.openInFull,
-                size: OmnisonicIconSizes.inline,
-                color: scheme.onSurface,
-              ),
+        // design's trailing control — drawn at 30px, hit-tested at 44.
+        IconButton(
+          onPressed: widget.onTap,
+          tooltip: 'Expand player',
+          icon: const Icon(OmnisonicIcons.openInFull),
+          iconSize: OmnisonicIconSizes.inline,
+          color: scheme.onSurface,
+          style: IconButton.styleFrom(
+            fixedSize: const Size.square(30),
+            minimumSize: const Size.square(30),
+            tapTargetSize: MaterialTapTargetSize.padded,
+            backgroundColor: scheme.onSurface.withValues(alpha: 0.07),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
             ),
           ),
         ),
       ],
     );
   }
+
+  /// Opens the queue, unless it is already the page on screen — repeated
+  /// clicks used to stack duplicate queue pages.
+  void _openQueue(BuildContext context) {
+    if (GoRouterState.of(context).uri.path == AppRouter.queue) return;
+    GoRouter.of(context).push(AppRouter.queue);
+  }
+
+  void _openLyrics(BuildContext context) => GoRouter.of(
+    context,
+  ).push(AppRouter.nowPlaying, extra: NowPlayingPanel.lyrics);
 
   /// Gabarito text action — the design's treatment for the bar's secondary
   /// destinations, which read better as words than as another icon.
@@ -883,7 +790,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         child: Text(
           label,
           style: OmnisonicTypography.glassButton.copyWith(
-            fontSize: 12,
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -927,58 +833,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   ///
   /// Solid ink rather than the brand accent: in the redesign this is the one
   /// element allowed to be fully opaque against the glass.
-  Widget _playPauseBtn(PlaybackViewModel vm, ColorScheme scheme) {
-    return Container(
-      width: OmnisonicTouchTargets.iconButton,
-      height: OmnisonicTouchTargets.iconButton,
-      decoration: BoxDecoration(
-        color: scheme.onSurface,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            spreadRadius: -8,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Semantics(
-        button: true,
-        label: vm.isPlaying ? 'Pause' : 'Play',
-        child: IconButton(
-          icon: Icon(
-            vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
-            color: scheme.surface,
-          ),
-          iconSize: OmnisonicIconSizes.md,
-          padding: EdgeInsets.zero,
-          tooltip: vm.isPlaying ? 'Pause' : 'Play',
-          onPressed: () {
-            Haptics.impact();
-            vm.togglePlayPause();
-          },
-        ),
-      ),
-    );
-  }
-
-  IconData _repeatIcon(playback.RepeatMode mode) {
-    return mode == playback.RepeatMode.one
-        ? OmnisonicIcons.repeatOne
-        : OmnisonicIcons.repeat;
-  }
-
-  String _repeatLabel(playback.RepeatMode mode) {
-    switch (mode) {
-      case playback.RepeatMode.none:
-        return 'Repeat off';
-      case playback.RepeatMode.all:
-        return 'Repeat all';
-      case playback.RepeatMode.one:
-        return 'Repeat one';
-    }
-  }
 
   IconData _volumeIcon(double volume) {
     if (volume <= 0) return OmnisonicIcons.volumeOff;
@@ -995,21 +849,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       vm.setVolume(_volumeBeforeMute);
     }
   }
-
-  Widget _buildFallbackArtwork() {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Icon(
-        OmnisonicIcons.musicNote,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        size: OmnisonicIconSizes.md,
-      ),
-    );
-  }
 }
 
 /// Tiny 3-bar equalizer indicator, sized for an icon-sized slot next to the
-/// play/pause button (unlike [AudioVisualizer]'s equalizer mode, which
+/// play/pause button (unlike a full-width equalizer, which
 /// assumes a much wider layout).
 class _MiniEqualizer extends StatefulWidget {
   const _MiniEqualizer({required this.isPlaying, required this.color});
@@ -1036,12 +879,28 @@ class _MiniEqualizerState extends State<_MiniEqualizer>
         vsync: this,
       ),
     );
-    if (widget.isPlaying) _start();
+  }
+
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // An endless loop is exactly what "reduce motion" asks to stop; the bars
+    // then hold still at mid height.
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    widget.isPlaying ? _start() : _stop();
   }
 
   void _start() {
+    if (_reduceMotion) {
+      for (final controller in _controllers) {
+        controller.value = 0.5;
+      }
+      return;
+    }
     for (final controller in _controllers) {
-      controller.repeat(reverse: true);
+      if (!controller.isAnimating) controller.repeat(reverse: true);
     }
   }
 

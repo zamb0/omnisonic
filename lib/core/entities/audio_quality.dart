@@ -31,6 +31,17 @@ enum AudioQuality {
     }
   }
 
+  /// A label for the UI. Deliberately without a bitrate: [bitrate] is the
+  /// tier's nominal rate, not what the file or stream actually has, and
+  /// showing "1411kbps" for every FLAC presented an invented number as fact.
+  String get displayName => switch (this) {
+    AudioQuality.low => 'MP3 · Low',
+    AudioQuality.medium => 'MP3 · Standard',
+    AudioQuality.high => 'MP3 · High',
+    AudioQuality.lossless => 'FLAC · Lossless',
+    AudioQuality.ultra => 'FLAC · Hi-Res',
+  };
+
   @override
   String toString() => '$format ${bitrate}kbps';
 }

@@ -1,6 +1,8 @@
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/widgets.dart';
 
+import '../utils/app_log.dart';
+
 /// Shared cache manager for album/artist artwork
 class OmnisonicImageCacheManager {
   static const String _cacheKey = 'omnisonicImageCache';
@@ -15,7 +17,7 @@ class OmnisonicImageCacheManager {
 }
 
 Widget coverArtErrorWidget(Widget placeholder, String url, Object error) {
-  debugPrint('Cover art load failed: $url -> $error');
+  AppLog.debug('Cover art load failed: $url -> $error');
   return placeholder;
 }
 

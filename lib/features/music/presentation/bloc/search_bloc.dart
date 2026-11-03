@@ -6,6 +6,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/entities.dart';
+import '../../../../core/errors/errors.dart';
 import '../../../../core/usecases/usecases.dart';
 import '../../../../core/utils/app_log.dart';
 
@@ -70,11 +71,33 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(searchHistory: merged.take(_maxHistory).toList()));
   }
 
-  // Debounce transformer for search queries
+  /// The query the user most recently asked for, updated the moment an
+  /// event is added — before any debounce. Clearing sets it to ''.
+  ///
+  /// SearchCleared is not debounced but queries are, so typing and clearing
+  /// within 300ms used to let the stale query run afterwards and fill an
+  /// empty field with old results. A handler whose query is no longer this
+  /// one drops its work.
+  String _latestQuery = '';
+
+  @override
+  void add(SearchEvent event) {
+    if (event is SearchQueryChanged) {
+      _latestQuery = event.query.trim();
+    } else if (event is SearchCleared) {
+      _latestQuery = '';
+    } else if (event is SearchSuggestionSelected) {
+      _latestQuery = event.suggestion.trim();
+    }
+    super.add(event);
+  }
+
+  /// Debounced and restartable: a newer query cancels the one in flight, so
+  /// results can never arrive out of order.
   EventTransformer<T> _debounceTransformer<T>() {
     return (events, mapper) => events
         .debounceTime(const Duration(milliseconds: 300))
-        .asyncExpand(mapper);
+        .switchMap(mapper);
   }
 
   Future<void> _onSearchQueryChanged(
@@ -82,6 +105,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) async {
     final query = event.query.trim();
+    if (query != _latestQuery) return;
 
     if (query.isEmpty) {
       emit(
@@ -115,12 +139,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
 
       final result = await _searchMusicUseCase(params);
+      if (query != _latestQuery || isClosed) return;
 
       result.fold(
         (failure) => emit(
           state.copyWith(
             status: SearchStatus.failure,
-            errorMessage: failure.message,
+            errorMessage: describeFailure(failure, action: 'search'),
           ),
         ),
         (results) => emit(
@@ -132,10 +157,12 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         ),
       );
     } catch (e) {
+      AppLog.error('Search for "$query" failed: $e');
+      if (query != _latestQuery || isClosed) return;
       emit(
         state.copyWith(
           status: SearchStatus.failure,
-          errorMessage: 'Unexpected error during search: $e',
+          errorMessage: describeUnexpected(action: 'search'),
         ),
       );
     }

@@ -4,10 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/routing/search_focus.dart';
 
 import '../../../music/presentation/bloc/search_bloc.dart';
-import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
-import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../widgets/widgets.dart';
@@ -16,7 +15,6 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/deduplication_engine.dart';
 import '../../../../core/utils/album_grouping.dart';
-import '../../../../core/utils/animation_utils.dart';
 
 typedef _MergedTrack = ({
   Track representative,
@@ -86,11 +84,45 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+    // The bloc outlives this page; leaving and coming back used to show its
+    // results under an empty field.
+    final query = context.read<SearchBloc>().state.query;
+    if (query.isNotEmpty) {
+      _searchController.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    }
     _searchController.addListener(_onSearchChanged);
+    SearchFocusRequest.requests.addListener(_focusField);
+    if (SearchFocusRequest.takePending()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusField());
+    }
+  }
+
+  void _focusField() {
+    if (!mounted) return;
+    SearchFocusRequest.takePending();
+    _searchFocusNode.requestFocus();
+    _searchController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _searchController.text.length,
+    );
+  }
+
+  /// Records the current query in the recent searches. Called on submit and
+  /// when a result is opened — the list used to fill only from taps on
+  /// itself, so on a fresh install it never appeared.
+  void _rememberQuery() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      context.read<SearchBloc>().add(SearchHistoryAdded(query));
+    }
   }
 
   @override
   void dispose() {
+    SearchFocusRequest.requests.removeListener(_focusField);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -226,6 +258,7 @@ class _SearchPageState extends State<SearchPage> {
           onSubmitted: (query) {
             if (query.trim().isNotEmpty) {
               context.read<SearchBloc>().add(SearchQueryChanged(query.trim()));
+              _rememberQuery();
             }
           },
         ),
@@ -258,13 +291,8 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
             child: ChoiceChip(
-              avatar: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: OmnisonicColors.serverColorFor(server.id),
-                ),
+              avatar: ExcludeSemantics(
+                child: ServerDot(serverId: server.id, size: 10),
               ),
               label: Text(server.name),
               selected: _selectedServerId == server.id,
@@ -570,14 +598,14 @@ class _SearchPageState extends State<SearchPage> {
           itemBuilder: (context, index) {
             final item = items[index];
             final track = item.representative;
-            return TrackTile(
+            return TrackRow(
               key: ValueKey(track.id),
               track: track,
               serverId: track.serverId,
               sourceServerIds: item.serverIds,
               qualityLabel: track.quality.format,
               onTap: () => _onTrackTapped(track, tracks, index),
-              onMorePressed: () => _showTrackOptions(tracks, index),
+              onShowActions: () => _showTrackOptions(tracks, index),
             );
           },
         ),
@@ -613,38 +641,32 @@ class _SearchPageState extends State<SearchPage> {
             // text half grows with the user's text size — scaling the whole
             // height would enlarge the artwork too and push the row off
             // screen.
-            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 56),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.md,
+            height: AlbumCard.extentFor(context, 160),
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.md,
+                ),
+                itemCount: expanded
+                    ? albums.length
+                    : albums.length.clamp(0, _carouselPreviewCount),
+                itemBuilder: (context, index) {
+                  final album = albums[index];
+                  final sources = sourceServerIds[album.id] ?? const [];
+                  return Padding(
+                    key: ValueKey(album.id),
+                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    child: AlbumCard(
+                      album: album,
+                      width: 160,
+                      onTap: () => _onAlbumTapped(album),
+                      sourceServerIds: sources.length > 1 ? sources : null,
+                    ),
+                  );
+                },
               ),
-              itemCount: expanded
-                  ? albums.length
-                  : albums.length.clamp(0, _carouselPreviewCount),
-              itemBuilder: (context, index) {
-                final album = albums[index];
-                final sources = sourceServerIds[album.id] ?? const [];
-                return Padding(
-                  key: ValueKey(album.id),
-                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
-                  child: Stack(
-                    children: [
-                      AlbumCard(
-                        album: album,
-                        width: 160,
-                        onTap: () => _onAlbumTapped(album),
-                      ),
-                      if (sources.length > 1)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: ServerDotStack(serverIds: sources),
-                        ),
-                    ],
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -669,27 +691,35 @@ class _SearchPageState extends State<SearchPage> {
                 : null,
           ),
           SizedBox(
-            height: OmnisonicTextScale.boxExtent(context, fixed: 160, text: 40),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.md,
+            height: MediaCard.extentFor(
+              context,
+              140,
+              subtitle: false,
+              meta: true,
+            ),
+            child: ScrollConfiguration(
+              behavior: const CarouselScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.md,
+                ),
+                itemCount: expanded
+                    ? artists.length
+                    : artists.length.clamp(0, _carouselPreviewCount),
+                itemBuilder: (context, index) {
+                  final artist = artists[index];
+                  return Padding(
+                    key: ValueKey(artist.id),
+                    padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
+                    child: ArtistCard(
+                      artist: artist,
+                      width: 140,
+                      onTap: () => _onArtistTapped(artist),
+                    ),
+                  );
+                },
               ),
-              itemCount: expanded
-                  ? artists.length
-                  : artists.length.clamp(0, _carouselPreviewCount),
-              itemBuilder: (context, index) {
-                final artist = artists[index];
-                return Padding(
-                  key: ValueKey(artist.id),
-                  padding: const EdgeInsets.only(right: OmnisonicSpacing.sm),
-                  child: ArtistCard(
-                    artist: artist,
-                    width: 140,
-                    onTap: () => _onArtistTapped(artist),
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -698,6 +728,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onTrackTapped(Track track, List<Track> playlist, int index) {
+    _rememberQuery();
     context.read<PlaybackViewModel>().playTrack(
       track,
       queue: playlist,
@@ -706,107 +737,22 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _onAlbumTapped(Album album) {
+    _rememberQuery();
     // Navigate to album detail page
     context.push(AppRouter.albumDetailLocation(album.id), extra: album);
   }
 
   void _onArtistTapped(Artist artist) {
+    _rememberQuery();
     // Navigate to artist detail page
     context.push(AppRouter.artistDetailLocation(artist.id), extra: artist);
   }
 
-  void _showTrackOptions(List<Track> tracks, int index) {
-    final track = tracks[index];
-    AnimationUtils.showCustomBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playArrow),
-              title: const Text('Play Now'),
-              onTap: () {
-                Navigator.pop(context);
-                _onTrackTapped(track, tracks, index);
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.queueMusic),
-              title: const Text('Add to Queue'),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<PlaybackViewModel>().addToQueue(track);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Added to queue')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(OmnisonicIcons.playlistAdd),
-              title: const Text('Add to Playlist'),
-              onTap: () {
-                Navigator.pop(context);
-                showAddToPlaylistSheet(context, track);
-              },
-            ),
-            _DownloadTrackTile(track: track),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "Download" row for the track options sheet: downloads the track for
-/// offline playback, or removes it again when it is already downloaded.
-class _DownloadTrackTile extends StatelessWidget {
-  const _DownloadTrackTile({required this.track});
-
-  final Track track;
-
-  @override
-  Widget build(BuildContext context) {
-    final offline = context.watch<OfflineModeViewModel>();
-    final isDownloaded = offline.isTrackAvailableOffline(track.id);
-    final isDownloading = offline.isTrackDownloading(track.id);
-
-    return ListTile(
-      leading: Icon(
-        isDownloaded
-            ? OmnisonicIcons.downloadDone
-            : isDownloading
-            ? OmnisonicIcons.downloading
-            : OmnisonicIcons.downloadOutline,
-      ),
-      title: Text(
-        isDownloaded
-            ? 'Remove Download'
-            : isDownloading
-            ? 'Downloading…'
-            : 'Download',
-      ),
-      enabled: !isDownloading,
-      onTap: () async {
-        Navigator.pop(context);
-        final messenger = ScaffoldMessenger.of(context);
-        final error = isDownloaded
-            ? await offline.removeDownload(track.id)
-            : await offline.downloadTrack(track);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              error ??
-                  (isDownloaded
-                      ? 'Download removed'
-                      : 'Downloaded for offline'),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  void _showTrackOptions(List<Track> tracks, int index) => showTrackActions(
+    context,
+    tracks[index],
+    onPlay: () => _onTrackTapped(tracks[index], tracks, index),
+  );
 }
 
 /// Result sections that can be expanded past their preview length.

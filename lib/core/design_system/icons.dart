@@ -29,6 +29,9 @@ class OmnisonicIcons {
   static const IconData shuffle = Icons.shuffle_rounded;
   static const IconData repeat = Icons.repeat_rounded;
   static const IconData repeatOne = Icons.repeat_one_rounded;
+  static const IconData repeatOn = Icons.repeat_on_rounded;
+  static const IconData repeatOneOn = Icons.repeat_one_on_rounded;
+  static const IconData shuffleOn = Icons.shuffle_on_rounded;
   static const IconData volumeUp = Icons.volume_up_rounded;
   static const IconData volumeDown = Icons.volume_down_rounded;
   static const IconData volumeOff = Icons.volume_off_rounded;
@@ -55,6 +58,8 @@ class OmnisonicIcons {
   static const IconData queueMusicOutline = Icons.queue_music_outlined;
   static const IconData playlistPlay = Icons.playlist_play_rounded;
   static const IconData playlistAdd = Icons.playlist_add_rounded;
+  static const IconData playNext = Icons.queue_play_next_rounded;
+  static const IconData addToQueue = Icons.add_to_queue_rounded;
   static const IconData playlistRemove = Icons.playlist_remove_rounded;
   static const IconData star = Icons.star_rounded;
   static const IconData starOutline = Icons.star_outline;
@@ -110,6 +115,10 @@ class OmnisonicIcons {
   static const IconData syncOutline = Icons.sync_outlined;
   static const IconData syncAlt = Icons.sync_alt_rounded;
   static const IconData reorder = Icons.reorder_rounded;
+  static const IconData image = Icons.image_outlined;
+  static const IconData description = Icons.description_outlined;
+  static const IconData arrowUpward = Icons.arrow_upward_rounded;
+  static const IconData arrowDownward = Icons.arrow_downward_rounded;
   static const IconData dragHandle = Icons.drag_handle_rounded;
   static const IconData filterList = Icons.filter_list_rounded;
   static const IconData filterAltOff = Icons.filter_alt_off_rounded;

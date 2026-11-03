@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../ui/presentation/widgets/chips.dart';
 
 /// A list tile widget for displaying server information
 class ServerListTile extends StatelessWidget {
@@ -47,87 +49,75 @@ class ServerListTile extends StatelessWidget {
   }
 
   Widget _buildTile(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
-      leading: _buildLeading(),
+      leading: _buildLeading(context),
       title: Text(
         server.name,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: OmnisonicTypography.titleSmall.copyWith(color: scheme.onSurface),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(server.url, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            server.url,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: OmnisonicTypography.bodySmall.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 4),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _buildStatusChip(server.status),
-              const SizedBox(width: 8),
+              StatusChip(status: server.status),
               Text(
-                'User: ${server.username}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: OmnisonicColors.neutralGray600,
+                server.username,
+                style: OmnisonicTypography.bodySmall.copyWith(
+                  color: scheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-          if (server.lastSync != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              'Last sync: ${_formatDateTime(server.lastSync!)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: OmnisonicColors.neutralGray600,
-                fontSize: 11,
-              ),
-            ),
-          ],
         ],
       ),
       trailing: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
+          ? const SizedBox.square(
+              dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : PopupMenuButton<String>(
-              onSelected: (value) => _handleMenuAction(value),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'test',
-                  child: ListTile(
-                    leading: Icon(OmnisonicIcons.wifiProtectedSetup),
-                    title: Text('Test Connection'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+          : MenuAnchor(
+              builder: (context, controller, child) => IconButton(
+                icon: const Icon(OmnisonicIcons.moreVert),
+                tooltip: 'Actions for ${server.name}',
+                onPressed: () =>
+                    controller.isOpen ? controller.close() : controller.open(),
+              ),
+              menuChildren: [
+                MenuItemButton(
+                  leadingIcon: const Icon(OmnisonicIcons.wifiProtectedSetup),
+                  onPressed: onTest,
+                  child: const Text('Test connection'),
                 ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                    leading: Icon(OmnisonicIcons.edit),
-                    title: Text('Edit'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                MenuItemButton(
+                  leadingIcon: const Icon(OmnisonicIcons.edit),
+                  onPressed: onEdit,
+                  child: const Text('Edit'),
                 ),
-                const PopupMenuDivider(),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                    leading: Icon(
-                      OmnisonicIcons.delete,
-                      color: OmnisonicColors.error,
-                    ),
-                    title: Text(
-                      'Delete',
-                      style: TextStyle(color: OmnisonicColors.error),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+                MenuItemButton(
+                  leadingIcon: Icon(OmnisonicIcons.delete, color: scheme.error),
+                  onPressed: onDelete,
+                  child: Text('Remove', style: TextStyle(color: scheme.error)),
                 ),
               ],
             ),
       onTap: onTap,
-      isThreeLine: true,
     );
   }
 
@@ -137,25 +127,25 @@ class ServerListTile extends StatelessWidget {
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Row(
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 4,
         children: [
           _buildStat(
             context,
             OmnisonicIcons.albumOutline,
-            albumCount != null ? '$albumCount albums' : '— albums',
+            albumCount != null ? pluralize(albumCount!, 'album') : '— albums',
           ),
-          const SizedBox(width: 16),
           _buildStat(
             context,
             OmnisonicIcons.speedOutline,
             latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
           ),
-          const SizedBox(width: 16),
           _buildStat(
             context,
             OmnisonicIcons.syncOutline,
             server.lastSync != null
-                ? _formatDateTime(server.lastSync!)
+                ? formatRelativeTime(server.lastSync!)
                 : 'never synced',
           ),
         ],
@@ -184,130 +174,16 @@ class ServerListTile extends StatelessWidget {
     );
   }
 
-  Widget _buildLeading() {
+  Widget _buildLeading(BuildContext context) {
+    final color = ServerStatusVisuals.of(context, server.status).color;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        color: _getStatusColor(server.status).withValues(alpha: 0.1),
-      ),
-      child: Icon(
-        OmnisonicIcons.dns,
-        color: _getStatusColor(server.status),
-        size: 24,
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(ServerStatus status) {
-    final color = _getStatusColor(status);
-    final icon = _getStatusIcon(status);
-    final text = _getStatusText(status);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: OmnisonicIconSizes.xs, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+      child: Icon(OmnisonicIcons.dns, color: color, size: 24),
     );
-  }
-
-  Color _getStatusColor(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return OmnisonicColors.success;
-      case ServerStatus.offline:
-        return OmnisonicColors.error;
-      case ServerStatus.connecting:
-        return OmnisonicColors.warning;
-      case ServerStatus.authenticating:
-        return OmnisonicColors.info;
-      case ServerStatus.syncing:
-        return OmnisonicColors.primaryPurple;
-      case ServerStatus.error:
-        return OmnisonicColors.error;
-    }
-  }
-
-  IconData _getStatusIcon(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return OmnisonicIcons.checkCircle;
-      case ServerStatus.offline:
-        return OmnisonicIcons.error;
-      case ServerStatus.connecting:
-        return OmnisonicIcons.sync;
-      case ServerStatus.authenticating:
-        return OmnisonicIcons.lock;
-      case ServerStatus.syncing:
-        return OmnisonicIcons.syncAlt;
-      case ServerStatus.error:
-        return OmnisonicIcons.warning;
-    }
-  }
-
-  String _getStatusText(ServerStatus status) {
-    switch (status) {
-      case ServerStatus.online:
-        return 'Online';
-      case ServerStatus.offline:
-        return 'Offline';
-      case ServerStatus.connecting:
-        return 'Connecting';
-      case ServerStatus.authenticating:
-        return 'Authenticating';
-      case ServerStatus.syncing:
-        return 'Syncing';
-      case ServerStatus.error:
-        return 'Error';
-    }
-  }
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'test':
-        onTest?.call();
-        break;
-      case 'edit':
-        onEdit?.call();
-        break;
-      case 'delete':
-        onDelete?.call();
-        break;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
   }
 }

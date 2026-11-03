@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
-import '../../../../core/services/cover_palette_service.dart';
+import '../../../../core/utils/animation_utils.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import 'art_tint.dart';
 
 /// [ArtTintBackground] wired to whatever art is most relevant right now: the
 /// playing track first, then the most recently played album.
@@ -20,20 +21,7 @@ class ShellArtTint extends StatefulWidget {
   State<ShellArtTint> createState() => _ShellArtTintState();
 }
 
-class _ShellArtTintState extends State<ShellArtTint> {
-  Color? _tint;
-  String? _tintSourceUrl;
-
-  void _updateTint(String? coverArtUrl) {
-    if (coverArtUrl == _tintSourceUrl) return;
-    _tintSourceUrl = coverArtUrl;
-    CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
-      if (mounted && _tintSourceUrl == coverArtUrl) {
-        setState(() => _tint = color);
-      }
-    });
-  }
-
+class _ShellArtTintState extends State<ShellArtTint> with ArtTintMixin {
   @override
   Widget build(BuildContext context) {
     // Selecting only the cover art URLs, not the whole view models: this
@@ -57,14 +45,22 @@ class _ShellArtTintState extends State<ShellArtTint> {
     // Palette extraction is a side effect, so it waits until after this frame
     // rather than running inside build.
     final tintSource = playingArt ?? libraryArt;
-    if (tintSource != _tintSourceUrl) {
+    if (tintSource != artTintUrl) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _updateTint(tintSource);
+        if (mounted) updateArtTint(tintSource);
       });
     }
 
     return RepaintBoundary(
-      child: AnimatedTintSwitcher(seed: _tint, child: widget.child),
+      child: AnimatedTintSwitcher(
+        seed: artTint,
+        // A 600ms colour wash across the whole window is motion too.
+        duration: AnimationUtils.adjustedDuration(
+          context,
+          AnimatedTintSwitcher.defaultDuration,
+        ),
+        child: widget.child,
+      ),
     );
   }
 }
@@ -72,8 +68,14 @@ class _ShellArtTintState extends State<ShellArtTint> {
 /// Cross-fades between tints when the source art changes, so a track change
 /// doesn't snap the whole window to a new colour.
 class AnimatedTintSwitcher extends ImplicitlyAnimatedWidget {
-  const AnimatedTintSwitcher({super.key, this.seed, this.child})
-    : super(duration: const Duration(milliseconds: 600));
+  const AnimatedTintSwitcher({
+    super.key,
+    this.seed,
+    this.child,
+    super.duration = defaultDuration,
+  });
+
+  static const Duration defaultDuration = Duration(milliseconds: 600);
 
   final Color? seed;
   final Widget? child;

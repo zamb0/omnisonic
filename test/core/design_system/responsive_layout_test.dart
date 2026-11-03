@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/design_system/responsive_layout.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/media_card.dart';
 import 'package:omnisonic/features/ui/presentation/widgets/responsive_grid.dart';
 
 /// This file used to cover LayoutConfiguration, ResponsiveValue and
@@ -111,10 +112,31 @@ void main() {
       expect(await columnsAt(tester, 100), 1);
     });
 
-    testWidgets('caps at six columns', (tester) async {
-      // Uncapped, an ultrawide window would render album art at postage
-      // stamp size.
-      expect(await columnsAt(tester, 4000), 6);
+    testWidgets('adds columns rather than growing cards past the max', (
+      tester,
+    ) async {
+      // A fixed six-column cap rendered album art at poster size on an
+      // ultrawide window; capping the card width instead scales with it.
+      final columns = await columnsAt(tester, 4000);
+      final cell = MediaGridPreset.cellWidth(4000, columns);
+      expect(cell, lessThanOrEqualTo(MediaGridPreset.maxItemWidth));
+      expect(cell, greaterThanOrEqualTo(160));
+    });
+
+    testWidgets('media cells fit a square cover and the text', (tester) async {
+      await pumpAtWidth(
+        tester,
+        360,
+        ResponsiveGridView.media(
+          itemCount: 4,
+          itemBuilder: (context, index) => MediaCard(title: 'Album $index'),
+        ),
+      );
+
+      final art = tester.getSize(find.byType(AspectRatio).first);
+      expect(art.width, art.height);
+      expect(art.width, greaterThan(140));
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('builds lazily rather than eagerly', (tester) async {

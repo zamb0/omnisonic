@@ -11,6 +11,8 @@ import '../viewmodels/offline_mode_view_model.dart';
 import '../widgets/offline_indicator.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
+import '../../../../core/utils/formatters.dart';
+import '../../../../core/entities/entities.dart';
 
 /// Page for managing offline mode and viewing offline content
 class OfflineModePage extends StatefulWidget {
@@ -39,8 +41,8 @@ class _OfflineModePageState extends State<OfflineModePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Offline Mode'),
+      appBar: PageHeaderAppBar(
+        title: 'Downloads',
         actions: [
           Consumer<OfflineModeViewModel>(
             builder: (context, viewModel, child) {
@@ -58,39 +60,25 @@ class _OfflineModePageState extends State<OfflineModePage>
                         : () => viewModel.refreshOfflineCollection(),
                     tooltip: 'Refresh',
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) => _handleMenuAction(context, value),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'stats',
-                        child: ListTile(
-                          leading: Icon(OmnisonicIcons.analytics),
-                          title: Text('Statistics'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'settings',
-                        child: ListTile(
-                          leading: Icon(OmnisonicIcons.settings),
-                          title: Text('Settings'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
+                  IconButton(
+                    icon: const Icon(OmnisonicIcons.analytics),
+                    tooltip: 'Storage details',
+                    onPressed: () => _showStatsDialog(context, viewModel),
                   ),
                 ],
               );
             },
           ),
         ],
-        bottom: TabBar(
+        bottom: PageHeaderAppBar.tabBar(
+          context,
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
-            Tab(text: 'Tracks', icon: Icon(OmnisonicIcons.musicNote)),
-            Tab(text: 'Albums', icon: Icon(OmnisonicIcons.album)),
-            Tab(text: 'Artists', icon: Icon(OmnisonicIcons.person)),
-            Tab(text: 'Playlists', icon: Icon(OmnisonicIcons.playlistPlay)),
+            Tab(text: 'Tracks'),
+            Tab(text: 'Albums'),
+            Tab(text: 'Artists'),
+            Tab(text: 'Playlists'),
           ],
         ),
       ),
@@ -108,40 +96,35 @@ class _OfflineModePageState extends State<OfflineModePage>
             );
           }
 
-          if (!viewModel.hasOfflineContent) {
-            return const EmptyState(
-              icon: OmnisonicIcons.cloudOff,
-              title: 'No Offline Content',
-              subtitle: 'Download music for offline listening to see it here.',
-            );
-          }
-
-          return Column(
-            children: [
-              // Offline mode banner
-              const OfflineModeBanner(),
-
-              // Statistics summary
-              _buildStatsSummary(context, viewModel),
-
-              if (viewModel.cacheStats != null)
-                _buildCacheUsageBar(context, viewModel.cacheStats!),
-
-              _buildWifiOnlyToggle(context),
-
-              // Content tabs
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+          // A header that scrolls away above the tabs: fixed, it left the
+          // tab content no room in landscape or at large text sizes.
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                child: Column(
                   children: [
-                    _buildTracksTab(viewModel),
-                    _buildAlbumsTab(viewModel),
-                    _buildArtistsTab(viewModel),
-                    _buildPlaylistsTab(viewModel),
+                    const OfflineModeBanner(),
+                    if (viewModel.hasOfflineContent) ...[
+                      _buildStatsSummary(context, viewModel),
+                      if (viewModel.cacheStats != null)
+                        _buildCacheUsageBar(context, viewModel.cacheStats!),
+                    ],
+                    // Shown with nothing downloaded too: that is when it
+                    // matters, before the first download.
+                    _buildWifiOnlyToggle(context),
                   ],
                 ),
               ),
             ],
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTracksTab(viewModel),
+                _buildAlbumsTab(viewModel),
+                _buildArtistsTab(viewModel),
+                _buildPlaylistsTab(viewModel),
+              ],
+            ),
           );
         },
       ),
@@ -312,22 +295,33 @@ class _OfflineModePageState extends State<OfflineModePage>
   }
 
   Widget _buildStatItem(String label, String value, String percentage) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: OmnisonicColors.neutralGray600),
-        ),
-        Text(
-          percentage,
-          style: TextStyle(fontSize: 11, color: OmnisonicColors.neutralGray600),
-        ),
-      ],
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: '$label: $value downloaded, $percentage',
+      excludeSemantics: true,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: OmnisonicTypography.statValue.copyWith(
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: OmnisonicTypography.labelMedium.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            percentage,
+            style: OmnisonicTypography.technicalSmall.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -335,10 +329,16 @@ class _OfflineModePageState extends State<OfflineModePage>
     final tracks = viewModel.offlineTracks;
 
     if (tracks.isEmpty) {
-      return const EmptyState(
-        icon: OmnisonicIcons.musicNoteOutline,
-        title: 'No offline tracks',
-        subtitle: 'Downloaded tracks appear here.',
+      return EmptyState(
+        icon: OmnisonicIcons.downloadOutline,
+        title: 'Nothing downloaded yet',
+        subtitle:
+            'Use Download on an album, or on any track\'s actions, to keep '
+            'it on this device.',
+        action: FilledButton(
+          onPressed: () => context.go(AppRouter.library),
+          child: const Text('Browse library'),
+        ),
       );
     }
 
@@ -347,15 +347,39 @@ class _OfflineModePageState extends State<OfflineModePage>
       itemCount: tracks.length,
       itemBuilder: (context, index) {
         final track = tracks[index];
-        return TrackTile(
+        void play() => context.read<PlaybackViewModel>().playTrack(
+          track,
+          queue: tracks,
+          startIndex: index,
+        );
+        return TrackRow(
+          key: ValueKey(track.id),
           track: track,
-          onTap: () => context.read<PlaybackViewModel>().playTrack(
-            track,
-            queue: tracks,
-            startIndex: index,
+          showAlbum: true,
+          onTap: play,
+          onShowActions: () => showTrackActions(context, track, onPlay: play),
+          // Downloads could not be removed from here at all, though the
+          // view model has always supported it.
+          trailing: IconButton(
+            icon: const Icon(OmnisonicIcons.delete),
+            iconSize: 20,
+            tooltip: 'Remove download',
+            onPressed: () => _removeDownload(track),
           ),
         );
       },
+    );
+  }
+
+  Future<void> _removeDownload(Track track) async {
+    final error = await context.read<OfflineModeViewModel>().removeDownload(
+      track.id,
+    );
+    if (!mounted) return;
+    showFeedback(
+      context,
+      error ?? 'Removed "${track.title}" from this device',
+      kind: error == null ? FeedbackKind.success : FeedbackKind.error,
     );
   }
 
@@ -370,29 +394,15 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.8,
+      meta: true,
       itemCount: albums.length,
       itemBuilder: (context, index) {
         final album = albums[index];
-        return Stack(
-          children: [
-            AlbumCard(
-              album: album,
-              onTap: () => context.push(
-                AppRouter.albumDetailLocation(album.id),
-                extra: album,
-              ),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return AlbumCard(
+          album: album,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
         );
       },
     );
@@ -409,29 +419,16 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.9,
+      subtitle: false,
+      meta: true,
       itemCount: artists.length,
       itemBuilder: (context, index) {
         final artist = artists[index];
-        return Stack(
-          children: [
-            ArtistCard(
-              artist: artist,
-              onTap: () => context.push(
-                AppRouter.artistDetailLocation(artist.id),
-                extra: artist,
-              ),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return ArtistCard(
+          artist: artist,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
         );
       },
     );
@@ -448,43 +445,26 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
-    return ResponsiveGridView(
+    return ResponsiveGridView.media(
       padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      minItemWidth: 160,
-      spacing: OmnisonicSpacing.md,
-      childAspectRatio: 0.8,
+      meta: true,
       itemCount: playlists.length,
       itemBuilder: (context, index) {
         final playlist = playlists[index];
-        return Stack(
-          children: [
-            PlaylistCard(
-              playlist: playlist,
-              onTap: () =>
-                  context.push(AppRouter.playlistDetailLocation(playlist.id)),
-            ),
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: OfflineContentBadge(isAvailable: true),
-            ),
-          ],
+        return MediaCard(
+          title: playlist.name,
+          subtitle: playlist.description?.isNotEmpty == true
+              ? playlist.description
+              : null,
+          meta: pluralize(playlist.trackCount, 'track'),
+          imageUrl: playlist.coverArtUrl,
+          fallbackIcon: OmnisonicIcons.playlistPlay,
+          badge: const OfflineContentBadge(isAvailable: true, size: 14),
+          onTap: () =>
+              context.push(AppRouter.playlistDetailLocation(playlist.id)),
         );
       },
     );
-  }
-
-  void _handleMenuAction(BuildContext context, String action) {
-    final viewModel = context.read<OfflineModeViewModel>();
-
-    switch (action) {
-      case 'stats':
-        _showStatsDialog(context, viewModel);
-        break;
-      case 'settings':
-        _showSettingsDialog(context, viewModel);
-        break;
-    }
   }
 
   void _showStatsDialog(BuildContext context, OfflineModeViewModel viewModel) {
@@ -534,38 +514,6 @@ class _OfflineModePageState extends State<OfflineModePage>
               ],
             );
           },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSettingsDialog(
-    BuildContext context,
-    OfflineModeViewModel viewModel,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Offline Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: const Text('Force Offline Mode'),
-              subtitle: const Text('Override network detection'),
-              value: viewModel.isOffline,
-              onChanged: (value) {
-                viewModel.setOfflineMode(value);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         ),
         actions: [
           TextButton(

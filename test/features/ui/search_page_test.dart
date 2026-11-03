@@ -118,14 +118,14 @@ void main() {
     ) async {
       await pumpSearch(tester, state: manyResults);
 
-      expect(find.byType(TrackTile), findsNWidgets(5));
+      expect(find.byType(TrackRow), findsNWidgets(5));
 
       await tester.tap(find.text('See All').first);
       await tester.pump();
 
       // Expanded, but still lazy: a SliverList only builds what fits, so the
       // count goes up without becoming thirty.
-      final expanded = find.byType(TrackTile).evaluate().length;
+      final expanded = find.byType(TrackRow).evaluate().length;
       expect(expanded, greaterThan(5));
       expect(expanded, lessThan(30));
     });
@@ -138,7 +138,7 @@ void main() {
       await tester.tap(find.text('Show Less').first);
       await tester.pump();
 
-      expect(find.byType(TrackTile), findsNWidgets(5));
+      expect(find.byType(TrackRow), findsNWidgets(5));
     });
   });
 
@@ -204,7 +204,7 @@ void main() {
       );
       expect(find.byType(TextField), findsOneWidget);
 
-      await tester.drag(find.byType(TrackTile).first, const Offset(0, -400));
+      await tester.drag(find.byType(TrackRow).first, const Offset(0, -400));
       await tester.pump();
 
       // A field that scrolls away is the one thing a search page cannot do.

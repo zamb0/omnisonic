@@ -82,8 +82,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(TrackTile), findsWidgets);
-    expect(find.byType(TrackTile).evaluate().length, lessThan(30));
+    expect(find.byType(TrackRow), findsWidgets);
+    expect(find.byType(TrackRow).evaluate().length, lessThan(30));
   });
 }
 

@@ -61,6 +61,17 @@ class OmnisonicSpacing {
     }
   }
 
+  /// The page's horizontal gutter: 16 on phones, 24 on tablets, 32 wider.
+  ///
+  /// Pages used 4, 16 or 24 as each saw fit, so content edges jumped as the
+  /// user moved between tabs. One gutter, adapting to the width.
+  static double gutter(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 600) return md;
+    if (width < 1200) return lg;
+    return xl;
+  }
+
   /// Get screen padding based on device size
   static EdgeInsets screenPaddingFor(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;

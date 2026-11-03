@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design_system/animation_manager.dart';
+import '../design_system/colors.dart';
 import '../design_system/spacing.dart';
 
 /// Utility class for creating consistent animations throughout the app
@@ -88,9 +89,14 @@ class AnimationUtils {
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      transitionAnimationController: AnimationController(
-        duration: AnimationManager.normalDuration,
-        vsync: Navigator.of(context),
+      // An AnimationController created here was never disposed — one leaked
+      // per sheet — and its fixed duration ignored reduced motion.
+      sheetAnimationStyle: AnimationStyle(
+        duration: adjustedDuration(context, AnimationManager.normalDuration),
+        reverseDuration: adjustedDuration(
+          context,
+          AnimationManager.quickDuration,
+        ),
       ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
@@ -111,7 +117,7 @@ class AnimationUtils {
       pageBuilder: (context, animation, secondaryAnimation) => builder(context),
       barrierDismissible: barrierDismissible,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
+      barrierColor: OmnisonicColors.scrim,
       transitionBuilder: fadeTransition,
       transitionDuration: AnimationManager.quickDuration,
     );

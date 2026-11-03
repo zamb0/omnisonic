@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/entities.dart';
 import '../../../../core/errors/result.dart';
@@ -46,7 +47,54 @@ class AdaptiveStreamingService {
   static const Duration _bufferingGracePeriod = Duration(seconds: 8);
   static const Duration _stableUpgradeWindow = Duration(seconds: 60);
 
+  /// The highest quality the user allows, or null for automatic. Persisted.
+  ///
+  /// Settings showed the streaming quality read-only; this is what makes
+  /// the choice there real. The adaptive logic still steps down from the
+  /// cap when the connection struggles.
+  AudioQuality? _qualityCap;
+  static const _qualityCapKey = 'omnisonic_streaming_quality_cap';
+
+  AudioQuality? get qualityCap => _qualityCap;
+
+  Future<void> setQualityCap(AudioQuality? cap) async {
+    _qualityCap = cap;
+    _recommendedQualityController.add(currentRecommendedQuality);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (cap == null) {
+        await prefs.remove(_qualityCapKey);
+      } else {
+        await prefs.setString(_qualityCapKey, cap.name);
+      }
+    } catch (e) {
+      AppLog.warn('Failed to save the streaming quality cap: $e');
+    }
+  }
+
+  Future<void> _restoreQualityCap() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_qualityCapKey);
+      if (saved == null) return;
+      _qualityCap = AudioQuality.values
+          .where((q) => q.name == saved)
+          .firstOrNull;
+      _recommendedQualityController.add(currentRecommendedQuality);
+    } catch (e) {
+      AppLog.warn('Failed to restore the streaming quality cap: $e');
+    }
+  }
+
+  AudioQuality _capped(AudioQuality quality) {
+    final cap = _qualityCap;
+    return cap != null && quality.qualityScore > cap.qualityScore
+        ? cap
+        : quality;
+  }
+
   void _init() {
+    _restoreQualityCap();
     // Monitor connectivity changes
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen((
       results,
@@ -194,7 +242,7 @@ class AdaptiveStreamingService {
         'Quality downgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (buffering)',
       );
       _currentRecommendedQuality = newQuality;
-      _recommendedQualityController.add(newQuality);
+      _recommendedQualityController.add(_capped(newQuality));
     }
   }
 
@@ -209,7 +257,7 @@ class AdaptiveStreamingService {
         'Quality upgrade: ${_currentRecommendedQuality.name} -> ${newQuality.name} (smooth streaming)',
       );
       _currentRecommendedQuality = newQuality;
-      _recommendedQualityController.add(newQuality);
+      _recommendedQualityController.add(_capped(newQuality));
     }
   }
 
@@ -222,7 +270,8 @@ class AdaptiveStreamingService {
   NetworkCondition get currentNetworkCondition => _currentCondition;
 
   /// Gets the current recommended quality
-  AudioQuality get currentRecommendedQuality => _currentRecommendedQuality;
+  AudioQuality get currentRecommendedQuality =>
+      _capped(_currentRecommendedQuality);
 
   /// Gets the estimated bandwidth in Mbps
   double get estimatedBandwidth => _estimatedBandwidth;
@@ -238,8 +287,8 @@ class AdaptiveStreamingService {
   /// Gets the optimal quality for a given track and current conditions
   Future<Result<AudioQuality>> getOptimalQuality(Track track) async {
     try {
-      // Consider track's available quality
-      AudioQuality optimalQuality = _currentRecommendedQuality;
+      // Consider track's available quality, within the user's cap
+      AudioQuality optimalQuality = _capped(_currentRecommendedQuality);
 
       // Don't recommend higher quality than what the track supports
       if (track.quality.qualityScore < optimalQuality.qualityScore) {

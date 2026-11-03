@@ -151,9 +151,7 @@ class FeishinShell extends StatelessWidget {
               'Omnisonic',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: OmnisonicTypography.sectionTitleSmall.copyWith(
-                fontSize: 17,
-                letterSpacing: -0.17,
+              style: OmnisonicTypography.wordmark.copyWith(
                 color: scheme.onSurface,
               ),
             ),
@@ -179,9 +177,15 @@ class FeishinShell extends StatelessWidget {
       (d) => d.route == AppRouter.library,
     );
     final isLibrary = libraryDestination.matches(path);
-    final activeLibraryTab =
+    // Derived from where the user actually is: an artist page used to light
+    // "Albums", because the missing ?tab= defaulted to albums.
+    final activeLibraryTab = switch (path) {
+      AppRouter.artistDetail => LibraryTab.artists,
+      AppRouter.albumDetail => LibraryTab.albums,
+      _ =>
         LibraryTab.fromName(location.queryParameters['tab']) ??
-        LibraryTab.albums;
+            LibraryTab.albums,
+    };
 
     Widget item(AppDestination destination) => _NavItem(
       extended: extended,
@@ -247,21 +251,16 @@ class FeishinShell extends StatelessWidget {
                 child: Text(
                   'SERVERS',
                   style: OmnisonicTypography.eyebrow.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.4),
-                  ),
-                ),
-              ),
-              InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-                onTap: () => context.go(AppRouter.servers),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    OmnisonicIcons.add,
-                    size: OmnisonicIconSizes.sm,
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
+              ),
+              IconButton(
+                tooltip: 'Add a server',
+                onPressed: () => context.go(AppRouter.servers),
+                icon: const Icon(OmnisonicIcons.add),
+                iconSize: OmnisonicIconSizes.sm,
+                color: scheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -289,7 +288,11 @@ class FeishinShell extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
-        color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.4),
+        color: OmnisonicColors.glassFill(
+          isDark ? Brightness.dark : Brightness.light,
+          light: 0.4,
+          dark: 0.05,
+        ),
         borderRadius: BorderRadius.circular(OmnisonicRadius.md),
         child: InkWell(
           borderRadius: BorderRadius.circular(OmnisonicRadius.md),
@@ -313,8 +316,7 @@ class FeishinShell extends StatelessWidget {
                 ),
                 Text(
                   _shortId(server.id),
-                  style: OmnisonicTypography.technical.copyWith(
-                    fontSize: 9.5,
+                  style: OmnisonicTypography.technicalSmall.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -413,7 +415,6 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
           Text(
             'Library health',
             style: OmnisonicTypography.glassButton.copyWith(
-              fontSize: 12,
               color: scheme.onSurface,
             ),
           ),
@@ -453,8 +454,7 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
           Text(
             '${(losslessShare * 100).round()}% lossless · '
             '${library.duplicateGroupCount} dupes merged',
-            style: OmnisonicTypography.technical.copyWith(
-              fontSize: 9.5,
+            style: OmnisonicTypography.technicalSmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),
           ),
@@ -512,7 +512,6 @@ class _NavItem extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OmnisonicTypography.labelSmall.copyWith(
-                    fontSize: 10,
                     color: selected
                         ? scheme.onSurface
                         : scheme.onSurfaceVariant,
@@ -566,9 +565,10 @@ class _NavItem extends StatelessWidget {
                   if (count != null && count! > 0)
                     Text(
                       '$count',
-                      style: OmnisonicTypography.technical.copyWith(
-                        fontSize: 10,
-                        color: foreground.withValues(alpha: 0.6),
+                      // Full-strength foreground: at 60% the count was
+                      // under 3:1 on the selected pill.
+                      style: OmnisonicTypography.technicalSmall.copyWith(
+                        color: foreground,
                       ),
                     ),
                 ],

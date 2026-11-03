@@ -30,10 +30,11 @@ void main() {
         isSemantics(isButton: true, hasEnabledState: true, isEnabled: false),
       );
 
-      final icon = tester.widget<Icon>(
-        find.descendant(of: control, matching: find.byType(Icon)),
+      // The colour the glyph is actually painted in, wherever it came from.
+      final glyph = tester.widget<RichText>(
+        find.descendant(of: control, matching: find.byType(RichText)),
       );
-      expect(icon.color!.a, closeTo(0.38, 0.01));
+      expect(glyph.text.style!.color!.a, closeTo(0.38, 0.01));
     }
     handle.dispose();
   });

@@ -96,7 +96,14 @@ class MainShell extends StatelessWidget {
                 mode: ShellMode.extendedSidebar,
               ).wrap(_buildSidebarShell(context, extended: true));
             }
-            if (width >= ResponsiveBreakpoints.tablet) {
+            // A phone on its side is wide but very short: the bottom bar, the
+            // mini player and the margins took ~140 of ~390px. The icon rail
+            // costs width instead, which landscape has to spare.
+            final landscapePhone =
+                width > constraints.maxHeight &&
+                width >= 560 &&
+                constraints.maxHeight < 500;
+            if (width >= ResponsiveBreakpoints.tablet || landscapePhone) {
               return const ShellLayout(
                 mode: ShellMode.collapsedSidebar,
               ).wrap(_buildSidebarShell(context, extended: false));
@@ -155,13 +162,14 @@ class MainShell extends StatelessWidget {
         horizontal: OmnisonicSpacing.sm,
         vertical: OmnisonicSpacing.xs,
       ),
-      // Flexible rather than fixed: five slots on a 375px phone at the
+      // Expanded rather than fixed: five slots on a 375px phone at the
       // largest chrome text size do not fit side by side, and the labels
-      // have to be allowed to ellipsize rather than overflow the bar.
+      // have to ellipsize rather than overflow. Expanded, not Flexible —
+      // loose slots bunched up on the left with the right of the bar empty.
       child: Row(
         children: [
           for (var i = 0; i < destinations.length; i++)
-            Flexible(
+            Expanded(
               child: _NavPillItem(
                 destination: destinations[i],
                 selected: currentIndex == i,
@@ -172,7 +180,7 @@ class MainShell extends StatelessWidget {
                 },
               ),
             ),
-          const Flexible(
+          const Expanded(
             child: AccountButton(axis: Axis.vertical, showLabel: true),
           ),
         ],

@@ -218,11 +218,11 @@ class AppRouter {
           child: NowPlayingPage(initialPanel: state.extra as NowPlayingPanel?),
           transitionDuration: AnimationUtils.adjustedDuration(
             context,
-            const Duration(milliseconds: 300),
+            AnimationManager.normalDuration,
           ),
           reverseTransitionDuration: AnimationUtils.adjustedDuration(
             context,
-            const Duration(milliseconds: 300),
+            AnimationManager.normalDuration,
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             // Slide up when entering, slide down when exiting

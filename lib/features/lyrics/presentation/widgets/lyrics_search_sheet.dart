@@ -41,80 +41,82 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
     final viewModel = context.watch<LyricsViewModel>();
     final theme = Theme.of(context);
 
+    // One scroll view for the whole sheet: with three fields and a fixed
+    // 260px list in a plain Column, opening the keyboard overflowed it.
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: OmnisonicSpacing.md),
-          Text('Search lyrics (LRCLIB)', style: theme.textTheme.titleMedium),
-          const SizedBox(height: OmnisonicSpacing.md),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.md,
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                ),
-                const SizedBox(height: OmnisonicSpacing.sm),
-                TextField(
-                  controller: _artistController,
-                  decoration: const InputDecoration(labelText: 'Artist'),
-                ),
-                const SizedBox(height: OmnisonicSpacing.sm),
-                TextField(
-                  controller: _albumController,
-                  decoration: const InputDecoration(labelText: 'Album'),
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: viewModel.isSearching
-                            ? null
-                            : () {
-                                viewModel.searchLyrics(
-                                  title: _titleController.text.trim(),
-                                  artist: _artistController.text.trim(),
-                                  album: _albumController.text.trim(),
-                                );
-                              },
-                        icon: viewModel.isSearching
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(OmnisonicIcons.search),
-                        label: const Text('Search'),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: OmnisonicSpacing.md),
+            Text('Search lyrics (LRCLIB)', style: theme.textTheme.titleMedium),
+            const SizedBox(height: OmnisonicSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: OmnisonicSpacing.md,
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.sm),
+                  TextField(
+                    controller: _artistController,
+                    decoration: const InputDecoration(labelText: 'Artist'),
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.sm),
+                  TextField(
+                    controller: _albumController,
+                    decoration: const InputDecoration(labelText: 'Album'),
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: viewModel.isSearching
+                              ? null
+                              : () {
+                                  viewModel.searchLyrics(
+                                    title: _titleController.text.trim(),
+                                    artist: _artistController.text.trim(),
+                                    album: _albumController.text.trim(),
+                                  );
+                                },
+                          icon: viewModel.isSearching
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(OmnisonicIcons.search),
+                          label: const Text('Search'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: OmnisonicSpacing.sm),
-                    if (viewModel.override != null)
-                      OutlinedButton(
-                        onPressed: () async {
-                          await viewModel.clearOverride();
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                        child: const Text('Clear override'),
-                      ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: OmnisonicSpacing.sm),
+                      if (viewModel.override != null)
+                        OutlinedButton(
+                          onPressed: () async {
+                            await viewModel.clearOverride();
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                          child: const Text('Clear override'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: OmnisonicSpacing.md),
-          _SearchResultsList(viewModel: viewModel),
-          const SizedBox(height: OmnisonicSpacing.md),
-        ],
+            const SizedBox(height: OmnisonicSpacing.md),
+            _SearchResultsList(viewModel: viewModel),
+            const SizedBox(height: OmnisonicSpacing.md),
+          ],
+        ),
       ),
     );
   }
@@ -145,26 +147,25 @@ class _SearchResultsList extends StatelessWidget {
       );
     }
 
-    return SizedBox(
-      height: 260,
-      child: ListView.separated(
-        itemCount: results.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final result = results[index];
-          return ListTile(
-            title: Text(result.title),
-            subtitle: Text(result.artist),
-            trailing: result.isSynced
-                ? const Icon(OmnisonicIcons.sync)
-                : const Icon(OmnisonicIcons.textSnippetOutline),
-            onTap: () async {
-              await viewModel.applySearchResult(result);
-              if (context.mounted) Navigator.pop(context);
-            },
-          );
-        },
-      ),
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: results.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final result = results[index];
+        return ListTile(
+          title: Text(result.title),
+          subtitle: Text(result.artist),
+          trailing: result.isSynced
+              ? const Icon(OmnisonicIcons.sync)
+              : const Icon(OmnisonicIcons.textSnippetOutline),
+          onTap: () async {
+            await viewModel.applySearchResult(result);
+            if (context.mounted) Navigator.pop(context);
+          },
+        );
+      },
     );
   }
 }

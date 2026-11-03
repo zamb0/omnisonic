@@ -20,13 +20,15 @@ class FavoritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavoritesPage>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  /// The tab the user was on, kept across visits: the shell rebuilds this
+  /// page on every tab switch, and it used to come back on Albums.
+  static int _lastTab = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
+  late final TabController _tabController = TabController(
+    length: 3,
+    vsync: this,
+    initialIndex: _lastTab,
+  )..addListener(() => _lastTab = _tabController.index);
 
   @override
   void dispose() {
@@ -36,27 +38,12 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
-      appBar: AppBar(
-        // Oversized display title on a transparent bar, matching Library: the
-        // art tint has to run behind the header rather than stop at it.
-        toolbarHeight: 72,
-        titleSpacing: OmnisonicSpacing.xs,
-        title: Text(
-          'Starred',
-          style: OmnisonicTypography.pageTitle.copyWith(
-            color: scheme.onSurface,
-          ),
-        ),
-        bottom: TabBar(
+      appBar: PageHeaderAppBar(
+        title: 'Starred',
+        bottom: PageHeaderAppBar.tabBar(
+          context,
           controller: _tabController,
-          labelStyle: OmnisonicTypography.navLabel,
-          unselectedLabelStyle: OmnisonicTypography.navLabel,
-          labelColor: scheme.onSurface,
-          unselectedLabelColor: scheme.onSurfaceVariant,
-          indicatorColor: scheme.primary,
           tabs: const [
             Tab(text: 'Albums'),
             Tab(text: 'Artists'),
@@ -91,14 +78,12 @@ class _FavoritesPageState extends State<FavoritesPage>
             title: 'No Starred Albums',
             subtitle: 'Star your favorite albums to see them here',
           ),
-          builder: (context) => ResponsiveGridView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+          builder: (context) => ResponsiveGridView.media(
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
-            minItemWidth: 160,
-            spacing: 20,
-            childAspectRatio: 0.72,
+            meta: true,
             itemCount: starredAlbums.length,
             itemBuilder: (context, index) {
               final album = starredAlbums[index];
@@ -107,10 +92,9 @@ class _FavoritesPageState extends State<FavoritesPage>
                 key: ValueKey(album.id),
                 album: album,
                 onTap: () => _onAlbumTapped(album),
-                onUnstar: isStarred ? () => viewModel.unstarAlbum(album) : null,
+                onStar: () => viewModel.starAlbum(album),
+                onUnstar: () => viewModel.unstarAlbum(album),
                 isStarred: isStarred,
-                showArtist: true,
-                showMeta: true,
               );
             },
           ),
@@ -135,14 +119,13 @@ class _FavoritesPageState extends State<FavoritesPage>
             title: 'No Starred Artists',
             subtitle: 'Star your favorite artists to see them here',
           ),
-          builder: (context) => ResponsiveGridView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+          builder: (context) => ResponsiveGridView.media(
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
-            minItemWidth: 150,
-            spacing: 20,
-            childAspectRatio: 0.72,
+            subtitle: false,
+            meta: true,
             itemCount: starredArtists.length,
             itemBuilder: (context, index) {
               final artist = starredArtists[index];
@@ -174,16 +157,23 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite tracks to see them here',
           ),
           builder: (context) => ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.lg,
+            padding: EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.gutter(context),
               vertical: OmnisonicSpacing.md,
             ),
             itemCount: starredTracks.length,
             itemBuilder: (context, index) {
               final track = starredTracks[index];
-              return TrackTile(
+              return TrackRow(
+                key: ValueKey(track.id),
                 track: track,
+                serverId: track.serverId,
                 onTap: () => _onTrackTapped(track, starredTracks),
+                onShowActions: () => showTrackActions(
+                  context,
+                  track,
+                  onPlay: () => _onTrackTapped(track, starredTracks),
+                ),
               );
             },
           ),

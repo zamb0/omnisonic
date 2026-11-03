@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
-import '../../../../core/services/subsonic_image_cache_manager.dart';
-import '../viewmodels/playlist_view_model.dart';
+import '../../../../core/routing/app_router.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
-import '../widgets/draggable_track_tile.dart';
-import '../widgets/playlist_edit_dialog.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
+import '../viewmodels/playlist_view_model.dart';
+import '../widgets/playlist_actions.dart';
+import '../widgets/playlist_form_dialog.dart';
 
-/// Detailed view of a playlist with track management and drag-and-drop reordering
+/// A playlist: header, play/shuffle, and its tracks, with reordering.
+///
+/// Built like the album page — art-led [DetailHeader] on the shell's tint,
+/// [TrackRow]s — rather than the old primary-colour gradient app bar with
+/// white-on-black text that read dark-on-primary in light mode.
+///
+/// Reordering: in reorder mode only the handle starts a drag, so the list
+/// still scrolls on touch and a tap does not start playback; every row's
+/// actions also offer Move up / Move down, so nothing needs a drag at all.
 class PlaylistDetailPage extends StatefulWidget {
   final String playlistId;
 
@@ -28,7 +37,9 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PlaylistViewModel>().selectPlaylist(widget.playlistId);
+      if (mounted) {
+        context.read<PlaylistViewModel>().selectPlaylist(widget.playlistId);
+      }
     });
   }
 
@@ -37,39 +48,76 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     return Scaffold(
       body: Consumer<PlaylistViewModel>(
         builder: (context, viewModel, child) {
-          if (viewModel.isLoading) {
-            return const LoadingStateView(kind: SkeletonKind.detailHeader);
-          }
+          final playlist = viewModel.selectedPlaylist?.id == widget.playlistId
+              ? viewModel.selectedPlaylist
+              : null;
 
-          final error = viewModel.errorMessage;
-          if (error != null) {
-            return ErrorStateView(
-              message: error,
-              onRetry: () => _reload(viewModel),
-            );
-          }
-
-          final playlist = viewModel.selectedPlaylist;
           if (playlist == null) {
-            return EmptyState(
-              icon: OmnisonicIcons.playlistPlay,
-              title: 'Playlist not found',
-              subtitle: 'It may have been deleted, or its server is offline.',
-              action: FilledButton.icon(
-                onPressed: () => _reload(viewModel),
-                icon: const Icon(OmnisonicIcons.refresh),
-                label: const Text('Try again'),
+            if (viewModel.isLoadingTracks || viewModel.isLoading) {
+              return const SafeArea(
+                child: LoadingStateView(kind: SkeletonKind.detailHeader),
+              );
+            }
+            final error = viewModel.errorMessage;
+            if (error != null) {
+              return _withBackBar(
+                ErrorStateView(
+                  message: error,
+                  onRetry: () => _reload(viewModel),
+                ),
+              );
+            }
+            return _withBackBar(
+              EmptyState(
+                icon: OmnisonicIcons.playlistPlay,
+                title: 'Playlist not found',
+                subtitle: 'It may have been deleted, or its server is offline.',
+                action: FilledButton(
+                  onPressed: () => context.go(AppRouter.playlistManagement),
+                  child: const Text('All playlists'),
+                ),
               ),
             );
           }
 
+          final tracks = viewModel.selectedPlaylistTracks;
           return RefreshIndicator(
             onRefresh: () async => _reload(viewModel),
             child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                _buildSliverAppBar(playlist, viewModel),
-                _buildPlaylistInfo(playlist),
-                _buildTrackList(playlist, viewModel),
+                _buildAppBar(playlist),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    OmnisonicSpacing.md,
+                    OmnisonicSpacing.sm,
+                    OmnisonicSpacing.md,
+                    OmnisonicSpacing.lg,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: _buildHeader(playlist, tracks),
+                  ),
+                ),
+                if (viewModel.errorMessage != null)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.md,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: InlineBanner(
+                        kind: BannerKind.warning,
+                        message: viewModel.errorMessage!,
+                        action: TextButton(
+                          onPressed: () => _reload(viewModel),
+                          child: const Text('Try again'),
+                        ),
+                      ),
+                    ),
+                  ),
+                _buildTrackList(playlist, viewModel, tracks),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: OmnisonicSpacing.xl),
+                ),
               ],
             ),
           );
@@ -78,233 +126,167 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
     );
   }
 
-  void _reload(PlaylistViewModel viewModel) {
-    viewModel.clearError();
-    viewModel.selectPlaylist(widget.playlistId);
+  /// A page with no content still needs a way out.
+  Widget _withBackBar(Widget body) => Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: AppBar(leading: BackButton(onPressed: _leave)),
+    body: body,
+  );
+
+  void _leave() {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      router.pop();
+    } else {
+      router.go(AppRouter.playlistManagement);
+    }
   }
 
-  Widget _buildSliverAppBar(Playlist playlist, PlaylistViewModel viewModel) {
+  Future<void> _reload(PlaylistViewModel viewModel) {
+    viewModel.clearError();
+    return viewModel.selectPlaylist(widget.playlistId);
+  }
+
+  Widget _buildAppBar(Playlist playlist) {
     return SliverAppBar(
-      expandedHeight: 200,
       pinned: true,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          playlist.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            shadows: [
-              Shadow(
-                offset: Offset(0, 1),
-                blurRadius: 3,
-                color: Colors.black54,
-              ),
-            ],
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withValues(alpha: 0.7),
-              ],
-            ),
-          ),
-          child: playlist.coverArtUrl != null
-              ? Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: SubsonicCoverArt.of(
-                        playlist.coverArtUrl!,
-                        600,
-                      ).url,
-                      cacheKey: SubsonicCoverArt.of(
-                        playlist.coverArtUrl!,
-                        600,
-                      ).cacheKey,
-                      cacheManager: OmnisonicImageCacheManager.instance,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 600,
-                      memCacheHeight: 600,
-                      fadeInDuration: const Duration(milliseconds: 120),
-                      useOldImageOnUrlChange: true,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : const Icon(
-                  OmnisonicIcons.playlistPlay,
-                  size: OmnisonicIconSizes.xxxl,
-                  color: Colors.white70,
-                ),
-        ),
-      ),
+      leading: BackButton(onPressed: _leave),
       actions: [
         IconButton(
           icon: Icon(
             _isReorderMode ? OmnisonicIcons.check : OmnisonicIcons.reorder,
           ),
-          onPressed: () {
-            setState(() {
-              _isReorderMode = !_isReorderMode;
-            });
-          },
-          tooltip: _isReorderMode ? 'Done Reordering' : 'Reorder Tracks',
+          isSelected: _isReorderMode,
+          onPressed: () => setState(() => _isReorderMode = !_isReorderMode),
+          tooltip: _isReorderMode ? 'Done reordering' : 'Reorder tracks',
         ),
-        PopupMenuButton<String>(
-          onSelected: (value) => _handleMenuAction(value, playlist, viewModel),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: ListTile(
-                leading: Icon(OmnisonicIcons.edit),
-                title: Text('Edit Playlist'),
-                contentPadding: EdgeInsets.zero,
-              ),
+        MenuAnchor(
+          builder: (context, controller, child) => IconButton(
+            icon: const Icon(OmnisonicIcons.moreVert),
+            tooltip: 'Playlist actions',
+            onPressed: () =>
+                controller.isOpen ? controller.close() : controller.open(),
+          ),
+          menuChildren: [
+            MenuItemButton(
+              leadingIcon: const Icon(OmnisonicIcons.edit),
+              onPressed: () =>
+                  showPlaylistFormDialog(context, playlist: playlist),
+              child: const Text('Edit'),
             ),
-            const PopupMenuItem(
-              value: 'duplicate',
-              child: ListTile(
-                leading: Icon(OmnisonicIcons.copy),
-                title: Text('Duplicate'),
-                contentPadding: EdgeInsets.zero,
-              ),
+            MenuItemButton(
+              leadingIcon: const Icon(OmnisonicIcons.copy),
+              onPressed: () => duplicatePlaylistFlow(context, playlist),
+              child: const Text('Duplicate'),
             ),
-            const PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'delete',
-              child: ListTile(
-                leading: Icon(
-                  OmnisonicIcons.delete,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                title: Text(
-                  'Delete Playlist',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-                contentPadding: EdgeInsets.zero,
+            MenuItemButton(
+              leadingIcon: Icon(
+                OmnisonicIcons.delete,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => _delete(playlist),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           ],
+        ),
+        const SizedBox(width: OmnisonicSpacing.xs),
+      ],
+    );
+  }
+
+  Widget _buildHeader(Playlist playlist, List<Track> tracks) {
+    final total = tracks.fold(Duration.zero, (sum, t) => sum + t.duration);
+    final canPlay = tracks.isNotEmpty;
+
+    return DetailHeader(
+      eyebrow: playlist.isPublic ? 'Public playlist' : 'Private playlist',
+      title: playlist.name,
+      artwork: CoverArt(
+        url: playlist.coverArtUrl,
+        fallbackIcon: OmnisonicIcons.playlistPlay,
+        elevated: true,
+      ),
+      subtitle: playlist.description?.isNotEmpty == true
+          ? Text(
+              playlist.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            )
+          : null,
+      chips: [
+        MetadataChip(
+          icon: OmnisonicIcons.queueMusic,
+          label: pluralize(
+            tracks.isNotEmpty ? tracks.length : playlist.trackCount,
+            'track',
+          ),
+        ),
+        if (tracks.isNotEmpty)
+          MetadataChip(
+            icon: OmnisonicIcons.accessTime,
+            label: formatTotalDuration(total),
+          ),
+        if (playlist.owner?.isNotEmpty == true)
+          MetadataChip(icon: OmnisonicIcons.person, label: playlist.owner!),
+      ],
+      actions: [
+        FilledButton.icon(
+          onPressed: canPlay ? () => _play(tracks, 0) : null,
+          icon: const Icon(OmnisonicIcons.playArrow),
+          label: const Text('Play'),
+        ),
+        OutlinedButton.icon(
+          onPressed: canPlay ? () => _play(tracks, 0, shuffle: true) : null,
+          icon: const Icon(OmnisonicIcons.shuffle),
+          label: const Text('Shuffle'),
         ),
       ],
     );
   }
 
-  Widget _buildPlaylistInfo(Playlist playlist) {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${playlist.trackCount} track${playlist.trackCount != 1 ? 's' : ''}',
-                        style: OmnisonicTypography.sectionTitleSmall,
-                      ),
-                      if (playlist.description?.isNotEmpty == true) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          playlist.description!,
-                          style: OmnisonicTypography.bodyMedium.copyWith(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            playlist.isPublic
-                                ? OmnisonicIcons.public
-                                : OmnisonicIcons.lock,
-                            size: OmnisonicIconSizes.sm,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            playlist.isPublic ? 'Public' : 'Private',
-                            style: OmnisonicTypography.metadata.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Consumer<PlaybackViewModel>(
-                  builder: (context, playbackViewModel, child) {
-                    return ElevatedButton.icon(
-                      onPressed: playlist.trackCount > 0
-                          ? () => _playPlaylist(playbackViewModel)
-                          : null,
-                      icon: const Icon(OmnisonicIcons.playArrow),
-                      label: const Text('Play'),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrackList(Playlist playlist, PlaylistViewModel viewModel) {
-    final tracks = viewModel.selectedPlaylistTracks;
+  Widget _buildTrackList(
+    Playlist playlist,
+    PlaylistViewModel viewModel,
+    List<Track> tracks,
+  ) {
+    if (tracks.isEmpty && viewModel.isLoadingTracks) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     if (tracks.isEmpty) {
       return SliverFillRemaining(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                OmnisonicIcons.musicNote,
-                size: OmnisonicIconSizes.xxxl,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No tracks in this playlist',
-                style: OmnisonicTypography.sectionTitle,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Add some tracks to get started',
-                style: OmnisonicTypography.bodyMedium,
-              ),
-            ],
+        hasScrollBody: false,
+        child: EmptyState(
+          icon: OmnisonicIcons.musicNote,
+          title: 'No tracks yet',
+          subtitle:
+              'Add tracks from an album or from search with "Add to playlist".',
+          action: OutlinedButton(
+            onPressed: () => context.go(AppRouter.search),
+            child: const Text('Search music'),
           ),
         ),
+      );
+    }
+
+    Widget row(int index) {
+      final track = tracks[index];
+      return TrackRow(
+        key: ValueKey('playlist-${track.id}-$index'),
+        track: track,
+        leading: TrackRowLeading.positionAndArt,
+        position: index + 1,
+        showAlbum: true,
+        // In reorder mode a tap is not "play": the rows are being arranged.
+        onTap: _isReorderMode ? null : () => _play(tracks, index),
+        onShowActions: () => _showActions(playlist, tracks, index),
+        reorderIndex: _isReorderMode ? index : null,
       );
     }
 
@@ -312,190 +294,80 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       return SliverReorderableList(
         itemCount: tracks.length,
         onReorderItem: (oldIndex, newIndex) =>
-            _reorderTracks(oldIndex, newIndex, viewModel),
-        itemBuilder: (context, index) {
-          final track = tracks[index];
-          return ReorderableDragStartListener(
-            key: ValueKey(track.id),
-            index: index,
-            child: DraggableTrackTile(
-              track: track,
-              index: index,
-              onTap: () => _playTrack(track, tracks, index),
-              onRemove: () => _removeTrack(track, viewModel),
-              showDragHandle: true,
-            ),
-          );
-        },
+            viewModel.moveTrackInPlaylist(playlist.id, oldIndex, newIndex),
+        itemBuilder: (context, index) => row(index),
       );
     }
-
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final track = tracks[index];
-        return DraggableTrackTile(
-          track: track,
-          index: index,
-          onTap: () => _playTrack(track, tracks, index),
-          onRemove: () => _removeTrack(track, viewModel),
-          showDragHandle: false,
-        );
-      }, childCount: tracks.length),
+    return SliverList.builder(
+      itemCount: tracks.length,
+      itemBuilder: (context, index) => row(index),
     );
   }
 
-  void _handleMenuAction(
-    String action,
-    Playlist playlist,
-    PlaylistViewModel viewModel,
-  ) {
-    switch (action) {
-      case 'edit':
-        _showEditDialog(playlist);
-        break;
-      case 'duplicate':
-        _duplicatePlaylist(playlist, viewModel);
-        break;
-      case 'delete':
-        _deletePlaylist(playlist, viewModel);
-        break;
-    }
-  }
-
-  void _showEditDialog(Playlist playlist) {
-    showDialog(
-      context: context,
-      builder: (context) => PlaylistEditDialog(playlist: playlist),
-    );
-  }
-
-  void _duplicatePlaylist(Playlist playlist, PlaylistViewModel viewModel) {
-    final controller = TextEditingController(text: '${playlist.name} (Copy)');
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Duplicate Playlist'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'New playlist name',
-            border: OutlineInputBorder(),
+  void _showActions(Playlist playlist, List<Track> tracks, int index) {
+    final viewModel = context.read<PlaylistViewModel>();
+    final track = tracks[index];
+    showTrackActions(
+      context,
+      track,
+      onPlay: () => _play(tracks, index),
+      extra: [
+        if (index > 0)
+          MediaAction(
+            'Move up',
+            OmnisonicIcons.arrowUpward,
+            (_) => viewModel.moveTrackInPlaylist(playlist.id, index, index - 1),
           ),
-          autofocus: true,
+        if (index < tracks.length - 1)
+          MediaAction(
+            'Move down',
+            OmnisonicIcons.arrowDownward,
+            (_) => viewModel.moveTrackInPlaylist(playlist.id, index, index + 1),
+          ),
+        MediaAction(
+          'Remove from playlist',
+          OmnisonicIcons.remove,
+          (context) => _remove(playlist, track, index),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                final messenger = ScaffoldMessenger.of(context);
-                Navigator.of(dialogContext).pop();
-                final success = await viewModel.duplicatePlaylist(
-                  playlist.id,
-                  newName,
-                );
-                if (success && mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Created "$newName"')),
-                  );
-                }
-              }
-            },
-            child: const Text('Duplicate'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
-  void _deletePlaylist(Playlist playlist, PlaylistViewModel viewModel) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Playlist'),
-        content: Text(
-          'Are you sure you want to delete "${playlist.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.of(dialogContext).pop();
-              final success = await viewModel.deletePlaylist(playlist.id);
-              if (success && mounted) {
-                Navigator.of(context).pop(); // Go back to previous screen
-                messenger.showSnackBar(
-                  SnackBar(content: Text('Deleted "${playlist.name}"')),
-                );
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+  /// Removing is reversible, so it happens straight away with Undo rather
+  /// than behind a confirmation dialog.
+  Future<void> _remove(Playlist playlist, Track track, int index) async {
+    final viewModel = context.read<PlaylistViewModel>();
+    final ok = await viewModel.removeTrackFromPlaylist(playlist.id, track.id);
+    if (!ok || !mounted) return;
+    showFeedback(
+      context,
+      'Removed "${track.title}"',
+      actionLabel: 'Undo',
+      onAction: () async {
+        final added = await viewModel.addTrackToPlaylist(playlist.id, track.id);
+        if (!added) return;
+        // Re-adding appends; put it back where it was.
+        final last = viewModel.selectedPlaylistTracks.length - 1;
+        if (index < last) {
+          await viewModel.moveTrackInPlaylist(playlist.id, last, index);
+        }
+      },
     );
   }
 
-  void _reorderTracks(int oldIndex, int newIndex, PlaylistViewModel viewModel) {
-    viewModel.moveTrackInPlaylist(widget.playlistId, oldIndex, newIndex);
+  Future<void> _delete(Playlist playlist) async {
+    final deleted = await confirmAndDeletePlaylist(context, playlist);
+    // Opened from a deep link there is nothing to pop back to, and popping
+    // the shell's only page would leave the user on a deleted playlist.
+    if (deleted && mounted) _leave();
   }
 
-  void _playTrack(Track track, List<Track> tracks, int index) {
-    final playbackViewModel = context.read<PlaybackViewModel>();
-    playbackViewModel.playTrack(track, queue: tracks, startIndex: index);
-  }
-
-  void _playPlaylist(PlaybackViewModel playbackViewModel) {
-    final tracks = context.read<PlaylistViewModel>().selectedPlaylistTracks;
-    if (tracks.isNotEmpty) {
-      playbackViewModel.playTrack(tracks.first, queue: tracks, startIndex: 0);
-    }
-  }
-
-  void _removeTrack(Track track, PlaylistViewModel viewModel) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove Track'),
-        content: Text('Remove "${track.title}" from this playlist?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              Navigator.of(dialogContext).pop();
-              final success = await viewModel.removeTrackFromPlaylist(
-                widget.playlistId,
-                track.id,
-              );
-              if (success && mounted) {
-                messenger.showSnackBar(
-                  SnackBar(content: Text('Removed "${track.title}"')),
-                );
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+  void _play(List<Track> tracks, int index, {bool shuffle = false}) {
+    final queue = shuffle ? (List<Track>.of(tracks)..shuffle()) : tracks;
+    context.read<PlaybackViewModel>().playTrack(
+      queue[shuffle ? 0 : index],
+      queue: queue,
+      startIndex: shuffle ? 0 : index,
     );
   }
 }

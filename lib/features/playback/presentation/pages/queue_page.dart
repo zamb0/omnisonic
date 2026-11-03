@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../ui/presentation/widgets/widgets.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart' as playback;
-import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../../core/utils/haptics.dart';
+import '../widgets/transport_controls.dart';
 
 /// Dedicated queue screen: a summary of what's playing now, and a
 /// reorderable "up next" list for everything queued after it.
@@ -33,7 +32,10 @@ class QueuePage extends StatelessWidget {
                 ),
             ],
           ),
-          body: vm.isLoading
+          // The skeleton only before the queue first loads: isLoading is
+          // also set by every playTrack, and the whole queue used to flash
+          // to placeholders, losing its scroll and any drag in progress.
+          body: vm.isLoading && !vm.hasQueue
               ? const LoadingStateView(kind: SkeletonKind.list, itemCount: 6)
               : track == null
               ? const EmptyState(
@@ -108,6 +110,10 @@ class QueuePage extends StatelessWidget {
                   subtitle: 'Add tracks from an album or playlist.',
                 )
               : ReorderableListView.builder(
+                  // Only the row's own handle starts a drag: the default
+                  // handles doubled it on desktop, and on touch a whole-row
+                  // long-press drag fought with scrolling.
+                  buildDefaultDragHandles: false,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
@@ -125,16 +131,30 @@ class QueuePage extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final upcomingTrack = upNext[i];
                     final absoluteIndex = currentIndex + 1 + i;
-                    return _QueueRow(
+                    void play() => vm.playTrack(
+                      upcomingTrack,
+                      queue: queue,
+                      startIndex: absoluteIndex,
+                    );
+                    return TrackRow(
                       key: ValueKey('queue-${upcomingTrack.id}-$absoluteIndex'),
                       track: upcomingTrack,
+                      leading: TrackRowLeading.positionAndArt,
                       position: i + 1,
-                      onTap: () => vm.playTrack(
+                      isCurrent: false,
+                      onTap: play,
+                      onShowActions: () => showTrackActions(
+                        context,
                         upcomingTrack,
-                        queue: queue,
-                        startIndex: absoluteIndex,
+                        onPlay: play,
                       ),
-                      onRemove: () => vm.removeFromQueue(absoluteIndex),
+                      trailing: IconButton(
+                        icon: const Icon(OmnisonicIcons.close),
+                        iconSize: 18,
+                        tooltip: 'Remove from queue',
+                        onPressed: () => vm.removeFromQueue(absoluteIndex),
+                      ),
+                      reorderIndex: i,
                     );
                   },
                 ),
@@ -160,28 +180,7 @@ class QueuePage extends StatelessWidget {
             child: SizedBox(
               width: 52,
               height: 52,
-              child: track.coverArtUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        128,
-                      ).url,
-                      cacheKey: SubsonicCoverArt.of(
-                        track.coverArtUrl!,
-                        128,
-                      ).cacheKey,
-                      cacheManager: OmnisonicImageCacheManager.instance,
-                      memCacheWidth: 128,
-                      memCacheHeight: 128,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      color: scheme.surfaceContainerHighest,
-                      child: Icon(
-                        OmnisonicIcons.musicNote,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
+              child: CoverArt(url: track.coverArtUrl, radius: 0),
             ),
           ),
           const SizedBox(width: OmnisonicSpacing.md),
@@ -215,20 +214,9 @@ class QueuePage extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: vm.hasPrevious ? () => vm.skipToPrevious() : null,
-            icon: const Icon(OmnisonicIcons.skipPrevious),
-          ),
-          IconButton(
-            onPressed: () => vm.togglePlayPause(),
-            icon: Icon(
-              vm.isPlaying ? OmnisonicIcons.pause : OmnisonicIcons.playArrow,
-            ),
-          ),
-          IconButton(
-            onPressed: vm.hasNext ? () => vm.skipToNext() : null,
-            icon: const Icon(OmnisonicIcons.skipNext),
-          ),
+          SkipPreviousButton(playback: vm),
+          PlayPauseButton(playback: vm),
+          SkipNextButton(playback: vm),
         ],
       ),
     );
@@ -273,109 +261,6 @@ class QueuePage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _QueueRow extends StatelessWidget {
-  const _QueueRow({
-    super.key,
-    required this.track,
-    required this.position,
-    required this.onTap,
-    required this.onRemove,
-  });
-
-  final Track track;
-  final int position;
-  final VoidCallback onTap;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 18,
-                child: Text(
-                  '$position',
-                  textAlign: TextAlign.center,
-                  style: OmnisonicTypography.metadata.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: track.coverArtUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            88,
-                          ).url,
-                          cacheKey: SubsonicCoverArt.of(
-                            track.coverArtUrl!,
-                            88,
-                          ).cacheKey,
-                          cacheManager: OmnisonicImageCacheManager.instance,
-                          memCacheWidth: 88,
-                          memCacheHeight: 88,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(
-                          color: scheme.surfaceContainerHighest,
-                          child: Icon(
-                            OmnisonicIcons.musicNote,
-                            color: scheme.onSurfaceVariant,
-                            size: OmnisonicIconSizes.smd,
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
-          title: Text(
-            track.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OmnisonicTypography.bodyMedium.copyWith(
-              color: scheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            track.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: OmnisonicTypography.bodySmall.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(OmnisonicIcons.close, size: 18),
-                tooltip: 'Remove from queue',
-                onPressed: onRemove,
-              ),
-              Icon(OmnisonicIcons.dragHandle, color: scheme.onSurfaceVariant),
-            ],
-          ),
-        ),
       ),
     );
   }

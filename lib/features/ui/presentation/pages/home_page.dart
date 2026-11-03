@@ -186,7 +186,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// "Pick up where you left" card: the single most recently played track,
+  /// "Pick up where you left off" card: the single most recently played track,
   /// presented as a glass panel over its own art. Purely a shortcut into
   /// existing playback — there's no persisted resume position to restore.
   /// What a section shows when it has nothing in it.
@@ -266,13 +266,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildContinueListeningSection() {
-    return Consumer<MusicLibraryViewModel>(
-      builder: (context, viewModel, child) {
+    return Consumer2<MusicLibraryViewModel, PlaybackViewModel>(
+      builder: (context, viewModel, playback, child) {
         final recent = viewModel.recentlyPlayed;
-        if (recent.isEmpty) {
+        // The deck first: a restored queue (or whatever is playing now) is
+        // where the user left off. The play history lags it, so the card
+        // said "Opening" while the mini player showed "Midnight Drive".
+        final current = playback.currentTrack;
+        if (current == null && recent.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
-        final track = recent.first;
+        final track = current ?? recent.first;
         final scheme = Theme.of(context).colorScheme;
 
         return SliverToBoxAdapter(
@@ -288,11 +292,16 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(OmnisonicSpacing.md),
               child: InkWell(
                 borderRadius: BorderRadius.circular(OmnisonicRadius.xxl),
-                onTap: () => context.read<PlaybackViewModel>().playTrack(
-                  track,
-                  queue: recent,
-                  startIndex: 0,
-                ),
+                // Resumes a paused deck; while it plays, opens the player.
+                onTap: current != null
+                    ? () => playback.isPlaying
+                          ? context.push(AppRouter.nowPlaying)
+                          : playback.resume()
+                    : () => playback.playTrack(
+                        track,
+                        queue: recent,
+                        startIndex: 0,
+                      ),
                 child: Row(
                   children: [
                     ClipRRect(
@@ -309,7 +318,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pick up where you left',
+                            'Pick up where you left off',
                             style: OmnisonicTypography.glassButton.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),

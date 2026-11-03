@@ -6,6 +6,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/search_focus.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 
 /// Desktop content-column header: a glass search field, the last-sync
 /// timestamp and a "Sync now" action. Settings are reached through the
@@ -36,13 +37,17 @@ class DesktopTopBar extends StatelessWidget {
               ),
             ),
           const Spacer(),
-          Consumer<MusicLibraryViewModel>(
-            builder: (context, viewModel, child) {
+          Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
+            builder: (context, viewModel, servers, child) {
               return Flexible(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Text(
-                    viewModel.isSyncing
+                    // Without a server there is no sync to report: it said
+                    // "last sync just now" on a fresh install.
+                    !servers.hasServers
+                        ? 'no servers yet'
+                        : viewModel.isSyncing
                         ? 'syncing…'
                         : 'last sync ${_relativeTime(viewModel.lastUpdated)}',
                     maxLines: 1,
@@ -58,12 +63,15 @@ class DesktopTopBar extends StatelessWidget {
           // Syncs through the library view model, the same path the library
           // page uses, so the "syncing…" label to the left of this button and
           // the in-memory collection both reflect what the button started.
-          _GlassButton(
-            label: 'Sync now',
-            onTap: () => context.read<MusicLibraryViewModel>().syncCollection(
-              forceRefresh: true,
+          if (context.select<ServerManagementViewModel, bool>(
+            (vm) => vm.hasServers,
+          ))
+            _GlassButton(
+              label: 'Sync now',
+              onTap: () => context.read<MusicLibraryViewModel>().syncCollection(
+                forceRefresh: true,
+              ),
             ),
-          ),
         ],
       ),
     );

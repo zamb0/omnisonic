@@ -412,6 +412,8 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final library = context.watch<MusicLibraryViewModel>();
+    // "0% lossless · 0 dupes merged" describes no library at all.
+    if (library.tracks.isEmpty) return const SizedBox.shrink();
     _retally(library.tracks);
 
     final losslessShare = _losslessShare;

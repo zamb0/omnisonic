@@ -216,8 +216,10 @@ class MusicLibraryViewModel extends ChangeNotifier {
 
       final result = await _syncMusicCollectionUseCase(params);
       result.fold(
-        (failure) =>
-            _setError(describeFailure(failure, action: 'sync your library')),
+        (failure) {
+          if (failure is NoServersFailure) return;
+          _setError(describeFailure(failure, action: 'sync your library'));
+        },
         (collection) {
           _collection = collection;
           _invalidateAlbumsCache();

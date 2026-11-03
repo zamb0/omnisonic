@@ -56,6 +56,12 @@ class SyncFailure extends Failure {
   const SyncFailure(super.message, [super.code]);
 }
 
+/// Nothing to sync because no server is configured: a state, not an error.
+/// First launch showed "the server didn't respond" before any server existed.
+class NoServersFailure extends Failure {
+  const NoServersFailure([super.message = 'No server configured']);
+}
+
 /// Playback-related failures
 class PlaybackFailure extends Failure {
   const PlaybackFailure(super.message, [super.code]);

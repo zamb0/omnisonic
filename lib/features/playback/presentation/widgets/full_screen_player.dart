@@ -903,12 +903,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
               context,
             ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
+          // A "now playing" marker, not a control: the pause glyph that was
+          // here looked like a button that did something.
           trailing: isCurrent
               ? Icon(
-                  playbackViewModel.isPlaying
-                      ? OmnisonicIcons.pause
-                      : OmnisonicIcons.playArrow,
+                  OmnisonicIcons.graphicEq,
                   color: scheme.primary,
+                  semanticLabel: 'Now playing',
                 )
               : null,
           onTap: () => playbackViewModel.playTrack(

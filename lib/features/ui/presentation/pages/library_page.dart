@@ -110,11 +110,22 @@ class _LibraryPageState extends State<LibraryPage> {
       appBar: PageHeaderAppBar(
         title: showTabBar ? 'Library' : activeTab.label,
         actions: [
-          IconButton(
-            icon: const Icon(OmnisonicIcons.sync),
-            onPressed: _syncLibrary,
-            tooltip: 'Sync library',
-          ),
+          // A spinner while it runs: the icon gave no sign of a ~10s sync.
+          if (context.select<MusicLibraryViewModel, bool>((vm) => vm.isSyncing))
+            const IconButton(
+              onPressed: null,
+              tooltip: 'Syncing library…',
+              icon: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(OmnisonicIcons.sync),
+              onPressed: _syncLibrary,
+              tooltip: 'Sync library',
+            ),
           IconButton(
             icon: const Icon(OmnisonicIcons.sort),
             onPressed: () => _showSortOptions(activeTab),

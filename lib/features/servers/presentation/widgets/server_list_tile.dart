@@ -124,7 +124,8 @@ class ServerListTile extends StatelessWidget {
 
   /// Albums synced / last measured latency / last sync time. Latency is
   /// only ever the result of an explicit "Test Connection" — it's not
-  /// continuously polled, so it reads "not tested" until the user runs one.
+  /// continuously polled, so it reads "not tested" until the user runs one
+  /// (and is left out for a server that is online).
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -137,11 +138,14 @@ class ServerListTile extends StatelessWidget {
             OmnisonicIcons.albumOutline,
             albumCount != null ? pluralize(albumCount!, 'album') : '— albums',
           ),
-          _buildStat(
-            context,
-            OmnisonicIcons.speedOutline,
-            latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
-          ),
+          // "not tested" next to an Online badge read as a contradiction:
+          // the status monitor does reach it, it just does not time it.
+          if (latency != null || server.status != ServerStatus.online)
+            _buildStat(
+              context,
+              OmnisonicIcons.speedOutline,
+              latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
+            ),
           _buildStat(
             context,
             OmnisonicIcons.syncOutline,

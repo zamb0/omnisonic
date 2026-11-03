@@ -43,6 +43,10 @@ class SyncMusicCollectionUseCase
 
       final onlineServers = serversResult.valueOrNull!;
       if (onlineServers.isEmpty) {
+        final all = await _serverRepository.getAllServers();
+        if (all.valueOrNull?.isEmpty ?? false) {
+          return const Left(NoServersFailure());
+        }
         return Left(
           ServerFailure('No online servers available for synchronization'),
         );
@@ -54,22 +58,16 @@ class SyncMusicCollectionUseCase
         final syncResult = await _musicRepository.syncFromServer(
           params.serverId!,
         );
+        // The server's own failure, not a SyncFailure wrapping its text:
+        // its type is what tells the user the cause (offline, sign-in, …).
         if (syncResult.isFailure) {
-          return Left(
-            SyncFailure(
-              'Failed to sync from server ${params.serverId}: ${syncResult.failureOrNull}',
-            ),
-          );
+          return Left(syncResult.failureOrNull!);
         }
       } else {
         // Sync from all servers
         final syncResult = await _musicRepository.syncFromServers();
         if (syncResult.isFailure) {
-          return Left(
-            SyncFailure(
-              'Failed to sync from servers: ${syncResult.failureOrNull}',
-            ),
-          );
+          return Left(syncResult.failureOrNull!);
         }
       }
 

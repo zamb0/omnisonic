@@ -612,8 +612,12 @@ class _SearchPageState extends State<SearchPage> {
               : null,
         ),
       ),
+      // TrackRow pads its content by md itself; on top of a full gutter the
+      // rows sat at 32 under headers at 16.
       SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+        padding: EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.gutter(context) - OmnisonicSpacing.md,
+        ),
         sliver: SliverList.builder(
           itemCount: visibleCount,
           itemBuilder: (context, index) {

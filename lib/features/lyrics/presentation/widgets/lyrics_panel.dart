@@ -124,12 +124,14 @@ class _LyricsControls extends StatelessWidget {
           tooltip: 'Find other lyrics',
           onPressed: () => showModalBottomSheet<void>(
             context: context,
+            useRootNavigator: true,
             isScrollControlled: true,
             showDragHandle: true,
             builder: (_) => LyricsSearchSheet(track: track),
           ),
         ),
         MenuAnchor(
+          reservedPadding: OmnisonicInsets.menuScreen,
           builder: (context, controller, child) => IconButton(
             icon: const Icon(OmnisonicIcons.moreVert),
             tooltip: 'Lyrics options',

@@ -109,6 +109,7 @@ class AccountButton extends StatelessWidget {
     // desktop window, far from what was clicked, read as a different app.
     if (vertical) return button(() => showAccountMenu(context));
     return MenuAnchor(
+      reservedPadding: OmnisonicInsets.menuScreen,
       builder: (context, controller, child) => button(
         () => controller.isOpen ? controller.close() : controller.open(),
       ),
@@ -134,6 +135,7 @@ void showAccountMenu(BuildContext context) {
 
   showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => SafeArea(
       top: false,

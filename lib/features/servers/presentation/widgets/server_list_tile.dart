@@ -93,6 +93,7 @@ class ServerListTile extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : MenuAnchor(
+              reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => IconButton(
                 icon: const Icon(OmnisonicIcons.moreVert),
                 tooltip: 'Actions for ${server.name}',

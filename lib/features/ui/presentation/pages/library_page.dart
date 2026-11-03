@@ -554,6 +554,7 @@ class _LibraryPageState extends State<LibraryPage> {
             // no value, and PopupMenuButton treats a null selection as a
             // dismissal, so that item did nothing.
             MenuAnchor(
+              reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => FilterChip(
                 avatar: const Icon(OmnisonicIcons.musicNote, size: 16),
                 label: Text(genre ?? 'All genres'),
@@ -618,6 +619,7 @@ class _LibraryPageState extends State<LibraryPage> {
   void _showSortOptions(LibraryTab tab) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (context) => SortOptionsSheet(
         currentOption: _sortState.getOption(tab),

@@ -32,6 +32,7 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
 
   final playlistId = await showModalBottomSheet<String>(
     context: context,
+    useRootNavigator: true,
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,

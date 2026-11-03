@@ -715,6 +715,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     _panel = panel;
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,

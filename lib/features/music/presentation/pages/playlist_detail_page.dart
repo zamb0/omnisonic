@@ -161,6 +161,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           tooltip: _isReorderMode ? 'Done reordering' : 'Reorder tracks',
         ),
         MenuAnchor(
+          reservedPadding: OmnisonicInsets.menuScreen,
           builder: (context, controller, child) => IconButton(
             icon: const Icon(OmnisonicIcons.moreVert),
             tooltip: 'Playlist actions',

@@ -248,6 +248,10 @@ class OmnisonicInsets {
   );
 
   // Component-specific insets
+  /// Minimum gap between a menu and the screen edge, so its shadow is
+  /// not clipped.
+  static const EdgeInsets menuScreen = EdgeInsets.all(12);
+
   static const EdgeInsets card = EdgeInsets.all(OmnisonicSpacing.cardPadding);
   static const EdgeInsets listItem = EdgeInsets.all(
     OmnisonicSpacing.listItemPadding,

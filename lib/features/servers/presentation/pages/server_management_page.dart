@@ -232,15 +232,22 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           const SizedBox(height: OmnisonicSpacing.sm),
           LayoutBuilder(
             builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 640 ? 4 : 2;
+              // Total plus one tile per status, so the tiles add up: servers
+              // in error used to be counted nowhere. On a phone Total takes
+              // its own row above a 2x2 grid of statuses.
+              final wide = constraints.maxWidth >= 640;
+              final columns = wide ? 5 : 2;
               final width =
                   (constraints.maxWidth - 12 * (columns - 1)) / columns;
               return Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
+                  SizedBox(
+                    width: wide ? width : constraints.maxWidth,
+                    child: tile(null, 'Total', stats['total']!),
+                  ),
                   for (final t in [
-                    tile(null, 'Total', stats['total']!),
                     tile(ServerStatus.online, 'Online', stats['online']!),
                     tile(ServerStatus.offline, 'Offline', stats['offline']!),
                     tile(
@@ -248,6 +255,7 @@ class _ServerManagementPageState extends State<ServerManagementPage>
                       'Connecting',
                       stats['connecting']!,
                     ),
+                    tile(ServerStatus.error, 'Error', stats['error']!),
                   ])
                     SizedBox(width: width, child: t),
                 ],

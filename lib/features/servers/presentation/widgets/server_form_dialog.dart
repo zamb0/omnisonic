@@ -185,7 +185,8 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
         context,
         existing != null
             ? 'Saved "${name.isEmpty ? existing.name : name}"'
-            : 'Added "${name.isEmpty ? url : name}" — syncing your library',
+            : 'Added "${name.isEmpty ? ServerManagementViewModel.defaultServerName(url) : name}" '
+                  '— syncing your library',
         kind: FeedbackKind.success,
       );
       return;

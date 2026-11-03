@@ -343,7 +343,7 @@ class _LibraryPageState extends State<LibraryPage> {
             _buildCountLine(
               shown: shown.length,
               total: sorted.length,
-              before: sorted.length,
+              before: viewModel.allArtists.length,
               noun: 'artist',
             ),
           ],

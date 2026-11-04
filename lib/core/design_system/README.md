@@ -26,7 +26,7 @@ MaterialApp(
 ```dart
 Container(
   decoration: BoxDecoration(gradient: OmnisonicColors.primaryGradient),
-  child: Text('Hello', style: TextStyle(color: OmnisonicColors.favoriteIndicator)),
+  child: Text('Hello', style: TextStyle(color: OmnisonicBrand.of(context).heat)),
 )
 ```
 

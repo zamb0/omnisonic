@@ -61,6 +61,23 @@ void main() {
     );
   });
 
+  // Aurora is the signature: at most one filled Aurora button per page, or
+  // none of them is the main action any more.
+  test('at most one AuroraButton per page (docs/design-system.md §1)', () {
+    final hits = <String>[];
+    for (final file in files.where((f) => f.path.contains('/pages/'))) {
+      final count = RegExp(
+        r'\bAuroraButton\(',
+      ).allMatches(file.readAsStringSync()).length;
+      if (count > 1) hits.add('${file.path}: $count');
+    }
+    expect(
+      hits,
+      isEmpty,
+      reason: 'More than one AuroraButton:\n${hits.join('\n')}',
+    );
+  });
+
   for (final MapEntry(key: what, value: pattern) in rules.entries) {
     test('no $what outside the design system', () {
       final hits = <String>[];

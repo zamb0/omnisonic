@@ -353,29 +353,19 @@ class _OverlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Over artwork, so the scrim colours in both themes: a solid white
-    // disc for Play, translucent white for the rest.
-    final size = primary ? 48.0 : 40.0;
-    final foreground = primary
-        ? OmnisonicColors.onScrimFill
-        : OmnisonicColors.onScrim;
-    return IconButton(
-      onPressed: onPressed,
+    // Over artwork. Play is the Aurora disc (it is the card's one signature
+    // control); the rest are translucent scrim controls, in both themes.
+    if (primary) {
+      return PlayDisc(onPressed: onPressed, tooltip: tooltip);
+    }
+    final button = OmnisonicIconButton(
+      variant: OmnisonicIconButtonVariant.onScrim,
+      icon: icon,
       tooltip: tooltip,
-      isSelected: toggled,
-      icon: Icon(icon),
-      selectedIcon: Icon(icon),
-      iconSize: primary ? OmnisonicIconSizes.lg : OmnisonicIconSizes.smd,
-      style: IconButton.styleFrom(
-        fixedSize: Size.square(size),
-        minimumSize: Size.square(size),
-        backgroundColor: primary
-            ? OmnisonicColors.onScrim
-            : OmnisonicColors.scrimControl,
-        foregroundColor: foreground,
-        hoverColor: foreground.withValues(alpha: 0.1),
-        side: BorderSide.none,
-      ),
+      onPressed: onPressed,
+      dimension: 40,
     );
+    if (toggled == null) return button;
+    return Semantics(toggled: toggled, child: button);
   }
 }

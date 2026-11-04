@@ -237,15 +237,16 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           MetadataChip(icon: OmnisonicIcons.person, label: playlist.owner!),
       ],
       actions: [
-        FilledButton.icon(
+        AuroraButton(
           onPressed: canPlay ? () => _play(tracks, 0) : null,
-          icon: const Icon(OmnisonicIcons.playArrow),
-          label: const Text('Play'),
+          icon: OmnisonicIcons.playArrow,
+          label: 'Play',
         ),
-        OutlinedButton.icon(
+        OmnisonicButton(
+          variant: OmnisonicButtonVariant.tonal,
           onPressed: canPlay ? () => _play(tracks, 0, shuffle: true) : null,
-          icon: const Icon(OmnisonicIcons.shuffle),
-          label: const Text('Shuffle'),
+          icon: OmnisonicIcons.shuffle,
+          label: 'Shuffle',
         ),
       ],
     );

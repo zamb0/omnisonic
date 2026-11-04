@@ -221,15 +221,16 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
           ),
         ],
         actions: [
-          FilledButton.icon(
+          AuroraButton(
             onPressed: hasAlbums ? _playArtist : null,
-            icon: const Icon(OmnisonicIcons.playArrow),
-            label: const Text('Play all'),
+            icon: OmnisonicIcons.playArrow,
+            label: 'Play all',
           ),
-          OutlinedButton.icon(
+          OmnisonicButton(
+            variant: OmnisonicButtonVariant.tonal,
             onPressed: hasAlbums ? _shuffleArtist : null,
-            icon: const Icon(OmnisonicIcons.shuffle),
-            label: const Text('Shuffle'),
+            icon: OmnisonicIcons.shuffle,
+            label: 'Shuffle',
           ),
         ],
         below: biography == null || biography.isEmpty

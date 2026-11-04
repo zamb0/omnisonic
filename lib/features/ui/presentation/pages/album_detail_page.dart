@@ -745,22 +745,24 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           ),
       ],
       actions: [
-        FilledButton.icon(
+        AuroraButton(
           onPressed: canPlay ? _playAlbum : null,
-          icon: const Icon(OmnisonicIcons.playArrow),
-          label: const Text('Play'),
+          icon: OmnisonicIcons.playArrow,
+          label: 'Play',
         ),
-        OutlinedButton.icon(
+        OmnisonicButton(
+          variant: OmnisonicButtonVariant.tonal,
           onPressed: canPlay ? _shuffleAlbum : null,
-          icon: const Icon(OmnisonicIcons.shuffle),
-          label: const Text('Shuffle'),
+          icon: OmnisonicIcons.shuffle,
+          label: 'Shuffle',
         ),
         // Icon-only: with a label the third button wrapped onto a row of
         // its own on phones. The app bar has the same action.
-        IconButton.outlined(
+        OmnisonicIconButton(
+          variant: OmnisonicIconButtonVariant.tonal,
           onPressed: canPlay ? _downloadAlbum : null,
           tooltip: 'Download album',
-          icon: const Icon(OmnisonicIcons.downloadOutline),
+          icon: OmnisonicIcons.downloadOutline,
         ),
       ],
       below: !desktop && _albumVariants.length > 1

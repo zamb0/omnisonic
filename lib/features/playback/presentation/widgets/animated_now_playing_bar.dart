@@ -888,7 +888,7 @@ class _MiniEqualizerState extends State<_MiniEqualizer>
     _controllers = List.generate(
       _barCount,
       (i) => AnimationController(
-        duration: Duration(milliseconds: 320 + i * 90),
+        duration: AnimationManager.equalizerBarDuration(i),
         vsync: this,
       ),
     );

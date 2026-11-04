@@ -33,6 +33,34 @@ void main() {
       .where((f) => !f.path.contains('/core/design_system/'))
       .toList();
 
+  // Animation lengths (milliseconds) belong to AnimationManager. Only UI code
+  // is scanned; display times in seconds (snackbar) are not motion. Logic like
+  // debounce, polling and position maths in view models and data sources is
+  // not motion either.
+  final uiFiles = files.where((f) => f.path.contains('/presentation/'));
+  test('no literal animation Duration in UI code (use AnimationManager)', () {
+    final pattern = RegExp(r'\bDuration\(\s*milliseconds:\s*[0-9]');
+    final hits = <String>[];
+    for (final file in uiFiles.where(
+      (f) =>
+          !f.path.contains('/viewmodels/') &&
+          !f.path.contains('/bloc/') &&
+          !f.path.contains('/datasources/'),
+    )) {
+      final lines = file.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (pattern.hasMatch(lines[i].split('//').first)) {
+          hits.add('${file.path}:${i + 1}: ${lines[i].trim()}');
+        }
+      }
+    }
+    expect(
+      hits,
+      isEmpty,
+      reason: 'Found literal Durations:\n${hits.join('\n')}',
+    );
+  });
+
   for (final MapEntry(key: what, value: pattern) in rules.entries) {
     test('no $what outside the design system', () {
       final hits = <String>[];

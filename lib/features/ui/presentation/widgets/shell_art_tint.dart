@@ -75,7 +75,7 @@ class AnimatedTintSwitcher extends ImplicitlyAnimatedWidget {
     super.duration = defaultDuration,
   });
 
-  static const Duration defaultDuration = Duration(milliseconds: 600);
+  static const Duration defaultDuration = AnimationManager.tintDuration;
 
   final Color? seed;
   final Widget? child;

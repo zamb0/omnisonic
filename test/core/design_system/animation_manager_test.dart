@@ -18,8 +18,12 @@ void main() {
         equals(const Duration(milliseconds: 300)),
       );
       expect(
-        AnimationManager.slowDuration,
-        equals(const Duration(milliseconds: 500)),
+        AnimationManager.emphasisDuration,
+        equals(const Duration(milliseconds: 450)),
+      );
+      expect(
+        AnimationManager.tintDuration,
+        equals(const Duration(milliseconds: 600)),
       );
       expect(
         AnimationManager.loadingDuration,
@@ -40,10 +44,12 @@ void main() {
     // duration longer than "normal" would be a silent authoring mistake.
     test('durations increase monotonically', () {
       const ladder = [
+        AnimationManager.instantDuration,
         AnimationManager.fastDuration,
         AnimationManager.quickDuration,
         AnimationManager.normalDuration,
-        AnimationManager.slowDuration,
+        AnimationManager.emphasisDuration,
+        AnimationManager.tintDuration,
         AnimationManager.loadingDuration,
       ];
 

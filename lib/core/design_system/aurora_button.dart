@@ -9,14 +9,14 @@ import 'motion.dart';
 import 'spacing.dart';
 import 'typography.dart';
 
-/// Heights of an [AuroraButton] (docs/design-system.md §9.1). `sm` is for
+/// Heights of an [AuroraButton] and [OmnisonicButton] (docs/design-system.md §9.1). `sm` is for
 /// pointer-only desktop layouts; touch layouts use [md] or [lg].
-enum AuroraButtonSize {
+enum OmnisonicButtonSize {
   sm(36),
   md(44),
   lg(52);
 
-  const AuroraButtonSize(this.height);
+  const OmnisonicButtonSize(this.height);
   final double height;
 }
 
@@ -52,59 +52,26 @@ class AuroraButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.loading = false,
-    this.size = AuroraButtonSize.md,
+    this.size = OmnisonicButtonSize.md,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
-  final AuroraButtonSize size;
+  final OmnisonicButtonSize size;
 
   bool get _enabled => onPressed != null && !loading;
 
   @override
   Widget build(BuildContext context) {
     final brand = OmnisonicBrand.of(context);
-    final style = size == AuroraButtonSize.lg
-        ? OmnisonicTypography.button.copyWith(fontSize: 16)
-        : OmnisonicTypography.button;
-    final color = brand.onAurora;
-    final glyph = OmnisonicIconSizes.smd;
-
-    Widget lead() => SizedBox.square(
-      dimension: glyph,
-      child: loading
-          ? _Spinner(color: color)
-          : Icon(icon, size: glyph, color: color),
-    );
-
-    final hasLead = icon != null;
-    final content = Stack(
-      alignment: Alignment.center,
-      children: [
-        Opacity(
-          opacity: loading && !hasLead ? 0 : 1,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (hasLead) ...[
-                lead(),
-                const SizedBox(width: OmnisonicSpacing.sm),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: style.copyWith(color: color),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (loading && !hasLead) lead(),
-      ],
+    final content = ButtonContent(
+      label: label,
+      icon: icon,
+      loading: loading,
+      size: size,
+      color: brand.onAurora,
     );
 
     return Semantics(
@@ -277,6 +244,70 @@ class _AuroraInkState extends State<_AuroraInk> {
         constraints: widget.constraints,
         child: Opacity(opacity: widget.enabled ? 1 : 0.38, child: decorated),
       ),
+    );
+  }
+}
+
+/// Icon (or spinner) + label, shared by every button with a loading state.
+///
+/// Loading keeps the width: the spinner takes the icon's place, or, without
+/// an icon, is drawn over the label, which stays laid out but invisible.
+class ButtonContent extends StatelessWidget {
+  const ButtonContent({
+    super.key,
+    required this.label,
+    required this.color,
+    required this.size,
+    this.icon,
+    this.loading = false,
+  });
+
+  final String label;
+  final IconData? icon;
+  final bool loading;
+  final OmnisonicButtonSize size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = size == OmnisonicButtonSize.lg
+        ? OmnisonicTypography.button.copyWith(fontSize: 16)
+        : OmnisonicTypography.button;
+    const glyph = OmnisonicIconSizes.smd;
+    final hasLead = icon != null;
+
+    Widget lead() => SizedBox.square(
+      dimension: glyph,
+      child: loading
+          ? _Spinner(color: color)
+          : Icon(icon, size: glyph, color: color),
+    );
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Opacity(
+          opacity: loading && !hasLead ? 0 : 1,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasLead) ...[
+                lead(),
+                const SizedBox(width: OmnisonicSpacing.sm),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: style.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (loading && !hasLead) lead(),
+      ],
     );
   }
 }

@@ -20,3 +20,4 @@ export 'responsive_layout.dart';
 export 'animation_manager.dart';
 export 'motion.dart';
 export 'aurora_button.dart';
+export 'omnisonic_button.dart';

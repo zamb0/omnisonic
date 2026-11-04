@@ -12,7 +12,7 @@ Widget _host(Widget child, {Brightness b = Brightness.dark}) => MaterialApp(
 void main() {
   group('AuroraButton', () {
     testWidgets('has the three heights from the spec', (t) async {
-      for (final size in AuroraButtonSize.values) {
+      for (final size in OmnisonicButtonSize.values) {
         await t.pumpWidget(
           _host(AuroraButton(label: 'Play', onPressed: () {}, size: size)),
         );
@@ -22,9 +22,9 @@ void main() {
           reason: size.name,
         );
       }
-      expect(AuroraButtonSize.sm.height, 36);
-      expect(AuroraButtonSize.md.height, 44);
-      expect(AuroraButtonSize.lg.height, 52);
+      expect(OmnisonicButtonSize.sm.height, 36);
+      expect(OmnisonicButtonSize.md.height, 44);
+      expect(OmnisonicButtonSize.lg.height, 52);
     });
 
     testWidgets('taps call onPressed; disabled does not', (t) async {

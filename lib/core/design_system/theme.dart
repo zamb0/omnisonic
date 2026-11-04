@@ -5,6 +5,7 @@ import 'typography.dart';
 import 'spacing.dart';
 import 'icons.dart';
 import 'surfaces.dart';
+import 'brand.dart';
 
 /// The app's [ThemeData], light and dark.
 ///
@@ -15,13 +16,23 @@ import 'surfaces.dart';
 /// `docs/design-system.md` §9: ink for the primary action, the accent only
 /// for live state, stadium buttons, opaque overlays.
 class OmnisonicTheme {
-  static ThemeData get lightTheme =>
-      _build(OmnisonicColors.lightColorScheme, OmnisonicSurfaces.light);
+  static ThemeData get lightTheme => _build(
+    OmnisonicColors.lightColorScheme,
+    OmnisonicSurfaces.light,
+    OmnisonicBrand.light,
+  );
 
-  static ThemeData get darkTheme =>
-      _build(OmnisonicColors.darkColorScheme, OmnisonicSurfaces.dark);
+  static ThemeData get darkTheme => _build(
+    OmnisonicColors.darkColorScheme,
+    OmnisonicSurfaces.dark,
+    OmnisonicBrand.dark,
+  );
 
-  static ThemeData _build(ColorScheme scheme, OmnisonicSurfaces surfaces) {
+  static ThemeData _build(
+    ColorScheme scheme,
+    OmnisonicSurfaces surfaces,
+    OmnisonicBrand brand,
+  ) {
     final isDark = scheme.brightness == Brightness.dark;
     const stadium = StadiumBorder();
     final controlShape = RoundedRectangleBorder(
@@ -68,7 +79,7 @@ class OmnisonicTheme {
       useMaterial3: true,
       brightness: scheme.brightness,
       colorScheme: scheme,
-      extensions: [surfaces],
+      extensions: [surfaces, brand],
       textTheme: OmnisonicTypography.textTheme.apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,

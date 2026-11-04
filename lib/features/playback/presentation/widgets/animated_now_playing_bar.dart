@@ -291,7 +291,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                                     : OmnisonicIcons.favoriteOutline,
                                 OmnisonicIconSizes.smd,
                                 isStarred
-                                    ? OmnisonicColors.favoriteIndicator
+                                    ? OmnisonicBrand.of(context).heat
                                     : scheme.onSurfaceVariant,
                                 pending
                                     ? null
@@ -704,7 +704,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   : OmnisonicIcons.favoriteOutline,
               OmnisonicIconSizes.smd,
               isStarred
-                  ? OmnisonicColors.favoriteIndicator
+                  ? OmnisonicBrand.of(context).heat
                   : scheme.onSurfaceVariant,
               track != null && !vm.isFavoritePending(track.id)
                   ? () => vm.toggleFavorite(track)

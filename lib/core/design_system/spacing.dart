@@ -115,6 +115,9 @@ class OmnisonicRadius {
   /// radius, and rounding it to 12 or 16 visibly changes the artwork.
   static const double art = 14.0;
 
+  /// Hero cover (detail header, Now Playing).
+  static const double artHero = 20.0;
+
   /// Nav pill corner in the sidebar chrome. Was 13 — a step off the scale
   /// that no other element shared.
   static const double pill = md;
@@ -175,6 +178,32 @@ class OmnisonicShadows {
       spreadRadius: -12,
       offset: Offset(0, 24),
     ),
+  ];
+
+  /// The cover "lights" the canvas: [color] is the cover's dominant colour.
+  static List<BoxShadow> artGlow(Color color) => [
+    BoxShadow(
+      color: color.withValues(alpha: 0.35),
+      blurRadius: 40,
+      offset: const Offset(0, 16),
+    ),
+  ];
+
+  /// Glow under the Aurora button / player focus.
+  static List<BoxShadow> glow(Brightness brightness) => [
+    BoxShadow(
+      color: const Color(
+        0xFFC04BE8,
+      ).withValues(alpha: brightness == Brightness.dark ? 0.40 : 0.22),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    ),
+  ];
+
+  /// Keyboard focus: a 2 px accent ring plus a soft Aurora halo.
+  static List<BoxShadow> focusRing(Color primary, Color halo) => [
+    BoxShadow(color: primary, spreadRadius: 2),
+    BoxShadow(color: halo, spreadRadius: 6),
   ];
 
   /// Softer lift for a small cover in a row.

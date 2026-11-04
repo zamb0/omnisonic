@@ -37,6 +37,7 @@ class ServerDot extends StatelessWidget {
         color: OmnisonicColors.serverColorFor(
           serverId,
           index: index >= 0 ? index : null,
+          brightness: Theme.of(context).brightness,
         ),
         border: Border.all(color: scheme.surface, width: size * 0.2),
       ),

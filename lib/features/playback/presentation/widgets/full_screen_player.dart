@@ -75,7 +75,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         }
 
         updateArtTint(currentTrack.coverArtUrl);
-        final tint = artTint ?? OmnisonicColors.nowPlayingGradient.colors.first;
+        final tint = artTint ?? OmnisonicColors.primaryDark;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -385,7 +385,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                             ? OmnisonicIcons.favorite
                             : OmnisonicIcons.favoriteOutline,
                         color: isStarred
-                            ? OmnisonicColors.favoriteIndicator
+                            ? OmnisonicBrand.of(context).heat
                             : scheme.onSurfaceVariant,
                       ),
                       tooltip: isStarred

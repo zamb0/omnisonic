@@ -12,6 +12,7 @@ export 'text_scale.dart';
 export 'icons.dart';
 export 'theme.dart';
 export 'surfaces.dart';
+export 'brand.dart';
 export 'layout.dart';
 export 'glass_surface.dart';
 export 'art_tint_background.dart';

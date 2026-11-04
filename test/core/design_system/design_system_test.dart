@@ -6,15 +6,15 @@ void main() {
   group('Design System Tests', () {
     test('Color palette has all required colors', () {
       // Test primary colors
-      expect(OmnisonicColors.primaryPurple, const Color(0xFF7C7CFF));
-      expect(OmnisonicColors.primaryBlue, const Color(0xFF5A67D8));
-      expect(OmnisonicColors.primaryTeal, const Color(0xFF4DD0E1));
+      expect(OmnisonicColors.primaryDark, const Color(0xFFB49CFF));
+      expect(OmnisonicColors.primaryLight, const Color(0xFF6A3DF0));
+      expect(OmnisonicColors.tertiaryDark, const Color(0xFF4FE3D0));
 
       // Test semantic colors
-      expect(OmnisonicColors.success, const Color(0xFF10B981));
-      expect(OmnisonicColors.warning, const Color(0xFFF59E0B));
-      expect(OmnisonicColors.error, const Color(0xFFEF4444));
-      expect(OmnisonicColors.info, const Color(0xFF3B82F6));
+      expect(OmnisonicColors.success, const Color(0xFF4ADE9B));
+      expect(OmnisonicColors.warning, const Color(0xFFFFC25C));
+      expect(OmnisonicColors.error, const Color(0xFFFF6B7F));
+      expect(OmnisonicColors.info, OmnisonicColors.tertiaryDark);
     });
 
     test('Typography system has all required styles', () {
@@ -71,26 +71,19 @@ void main() {
       expect(lightScheme.tertiary, OmnisonicColors.tertiaryLight);
     });
 
-    test('Gradients are properly defined', () {
-      expect(OmnisonicColors.primaryGradient.colors.length, 2);
-      expect(
-        OmnisonicColors.primaryGradient.colors[0],
-        OmnisonicColors.primaryPurple,
-      );
-      expect(
-        OmnisonicColors.primaryGradient.colors[1],
-        OmnisonicColors.primaryBlue,
-      );
-
-      expect(OmnisonicColors.accentGradient.colors.length, 2);
-      expect(
-        OmnisonicColors.accentGradient.colors[0],
-        OmnisonicColors.primaryBlue,
-      );
-      expect(
-        OmnisonicColors.accentGradient.colors[1],
-        OmnisonicColors.primaryTeal,
-      );
+    test('OmnisonicBrand carries the Aurora signature in both themes', () {
+      for (final brand in [OmnisonicBrand.dark, OmnisonicBrand.light]) {
+        expect(brand.aurora.colors, [
+          OmnisonicColors.auroraViolet,
+          OmnisonicColors.auroraMagenta,
+          OmnisonicColors.auroraCoral,
+        ]);
+        expect(brand.auroraMesh.length, 3);
+        expect(brand.onAurora, OmnisonicColors.onAurora);
+        expect(brand.glow, isNotEmpty);
+      }
+      expect(OmnisonicTheme.darkTheme.extension<OmnisonicBrand>(), isNotNull);
+      expect(OmnisonicTheme.lightTheme.extension<OmnisonicBrand>(), isNotNull);
     });
 
     test('Border radius values are consistent', () {

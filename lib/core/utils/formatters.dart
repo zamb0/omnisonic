@@ -22,6 +22,8 @@ String formatTotalDuration(Duration total) {
   final hours = total.inHours;
   final minutes = total.inMinutes % 60;
   if (hours > 0) return minutes > 0 ? '$hours h $minutes min' : '$hours h';
+  // "0 min" read as empty for a 55s playlist.
+  if (total > Duration.zero && total.inMinutes == 0) return '<1 min';
   return '${total.inMinutes} min';
 }
 

@@ -118,39 +118,40 @@ class OmnisonicTypography {
     height: 1.27,
   );
 
+  // Title, label and body styles carry no Material tracking: the 0.25-0.5
+  // letter spacing of the stock ramp made Manrope read like a form.
+
+  /// The primary line of a list row.
   static TextStyle get titleMedium => _manrope(
-    fontSize: 16,
-    fontWeight: medium,
-    letterSpacing: 0.15,
-    height: 1.5,
+    fontSize: 15,
+    fontWeight: semiBold,
+    letterSpacing: 0,
+    height: 1.4,
   );
 
   static TextStyle get titleSmall => _manrope(
     fontSize: 14,
-    fontWeight: medium,
-    letterSpacing: 0.1,
-    height: 1.43,
+    fontWeight: semiBold,
+    letterSpacing: 0,
+    height: 1.4,
   );
 
   // Label styles
-  static TextStyle get labelLarge => _manrope(
-    fontSize: 14,
-    fontWeight: medium,
-    letterSpacing: 0.1,
-    height: 1.43,
-  );
+
+  /// Material's button slot — the same voice as [button].
+  static TextStyle get labelLarge => button;
 
   static TextStyle get labelMedium => _manrope(
     fontSize: 12,
-    fontWeight: medium,
-    letterSpacing: 0.5,
+    fontWeight: semiBold,
+    letterSpacing: 0.1,
     height: 1.33,
   );
 
   static TextStyle get labelSmall => _manrope(
     fontSize: 11,
-    fontWeight: medium,
-    letterSpacing: 0.5,
+    fontWeight: semiBold,
+    letterSpacing: 0.2,
     height: 1.45,
   );
 
@@ -158,22 +159,24 @@ class OmnisonicTypography {
   static TextStyle get bodyLarge => _manrope(
     fontSize: 16,
     fontWeight: regular,
-    letterSpacing: 0.5,
+    letterSpacing: 0,
     height: 1.5,
   );
 
   static TextStyle get bodyMedium => _manrope(
     fontSize: 14,
     fontWeight: regular,
-    letterSpacing: 0.25,
-    height: 1.43,
+    letterSpacing: 0,
+    height: 1.45,
   );
 
+  /// Secondary lines — the artist under a title. Medium weight: at 12px the
+  /// regular cut thinned out on the glass.
   static TextStyle get bodySmall => _manrope(
     fontSize: 12,
-    fontWeight: regular,
-    letterSpacing: 0.4,
-    height: 1.33,
+    fontWeight: medium,
+    letterSpacing: 0,
+    height: 1.35,
   );
 
   // Music-specific typography styles
@@ -215,8 +218,17 @@ class OmnisonicTypography {
     height: 1.3,
   );
 
-  static TextStyle get duration =>
-      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.4, height: 1.2);
+  /// Times: track lengths, player position. JetBrains Mono 12/500 with
+  /// tabular figures, so a ticking position never jitters the layout.
+  static TextStyle get timecode => _mono(
+    fontSize: 12,
+    fontWeight: medium,
+    letterSpacing: 0.4,
+    height: 1.2,
+  ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
+  /// The length of a track in a list; same voice as [timecode].
+  static TextStyle get duration => timecode;
 
   static TextStyle get metadata =>
       _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.3, height: 1.3);
@@ -230,6 +242,23 @@ class OmnisonicTypography {
   // technical string (counts, bitrates, server ids, timestamps).
   // ---------------------------------------------------------------------
 
+  /// The hero of a detail page — an album's or an artist's name. Gabarito
+  /// 800 at 56. Phones use [heroTitleCompact].
+  static TextStyle get heroTitle => _gabarito(
+    fontSize: 56,
+    fontWeight: extraBold,
+    letterSpacing: -1.6,
+    height: 1.0,
+  );
+
+  /// [heroTitle] on a phone: 40.
+  static TextStyle get heroTitleCompact => _gabarito(
+    fontSize: 40,
+    fontWeight: extraBold,
+    letterSpacing: -1.2,
+    height: 1.0,
+  );
+
   /// Screen title — "Home", "Library". Gabarito 800 at display size.
   static TextStyle get pageTitle => _gabarito(
     fontSize: 40,
@@ -240,9 +269,9 @@ class OmnisonicTypography {
 
   /// Section heading inside a screen — "Recently added".
   static TextStyle get sectionTitle => _gabarito(
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: extraBold,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     height: 1.1,
   );
 
@@ -251,9 +280,26 @@ class OmnisonicTypography {
   static TextStyle get sectionTitleSmall => _gabarito(
     fontSize: 22,
     fontWeight: extraBold,
-    letterSpacing: -0.22,
+    letterSpacing: -0.2,
     height: 1.15,
   );
+
+  /// Title of a dialog or sheet.
+  static TextStyle get overlayTitle => _gabarito(
+    fontSize: 20,
+    fontWeight: bold,
+    letterSpacing: -0.2,
+    height: 1.2,
+  );
+
+  /// A group inside a page — "Tracks", "Details", a settings section. One
+  /// step under [sectionTitleSmall]; Manrope bold at 22 used to stand in.
+  static TextStyle get groupTitle =>
+      _gabarito(fontSize: 17, fontWeight: bold, letterSpacing: 0, height: 1.25);
+
+  /// Every button label, Material and glass alike.
+  static TextStyle get button =>
+      _gabarito(fontSize: 14, fontWeight: bold, letterSpacing: 0, height: 1.2);
 
   /// All-caps mono label above a group — "SERVERS", "THIS WEEK".
   ///
@@ -262,7 +308,7 @@ class OmnisonicTypography {
   static TextStyle get eyebrow => _mono(
     fontSize: 11,
     fontWeight: semiBold,
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     height: 1.4,
   );
 
@@ -275,15 +321,14 @@ class OmnisonicTypography {
   );
 
   /// Glass button label — "Play", "Sync now".
-  static TextStyle get glassButton =>
-      _gabarito(fontSize: 13, fontWeight: bold, letterSpacing: 0, height: 1.2);
+  static TextStyle get glassButton => button;
 
   /// Big number in a stat tile.
-  static TextStyle get statValue => _gabarito(
-    fontSize: 21,
-    fontWeight: extraBold,
-    letterSpacing: -0.2,
-    height: 1.1,
+  ///
+  /// The same face and size as [sectionTitleSmall], with tabular figures so
+  /// a count that changes while a sync runs does not jitter its tile.
+  static TextStyle get statValue => sectionTitleSmall.copyWith(
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   /// Inline technical string — bitrate, server id, count, timestamp.
@@ -404,9 +449,14 @@ extension OmnisonicTextTheme on TextTheme {
   TextStyle get pageTitle => OmnisonicTypography.pageTitle;
   TextStyle get sectionTitle => OmnisonicTypography.sectionTitle;
   TextStyle get sectionTitleSmall => OmnisonicTypography.sectionTitleSmall;
+  TextStyle get heroTitle => OmnisonicTypography.heroTitle;
+  TextStyle get timecode => OmnisonicTypography.timecode;
   TextStyle get eyebrow => OmnisonicTypography.eyebrow;
   TextStyle get navLabel => OmnisonicTypography.navLabel;
   TextStyle get glassButton => OmnisonicTypography.glassButton;
+  TextStyle get overlayTitle => OmnisonicTypography.overlayTitle;
+  TextStyle get groupTitle => OmnisonicTypography.groupTitle;
+  TextStyle get button => OmnisonicTypography.button;
   TextStyle get statValue => OmnisonicTypography.statValue;
   TextStyle get technical => OmnisonicTypography.technical;
   TextStyle get buttonLarge => OmnisonicTypography.buttonLarge;

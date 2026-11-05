@@ -50,9 +50,9 @@ class _OfflineModePageState extends State<OfflineModePage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const NetworkQualityIndicator(),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: OmnisonicSpacing.sm),
                   const OfflineIndicator(showWhenOnline: true),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: OmnisonicSpacing.sm),
                   IconButton(
                     icon: const Icon(OmnisonicIcons.refresh),
                     onPressed: viewModel.isLoading
@@ -139,10 +139,15 @@ class _OfflineModePageState extends State<OfflineModePage>
     if (stats == null) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.md,
+        PageGutter.of(context),
+        OmnisonicSpacing.ms,
+      ),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.all(16),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Row(
           children: [
             Expanded(
@@ -152,11 +157,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                 '${stats.trackCachePercentage.toStringAsFixed(1)}%',
               ),
             ),
-            Container(
-              width: 1,
-              height: 40,
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            ),
+            const SizedBox(height: 40, child: VerticalDivider(width: 1)),
             Expanded(
               child: _buildStatItem(
                 'Albums',
@@ -164,11 +165,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                 '${stats.albumCachePercentage.toStringAsFixed(1)}%',
               ),
             ),
-            Container(
-              width: 1,
-              height: 40,
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            ),
+            const SizedBox(height: 40, child: VerticalDivider(width: 1)),
             Expanded(
               child: _buildStatItem(
                 'Artists',
@@ -191,26 +188,31 @@ class _OfflineModePageState extends State<OfflineModePage>
     if (totalCached == 0) return const SizedBox.shrink();
 
     final segments = <(String, int, Color)>[
-      ('Tracks', stats.cachedTracks, OmnisonicColors.primaryTeal),
-      ('Albums', stats.cachedAlbums, OmnisonicColors.primaryPurple),
-      ('Artists', stats.cachedArtists, OmnisonicColors.accentPink),
+      ('Tracks', stats.cachedTracks, scheme.tertiary),
+      ('Albums', stats.cachedAlbums, scheme.primary),
+      ('Artists', stats.cachedArtists, OmnisonicBrand.of(context).heat),
     ].where((s) => s.$2 > 0).toList();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        0,
+        PageGutter.of(context),
+        OmnisonicSpacing.ms,
+      ),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.all(16),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Downloaded content',
-              style: OmnisonicTypography.overline.copyWith(
+              'DOWNLOADED CONTENT',
+              style: OmnisonicTypography.eyebrow.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: OmnisonicSpacing.ms),
             ClipRRect(
               borderRadius: BorderRadius.circular(OmnisonicRadius.full),
               child: SizedBox(
@@ -226,10 +228,10 @@ class _OfflineModePageState extends State<OfflineModePage>
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: OmnisonicSpacing.ms),
             Wrap(
-              spacing: 12,
-              runSpacing: 4,
+              spacing: OmnisonicSpacing.ms,
+              runSpacing: OmnisonicSpacing.xs,
               children: [
                 for (final segment in segments)
                   Row(
@@ -243,10 +245,12 @@ class _OfflineModePageState extends State<OfflineModePage>
                           color: segment.$3,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(
+                        width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                      ),
                       Text(
                         '${segment.$1} (${segment.$2})',
-                        style: OmnisonicTypography.metadata.copyWith(
+                        style: OmnisonicTypography.technicalSmall.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
@@ -262,28 +266,26 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   Widget _buildWifiOnlyToggle(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        0,
+        PageGutter.of(context),
+        OmnisonicSpacing.ms,
+      ),
       child: AnimatedBuilder(
         animation: DownloadPreferencesService.instance,
         builder: (context, child) {
           final scheme = Theme.of(context).colorScheme;
           return GlassSurface(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+            padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
             child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                'Wi-Fi only',
-                style: OmnisonicTypography.bodyMedium.copyWith(
-                  color: scheme.onSurface,
-                ),
+              secondary: Icon(
+                OmnisonicIcons.wifi,
+                color: scheme.onSurfaceVariant,
               ),
-              subtitle: Text(
-                'Only download new content on Wi-Fi',
-                style: OmnisonicTypography.bodySmall.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
+              title: const Text('Wi-Fi only'),
+              subtitle: const Text('Only download new content on Wi-Fi'),
               value: DownloadPreferencesService.instance.wifiOnlyEnabled,
               onChanged: (value) =>
                   DownloadPreferencesService.instance.setWifiOnlyEnabled(value),
@@ -307,7 +309,7 @@ class _OfflineModePageState extends State<OfflineModePage>
               color: scheme.onSurface,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: OmnisonicSpacing.xxs),
           Text(
             label,
             style: OmnisonicTypography.labelMedium.copyWith(
@@ -342,8 +344,12 @@ class _OfflineModePageState extends State<OfflineModePage>
       );
     }
 
+    // TrackRow lays itself out on the gutter.
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(
+        top: OmnisonicSpacing.sm,
+        bottom: OmnisonicLayout.pageBottom,
+      ),
       itemCount: tracks.length,
       itemBuilder: (context, index) {
         final track = tracks[index];
@@ -395,7 +401,13 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
-      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      staggered: true,
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.md,
+        PageGutter.of(context),
+        OmnisonicLayout.pageBottom,
+      ),
       meta: true,
       itemCount: albums.length,
       itemBuilder: (context, index) {
@@ -420,7 +432,13 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
-      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      staggered: true,
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.md,
+        PageGutter.of(context),
+        OmnisonicLayout.pageBottom,
+      ),
       subtitle: false,
       meta: true,
       itemCount: artists.length,
@@ -446,7 +464,13 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
-      padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      staggered: true,
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.md,
+        PageGutter.of(context),
+        OmnisonicLayout.pageBottom,
+      ),
       meta: true,
       itemCount: playlists.length,
       itemBuilder: (context, index) {
@@ -501,7 +525,7 @@ class _OfflineModePageState extends State<OfflineModePage>
                 Text(
                   'Usage: ${cacheStats['usagePercentage'].toStringAsFixed(1)}%',
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: OmnisonicSpacing.md),
                 Text(
                   'Tracks: ${collectionStats['cachedTracks']}/${collectionStats['totalTracks']}',
                 ),

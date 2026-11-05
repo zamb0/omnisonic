@@ -37,6 +37,7 @@ class ServerDot extends StatelessWidget {
         color: OmnisonicColors.serverColorFor(
           serverId,
           index: index >= 0 ? index : null,
+          brightness: Theme.of(context).brightness,
         ),
         border: Border.all(color: scheme.surface, width: size * 0.2),
       ),
@@ -81,7 +82,14 @@ class ServerDotStack extends StatelessWidget {
     final shown = serverIds.take(maxDots).toList();
     final overlap = dotSize * 0.55;
 
-    return SizedBox(
+    // One tooltip for the cluster: the per-dot ones overlap and are too
+    // small to aim at.
+    final servers = ServerDot._servers(context);
+    final names = [
+      for (final id in serverIds)
+        servers?.where((s) => s.id == id).firstOrNull?.name ?? id,
+    ];
+    final stack = SizedBox(
       width: dotSize + overlap * (shown.length - 1),
       height: dotSize,
       child: Stack(
@@ -89,10 +97,21 @@ class ServerDotStack extends StatelessWidget {
           for (var i = 0; i < shown.length; i++)
             Positioned(
               left: overlap * i,
-              child: ServerDot(serverId: shown[i], size: dotSize),
+              child: ExcludeSemantics(
+                child: TooltipVisibility(
+                  visible: false,
+                  child: ServerDot(serverId: shown[i], size: dotSize),
+                ),
+              ),
             ),
         ],
       ),
+    );
+    final label = 'On ${names.join(' and ')}';
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: Semantics(label: label, child: stack),
     );
   }
 }

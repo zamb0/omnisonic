@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'colors.dart';
 import 'spacing.dart';
 
 /// How prominent a glass surface should read: [card] for content surfaces
@@ -56,19 +57,19 @@ class GlassSurface extends StatelessWidget {
     final blurSigma = isPill ? _pillBlurSigma : _cardBlurSigma;
     final saturation = isDark ? (isPill ? 1.7 : 1.6) : (isPill ? 1.9 : 1.8);
 
-    // Design spec, light: card fill .66 -> .38, pill fill .72 -> .46 with a
-    // .85/.90 border. Dark glass sits on a near-black base so it reads as a
-    // flat white wash instead of a gradient.
+    // docs/design-system.md §2.1. Light: L1 .66 -> .40, L2 .74 -> .48.
+    // Dark: L1 .06 -> .04, L2 .10 -> .06, on a near-black base, so it reads
+    // as a flat white wash rather than a gradient.
     final Color fillTop;
     final Color fillBottom;
     final Color borderColor;
     if (isDark) {
-      fillTop = Colors.white.withValues(alpha: isPill ? 0.09 : 0.06);
+      fillTop = Colors.white.withValues(alpha: isPill ? 0.10 : 0.06);
       fillBottom = Colors.white.withValues(alpha: isPill ? 0.06 : 0.04);
       borderColor = Colors.white.withValues(alpha: isPill ? 0.16 : 0.12);
     } else {
-      fillTop = Colors.white.withValues(alpha: isPill ? 0.72 : 0.66);
-      fillBottom = Colors.white.withValues(alpha: isPill ? 0.46 : 0.38);
+      fillTop = Colors.white.withValues(alpha: isPill ? 0.74 : 0.66);
+      fillBottom = Colors.white.withValues(alpha: isPill ? 0.48 : 0.40);
       borderColor = Colors.white.withValues(alpha: isPill ? 0.90 : 0.85);
     }
 
@@ -82,6 +83,30 @@ class GlassSurface extends StatelessWidget {
       spreadRadius: -18,
       offset: Offset(0, isPill ? 16 : 12),
     );
+
+    // "Reduce transparency": the platform's high-contrast setting is the
+    // closest signal Flutter exposes. Glass becomes an opaque container with
+    // a hairline, no blur: legible over any artwork and cheaper to paint.
+    if (MediaQuery.highContrastOf(context)) {
+      final scheme = Theme.of(context).colorScheme;
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: borderRadius,
+          border: Border.all(color: scheme.outlineVariant),
+          boxShadow: [shadow],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+        ),
+      );
+    }
+
+    // Floating chrome in the dark gets a light edge instead of a flat
+    // border: white 14 % at the top fading to nothing — thickness without a
+    // heavy shadow.
+    final lightEdge = isDark && isPill;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -103,7 +128,9 @@ class GlassSurface extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [fillTop, fillBottom],
               ),
-              border: Border.all(color: borderColor, width: 1),
+              border: lightEdge
+                  ? null
+                  : Border.all(color: borderColor, width: 1),
             ),
             child: Stack(
               children: [
@@ -118,7 +145,15 @@ class GlassSurface extends StatelessWidget {
                     child: child,
                   ),
                 ),
-                if (highlight)
+                if (lightEdge)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _LightEdgePainter(borderRadius),
+                      ),
+                    ),
+                  ),
+                if (highlight && !lightEdge)
                   Positioned(
                     left: borderRadius.topLeft.x,
                     right: borderRadius.topRight.x,
@@ -185,9 +220,12 @@ class GlassInkButton extends StatelessWidget {
     required this.child,
     required this.onTap,
     this.borderRadius = const BorderRadius.all(
-      Radius.circular(OmnisonicRadius.md),
+      Radius.circular(OmnisonicRadius.full),
     ),
-    this.padding = const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: OmnisonicSpacing.md,
+      vertical: OmnisonicSpacing.sm + OmnisonicSpacing.xxs,
+    ),
     this.intensity = GlassIntensity.card,
     this.tooltip,
     this.semanticLabel,
@@ -264,97 +302,70 @@ class GlassPanel extends StatelessWidget {
   }
 }
 
-/// The third glass layer: a slow specular sweep travelling across a pane.
+/// The third glass layer: a still diagonal reflection across a pane
+/// (docs/design-system.md §6).
 ///
-/// Purely decorative and always [IgnorePointer]-wrapped, so it can be
-/// stacked over any glass surface without stealing taps. Stack it *inside*
-/// the surface's clip — it draws a full-height band and relies on the parent
-/// to crop it.
-class GlassSheen extends StatefulWidget {
-  const GlassSheen({
-    super.key,
-    this.period = const Duration(seconds: 6),
-    this.bandWidthFactor = 0.18,
-    this.opacity = 0.5,
-  });
+/// Dark theme only, at 4 % white: on Pearl glass a white sheen has nothing to
+/// lift and reads as a smear. It does not move — the motion rules allow no
+/// decorative loops besides the live equalizer and the Aurora drift, and a
+/// sweep crossing the player bar every few seconds was exactly that.
+///
+/// Purely decorative and [IgnorePointer]-wrapped, so it can be stacked over
+/// any glass surface without stealing taps. Stack it *inside* the surface's
+/// clip.
+class GlassSheen extends StatelessWidget {
+  const GlassSheen({super.key});
 
-  /// One full left-to-right pass.
-  final Duration period;
-
-  /// Band width as a fraction of the pane width.
-  final double bandWidthFactor;
-
-  /// Peak white alpha at the centre of the band.
-  final double opacity;
-
-  @override
-  State<GlassSheen> createState() => _GlassSheenState();
-}
-
-class _GlassSheenState extends State<GlassSheen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    duration: widget.period,
-    vsync: this,
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Honours "reduce motion": a continuously repeating sweep is exactly the
-    // kind of ambient animation that setting exists to suppress.
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  /// Peak white alpha of the reflection, dark theme.
+  static const double peakAlpha = 0.04;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final peak = Colors.white.withValues(
-      alpha: isDark ? widget.opacity * 0.24 : widget.opacity,
-    );
-
+    if (Theme.of(context).brightness != Brightness.dark) {
+      return const SizedBox.shrink();
+    }
+    final peak = OmnisonicColors.neutralWhite.withValues(alpha: peakAlpha);
     return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          if (!width.isFinite || width <= 0) return const SizedBox.shrink();
-          final bandWidth = width * widget.bandWidthFactor;
-
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final dx = -bandWidth + _controller.value * (width + bandWidth);
-              return Transform.translate(offset: Offset(dx, 0), child: child);
-            },
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                width: bandWidth,
-                height: double.infinity,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [Colors.transparent, peak, Colors.transparent],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.transparent, peak, Colors.transparent],
+            stops: const [0.25, 0.45, 0.65],
+          ),
+        ),
       ),
     );
   }
+}
+
+/// A 1 px outline fading from white 14 % at the top edge to transparent at
+/// the bottom: the "light edge" of floating dark chrome.
+class _LightEdgePainter extends CustomPainter {
+  const _LightEdgePainter(this.radius);
+
+  final BorderRadius radius;
+
+  static const Color _top = Color(0x24FFFFFF); // white 14 %
+  static const Color _bottom = Color(0x00FFFFFF);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRRect(
+      radius.toRRect(rect).deflate(0.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_top, _bottom],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LightEdgePainter old) => old.radius != radius;
 }

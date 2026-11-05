@@ -19,8 +19,9 @@ import '../viewmodels/server_management_view_model.dart';
 ///   one), and a changed URL, username or password is tested before saving.
 /// - The URL is normalised: `music.example.com/rest/` becomes
 ///   `https://music.example.com`.
-/// - Enter on the password field submits; validation runs as the user
-///   types; autofill hints are set in both modes.
+/// - Enter on the password field submits; each field validates once the
+///   user has typed in it (or on submit); autofill hints are set in both
+///   modes.
 /// - A test result is cleared as soon as a field changes, so "Connection
 ///   successful" never describes values that are no longer there. Testing
 ///   does not need the name.
@@ -63,6 +64,17 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
   ({bool ok, String message})? _result;
 
   bool get _editing => widget.server != null;
+
+  /// Whether there is more form below the visible part, which draws a
+  /// divider above the actions; without it the cut-off helper text looked
+  /// like a glitch.
+  bool _moreBelow = false;
+
+  bool _onScrollMetrics(ScrollMetrics metrics) {
+    final moreBelow = metrics.extentAfter > 0;
+    if (moreBelow != _moreBelow) setState(() => _moreBelow = moreBelow);
+    return false;
+  }
 
   @override
   void initState() {
@@ -129,15 +141,19 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
     viewModel.clearActionError();
     final info = connection?.serverInfo;
     final name = info?.serverName;
-    final version = info?.version;
+    // "0.64.2 (10114574)": the build number in parentheses is noise here.
+    final version = info?.version.split(' ').first;
+    final hasVersion = version != null && version != 'Unknown';
     setState(() {
       _testing = false;
       _result = connection != null
           ? (
               ok: true,
-              message:
-                  'Connected${name != null ? ' to $name' : ''}'
-                  '${version != null ? ' (version $version)' : ''}.',
+              message: [
+                'Connected',
+                ?name,
+                if (hasVersion) 'version $version',
+              ].join(' · '),
             )
           : (ok: false, message: error ?? "Couldn't connect to the server.");
     });
@@ -208,132 +224,32 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
     final result = _result;
 
     return AlertDialog(
-      title: Text(_editing ? 'Edit server' : 'Add a server'),
-      scrollable: true,
+      title: Text(_editing ? 'Edit server' : 'Add server'),
       content: ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 280,
           maxWidth: kDialogMaxWidth,
         ),
-        child: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          // URL, username and password as one credential, for password
-          // managers.
-          child: AutofillGroup(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (result != null) ...[
-                  InlineBanner(
-                    kind: result.ok ? BannerKind.success : BannerKind.error,
-                    message: result.message,
-                  ),
-                  const SizedBox(height: OmnisonicSpacing.md),
-                ],
-                TextFormField(
-                  key: _urlKey,
-                  controller: _url,
-                  autofocus: !_editing,
-                  enabled: !busy,
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                  autofillHints: const [AutofillHints.url],
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Server URL',
-                    hintText: 'music.example.com',
-                    helperText: 'https:// is added if you leave it out',
-                  ),
-                  validator: _validateUrl,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                TextFormField(
-                  key: _usernameKey,
-                  controller: _username,
-                  enabled: !busy,
-                  autocorrect: false,
-                  autofillHints: const [AutofillHints.username],
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Username'),
-                  validator: (value) => (value?.trim().isEmpty ?? true)
-                      ? 'Enter your username'
-                      : null,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                TextFormField(
-                  key: _passwordKey,
-                  controller: _password,
-                  enabled: !busy,
-                  obscureText: _obscure,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  autofillHints: [
-                    _editing
-                        ? AutofillHints.newPassword
-                        : AutofillHints.password,
-                  ],
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(
-                    labelText: _editing ? 'New password' : 'Password',
-                    helperText: _editing
-                        ? 'Leave empty to keep the current password'
-                        : null,
-                    suffixIcon: IconButton(
-                      tooltip: _obscure ? 'Show password' : 'Hide password',
-                      icon: Icon(
-                        _obscure
-                            ? OmnisonicIcons.visibility
-                            : OmnisonicIcons.visibilityOff,
-                      ),
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                    ),
-                  ),
-                  validator: (value) => !_editing && (value?.isEmpty ?? true)
-                      ? 'Enter your password'
-                      : null,
-                ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                TextFormField(
-                  controller: _name,
-                  enabled: !busy,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
-                  decoration: const InputDecoration(
-                    labelText: 'Name (optional)',
-                    hintText: 'Living room',
-                    helperText: 'Shown next to tracks from this server',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Flexible(
+              child: NotificationListener<ScrollMetricsNotification>(
+                onNotification: (n) => _onScrollMetrics(n.metrics),
+                child: NotificationListener<ScrollUpdateNotification>(
+                  onNotification: (n) => _onScrollMetrics(n.metrics),
+                  child: SingleChildScrollView(
+                    // Room for the focused field's floating label, which
+                    // sits above the field and was clipped by the viewport.
+                    padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
+                    child: _buildForm(busy, result),
                   ),
                 ),
-                const SizedBox(height: OmnisonicSpacing.md),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: OutlinedButton.icon(
-                    onPressed: busy ? null : _test,
-                    icon: _testing
-                        ? const SizedBox.square(
-                            dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(OmnisonicIcons.wifiProtectedSetup),
-                    label: Text(_testing ? 'Testing…' : 'Test connection'),
-                  ),
-                ),
-                if (!_editing) ...[
-                  const SizedBox(height: OmnisonicSpacing.md),
-                  const InlineBanner(
-                    title: 'Using Navidrome?',
-                    message:
-                        'Use your Navidrome username and password, and make '
-                        'sure the Subsonic API is enabled in its settings.',
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+            if (_moreBelow) const Divider(height: 1),
+          ],
         ),
       ),
       actions: [
@@ -341,16 +257,137 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
+        // Saving swaps the label for a spinner without changing the width.
+        OmnisonicButton(
           onPressed: busy ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_editing ? 'Save' : 'Add server'),
+          loading: _saving,
+          label: _editing ? 'Save' : 'Add server',
         ),
       ],
+    );
+  }
+
+  Widget _buildForm(bool busy, ({bool ok, String message})? result) {
+    return Form(
+      key: _formKey,
+      // URL, username and password as one credential, for password
+      // managers.
+      child: AutofillGroup(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Per field, not on the Form: form-level validation flagged
+            // every empty field as soon as one was typed in.
+            TextFormField(
+              key: _urlKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              controller: _url,
+              autofocus: !_editing,
+              enabled: !busy,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.url],
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'Server URL',
+                hintText: 'music.example.com',
+                helperText: 'https:// is added if you leave it out',
+              ),
+              validator: _validateUrl,
+            ),
+            const SizedBox(height: OmnisonicSpacing.md),
+            TextFormField(
+              key: _usernameKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              controller: _username,
+              enabled: !busy,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.username],
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Username'),
+              validator: (value) => (value?.trim().isEmpty ?? true)
+                  ? 'Enter your username'
+                  : null,
+            ),
+            const SizedBox(height: OmnisonicSpacing.md),
+            TextFormField(
+              key: _passwordKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              controller: _password,
+              enabled: !busy,
+              obscureText: _obscure,
+              autocorrect: false,
+              enableSuggestions: false,
+              autofillHints: [
+                _editing ? AutofillHints.newPassword : AutofillHints.password,
+              ],
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                labelText: _editing ? 'New password' : 'Password',
+                helperText: _editing
+                    ? 'Leave empty to keep the current password'
+                    : null,
+                suffixIcon: IconButton(
+                  tooltip: _obscure ? 'Show password' : 'Hide password',
+                  icon: Icon(
+                    _obscure
+                        ? OmnisonicIcons.visibility
+                        : OmnisonicIcons.visibilityOff,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+              ),
+              validator: (value) => !_editing && (value?.isEmpty ?? true)
+                  ? 'Enter your password'
+                  : null,
+            ),
+            const SizedBox(height: OmnisonicSpacing.md),
+            TextFormField(
+              controller: _name,
+              enabled: !busy,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
+              decoration: const InputDecoration(
+                labelText: 'Name (optional)',
+                hintText: 'Living room',
+                helperText: 'Shown next to tracks from this server',
+              ),
+            ),
+            const SizedBox(height: OmnisonicSpacing.md),
+            OutlinedButton.icon(
+              onPressed: busy ? null : _test,
+              icon: _testing
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(OmnisonicIcons.wifiProtectedSetup),
+              label: Text(_testing ? 'Testing…' : 'Test connection'),
+            ),
+            // Under the button that produced it. At the top of the form
+            // it pushed every field down by ~75pt.
+            if (result != null) ...[
+              const SizedBox(height: OmnisonicSpacing.sm),
+              InlineBanner(
+                kind: result.ok ? BannerKind.success : BannerKind.error,
+                message: result.message,
+              ),
+            ],
+            if (!_editing) ...[
+              const SizedBox(height: OmnisonicSpacing.md),
+              const InlineBanner(
+                title: 'Using Navidrome?',
+                message:
+                    'Use your Navidrome username and password, and make '
+                    'sure the Subsonic API is enabled in its settings.',
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

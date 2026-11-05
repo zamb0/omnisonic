@@ -6,6 +6,11 @@ class DeduplicationEngine {
   static const double _duplicateThreshold = 0.85;
   static const int _maxDurationDifferenceSeconds = 10;
 
+  /// Below this album similarity two tracks are different recordings, not
+  /// copies. Same title, artist and length on two albums ("Midnight Drive"
+  /// on an LP and on its live record) scored 0.9 overall and merged.
+  static const double _minAlbumSimilarity = 0.85;
+
   /// Groups tracks by similarity and returns duplicate groups
   /// Each group contains tracks that are considered duplicates
   ///
@@ -53,6 +58,12 @@ class DeduplicationEngine {
         final candidateTrack = tracks[j];
         if (processed.contains(candidateTrack.id)) continue;
 
+        // A group holds at most one copy per server: a server listing the
+        // same song twice has two distinct entries, not a duplicate.
+        if (duplicates.any((t) => t.serverId == candidateTrack.serverId)) {
+          continue;
+        }
+
         // Adjacent buckets can still be up to twice the tolerance apart, and
         // the tolerance is a precondition rather than a weight: two tracks
         // with identical metadata but a four-minute difference are a radio
@@ -89,8 +100,18 @@ class DeduplicationEngine {
       _similarityOf(_NormalizedTrack.of(track1), _NormalizedTrack.of(track2));
 
   double _similarityOf(_NormalizedTrack a, _NormalizedTrack b) {
-    // Don't compare tracks from the same server with same ID
-    if (a.serverId == b.serverId && a.id == b.id) {
+    // Deduplication is across servers only: two tracks from one server are
+    // never copies of each other.
+    if (a.serverId == b.serverId) {
+      return 0.0;
+    }
+
+    // An album mismatch rules a pair out rather than costing 20%. An empty
+    // album tag on either side says nothing either way.
+    final albumSimilarity = a.album.isEmpty || b.album.isEmpty
+        ? 1.0
+        : _calculateStringSimilarity(a.album, b.album);
+    if (albumSimilarity < _minAlbumSimilarity) {
       return 0.0;
     }
 
@@ -103,7 +124,7 @@ class DeduplicationEngine {
     score += _calculateStringSimilarity(a.artist, b.artist) * 0.3;
 
     // Album similarity (20% weight)
-    score += _calculateStringSimilarity(a.album, b.album) * 0.2;
+    score += albumSimilarity * 0.2;
 
     // Duration similarity (10% weight)
     score += _calculateDurationSimilarity(a.duration, b.duration) * 0.1;

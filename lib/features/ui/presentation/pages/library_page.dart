@@ -10,6 +10,8 @@ import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/debouncer.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import '../../../servers/presentation/widgets/server_form_dialog.dart';
 import '../models/library_sort_state.dart';
 import '../models/library_tab.dart';
 import '../models/sort_option.dart';
@@ -110,11 +112,22 @@ class _LibraryPageState extends State<LibraryPage> {
       appBar: PageHeaderAppBar(
         title: showTabBar ? 'Library' : activeTab.label,
         actions: [
-          IconButton(
-            icon: const Icon(OmnisonicIcons.sync),
-            onPressed: _syncLibrary,
-            tooltip: 'Sync library',
-          ),
+          // A spinner while it runs: the icon gave no sign of a ~10s sync.
+          if (context.select<MusicLibraryViewModel, bool>((vm) => vm.isSyncing))
+            const IconButton(
+              onPressed: null,
+              tooltip: 'Syncing library…',
+              icon: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(OmnisonicIcons.sync),
+              onPressed: _syncLibrary,
+              tooltip: 'Sync library',
+            ),
           IconButton(
             icon: const Icon(OmnisonicIcons.sort),
             onPressed: () => _showSortOptions(activeTab),
@@ -185,54 +198,66 @@ class _LibraryPageState extends State<LibraryPage> {
     final error = viewModel.errorMessage;
     return RefreshIndicator(
       onRefresh: () => viewModel.syncCollection(),
-      child: CustomScrollView(
-        controller: _scrollControllers[tab],
-        // So pull-to-refresh works on the empty and error states too.
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          if (error != null && isEmptyLibrary)
-            ErrorStateView.sliver(message: error, onRetry: _syncLibrary)
-          else if (isEmptyLibrary)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(
-                icon: tab == LibraryTab.albums
-                    ? OmnisonicIcons.album
-                    : OmnisonicIcons.person,
-                title: emptyTitle,
-                subtitle: 'Add a server and sync your library to see it here.',
-                action: FilledButton(
-                  onPressed: _syncLibrary,
-                  child: const Text('Sync library'),
+      // The first cards fade in one after the other when the grid first shows.
+      child: EntranceScope(
+        child: CustomScrollView(
+          controller: _scrollControllers[tab],
+          // So pull-to-refresh works on the empty and error states too.
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            if (error != null && isEmptyLibrary)
+              ErrorStateView.sliver(message: error, onRetry: _syncLibrary)
+            else if (isEmptyLibrary)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: tab == LibraryTab.albums
+                      ? OmnisonicIcons.album
+                      : OmnisonicIcons.person,
+                  title: emptyTitle,
+                  subtitle:
+                      'Add a server and sync your library to see it here.',
+                  // With no server a sync has nothing to read: the way out
+                  // is adding one, straight to the form.
+                  action: context.watch<ServerManagementViewModel>().hasServers
+                      ? FilledButton(
+                          onPressed: _syncLibrary,
+                          child: const Text('Sync library'),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => showServerFormDialog(context),
+                          icon: const Icon(OmnisonicIcons.add),
+                          label: const Text('Add server'),
+                        ),
                 ),
-              ),
-            )
-          else ...[
-            // With a library on screen, a failed sync is a banner, not a
-            // page: what was there stays usable.
-            if (error != null)
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  OmnisonicSpacing.gutter(context),
-                  12,
-                  OmnisonicSpacing.gutter(context),
-                  0,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: InlineBanner(
-                    kind: BannerKind.warning,
-                    message: error,
-                    action: TextButton(
-                      onPressed: _syncLibrary,
-                      child: const Text('Retry'),
+              )
+            else ...[
+              // With a library on screen, a failed sync is a banner, not a
+              // page: what was there stays usable.
+              if (error != null)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    OmnisonicSpacing.gutter(context),
+                    OmnisonicSpacing.sm,
+                    OmnisonicSpacing.gutter(context),
+                    OmnisonicSpacing.xs,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: InlineBanner(
+                      kind: BannerKind.warning,
+                      message: error,
+                      action: TextButton(
+                        onPressed: _syncLibrary,
+                        child: const Text('Retry'),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            for (final widget in header) SliverToBoxAdapter(child: widget),
-            ...body,
+              for (final widget in header) SliverToBoxAdapter(child: widget),
+              ...body,
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -343,7 +368,7 @@ class _LibraryPageState extends State<LibraryPage> {
             _buildCountLine(
               shown: shown.length,
               total: sorted.length,
-              before: sorted.length,
+              before: viewModel.allArtists.length,
               noun: 'artist',
             ),
           ],
@@ -392,9 +417,9 @@ class _LibraryPageState extends State<LibraryPage> {
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        8,
+        OmnisonicLayout.headerGap,
         OmnisonicSpacing.gutter(context),
-        24,
+        OmnisonicLayout.pageBottom,
       ),
       sliver: SliverLayoutBuilder(
         builder: (context, constraints) {
@@ -414,7 +439,8 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
             ),
             itemCount: itemCount,
-            itemBuilder: itemBuilder,
+            itemBuilder: (context, index) =>
+                Staggered(index: index, child: itemBuilder(context, index)),
           );
         },
       ),
@@ -429,61 +455,17 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Widget _buildSearchPill(LibraryTab tab, String hint) {
-    final scheme = Theme.of(context).colorScheme;
-    final controller = _searchControllers[tab]!;
+    final gutter = OmnisonicSpacing.gutter(context);
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        OmnisonicSpacing.gutter(context),
-        12,
-        OmnisonicSpacing.gutter(context),
-        0,
-      ),
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        padding: const EdgeInsets.only(left: 16, right: 4),
-        child: Row(
-          children: [
-            Icon(
-              OmnisonicIcons.search,
-              size: OmnisonicIconSizes.smd,
-              color: scheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                style: OmnisonicTypography.bodyMedium.copyWith(
-                  color: scheme.onSurface,
-                ),
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  hintText: hint,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onChanged: (value) => _searchDebouncer.run(() {
-                  if (!mounted) return;
-                  setState(() => _LibraryMemory.queries[tab] = value);
-                }),
-              ),
-            ),
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, child) => value.text.isEmpty
-                  ? const SizedBox(height: OmnisonicTouchTargets.minimum)
-                  // A full-size target: the old clear button was ~18px.
-                  : IconButton(
-                      icon: const Icon(OmnisonicIcons.close),
-                      iconSize: 18,
-                      tooltip: 'Clear search',
-                      onPressed: () => _setQuery(tab, ''),
-                    ),
-            ),
-          ],
-        ),
+      padding: EdgeInsets.fromLTRB(gutter, OmnisonicSpacing.xs, gutter, 0),
+      child: SearchField(
+        controller: _searchControllers[tab]!,
+        hint: hint,
+        onChanged: (value) => _searchDebouncer.run(() {
+          if (!mounted) return;
+          setState(() => _LibraryMemory.queries[tab] = value);
+        }),
+        onClear: () => _setQuery(tab, ''),
       ),
     );
   }
@@ -509,7 +491,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        10,
+        OmnisonicSpacing.ms,
         OmnisonicSpacing.gutter(context),
         0,
       ),
@@ -517,7 +499,7 @@ class _LibraryPageState extends State<LibraryPage> {
         liveRegion: true,
         child: Text(
           text,
-          style: OmnisonicTypography.metadata.copyWith(
+          style: OmnisonicTypography.technical.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -534,17 +516,20 @@ class _LibraryPageState extends State<LibraryPage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         OmnisonicSpacing.gutter(context),
-        8,
+        OmnisonicSpacing.sm,
         OmnisonicSpacing.gutter(context),
         0,
       ),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: OmnisonicSpacing.sm,
+        runSpacing: OmnisonicSpacing.sm,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilterChip(
-            avatar: const Icon(OmnisonicIcons.star, size: 16),
+            avatar: const Icon(
+              OmnisonicIcons.star,
+              size: OmnisonicIconSizes.sm,
+            ),
             label: const Text('Starred'),
             selected: viewModel.showStarredOnly,
             onSelected: (_) => viewModel.toggleStarredFilter(),
@@ -554,8 +539,12 @@ class _LibraryPageState extends State<LibraryPage> {
             // no value, and PopupMenuButton treats a null selection as a
             // dismissal, so that item did nothing.
             MenuAnchor(
+              reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => FilterChip(
-                avatar: const Icon(OmnisonicIcons.musicNote, size: 16),
+                avatar: const Icon(
+                  OmnisonicIcons.musicNote,
+                  size: OmnisonicIconSizes.sm,
+                ),
                 label: Text(genre ?? 'All genres'),
                 selected: genre != null,
                 onSelected: (_) =>
@@ -589,7 +578,10 @@ class _LibraryPageState extends State<LibraryPage> {
           if (filtered)
             TextButton.icon(
               onPressed: viewModel.clearFilters,
-              icon: const Icon(OmnisonicIcons.clear, size: 16),
+              icon: const Icon(
+                OmnisonicIcons.clear,
+                size: OmnisonicIconSizes.sm,
+              ),
               label: const Text('Clear filters'),
             ),
         ],
@@ -618,6 +610,7 @@ class _LibraryPageState extends State<LibraryPage> {
   void _showSortOptions(LibraryTab tab) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (context) => SortOptionsSheet(
         currentOption: _sortState.getOption(tab),

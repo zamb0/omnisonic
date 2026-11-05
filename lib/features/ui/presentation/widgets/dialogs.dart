@@ -23,7 +23,6 @@ Future<bool> showConfirmDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
-      final scheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
         title: Text(title),
         content: ConstrainedBox(
@@ -36,17 +35,18 @@ Future<bool> showConfirmDialog(
             onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(cancelLabel),
           ),
-          FilledButton(
-            autofocus: !destructive,
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: scheme.error,
-                    foregroundColor: scheme.onError,
-                  )
-                : null,
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(confirmLabel),
-          ),
+          if (destructive)
+            OmnisonicButton(
+              variant: OmnisonicButtonVariant.destructive,
+              onPressed: () => Navigator.pop(dialogContext, true),
+              label: confirmLabel,
+            )
+          else
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(confirmLabel),
+            ),
         ],
       );
     },
@@ -144,12 +144,6 @@ class _TextInputDialogState extends State<_TextInputDialog> {
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        OmnisonicSpacing.lg,
-        0,
-        OmnisonicSpacing.lg,
-        OmnisonicSpacing.md,
-      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -159,4 +153,73 @@ class _TextInputDialogState extends State<_TextInputDialog> {
       ],
     );
   }
+}
+
+/// A read-only sheet of facts about one thing — a track, a server — as
+/// label/value rows, with Close and optional extra [actions] before it.
+///
+/// Track info and server details each laid this out by hand with different
+/// label widths, label styles and row spacing.
+Future<void> showDetailsDialog(
+  BuildContext context, {
+  required String title,
+  required List<(String, String)> rows,
+  List<Widget> Function(BuildContext dialogContext)? actions,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      final scheme = Theme.of(dialogContext).colorScheme;
+      return AlertDialog(
+        title: Text(title),
+        scrollable: true,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: kDialogMaxWidth),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (label, value) in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      SizedBox(
+                        width: 112,
+                        child: Text(
+                          label.toUpperCase(),
+                          style: OmnisonicTypography.eyebrow.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: SelectableText(
+                          value,
+                          style: OmnisonicTypography.bodyMedium.copyWith(
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          ...?actions?.call(dialogContext),
+          FilledButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
 }

@@ -6,6 +6,8 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/search_focus.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../../core/utils/animation_utils.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 
 /// Desktop content-column header: a glass search field, the last-sync
 /// timestamp and a "Sync now" action. Settings are reached through the
@@ -14,16 +16,56 @@ import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 ///
 /// The sidebar deliberately carries no search entry of its own — search is a
 /// content-area concern in the redesign, reachable from anywhere with ⌘K.
+///
+/// Transparent over the canvas at rest; once the page has scrolled
+/// [scrolledThreshold] px it fades into a glass bar (L2, `fast`), so rows
+/// passing underneath do not collide with the controls.
 class DesktopTopBar extends StatelessWidget {
-  const DesktopTopBar({super.key});
+  const DesktopTopBar({super.key, this.scrolled = false});
+
+  /// Scroll distance after which the bar becomes glass.
+  static const double scrolledThreshold = 8;
+
+  /// Whether content has scrolled under the bar.
+  final bool scrolled;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSearch = GoRouterState.of(context).uri.path == AppRouter.search;
 
+    final gutter = PageGutter.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+      padding: EdgeInsets.fromLTRB(gutter, 0, gutter, OmnisonicSpacing.sm),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: AnimatedOpacity(
+                  opacity: scrolled ? 1 : 0,
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    AnimationManager.fastDuration,
+                  ),
+                  child: GlassSurface(
+                    intensity: GlassIntensity.pill,
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _buildRow(context, scheme, onSearch),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, ColorScheme scheme, bool onSearch) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.xs),
       child: Row(
         children: [
           // Not on /search, which has its own field: two search boxes on
@@ -36,13 +78,17 @@ class DesktopTopBar extends StatelessWidget {
               ),
             ),
           const Spacer(),
-          Consumer<MusicLibraryViewModel>(
-            builder: (context, viewModel, child) {
+          Consumer2<MusicLibraryViewModel, ServerManagementViewModel>(
+            builder: (context, viewModel, servers, child) {
               return Flexible(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: OmnisonicSpacing.ms),
                   child: Text(
-                    viewModel.isSyncing
+                    // Without a server there is no sync to report: it said
+                    // "last sync just now" on a fresh install.
+                    !servers.hasServers
+                        ? 'no servers yet'
+                        : viewModel.isSyncing
                         ? 'syncing…'
                         : 'last sync ${_relativeTime(viewModel.lastUpdated)}',
                     maxLines: 1,
@@ -58,12 +104,15 @@ class DesktopTopBar extends StatelessWidget {
           // Syncs through the library view model, the same path the library
           // page uses, so the "syncing…" label to the left of this button and
           // the in-memory collection both reflect what the button started.
-          _GlassButton(
-            label: 'Sync now',
-            onTap: () => context.read<MusicLibraryViewModel>().syncCollection(
-              forceRefresh: true,
+          if (context.select<ServerManagementViewModel, bool>(
+            (vm) => vm.hasServers,
+          ))
+            _GlassButton(
+              label: 'Sync now',
+              onTap: () => context.read<MusicLibraryViewModel>().syncCollection(
+                forceRefresh: true,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -91,17 +140,20 @@ class _SearchField extends StatelessWidget {
         SearchFocusRequest.request();
         context.go(AppRouter.search);
       },
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.ms,
+      ),
       semanticLabel: 'Search',
       child: Row(
         children: [
           Icon(
             OmnisonicIcons.search,
-            size: OmnisonicIconSizes.sm,
+            size: OmnisonicIconSizes.smd,
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
             child: Text(
               'Search albums, artists, tracks — all servers',
@@ -112,10 +164,24 @@ class _SearchField extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            '⌘K',
-            style: OmnisonicTypography.technical.copyWith(
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+          const SizedBox(width: OmnisonicSpacing.sm),
+          // A key cap, so the shortcut reads as a shortcut and not as part
+          // of the placeholder.
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+              vertical: OmnisonicSpacing.xxs,
+            ),
+            decoration: BoxDecoration(
+              color: OmnisonicSurfaces.of(context).well,
+              borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
+              border: Border.all(color: OmnisonicSurfaces.of(context).hairline),
+            ),
+            child: Text(
+              '⌘K',
+              style: OmnisonicTypography.technicalSmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
@@ -137,6 +203,11 @@ class _GlassButton extends StatelessWidget {
 
     return GlassInkButton(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.ms,
+      ),
       child: Text(
         label,
         style: OmnisonicTypography.glassButton.copyWith(

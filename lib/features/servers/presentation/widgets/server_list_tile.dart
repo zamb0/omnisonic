@@ -7,6 +7,8 @@ import '../../../ui/presentation/widgets/chips.dart';
 
 /// A list tile widget for displaying server information
 class ServerListTile extends StatelessWidget {
+  static const double _leadingSize = 48;
+
   final MusicServer server;
   final bool isLoading;
   final VoidCallback? onTap;
@@ -36,12 +38,15 @@ class ServerListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
         padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          // Stretched, so the stats line starts on the text column rather
+          // than floating in the middle of the card.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [_buildTile(context), _buildStatTrio(context)],
         ),
       ),
@@ -70,10 +75,10 @@ class ServerListTile extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: OmnisonicSpacing.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: OmnisonicSpacing.sm,
+            runSpacing: OmnisonicSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StatusChip(status: server.status),
@@ -93,6 +98,7 @@ class ServerListTile extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : MenuAnchor(
+              reservedPadding: OmnisonicInsets.menuScreen,
               builder: (context, controller, child) => IconButton(
                 icon: const Icon(OmnisonicIcons.moreVert),
                 tooltip: 'Actions for ${server.name}',
@@ -123,24 +129,35 @@ class ServerListTile extends StatelessWidget {
 
   /// Albums synced / last measured latency / last sync time. Latency is
   /// only ever the result of an explicit "Test Connection" — it's not
-  /// continuously polled, so it reads "not tested" until the user runs one.
+  /// continuously polled, so it reads "not tested" until the user runs one
+  /// (and is left out for a server that is online).
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      // Indented to the tile's text column: content padding, the 48 badge
+      // and the title gap.
+      padding: const EdgeInsets.fromLTRB(
+        OmnisonicSpacing.md + _leadingSize + OmnisonicSpacing.ms,
+        0,
+        OmnisonicSpacing.md,
+        OmnisonicSpacing.ms,
+      ),
       child: Wrap(
-        spacing: 16,
-        runSpacing: 4,
+        spacing: OmnisonicSpacing.md,
+        runSpacing: OmnisonicSpacing.xs,
         children: [
           _buildStat(
             context,
             OmnisonicIcons.albumOutline,
             albumCount != null ? pluralize(albumCount!, 'album') : '— albums',
           ),
-          _buildStat(
-            context,
-            OmnisonicIcons.speedOutline,
-            latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
-          ),
+          // "not tested" next to an Online badge read as a contradiction:
+          // the status monitor does reach it, it just does not time it.
+          if (latency != null || server.status != ServerStatus.online)
+            _buildStat(
+              context,
+              OmnisonicIcons.speedOutline,
+              latency != null ? '${latency!.inMilliseconds}ms' : 'not tested',
+            ),
           _buildStat(
             context,
             OmnisonicIcons.syncOutline,
@@ -163,10 +180,10 @@ class ServerListTile extends StatelessWidget {
           size: OmnisonicIconSizes.inline,
           color: scheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: OmnisonicSpacing.xs),
         Text(
           label,
-          style: OmnisonicTypography.metadata.copyWith(
+          style: OmnisonicTypography.technicalSmall.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
@@ -177,13 +194,18 @@ class ServerListTile extends StatelessWidget {
   Widget _buildLeading(BuildContext context) {
     final color = ServerStatusVisuals.of(context, server.status).color;
     return Container(
-      width: 48,
-      height: 48,
+      width: _leadingSize,
+      height: _leadingSize,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
-      child: Icon(OmnisonicIcons.dns, color: color, size: 24),
+      child: Icon(
+        OmnisonicIcons.dns,
+        color: color,
+        size: OmnisonicIconSizes.smd,
+      ),
     );
   }
 }

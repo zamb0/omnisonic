@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/destinations.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import 'chips.dart';
+import 'server_health.dart';
 
 /// The way into every destination that doesn't get a permanent slot —
 /// Starred, Downloads, Servers, Settings.
@@ -29,23 +33,45 @@ class AccountButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     final path = GoRouterState.of(context).uri.path;
     final active = AppDestinations.isSecondary(path);
-    final color = active ? scheme.primary : scheme.onSurfaceVariant;
+    final color = active ? scheme.onSurface : scheme.onSurfaceVariant;
     final vertical = axis == Axis.vertical;
 
-    final avatar = Container(
-      width: 24,
-      height: 24,
+    // The ring is the aggregate server state (success / warning / error).
+    // Its colour is never alone: the semantics label says it too.
+    final health = context.select<ServerManagementViewModel, ServerHealth>(
+      (vm) => ServerHealth.of(vm.servers.map((server) => server.status)),
+    );
+    final healthStatus = health.status;
+    final ringColor = healthStatus == null
+        ? null
+        : ServerStatusVisuals.of(context, healthStatus).color;
+
+    // Active, the sidebar footer avatar takes the `wellHover` fill. In the
+    // bottom bar the shared sliding indicator sits behind this slot, so the
+    // avatar stays bare there.
+    final disc = Container(
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: color, width: 1.5),
+        color: vertical ? null : (active ? surfaces.wellHover : surfaces.well),
+        border: ringColor == null
+            ? null
+            : Border.all(color: ringColor, width: 2),
       ),
       child: Icon(
-        OmnisonicIcons.personOutline,
+        active ? OmnisonicIcons.person : OmnisonicIcons.personOutline,
         size: OmnisonicIconSizes.sm,
         color: color,
       ),
+    );
+    final avatar = SizedBox(
+      width: vertical ? 52 : 28,
+      height: 28,
+      child: Center(child: disc),
     );
 
     final label = Text(
@@ -53,19 +79,14 @@ class AccountButton extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: vertical
-          ? OmnisonicTypography.labelSmall.copyWith(
-              color: color,
-              fontWeight: active
-                  ? OmnisonicTypography.semiBold
-                  : OmnisonicTypography.medium,
-            )
+          ? OmnisonicTypography.labelSmall.copyWith(color: color)
           : OmnisonicTypography.navLabel.copyWith(color: color),
     );
 
     Widget button(VoidCallback onTap) => Semantics(
       button: true,
       selected: active,
-      label: 'Account and settings',
+      label: 'Account and settings, ${health.description}',
       excludeSemantics: true,
       child: Tooltip(
         message: 'Account and settings',
@@ -79,10 +100,12 @@ class AccountButton extends StatelessWidget {
               minHeight: OmnisonicTouchTargets.minimum,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.sm,
-                vertical: OmnisonicSpacing.xs,
-              ),
+              padding: vertical
+                  ? const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs)
+                  : const EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.xs,
+                      vertical: OmnisonicSpacing.xs,
+                    ),
               child: Flex(
                 direction: axis,
                 mainAxisSize: MainAxisSize.min,
@@ -91,8 +114,8 @@ class AccountButton extends StatelessWidget {
                   avatar,
                   if (showLabel) ...[
                     SizedBox(
-                      width: vertical ? 0 : OmnisonicSpacing.sm,
-                      height: vertical ? 2 : 0,
+                      width: vertical ? 0 : OmnisonicSpacing.ms,
+                      height: vertical ? OmnisonicSpacing.xxs : 0,
                     ),
                     Flexible(child: label),
                   ],
@@ -109,6 +132,7 @@ class AccountButton extends StatelessWidget {
     // desktop window, far from what was clicked, read as a different app.
     if (vertical) return button(() => showAccountMenu(context));
     return MenuAnchor(
+      reservedPadding: OmnisonicInsets.menuScreen,
       builder: (context, controller, child) => button(
         () => controller.isOpen ? controller.close() : controller.open(),
       ),
@@ -134,23 +158,63 @@ void showAccountMenu(BuildContext context) {
 
   showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
+    // The glass panel is the sheet: without this the theme's hairline drew a
+    // second, empty outline around it.
+    shape: const RoundedRectangleBorder(),
+    showDragHandle: false,
     builder: (sheetContext) => SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
-          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final destination in AppDestinations.secondary)
-                _AccountMenuItem(
-                  destination: destination,
-                  selected: destination.matches(currentPath),
+        padding: const EdgeInsets.fromLTRB(
+          OmnisonicLayout.chromeInset,
+          OmnisonicSpacing.sm,
+          OmnisonicLayout.chromeInset,
+          OmnisonicLayout.chromeInset,
+        ),
+        // An L3 overlay, like the menu the same destinations open on a
+        // tablet: glass over the modal scrim read as a muddy grey.
+        // A Material, not a decorated box, so the rows' ink shows; the same
+        // values as the menu theme.
+        child: Material(
+          color: Theme.of(sheetContext).colorScheme.surfaceContainerHigh,
+          surfaceTintColor: Colors.transparent,
+          elevation: 16,
+          shadowColor: OmnisonicColors.overlayShadow,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+            side: BorderSide(
+              color: OmnisonicSurfaces.of(sheetContext).hairline,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // The sheet's 36 × 4 handle (docs/design-system.md, "Bottom
+                // sheet"), inside the floating panel rather than on an
+                // invisible sheet above it.
+                ExcludeSemantics(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).colorScheme.outline,
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                    ),
+                  ),
                 ),
-            ],
+                for (final destination in AppDestinations.secondary)
+                  _AccountMenuItem(
+                    destination: destination,
+                    selected: destination.matches(currentPath),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -167,20 +231,32 @@ class _AccountMenuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurface;
+    final color = selected ? scheme.onSurface : scheme.onSurfaceVariant;
 
     return ListTile(
       leading: Icon(
         selected ? destination.activeIcon : destination.icon,
         color: color,
+        size: OmnisonicIconSizes.smd,
       ),
-      title: Text(destination.label, style: TextStyle(color: color)),
+      title: Text(destination.label),
+      trailing: selected
+          ? Icon(
+              OmnisonicIcons.check,
+              color: scheme.primary,
+              size: OmnisonicIconSizes.smd,
+            )
+          : null,
       selected: selected,
       onTap: () {
         // Pop the sheet before navigating: pushing first leaves the sheet
         // stacked over the destination.
+        //
+        // Pushed, not replaced: these pages sit above the tabs, and with go()
+        // Servers had a back arrow when opened from Home but none from here.
+        final router = GoRouter.of(context);
         Navigator.of(context).pop();
-        GoRouter.of(context).go(destination.route);
+        if (!selected) router.push(destination.route);
       },
     );
   }

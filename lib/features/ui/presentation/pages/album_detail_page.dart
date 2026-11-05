@@ -26,7 +26,8 @@ class AlbumDetailPage extends StatefulWidget {
   State<AlbumDetailPage> createState() => _AlbumDetailPageState();
 }
 
-class _AlbumDetailPageState extends State<AlbumDetailPage> {
+class _AlbumDetailPageState extends State<AlbumDetailPage>
+    with ArtTintMixin, HeaderCollapseMixin {
   late Album _album;
   List<Album> _albumVariants = [];
   List<Track> _tracks = [];
@@ -44,6 +45,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   /// every variant's tracks and read the server list from the context on each
   /// call, which made scrolling cost O(variants x tracks) per row.
   Map<String, String>? _sourceNotes;
+
+  /// Servers each on-screen track is actually on, keyed by track ID. Every
+  /// row used to carry its own copy's dot only, so a track on both servers
+  /// looked like it was on one.
+  Map<String, List<String>> _trackSources = const {};
 
   /// Server ID to display name, so per-row lookups do not read the provider
   /// and scan the server list again for every visible track.
@@ -119,13 +125,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadTracks,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
-              return _buildDesktopScaffold(context);
-            }
-            return _buildMobileScaffold(context);
-          },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: onHeaderScroll,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
+                return _buildDesktopScaffold(context);
+              }
+              return _buildMobileScaffold(context);
+            },
+          ),
         ),
       ),
     );
@@ -137,25 +146,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         _buildSliverAppBar(),
         SliverToBoxAdapter(child: _buildAlbumHeader(context)),
 
-        // Tracks section header
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Tracks',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: OmnisonicTypography.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Tracks content
+        const SliverToBoxAdapter(child: SectionHeader(title: 'Tracks')),
         _buildTracksContent(),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: OmnisonicLayout.pageBottom),
+        ),
       ],
     );
   }
@@ -172,7 +167,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         // table to be an eager Column — a 500-track album built 500 rows on
         // the first frame.
         SliverPadding(
-          padding: const EdgeInsets.all(OmnisonicSpacing.lg),
+          padding: EdgeInsets.fromLTRB(
+            PageGutter.of(context),
+            OmnisonicSpacing.sm,
+            PageGutter.of(context),
+            OmnisonicLayout.pageBottom,
+          ),
           sliver: SliverCrossAxisGroup(
             slivers: [
               SliverCrossAxisExpanded(
@@ -184,9 +184,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(context, desktop: true),
-                          const SizedBox(height: OmnisonicSpacing.lg),
+                          const SizedBox(height: OmnisonicSpacing.xl),
                           _buildTracksHeaderRow(context),
-                          const SizedBox(height: OmnisonicSpacing.sm),
+                          const SizedBox(height: OmnisonicLayout.headerGap),
                         ],
                       ),
                     ),
@@ -195,9 +195,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 ),
               ),
               SliverConstrainedCrossAxis(
-                maxExtent: 340 + OmnisonicSpacing.lg,
+                maxExtent: 340 + OmnisonicSpacing.xl,
                 sliver: SliverPadding(
-                  padding: const EdgeInsets.only(left: OmnisonicSpacing.lg),
+                  padding: const EdgeInsets.only(left: OmnisonicSpacing.xl),
                   sliver: SliverToBoxAdapter(
                     child: _buildResolutionPanel(context),
                   ),
@@ -211,8 +211,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   SliverAppBar _buildSliverAppBar() {
-    return SliverAppBar(
-      pinned: true,
+    return collapsingAppBar(
+      context,
+      collapsed: headerCollapsed,
+      scrolledUnder: headerScrolledUnder,
+      title: _album.title,
       leading: BackButton(
         onPressed: () {
           if (context.canPop()) {
@@ -222,8 +225,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           }
         },
       ),
-      title: Text(_album.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      actions: [
+      collapsedActions: [
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Play',
@@ -247,16 +249,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   Widget _buildTracksHeaderRow(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          'Tracks',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: OmnisonicTypography.bold,
-          ),
+    return Semantics(
+      header: true,
+      child: Text(
+        'Tracks',
+        style: OmnisonicTypography.groupTitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
         ),
-        const Spacer(),
-      ],
+      ),
     );
   }
 
@@ -293,7 +293,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           key: ValueKey(track.id),
           track: track,
           leading: TrackRowLeading.trackNumber,
-          serverId: _albumVariants.length > 1 ? track.serverId : null,
+          sourceServerIds: _albumVariants.length > 1
+              ? _trackSources[track.id] ?? [track.serverId]
+              : null,
           qualityLabel: track.quality.format,
           sourceNote: _sourceNotes?[track.id],
           onTap: () => _onTrackTapped(track, index),
@@ -363,7 +365,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     Widget label(String text, {TextAlign? align}) => Text(
       text,
       textAlign: align,
-      style: OmnisonicTypography.overline.copyWith(
+      style: OmnisonicTypography.eyebrow.copyWith(
         color: scheme.onSurfaceVariant,
       ),
     );
@@ -397,10 +399,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               ],
             ),
           ),
-          Divider(
-            height: 1,
-            color: scheme.outlineVariant.withValues(alpha: 0.4),
-          ),
+          const Divider(height: 1),
         ],
       ),
     );
@@ -413,8 +412,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
     return InkWell(
       onTap: () => _onTrackTapped(track, index),
+      onSecondaryTap: () => _showTrackOptions(track),
+      onLongPress: () => _showTrackOptions(track),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.md,
+          vertical: OmnisonicSpacing.sm,
+        ),
         child: Row(
           children: [
             SizedBox(
@@ -435,7 +440,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                     track.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: OmnisonicTypography.bodyMedium.copyWith(
+                    style: OmnisonicTypography.titleSmall.copyWith(
                       color: scheme.onSurface,
                     ),
                   ),
@@ -456,7 +461,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                 children: [
                   if (showSource) ...[
                     ServerDot(serverId: track.serverId, size: 8),
-                    const SizedBox(width: 6),
+                    const SizedBox(
+                      width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                    ),
                   ],
                   Expanded(
                     child: Text(
@@ -501,7 +508,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             SizedBox(
               width: 40,
               child: IconButton(
-                icon: const Icon(OmnisonicIcons.moreVert, size: 18),
+                icon: const Icon(OmnisonicIcons.moreVert),
                 tooltip: 'More actions for ${track.title}',
                 onPressed: () => _showTrackOptions(track),
               ),
@@ -523,7 +530,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
         children: [
           if (_albumVariants.length > 1) ...[
             _buildSourcePanel(context, Theme.of(context).colorScheme),
-            const SizedBox(height: 20),
+            const SizedBox(height: OmnisonicSpacing.lg),
           ],
           _buildConflictCallouts(context),
           _buildAlsoByArtistGrid(context),
@@ -569,10 +576,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
 
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.lg),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-        padding: const EdgeInsets.all(12),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -583,19 +590,21 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
                   size: OmnisonicIconSizes.sm,
                   color: OmnisonicColors.warningAccessible,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 Text(
                   'CONFLICTS',
-                  style: OmnisonicTypography.overline.copyWith(
+                  style: OmnisonicTypography.eyebrow.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: OmnisonicSpacing.sm),
             for (final callout in callouts)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  vertical: OmnisonicSpacing.xxs,
+                ),
                 child: Text(
                   callout,
                   style: OmnisonicTypography.bodySmall.copyWith(
@@ -630,14 +639,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       children: [
         Text(
           'ALSO BY ${_album.artist.toUpperCase()}',
-          style: OmnisonicTypography.overline.copyWith(
+          style: OmnisonicTypography.eyebrow.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: OmnisonicSpacing.ms),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: OmnisonicSpacing.ms,
+          runSpacing: OmnisonicSpacing.ms,
           children: [
             for (final album in others)
               SizedBox(
@@ -661,7 +670,12 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   Widget _buildAlbumHeader(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    padding: EdgeInsets.fromLTRB(
+      PageGutter.of(context),
+      OmnisonicSpacing.sm,
+      PageGutter.of(context),
+      0,
+    ),
     child: _buildHeader(context),
   );
 
@@ -672,15 +686,22 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     final scheme = Theme.of(context).colorScheme;
     final canPlay = _tracks.isNotEmpty;
     final artistId = _album.artistId;
+    // The header takes its colour from the cover (cached per URL).
+    updateArtTint(_album.coverArtUrl);
 
     return DetailHeader(
+      bleedTop: DetailHeader.pageBleed,
       forceNarrow: desktop,
-      artworkSize: desktop ? 220 : null,
+      artworkSize: desktop ? 240 : null,
+      tint: artTint,
       // Eyebrow states the aggregation up front — this is the one screen
       // where "the same album lives on N servers" is the point.
-      eyebrow: _albumVariants.length > 1
-          ? 'Album · merged from ${_albumVariants.length} servers'
-          : 'Album',
+      eyebrow: [
+        'Album',
+        if (_album.year != null) '${_album.year}',
+        if (_albumVariants.length > 1)
+          'merged from ${_albumVariants.length} servers',
+      ].join(' · '),
       title: _album.title,
       artwork: LayoutBuilder(
         builder: (context, constraints) =>
@@ -714,26 +735,45 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
               _tracks.fold(Duration.zero, (sum, t) => sum + t.duration),
             ),
           ),
-        MetadataChip(
-          icon: OmnisonicIcons.dns,
-          label: _getServerNameForAlbum(context, _album),
-        ),
+        // Merged albums name the server count, with the list on tap: one
+        // server's name under a "merged from 2 servers" eyebrow contradicted it.
+        if (_albumVariants.length > 1)
+          Tooltip(
+            triggerMode: TooltipTriggerMode.tap,
+            message: [
+              for (final variant in _albumVariants)
+                _getServerNameForAlbum(context, variant),
+            ].join('\n'),
+            child: MetadataChip(
+              icon: OmnisonicIcons.dns,
+              label: '${_albumVariants.length} servers',
+            ),
+          )
+        else
+          MetadataChip(
+            icon: OmnisonicIcons.dns,
+            label: _getServerNameForAlbum(context, _album),
+          ),
       ],
       actions: [
-        FilledButton.icon(
+        AuroraButton(
           onPressed: canPlay ? _playAlbum : null,
-          icon: const Icon(OmnisonicIcons.playArrow),
-          label: const Text('Play'),
+          icon: OmnisonicIcons.playArrow,
+          label: 'Play',
         ),
-        OutlinedButton.icon(
+        OmnisonicButton(
+          variant: OmnisonicButtonVariant.tonal,
           onPressed: canPlay ? _shuffleAlbum : null,
-          icon: const Icon(OmnisonicIcons.shuffle),
-          label: const Text('Shuffle'),
+          icon: OmnisonicIcons.shuffle,
+          label: 'Shuffle',
         ),
-        OutlinedButton.icon(
+        // Icon-only: with a label the third button wrapped onto a row of
+        // its own on phones. The app bar has the same action.
+        OmnisonicIconButton(
+          variant: OmnisonicIconButtonVariant.tonal,
           onPressed: canPlay ? _downloadAlbum : null,
-          icon: const Icon(OmnisonicIcons.downloadOutline),
-          label: const Text('Download'),
+          tooltip: 'Download album',
+          icon: OmnisonicIcons.downloadOutline,
         ),
       ],
       below: !desktop && _albumVariants.length > 1
@@ -747,25 +787,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     ColorScheme scheme,
     double size,
   ) {
-    final borderRadius = BorderRadius.circular(OmnisonicRadius.art);
+    // The same lifted cover as the cards it came from, so the Hero lands
+    // on the shape it left.
     return Hero(
       tag: 'album-${widget.album.id}',
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: borderRadius,
-          color: scheme.surfaceContainerHighest,
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: ClipRRect(
-          borderRadius: borderRadius,
-          child: CoverArt(
-            url: _album.coverArtUrl,
-            radius: 0,
-            fallbackIcon: OmnisonicIcons.album,
-          ),
-        ),
+      child: CoverArt(
+        url: _album.coverArtUrl,
+        seed: _album.id,
+        size: size,
+        radius: OmnisonicRadius.artHero,
+        fallbackIcon: OmnisonicIcons.album,
       ),
     );
   }
@@ -778,6 +809,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return tracks
         .map((t) => t.quality)
         .reduce((a, b) => a.qualityScore >= b.qualityScore ? a : b);
+  }
+
+  bool get _variantQualitiesDiffer {
+    final scores = {
+      for (final variant in _albumVariants)
+        _bestQualityFor(variant.id)?.qualityScore,
+    }..remove(null);
+    return scores.length > 1;
   }
 
   /// The variant with the best overall quality among the sources we've
@@ -809,12 +848,28 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     };
     _serverNames = serverNames;
 
+    final sources = <String, List<String>>{};
     for (final track in _tracks) {
       final note = _sourceNoteFor(track, serverNames);
       if (note != null) notes[track.id] = note;
+      sources[track.id] = _sourcesFor(track);
     }
 
     _sourceNotes = notes;
+    _trackSources = sources;
+  }
+
+  List<String> _sourcesFor(Track track) {
+    if (track.trackNumber == null) return [track.serverId];
+    final serverIds = <String>{track.serverId};
+    for (final tracks in _variantTracksCache.values) {
+      for (final other in tracks) {
+        if (other.trackNumber == track.trackNumber) {
+          serverIds.add(other.serverId);
+        }
+      }
+    }
+    return serverIds.toList();
   }
 
   String? _sourceNoteFor(Track track, Map<String, String> serverNames) {
@@ -859,19 +914,23 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GlassSurface(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.xs,
-            vertical: OmnisonicSpacing.xs,
+          borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+          padding: const EdgeInsets.all(
+            OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 6, 10, 2),
+                padding: const EdgeInsets.fromLTRB(
+                  OmnisonicSpacing.ms,
+                  OmnisonicSpacing.sm,
+                  OmnisonicSpacing.ms,
+                  OmnisonicSpacing.xs,
+                ),
                 child: Text(
                   'SOURCE',
-                  style: OmnisonicTypography.overline.copyWith(
+                  style: OmnisonicTypography.eyebrow.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
@@ -885,10 +944,14 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
             ],
           ),
         ),
-        if (best != null) ...[
-          const SizedBox(height: 6),
+        // Only when the copies differ: "highest quality available" over two
+        // identical MP3 128 copies claimed a choice that was not there.
+        if (best != null && _variantQualitiesDiffer) ...[
+          const SizedBox(height: OmnisonicSpacing.sm),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.xs,
+            ),
             child: Text(
               best.id == _album.id
                   ? 'Playing from ${_serverNameFor(_album.serverId)} — highest quality available'
@@ -917,32 +980,34 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     ];
 
     return InkWell(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
       onTap: () {
         if (variant.id == _album.id) return;
         setState(() => _album = variant);
         _loadTracks();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.ms,
+          vertical: OmnisonicSpacing.sm,
+        ),
         child: Row(
           children: [
             ServerDot(serverId: variant.serverId, size: 10),
-            const SizedBox(width: 10),
+            const SizedBox(width: OmnisonicSpacing.ms),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     server?.name ?? variant.serverId,
-                    style: OmnisonicTypography.bodySmall.copyWith(
+                    style: OmnisonicTypography.titleSmall.copyWith(
                       color: scheme.onSurface,
-                      fontWeight: OmnisonicTypography.semiBold,
                     ),
                   ),
                   Text(
                     subtitleParts.join(' · '),
-                    style: OmnisonicTypography.metadata.copyWith(
+                    style: OmnisonicTypography.technicalSmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
@@ -1104,7 +1169,7 @@ class _ArtistLink extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
+          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xxs),
           child: Text(name),
         ),
       ),

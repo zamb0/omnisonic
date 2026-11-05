@@ -220,32 +220,6 @@ windows-zip: windows-bundle ## Package Windows build as .zip
 	cd $(DIST_DIR) && zip -r $(APP_NAME)-$(VERSION)-windows-x64.zip $(APP_NAME)-windows-x64/
 	@echo "Archive: $(DIST_DIR)/$(APP_NAME)-$(VERSION)-windows-x64.zip"
 
-# ─── Web ─────────────────────────────────────────────────────────────────────
-
-.PHONY: web
-web: ## Build Web app (release)
-	flutter build web --release
-
-.PHONY: web-debug
-web-debug: ## Build Web app (debug, with source maps)
-	flutter build web --profile
-
-.PHONY: run-web
-run-web: ## Run in browser
-	flutter run -d chrome
-
-.PHONY: web-bundle
-web-bundle: web ## Build Web and copy to dist/
-	@mkdir -p $(DIST_DIR)
-	@rm -rf $(DIST_DIR)/$(APP_NAME)-web
-	cp -r $(BUILD_DIR)/web $(DIST_DIR)/$(APP_NAME)-web
-	@echo "Web build: $(DIST_DIR)/$(APP_NAME)-web/"
-
-.PHONY: web-zip
-web-zip: web-bundle ## Package Web build as .zip
-	cd $(DIST_DIR) && zip -r $(APP_NAME)-$(VERSION)-web.zip $(APP_NAME)-web/
-	@echo "Archive: $(DIST_DIR)/$(APP_NAME)-$(VERSION)-web.zip"
-
 # ─── All Platforms ───────────────────────────────────────────────────────────
 
 .PHONY: all-desktop
@@ -255,10 +229,10 @@ all-desktop: linux macos windows ## Build all desktop platforms
 all-mobile: apk ipa ## Build all mobile platforms (APK + IPA)
 
 .PHONY: all
-all: all-desktop all-mobile web ## Build everything
+all: all-desktop all-mobile ## Build everything
 
 .PHONY: dist-all
-dist-all: linux-tar macos-bundle windows-zip web-zip ## Package all platforms for distribution
+dist-all: linux-tar macos-bundle windows-zip ## Package all platforms for distribution
 
 # ─── Icons ───────────────────────────────────────────────────────────────────
 

@@ -25,10 +25,19 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showFeedback(
   if (messenger == null) return null;
 
   final scheme = Theme.of(context).colorScheme;
+  // The bar is the opposite of the theme: dark on light, light on dark. Each
+  // kind takes the semantic colour that reads on it.
+  final onDarkBar = scheme.brightness == Brightness.light;
   final (IconData icon, Color color) = switch (kind) {
-    FeedbackKind.success => (OmnisonicIcons.checkCircle, scheme.inversePrimary),
+    FeedbackKind.success => (
+      OmnisonicIcons.checkCircle,
+      onDarkBar ? OmnisonicColors.success : OmnisonicColors.successAccessible,
+    ),
     FeedbackKind.error => (OmnisonicIcons.error, _errorOnInverse(scheme)),
-    FeedbackKind.info => (OmnisonicIcons.info, scheme.onInverseSurface),
+    FeedbackKind.info => (
+      OmnisonicIcons.info,
+      onDarkBar ? OmnisonicColors.info : OmnisonicColors.infoAccessible,
+    ),
   };
 
   messenger.hideCurrentSnackBar();
@@ -36,8 +45,10 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? showFeedback(
     SnackBar(
       content: Row(
         children: [
-          ExcludeSemantics(child: Icon(icon, color: color, size: 20)),
-          const SizedBox(width: OmnisonicSpacing.sm),
+          ExcludeSemantics(
+            child: Icon(icon, color: color, size: OmnisonicIconSizes.smd),
+          ),
+          const SizedBox(width: OmnisonicSpacing.ms),
           Expanded(child: Text(message)),
         ],
       ),

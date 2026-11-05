@@ -79,9 +79,12 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite albums to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
-            padding: EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.gutter(context),
-              vertical: OmnisonicSpacing.md,
+            staggered: true,
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              OmnisonicLayout.headerGap + OmnisonicSpacing.xs,
+              OmnisonicSpacing.gutter(context),
+              OmnisonicLayout.pageBottom,
             ),
             meta: true,
             itemCount: starredAlbums.length,
@@ -120,9 +123,12 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite artists to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
-            padding: EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.gutter(context),
-              vertical: OmnisonicSpacing.md,
+            staggered: true,
+            padding: EdgeInsets.fromLTRB(
+              OmnisonicSpacing.gutter(context),
+              OmnisonicLayout.headerGap + OmnisonicSpacing.xs,
+              OmnisonicSpacing.gutter(context),
+              OmnisonicLayout.pageBottom,
             ),
             subtitle: false,
             meta: true,
@@ -156,10 +162,11 @@ class _FavoritesPageState extends State<FavoritesPage>
             title: 'No Starred Tracks',
             subtitle: 'Star your favorite tracks to see them here',
           ),
+          // TrackRow lays itself out on the gutter.
           builder: (context) => ListView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.gutter(context),
-              vertical: OmnisonicSpacing.md,
+            padding: const EdgeInsets.only(
+              top: OmnisonicSpacing.sm,
+              bottom: OmnisonicLayout.pageBottom,
             ),
             itemCount: starredTracks.length,
             itemBuilder: (context, index) {

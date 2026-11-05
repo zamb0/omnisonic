@@ -41,7 +41,7 @@ class AlbumCard extends StatelessWidget {
   final bool showMeta;
 
   /// Servers this album is available on. With more than one, a stack of
-  /// server dots badges the cover; with one, a single dot.
+  /// server dots badges the cover; with one (or none) there is no badge.
   final List<String>? sourceServerIds;
 
   /// Whether the play/shuffle overlay and the actions sheet are offered.
@@ -94,10 +94,10 @@ class AlbumCard extends StatelessWidget {
           : null,
       badge:
           badge ??
-          (sources == null || sources.isEmpty
+          // Only where it says something: one source is the default, and a
+          // dot on every cover is noise. Several sources get the stack.
+          (sources == null || sources.length < 2
               ? null
-              : sources.length == 1
-              ? ServerDot(serverId: sources.single, size: 7)
               : ServerDotStack(serverIds: sources, dotSize: 7)),
     );
   }

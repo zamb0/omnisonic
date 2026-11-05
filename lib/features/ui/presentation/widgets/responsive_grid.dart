@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/design_system/design_system.dart';
 import 'media_card.dart';
 
 /// The one geometry for every card grid — library, favorites, offline — and
@@ -62,6 +63,10 @@ class ResponsiveGridView extends StatelessWidget {
   final double? childAspectRatio;
   final double Function(BuildContext context, double cellWidth)? itemExtent;
 
+  /// Fades the first cards in, one after the other, when the grid first
+  /// appears. For content; not for skeletons standing in for it.
+  final bool staggered;
+
   const ResponsiveGridView({
     super.key,
     required this.itemCount,
@@ -74,6 +79,7 @@ class ResponsiveGridView extends StatelessWidget {
     this.physics,
     this.childAspectRatio,
     this.itemExtent,
+    this.staggered = false,
   });
 
   /// A grid of [MediaCard]s whose cells fit a square cover plus the given
@@ -87,6 +93,7 @@ class ResponsiveGridView extends StatelessWidget {
     ScrollPhysics? physics,
     bool subtitle = true,
     bool meta = false,
+    bool staggered = false,
   }) => ResponsiveGridView(
     key: key,
     itemCount: itemCount,
@@ -94,12 +101,18 @@ class ResponsiveGridView extends StatelessWidget {
     padding: padding,
     controller: controller,
     physics: physics,
+    staggered: staggered,
     itemExtent: (context, width) =>
         MediaCard.extentFor(context, width, subtitle: subtitle, meta: meta),
   );
 
   @override
   Widget build(BuildContext context) {
+    final grid = _buildGrid(context);
+    return staggered ? EntranceScope(child: grid) : grid;
+  }
+
+  Widget _buildGrid(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth =
@@ -129,7 +142,10 @@ class ResponsiveGridView extends StatelessWidget {
                 childAspectRatio ?? minItemWidth / (minItemWidth + 64),
           ),
           itemCount: itemCount,
-          itemBuilder: itemBuilder,
+          itemBuilder: staggered
+              ? (context, index) =>
+                    Staggered(index: index, child: itemBuilder(context, index))
+              : itemBuilder,
         );
       },
     );

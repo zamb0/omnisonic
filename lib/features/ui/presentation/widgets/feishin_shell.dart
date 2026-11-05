@@ -11,6 +11,7 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../models/library_tab.dart';
 import '../widgets/account_menu.dart';
 import '../widgets/desktop_top_bar.dart';
+import 'nav_selection.dart';
 import '../widgets/server_dot.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 
@@ -37,7 +38,12 @@ class FeishinShell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
+          padding: const EdgeInsets.fromLTRB(
+            OmnisonicLayout.chromeInset,
+            OmnisonicLayout.chromeInset,
+            0,
+            OmnisonicLayout.chromeInset,
+          ),
           child: SizedBox(
             width: extended ? _extendedWidth : _railWidth,
             // The rail is a fixed 72px and the sidebar a fixed 234; neither
@@ -50,29 +56,48 @@ class FeishinShell extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-                  child: Column(
-                    children: [
-                      if (extended) const DesktopTopBar(),
-                      Expanded(child: child),
-                    ],
+          // The content column is its own semantics boundary. Its nested
+          // Navigator carries a modal barrier that blocks semantics of
+          // whatever was painted before it — which, as the sidebar is the
+          // earlier sibling, hid every nav item from screen readers.
+          child: Semantics(
+            container: true,
+            explicitChildNodes: true,
+            // Pages lay themselves out at the gutter, measured from the
+            // sidebar's glass edge; the player bar is chrome and keeps the
+            // chrome inset, so it no longer butts against the sidebar.
+            child: PageGutter(
+              value: OmnisonicLayout.sidebarGutter,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: OmnisonicLayout.chromeInset,
+                      ),
+                      child: _ContentWithTopBar(
+                        showTopBar: extended,
+                        child: child,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 14, 12),
-                child: OmnisonicTextScale.clampChrome(
-                  context,
-                  AnimatedNowPlayingBar(
-                    onTap: () => context.push(AppRouter.nowPlaying),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      OmnisonicLayout.chromeInset,
+                      OmnisonicSpacing.sm,
+                      OmnisonicLayout.chromeInset,
+                      OmnisonicLayout.chromeInset,
+                    ),
+                    child: OmnisonicTextScale.clampChrome(
+                      context,
+                      AnimatedNowPlayingBar(
+                        onTap: () => context.push(AppRouter.nowPlaying),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ],
@@ -80,31 +105,40 @@ class FeishinShell extends StatelessWidget {
   }
 
   Widget _buildSidebar(BuildContext context) {
+    // A landscape phone gives the rail ~360pt: the default insets left the
+    // nav items half cut off.
+    final short = MediaQuery.sizeOf(context).height < 500;
     return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.xl),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
       padding: EdgeInsets.symmetric(
-        horizontal: extended ? 14 : 8,
-        vertical: 18,
+        horizontal: extended ? OmnisonicSpacing.ms : OmnisonicSpacing.sm,
+        vertical: short ? OmnisonicSpacing.sm : OmnisonicSpacing.md,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildBrand(context),
-          const SizedBox(height: 18),
+          SizedBox(height: short ? OmnisonicSpacing.sm : OmnisonicSpacing.lg),
           // Everything below the brand scrolls. The nav items alone used to
           // scroll while the SERVERS list and the health card were pinned
           // outside it, which overflows a short window as soon as enough
           // servers are configured — that list has no upper bound.
+          //
+          // The thumb shows whenever the items do not fit, so a clipped
+          // item reads as "scroll for more" rather than as a glitch.
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ..._buildNavItems(context),
-                  _buildServersSection(context),
-                  const SizedBox(height: 12),
-                  _buildLibraryHealthCard(context),
-                ],
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ..._buildNavItems(context),
+                    _buildServersSection(context),
+                    const SizedBox(height: OmnisonicSpacing.ms),
+                    _buildLibraryHealthCard(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -124,28 +158,29 @@ class FeishinShell extends StatelessWidget {
 
   Widget _buildBrand(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     final mark = Container(
-      width: 22,
-      height: 22,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
-        color: scheme.onSurface,
+        color: surfaces.ink,
         borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
       ),
       child: Icon(
         OmnisonicIcons.graphicEq,
-        size: OmnisonicIconSizes.inline,
-        color: scheme.surface,
+        size: OmnisonicIconSizes.sm,
+        color: surfaces.onInk,
       ),
     );
 
     if (!extended) return Center(child: mark);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.sm),
       child: Row(
         children: [
           mark,
-          const SizedBox(width: 9),
+          const SizedBox(width: OmnisonicSpacing.ms),
           Expanded(
             child: Text(
               'Omnisonic',
@@ -244,7 +279,12 @@ class FeishinShell extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 22, 4, 8),
+          padding: const EdgeInsets.fromLTRB(
+            OmnisonicSpacing.sm,
+            OmnisonicSpacing.lg,
+            0,
+            OmnisonicSpacing.xs,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -256,7 +296,7 @@ class FeishinShell extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Add a server',
+                tooltip: 'Add server',
                 onPressed: () => context.go(AppRouter.servers),
                 icon: const Icon(OmnisonicIcons.add),
                 iconSize: OmnisonicIconSizes.sm,
@@ -267,7 +307,9 @@ class FeishinShell extends StatelessWidget {
         ),
         if (servers.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 11),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.sm,
+            ),
             child: Text(
               'No servers yet',
               style: OmnisonicTypography.bodySmall.copyWith(
@@ -283,26 +325,24 @@ class FeishinShell extends StatelessWidget {
 
   Widget _buildServerRow(BuildContext context, MusicServer server) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
       child: Material(
-        color: OmnisonicColors.glassFill(
-          isDark ? Brightness.dark : Brightness.light,
-          light: 0.4,
-          dark: 0.05,
-        ),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+        color: OmnisonicSurfaces.of(context).well,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
         child: InkWell(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
           onTap: () => context.go(AppRouter.servers),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            padding: const EdgeInsets.symmetric(
+              horizontal: OmnisonicSpacing.ms,
+              vertical: OmnisonicSpacing.sm,
+            ),
             child: Row(
               children: [
                 ServerDot(serverId: server.id, size: 8),
-                const SizedBox(width: 9),
+                const SizedBox(width: OmnisonicSpacing.sm),
                 Expanded(
                   child: Text(
                     server.name,
@@ -337,13 +377,18 @@ class FeishinShell extends StatelessWidget {
       final isSyncing = context.select<MusicLibraryViewModel, bool>(
         (viewModel) => viewModel.isSyncing,
       );
+      // Only a sync indicator: at rest the unlabelled shield looked like a
+      // nav item that did nothing.
+      if (!isSyncing) return const SizedBox.shrink();
       return Center(
-        child: Icon(
-          isSyncing
-              ? OmnisonicIcons.sync
-              : OmnisonicIcons.healthAndSafetyOutline,
-          size: OmnisonicIconSizes.smd,
-          color: scheme.onSurfaceVariant,
+        child: Tooltip(
+          message: 'Syncing library',
+          child: Icon(
+            OmnisonicIcons.sync,
+            size: OmnisonicIconSizes.smd,
+            color: scheme.onSurfaceVariant,
+            semanticLabel: 'Syncing library',
+          ),
         ),
       );
     }
@@ -353,6 +398,57 @@ class FeishinShell extends StatelessWidget {
 
   void _goToLibraryTab(BuildContext context, LibraryTab tab) {
     context.go('${AppRouter.library}?tab=${tab.name}');
+  }
+}
+
+/// The page and, on wide windows, the top bar above it. Watches the page's
+/// vertical scroll so the bar can turn from transparent into glass once
+/// content passes under it (docs/design-system.md §9.4).
+class _ContentWithTopBar extends StatefulWidget {
+  const _ContentWithTopBar({required this.showTopBar, required this.child});
+
+  final bool showTopBar;
+  final Widget child;
+
+  @override
+  State<_ContentWithTopBar> createState() => _ContentWithTopBarState();
+}
+
+class _ContentWithTopBarState extends State<_ContentWithTopBar> {
+  bool _scrolled = false;
+  String? _path;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A new page starts at the top, and says nothing until it scrolls.
+    final path = GoRouterState.of(context).uri.path;
+    if (path != _path) {
+      _path = path;
+      _scrolled = false;
+    }
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    // Only the page's own vertical scrollable: not a carousel inside it.
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final scrolled =
+        notification.metrics.pixels > DesktopTopBar.scrolledThreshold;
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: Column(
+        children: [
+          if (widget.showTopBar) DesktopTopBar(scrolled: _scrolled),
+          Expanded(child: widget.child),
+        ],
+      ),
+    );
   }
 }
 
@@ -398,27 +494,29 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final library = context.watch<MusicLibraryViewModel>();
+    // "0% lossless · 0 dupes merged" describes no library at all.
+    if (library.tracks.isEmpty) return const SizedBox.shrink();
     _retally(library.tracks);
 
     final losslessShare = _losslessShare;
     final highShare = _highShare;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(OmnisonicSpacing.ms),
       decoration: BoxDecoration(
-        color: scheme.onSurface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        color: OmnisonicSurfaces.of(context).well,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Library health',
-            style: OmnisonicTypography.glassButton.copyWith(
-              color: scheme.onSurface,
+            'LIBRARY HEALTH',
+            style: OmnisonicTypography.eyebrow.copyWith(
+              color: scheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: OmnisonicSpacing.sm),
           ClipRRect(
             borderRadius: BorderRadius.circular(OmnisonicRadius.xs),
             child: SizedBox(
@@ -450,7 +548,7 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
               ),
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: OmnisonicSpacing.sm),
           Text(
             '${(losslessShare * 100).round()}% lossless · '
             '${library.duplicateGroupCount} dupes merged',
@@ -464,9 +562,10 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
   }
 }
 
-/// Sidebar row. Extended mode follows the design's marker-dot + Gabarito
-/// label + optional mono count; the collapsed rail keeps icons, since a
-/// column of identical dots would be unusable without labels.
+/// Sidebar row: icon, Gabarito label and an optional mono count; the
+/// collapsed rail stacks the icon over its label. The marker dots that used
+/// to lead each row were identical for every destination and said nothing an
+/// icon would not say better.
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.extended,
@@ -489,92 +588,127 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
+    // Selected: a `wellHover` pill, a filled icon and the Aurora bar on the
+    // left edge. Hover is `well`. The bar and the filled icon mean the state
+    // is not carried by colour alone.
+    final background = navPillColor(context, selected: selected);
+    final foreground = scheme.onSurface;
+    final muted = selected ? scheme.onSurface : scheme.onSurfaceVariant;
+    final radius = BorderRadius.circular(OmnisonicRadius.pill);
 
     if (!extended) {
-      return Semantics(
-        selected: selected,
-        button: true,
-        child: InkResponse(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  selected ? activeIcon : icon,
-                  size: OmnisonicIconSizes.md,
-                  color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: OmnisonicTypography.labelSmall.copyWith(
-                    color: selected
-                        ? scheme.onSurface
-                        : scheme.onSurfaceVariant,
+      return Padding(
+        padding: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
+        child: Semantics(
+          selected: selected,
+          button: true,
+          container: true,
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: radius,
+                  hoverColor: surfaces.well,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: OmnisonicSpacing.xs,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: background,
+                            borderRadius: BorderRadius.circular(
+                              OmnisonicRadius.full,
+                            ),
+                          ),
+                          child: Icon(
+                            selected ? activeIcon : icon,
+                            size: OmnisonicIconSizes.smd,
+                            color: muted,
+                          ),
+                        ),
+                        const SizedBox(height: OmnisonicSpacing.xs),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: OmnisonicTypography.labelSmall.copyWith(
+                            color: muted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              AuroraBar(visible: selected),
+            ],
           ),
         ),
       );
     }
 
-    // Selected rows invert to a solid ink pill — the redesign's single
-    // strongest accent, used sparingly so it always means "you are here".
-    final foreground = selected ? scheme.surface : scheme.onSurfaceVariant;
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.xxs),
       child: Semantics(
         selected: selected,
         button: true,
-        child: Material(
-          color: selected ? scheme.onSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(OmnisonicRadius.pill),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(OmnisonicRadius.pill),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: foreground.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+        container: true,
+        child: Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Material(
+              color: background,
+              borderRadius: radius,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: radius,
+                hoverColor: surfaces.well,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OmnisonicSpacing.ms,
+                    vertical: OmnisonicSpacing.sm + OmnisonicSpacing.xxs,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OmnisonicTypography.navLabel.copyWith(
-                        color: selected ? scheme.surface : scheme.onSurface,
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected ? activeIcon : icon,
+                        size: OmnisonicIconSizes.smd,
+                        color: muted,
                       ),
-                    ),
+                      const SizedBox(width: OmnisonicSpacing.ms),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: OmnisonicTypography.navLabel.copyWith(
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                      if (count != null && count! > 0)
+                        Text(
+                          '$count',
+                          style: OmnisonicTypography.technicalSmall.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
                   ),
-                  if (count != null && count! > 0)
-                    Text(
-                      '$count',
-                      // Full-strength foreground: at 60% the count was
-                      // under 3:1 on the selected pill.
-                      style: OmnisonicTypography.technicalSmall.copyWith(
-                        color: foreground,
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
-          ),
+            AuroraBar(visible: selected),
+          ],
         ),
       ),
     );

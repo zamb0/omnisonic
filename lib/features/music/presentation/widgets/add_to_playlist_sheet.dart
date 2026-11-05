@@ -7,7 +7,7 @@ import 'playlist_form_dialog.dart';
 import '../../../../core/design_system/design_system.dart';
 
 import '../../../../core/entities/entities.dart';
-import '../../../ui/presentation/widgets/section_header.dart';
+import '../../../ui/presentation/widgets/cover_art.dart';
 import '../viewmodels/playlist_view_model.dart';
 import '../../../../core/utils/formatters.dart';
 
@@ -30,17 +30,29 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
     return;
   }
 
+  final rootContext = Navigator.of(context, rootNavigator: true).context;
   final playlistId = await showModalBottomSheet<String>(
     context: context,
+    useRootNavigator: true,
     builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: SectionHeader(
-              title: 'Add to Playlist',
-              padding: EdgeInsets.zero,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              OmnisonicSpacing.lg,
+              0,
+              OmnisonicSpacing.lg,
+              OmnisonicSpacing.sm,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Add to playlist',
+                style: OmnisonicTypography.overlayTitle.copyWith(
+                  color: Theme.of(sheetContext).colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
           Flexible(
@@ -50,7 +62,15 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
               itemBuilder: (context, index) {
                 final playlist = playlists[index];
                 return ListTile(
-                  leading: const Icon(OmnisonicIcons.playlistPlay),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: OmnisonicSpacing.lg,
+                  ),
+                  leading: CoverArt(
+                    url: playlist.coverArtUrl,
+                    seed: playlist.id,
+                    size: 40,
+                    fallbackIcon: OmnisonicIcons.playlistPlay,
+                  ),
                   title: Text(playlist.name),
                   subtitle: Text(pluralize(playlist.trackCount, 'track')),
                   onTap: () => Navigator.pop(sheetContext, playlist.id),
@@ -65,12 +85,25 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
 
   if (playlistId == null) return;
 
+  // The root navigator outlives the row that opened the sheet. Confirming
+  // through the row's own context dropped the snackbar whenever that row had
+  // been rebuilt away by the time the server answered.
+  final feedbackContext = rootContext.mounted ? rootContext : context;
+  final name = playlists.where((p) => p.id == playlistId).firstOrNull?.name;
+
   final added = await playlistViewModel.addTrackToPlaylist(
     playlistId,
     track.id,
   );
   // A failure is reported by the app-wide ActionErrorListener.
-  if (added && context.mounted) {
-    showFeedback(context, 'Added to playlist', kind: FeedbackKind.success);
+  if (added && feedbackContext.mounted) {
+    showFeedback(
+      feedbackContext,
+      name != null ? 'Added to $name' : 'Added to playlist',
+      kind: FeedbackKind.success,
+      actionLabel: 'Undo',
+      onAction: () =>
+          playlistViewModel.removeTrackFromPlaylist(playlistId, track.id),
+    );
   }
 }

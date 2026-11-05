@@ -70,6 +70,27 @@ void main() {
     expect(find.text('Enter your username'), findsOneWidget);
   });
 
+  testWidgets('typing in one field flags no other field (#71)', (tester) async {
+    await pumpForm(tester);
+    await tester.enterText(field('Username'), 'ada');
+    await tester.enterText(field('Username'), '');
+    await tester.pump();
+
+    expect(find.text('Enter your username'), findsOneWidget);
+    expect(find.text('Enter the server URL'), findsNothing);
+    expect(find.text('Enter your password'), findsNothing);
+  });
+
+  testWidgets('submitting still flags every empty field (#71)', (tester) async {
+    await pumpForm(tester);
+    await tester.showKeyboard(field('Password'));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+
+    expect(find.text('Enter the server URL'), findsOneWidget);
+    expect(find.text('Enter your password'), findsOneWidget);
+  });
+
   testWidgets('editing offers a password change and keeps it optional', (
     tester,
   ) async {

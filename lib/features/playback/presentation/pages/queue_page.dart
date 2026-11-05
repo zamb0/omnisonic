@@ -87,21 +87,15 @@ class QueuePage extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: EdgeInsets.fromLTRB(
+            PageGutter.of(context),
+            OmnisonicSpacing.sm,
+            PageGutter.of(context),
+            0,
+          ),
           child: _buildNowPlayingCard(context, vm, track),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Up Next (${upNext.length})',
-              style: OmnisonicTypography.titleSmall.copyWith(
-                fontWeight: OmnisonicTypography.semiBold,
-              ),
-            ),
-          ),
-        ),
+        SectionHeader(title: 'Up next', meta: '${upNext.length}'),
         Expanded(
           child: upNext.isEmpty
               ? const EmptyState(
@@ -114,10 +108,8 @@ class QueuePage extends StatelessWidget {
                   // handles doubled it on desktop, and on touch a whole-row
                   // long-press drag fought with scrolling.
                   buildDefaultDragHandles: false,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  // TrackRow lays itself out on the gutter.
+                  padding: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
                   itemCount: upNext.length,
                   // onReorderItem (unlike the deprecated onReorder) already
                   // adjusts newIndex for the removed item, matching
@@ -150,7 +142,7 @@ class QueuePage extends StatelessWidget {
                       ),
                       trailing: IconButton(
                         icon: const Icon(OmnisonicIcons.close),
-                        iconSize: 18,
+                        iconSize: OmnisonicIconSizes.sm,
                         tooltip: 'Remove from queue',
                         onPressed: () => vm.removeFromQueue(absoluteIndex),
                       ),
@@ -171,17 +163,15 @@ class QueuePage extends StatelessWidget {
   ) {
     final scheme = Theme.of(context).colorScheme;
     return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: const EdgeInsets.all(OmnisonicSpacing.sm),
+      borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+      padding: const EdgeInsets.all(OmnisonicSpacing.ms),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-            child: SizedBox(
-              width: 52,
-              height: 52,
-              child: CoverArt(url: track.coverArtUrl, radius: 0),
-            ),
+          CoverArt(
+            url: track.coverArtUrl,
+            seed: track.albumId ?? track.id,
+            size: 56,
+            elevated: true,
           ),
           const SizedBox(width: OmnisonicSpacing.md),
           Expanded(
@@ -189,12 +179,12 @@ class QueuePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Now Playing',
-                  style: OmnisonicTypography.overline.copyWith(
+                  'NOW PLAYING',
+                  style: OmnisonicTypography.eyebrow.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: OmnisonicSpacing.xxs),
                 Text(
                   track.title,
                   style: OmnisonicTypography.titleSmall.copyWith(
@@ -243,7 +233,12 @@ class QueuePage extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        PageGutter.of(context),
+        OmnisonicSpacing.sm,
+        PageGutter.of(context),
+        OmnisonicSpacing.md,
+      ),
       child: Row(
         children: [
           Icon(
@@ -251,11 +246,11 @@ class QueuePage extends StatelessWidget {
             size: OmnisonicIconSizes.inline,
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
             child: Text(
               hint,
-              style: OmnisonicTypography.metadata.copyWith(
+              style: OmnisonicTypography.technicalSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
             ),

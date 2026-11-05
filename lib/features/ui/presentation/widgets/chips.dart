@@ -64,7 +64,7 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visuals = ServerStatusVisuals.of(context, status);
-    return _TintedChip(
+    return TintedChip(
       color: visuals.color,
       icon: visuals.icon,
       label: visuals.label,
@@ -83,28 +83,39 @@ class MetadataChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.ms,
+        vertical: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+      ),
       decoration: BoxDecoration(
+        color: surfaces.well,
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-        border: Border.all(color: scheme.outlineVariant),
+        border: Border.all(color: surfaces.hairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: OmnisonicIconSizes.sm,
+            // Follows the label: a fixed 16 sat beside 3x text.
+            size: OmnisonicTextScale.textExtent(
+              context,
+              OmnisonicIconSizes.sm,
+              max: OmnisonicIconSizes.sm * 2,
+            ),
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: OmnisonicTypography.labelMedium.copyWith(
-                color: scheme.onSurfaceVariant,
+              // Metadata is data: mono, like every other technical string.
+              style: OmnisonicTypography.technical.copyWith(
+                color: scheme.onSurface,
               ),
             ),
           ),
@@ -114,8 +125,52 @@ class MetadataChip extends StatelessWidget {
   }
 }
 
-class _TintedChip extends StatelessWidget {
-  const _TintedChip({
+/// The quality of what is playing, in mono on a `well` pill
+/// (`FLAC · Lossless`). Lossless and better take a `tertiary` edge: a
+/// glanceable "this is the good copy" that the words also say.
+class QualityBadge extends StatelessWidget {
+  const QualityBadge({super.key, required this.quality});
+
+  final AudioQuality quality;
+
+  /// Whether the badge gets the lossless edge.
+  bool get lossless =>
+      quality.qualityScore >= AudioQuality.lossless.qualityScore;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.ms,
+        vertical: OmnisonicSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: surfaces.well,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        border: Border.all(
+          color: lossless ? scheme.tertiary : surfaces.hairline,
+        ),
+      ),
+      child: Text(
+        quality.displayName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: OmnisonicTypography.technicalSmall.copyWith(
+          color: scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+/// A small status pill in a semantic colour: tinted fill, tinted edge,
+/// icon and label in the colour itself. Status, count and offline badges all
+/// use it, so "online" looks the same wherever it is said.
+class TintedChip extends StatelessWidget {
+  const TintedChip({
+    super.key,
     required this.color,
     required this.icon,
     required this.label,
@@ -127,28 +182,49 @@ class _TintedChip extends StatelessWidget {
   final String label;
   final String? semanticLabel;
 
+  /// How far the label is pulled toward the text colour on the light theme,
+  /// where the semantic hue on its own 14 % tint is only 3.8–4.4:1.
+  static const double lightLabelMix = 0.3;
+
+  /// The label colour for a chip of [color]: the hue itself on dark, darkened
+  /// toward `onSurface` on light so it clears 4.5:1. (The icon keeps [color]:
+  /// it only needs 3:1.)
+  static Color labelColorFor(Color color, ColorScheme scheme) =>
+      scheme.brightness == Brightness.light
+      ? Color.lerp(color, scheme.onSurface, lightLabelMix)!
+      : color;
+
   @override
   Widget build(BuildContext context) {
+    final labelColor = labelColorFor(color, Theme.of(context).colorScheme);
     return Semantics(
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: OmnisonicSpacing.sm,
+          vertical: OmnisonicSpacing.xs,
+        ),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+          // The semantic tint at 14 %: enough to see, never to carry the
+          // meaning — the icon and the label do.
+          color: color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: OmnisonicIconSizes.xs, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: OmnisonicSpacing.xs),
             Flexible(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: OmnisonicTypography.labelMedium.copyWith(color: color),
+                style: OmnisonicTypography.labelMedium.copyWith(
+                  color: labelColor,
+                ),
               ),
             ),
           ],
@@ -167,6 +243,9 @@ enum BannerKind { info, success, warning, error }
 /// Replaces the result banners hand-built in each server dialog and the
 /// offline banner.
 class InlineBanner extends StatelessWidget {
+  /// Width of the semantic bar on the left edge.
+  static const double bannerBarWidth = 3;
+
   const InlineBanner({
     super.key,
     required this.message,
@@ -191,7 +270,10 @@ class InlineBanner extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final light = Theme.of(context).brightness == Brightness.light;
     final (Color accent, IconData kindIcon) = switch (kind) {
-      BannerKind.info => (scheme.primary, OmnisonicIcons.info),
+      BannerKind.info => (
+        light ? OmnisonicColors.infoAccessible : OmnisonicColors.info,
+        OmnisonicIcons.info,
+      ),
       BannerKind.success => (
         light ? OmnisonicColors.successAccessible : OmnisonicColors.success,
         OmnisonicIcons.checkCircle,
@@ -203,47 +285,74 @@ class InlineBanner extends StatelessWidget {
       BannerKind.error => (scheme.error, OmnisonicIcons.error),
     };
 
+    final surfaces = OmnisonicSurfaces.of(context);
+    final radius = BorderRadius.circular(OmnisonicRadius.tile);
+
+    // A well with a 3 px bar in the semantic colour down its left edge. (A
+    // single-sided border cannot be rounded, so the bar is its own box.)
     return Semantics(
       liveRegion: kind == BannerKind.error || kind == BannerKind.success,
       container: true,
-      child: Container(
-        padding: const EdgeInsets.all(OmnisonicSpacing.md),
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(OmnisonicRadius.md),
-          border: Border.all(color: accent.withValues(alpha: 0.35)),
+          color: surfaces.well,
+          borderRadius: radius,
+          border: Border.all(color: surfaces.hairline),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon ?? kindIcon, color: accent, size: OmnisonicIconSizes.md),
-            const SizedBox(width: OmnisonicSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (title != null)
-                    Text(
-                      title!,
-                      style: OmnisonicTypography.labelLarge.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                  Text(
-                    message,
-                    style: OmnisonicTypography.bodySmall.copyWith(
-                      color: scheme.onSurface,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ColoredBox(
+                  color: accent,
+                  child: const SizedBox(width: bannerBarWidth),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(OmnisonicSpacing.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Never colour alone: the icon says it too.
+                        Icon(
+                          icon ?? kindIcon,
+                          color: accent,
+                          size: OmnisonicIconSizes.smd,
+                        ),
+                        const SizedBox(width: OmnisonicSpacing.ms),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (title != null)
+                                Text(
+                                  title!,
+                                  style: OmnisonicTypography.titleSmall
+                                      .copyWith(color: scheme.onSurface),
+                                ),
+                              Text(
+                                message,
+                                style: OmnisonicTypography.bodySmall.copyWith(
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (action != null) ...[
+                          const SizedBox(width: OmnisonicSpacing.sm),
+                          action!,
+                        ],
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            if (action != null) ...[
-              const SizedBox(width: OmnisonicSpacing.sm),
-              action!,
-            ],
-          ],
+          ),
         ),
       ),
     );

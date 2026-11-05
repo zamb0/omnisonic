@@ -13,6 +13,7 @@ import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import 'cover_art.dart';
+import 'dialogs.dart';
 import 'feedback.dart';
 
 /// One entry in an actions sheet.
@@ -52,14 +53,30 @@ Future<void> showTrackActions(
     actions: [
       if (onPlay != null)
         MediaAction('Play', OmnisonicIcons.playArrow, (_) => onPlay()),
+      // Both undoable: a stray tap on the sheet changed the queue with no way
+      // back but finding the track in it.
       MediaAction('Play next', OmnisonicIcons.playNext, (context) {
         final at = playback.hasCurrentTrack ? playback.currentIndex + 1 : 0;
         playback.insertInQueue(track, at);
-        showFeedback(context, 'Plays next', kind: FeedbackKind.success);
+        showFeedback(
+          context,
+          'Plays next',
+          kind: FeedbackKind.success,
+          actionLabel: 'Undo',
+          onAction: () => playback.removeFromQueue(at),
+        );
       }),
-      MediaAction('Add to queue', OmnisonicIcons.addToQueue, (context) {
-        playback.addToQueue(track);
-        showFeedback(context, 'Added to queue', kind: FeedbackKind.success);
+      MediaAction('Add to queue', OmnisonicIcons.addToQueue, (context) async {
+        await playback.addToQueue(track);
+        if (!context.mounted) return;
+        final at = playback.queueLength - 1;
+        showFeedback(
+          context,
+          'Added to queue',
+          kind: FeedbackKind.success,
+          actionLabel: 'Undo',
+          onAction: () => playback.removeFromQueue(at),
+        );
       }),
       MediaAction(
         'Add to playlist',
@@ -220,46 +237,7 @@ Future<void> showTrackInfo(BuildContext context, Track track) {
     ('Format', track.quality.displayName),
     ('Server', servers?.serverNameFor(track.serverId) ?? track.serverId),
   ];
-  return showDialog<void>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(track.title),
-      scrollable: true,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final (label, value) in rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 88,
-                    child: Text(
-                      label,
-                      style: OmnisonicTypography.labelMedium.copyWith(
-                        color: Theme.of(
-                          dialogContext,
-                        ).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: SelectableText(value)),
-                ],
-              ),
-            ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
+  return showDetailsDialog(context, title: track.title, rows: rows);
 }
 
 Future<void> _showActionSheet(
@@ -284,21 +262,60 @@ Future<void> _showActionSheet(
           shrinkWrap: true,
           padding: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
           children: [
-            ListTile(
-              leading: CoverArt(url: imageUrl, size: 48),
-              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: subtitle == null
-                  ? null
-                  : Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                OmnisonicSpacing.lg,
+                0,
+                OmnisonicSpacing.lg,
+                OmnisonicSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  CoverArt(
+                    url: imageUrl,
+                    seed: title,
+                    size: 56,
+                    elevated: true,
+                  ),
+                  const SizedBox(width: OmnisonicSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: OmnisonicTypography.groupTitle.copyWith(
+                            color: Theme.of(sheetContext).colorScheme.onSurface,
+                          ),
+                        ),
+                        if (subtitle != null)
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OmnisonicTypography.bodySmall.copyWith(
+                              color: Theme.of(
+                                sheetContext,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                ],
+              ),
             ),
             const Divider(height: 1),
+            const SizedBox(height: OmnisonicSpacing.xs),
             for (final action in actions)
               ListTile(
-                leading: Icon(action.icon),
+                minTileHeight: OmnisonicTouchTargets.comfortable,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.lg,
+                ),
+                leading: Icon(action.icon, size: OmnisonicIconSizes.smd),
                 title: Text(action.label),
                 onTap: () => Navigator.pop(sheetContext, action),
               ),

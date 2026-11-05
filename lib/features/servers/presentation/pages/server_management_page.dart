@@ -115,10 +115,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         subtitle:
             'Add a Subsonic-compatible server — Navidrome, Airsonic, '
             'Gonic — to start listening.',
-        action: FilledButton.icon(
+        action: AuroraButton(
           onPressed: () => showServerFormDialog(context),
-          icon: const Icon(OmnisonicIcons.add),
-          label: const Text('Add server'),
+          icon: OmnisonicIcons.add,
+          label: 'Add server',
         ),
       );
     }
@@ -139,11 +139,11 @@ class _ServerManagementPageState extends State<ServerManagementPage>
           onRefresh: viewModel.refreshServers,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              OmnisonicSpacing.md,
-              0,
-              OmnisonicSpacing.md,
-              OmnisonicSpacing.lg,
+            padding: EdgeInsets.fromLTRB(
+              PageGutter.of(context),
+              OmnisonicSpacing.xs,
+              PageGutter.of(context),
+              OmnisonicLayout.pageBottom,
             ),
             children: [
               _buildServerSummary(viewModel),
@@ -179,10 +179,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   Widget _buildServerSummary(ServerManagementViewModel viewModel) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.ms),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: OmnisonicSpacing.sm,
+        runSpacing: OmnisonicSpacing.sm,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
@@ -226,10 +226,22 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       onRefresh: viewModel.refreshServers,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(OmnisonicSpacing.md),
+        padding: EdgeInsets.fromLTRB(
+          PageGutter.of(context),
+          0,
+          PageGutter.of(context),
+          OmnisonicLayout.pageBottom,
+        ),
         children: [
-          const SectionHeader(title: 'Overview', padding: EdgeInsets.zero),
-          const SizedBox(height: OmnisonicSpacing.sm),
+          const SectionHeader(
+            title: 'Overview',
+            padding: EdgeInsets.fromLTRB(
+              0,
+              OmnisonicSpacing.md,
+              0,
+              OmnisonicLayout.headerGap,
+            ),
+          ),
           LayoutBuilder(
             builder: (context, constraints) {
               // Total plus one tile per status, so the tiles add up: servers
@@ -237,11 +249,12 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               // its own row above a 2x2 grid of statuses.
               final wide = constraints.maxWidth >= 640;
               final columns = wide ? 5 : 2;
+              const gap = OmnisonicSpacing.ms;
               final width =
-                  (constraints.maxWidth - 12 * (columns - 1)) / columns;
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
               return Wrap(
-                spacing: 12,
-                runSpacing: 12,
+                spacing: gap,
+                runSpacing: gap,
                 children: [
                   SizedBox(
                     width: wide ? width : constraints.maxWidth,
@@ -262,9 +275,15 @@ class _ServerManagementPageState extends State<ServerManagementPage>
               );
             },
           ),
-          const SizedBox(height: OmnisonicSpacing.lg),
-          const SectionHeader(title: 'Details', padding: EdgeInsets.zero),
-          const SizedBox(height: OmnisonicSpacing.sm),
+          const SectionHeader(
+            title: 'Details',
+            padding: EdgeInsets.fromLTRB(
+              0,
+              OmnisonicSpacing.xl,
+              0,
+              OmnisonicLayout.headerGap,
+            ),
+          ),
           if (viewModel.servers.isEmpty)
             const EmptyState(
               icon: OmnisonicIcons.dns,
@@ -282,9 +301,9 @@ class _ServerManagementPageState extends State<ServerManagementPage>
   Widget _buildServerStatusDetail(MusicServer server) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: OmnisonicSpacing.ms),
       child: GlassSurface(
-        borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+        borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
         padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,8 +333,8 @@ class _ServerManagementPageState extends State<ServerManagementPage>
             ),
             const SizedBox(height: OmnisonicSpacing.sm),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: OmnisonicSpacing.sm,
+              runSpacing: OmnisonicSpacing.sm,
               children: [
                 MetadataChip(
                   icon: OmnisonicIcons.info,
@@ -351,56 +370,19 @@ class _ServerManagementPageState extends State<ServerManagementPage>
       if (server.lastSync != null)
         ('Last sync', formatRelativeTime(server.lastSync!)),
     ];
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        final scheme = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: Text(server.name),
-          scrollable: true,
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: kDialogMaxWidth),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final (label, value) in rows)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 112,
-                          child: Text(
-                            label,
-                            style: OmnisonicTypography.labelMedium.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: SelectableText(value)),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                showServerFormDialog(context, server: server);
-              },
-              child: const Text('Edit'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
+    showDetailsDialog(
+      context,
+      title: server.name,
+      rows: rows,
+      actions: (dialogContext) => [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(dialogContext);
+            showServerFormDialog(context, server: server);
+          },
+          child: const Text('Edit'),
+        ),
+      ],
     );
   }
 
@@ -492,16 +474,6 @@ class _CountChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visuals = ServerStatusVisuals.of(context, status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: visuals.color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-      ),
-      child: Text(
-        label,
-        style: OmnisonicTypography.labelMedium.copyWith(color: visuals.color),
-      ),
-    );
+    return TintedChip(color: visuals.color, icon: visuals.icon, label: label);
   }
 }

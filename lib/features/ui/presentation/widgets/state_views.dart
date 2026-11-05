@@ -66,31 +66,33 @@ class LoadingStateView extends StatelessWidget {
           itemBuilder: (context, index) => const SkeletonTile(),
         );
       case SkeletonKind.grid:
-        return SliverPadding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: OmnisonicSpacing.lg,
-            vertical: OmnisonicSpacing.md,
-          ),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.crossAxisExtent;
-              final columns = MediaGridPreset.columnsFor(width);
-              final cell = MediaGridPreset.cellWidth(width, columns);
-              return SliverGrid.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  crossAxisSpacing: MediaGridPreset.spacing,
-                  mainAxisSpacing: MediaGridPreset.spacing,
-                  mainAxisExtent: MediaCard.extentFor(
-                    context,
-                    cell,
-                    meta: true,
+        return SliverLayoutBuilder(
+          builder: (context, _) => SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: PageGutter.of(context),
+              vertical: OmnisonicSpacing.md,
+            ),
+            sliver: SliverLayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.crossAxisExtent;
+                final columns = MediaGridPreset.columnsFor(width);
+                final cell = MediaGridPreset.cellWidth(width, columns);
+                return SliverGrid.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: MediaGridPreset.spacing,
+                    mainAxisSpacing: MediaGridPreset.spacing,
+                    mainAxisExtent: MediaCard.extentFor(
+                      context,
+                      cell,
+                      meta: true,
+                    ),
                   ),
-                ),
-                itemCount: itemCount ?? 8,
-                itemBuilder: (context, index) => const SkeletonCard(),
-              );
-            },
+                  itemCount: itemCount ?? 8,
+                  itemBuilder: (context, index) => const SkeletonCard(),
+                );
+              },
+            ),
           ),
         );
       case SkeletonKind.carousel:
@@ -143,12 +145,15 @@ class ErrorStateView extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: OmnisonicIcons.errorOutline,
+      accent: Theme.of(context).colorScheme.error,
       title: title,
       subtitle: message,
-      action: FilledButton.icon(
+      // Retrying is the way out, not the screen's signature: tonal.
+      action: OmnisonicButton(
+        variant: OmnisonicButtonVariant.tonal,
         onPressed: onRetry,
-        icon: const Icon(OmnisonicIcons.refresh),
-        label: const Text('Try again'),
+        icon: OmnisonicIcons.refresh,
+        label: 'Try again',
       ),
     );
   }
@@ -207,11 +212,11 @@ class AsyncStateSwitcher extends StatelessWidget {
       return Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              OmnisonicSpacing.md,
+            padding: EdgeInsets.fromLTRB(
+              PageGutter.of(context),
               OmnisonicSpacing.sm,
-              OmnisonicSpacing.md,
-              0,
+              PageGutter.of(context),
+              OmnisonicSpacing.sm,
             ),
             child: InlineBanner(
               kind: BannerKind.warning,
@@ -261,6 +266,10 @@ class SkeletonBox extends StatefulWidget {
   final BorderRadius? borderRadius;
   final BoxShape shape;
 
+  /// Alpha of the white sheen over the base, per brightness.
+  static const double sheenAlphaDark = 0.06;
+  static const double sheenAlphaLight = 0.55;
+
   @override
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
@@ -305,12 +314,19 @@ class _SkeletonBoxState extends State<SkeletonBox>
     final scheme = Theme.of(context).colorScheme;
     final isCircle = widget.shape == BoxShape.circle;
 
-    // Tinted from onSurface rather than the surfaceContainer roles. In this
-    // app's dark scheme surfaceContainerHighest is cardDark, which is within
-    // a shade of the scaffold background — a skeleton painted with it is
-    // invisible in the mode most of the app runs in.
-    final base = scheme.onSurface.withValues(alpha: 0.08);
-    final highlight = scheme.onSurface.withValues(alpha: 0.16);
+    // The container ladder's top rung, with a diagonal white sheen sweeping
+    // across (§9.8). The sheen is the 6 % the spec gives on dark; on light a
+    // white wash that faint is invisible against a pale base, so it is
+    // stronger there.
+    final base = scheme.surfaceContainerHighest;
+    final sheen = Color.alphaBlend(
+      OmnisonicColors.neutralWhite.withValues(
+        alpha: scheme.brightness == Brightness.dark
+            ? SkeletonBox.sheenAlphaDark
+            : SkeletonBox.sheenAlphaLight,
+      ),
+      base,
+    );
 
     return AnimatedBuilder(
       animation: _sweep,
@@ -324,9 +340,9 @@ class _SkeletonBoxState extends State<SkeletonBox>
               : widget.borderRadius ??
                     BorderRadius.circular(OmnisonicRadius.sm),
           gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [base, highlight, base],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [base, sheen, base],
             stops: [
               _sweep.value - 0.3,
               _sweep.value,
@@ -375,7 +391,7 @@ class SkeletonCard extends StatelessWidget {
         const SizedBox(height: OmnisonicSpacing.sm),
         SkeletonText(width: w * 0.7),
         const SizedBox(height: OmnisonicSpacing.xs),
-        SkeletonText(width: w * 0.45, height: 10),
+        SkeletonText(width: w * 0.45, height: 11),
       ],
     );
 
@@ -393,15 +409,16 @@ class SkeletonTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Same geometry as a TrackRow: content on the gutter, 48px art.
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: OmnisonicSpacing.md,
+      padding: EdgeInsets.symmetric(
+        horizontal: PageGutter.of(context),
         vertical: OmnisonicSpacing.sm,
       ),
       child: Row(
         children: [
           const SkeletonBox(width: 48, height: 48),
-          const SizedBox(width: OmnisonicSpacing.md),
+          const SizedBox(width: OmnisonicSpacing.ms),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,8 +461,8 @@ class _SkeletonGrid extends StatelessWidget {
     // replaces this.
     return ResponsiveGridView.media(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(
-        horizontal: OmnisonicSpacing.lg,
+      padding: EdgeInsets.symmetric(
+        horizontal: PageGutter.of(context),
         vertical: OmnisonicSpacing.md,
       ),
       meta: true,
@@ -463,14 +480,14 @@ class _SkeletonCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 244,
+      height: MediaCard.extentFor(context, 160),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.md),
+        padding: PageGutter.horizontal(context),
         itemCount: itemCount,
         itemBuilder: (context, index) => const Padding(
-          padding: EdgeInsets.only(right: 14),
+          padding: EdgeInsets.only(right: MediaGridPreset.spacing),
           child: SkeletonCard(width: 160),
         ),
       ),
@@ -483,20 +500,27 @@ class _SkeletonDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(OmnisonicSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    final gutter = PageGutter.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            gutter,
+            OmnisonicSpacing.md,
+            gutter,
+            OmnisonicSpacing.lg,
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SkeletonBox(
-                width: 150,
-                height: 150,
-                borderRadius: BorderRadius.circular(OmnisonicRadius.art),
+                width: 160,
+                height: 160,
+                // The real header's cover: artHero.
+                borderRadius: BorderRadius.circular(OmnisonicRadius.artHero),
               ),
-              const SizedBox(width: OmnisonicSpacing.md),
+              const SizedBox(width: OmnisonicSpacing.lg),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,10 +535,10 @@ class _SkeletonDetailHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: OmnisonicSpacing.lg),
-          for (var i = 0; i < 5; i++) const SkeletonTile(),
-        ],
-      ),
+        ),
+        // The rows carry the gutter themselves.
+        for (var i = 0; i < 5; i++) const SkeletonTile(),
+      ],
     );
   }
 }

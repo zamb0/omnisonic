@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -28,37 +29,66 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const PageHeaderAppBar(title: 'Settings'),
+      // A column of controls, capped at a readable width: on desktop the
+      // rows used to run the full width of the window, with each switch a
+      // thousand pixels from its label.
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          OmnisonicSpacing.gutter(context),
+          OmnisonicSpacing.sm,
+          OmnisonicSpacing.gutter(context),
+          OmnisonicLayout.pageBottom,
+        ),
         children: [
-          _buildSectionHeader(context, 'Appearance'),
-          _buildThemeModeCard(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Playback'),
-          _buildPlaybackCard(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Library & Cache'),
-          _buildLibraryCard(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'Account'),
-          _buildAccountCard(context),
-          const SizedBox(height: 24),
-          _buildSectionHeader(context, 'About'),
-          _buildAboutCard(context),
+          ReadableWidth(
+            maxWidth: OmnisonicLayout.readableMaxWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSectionHeader('Appearance', first: true),
+                _buildThemeModeCard(context),
+                _buildSectionHeader('Playback'),
+                _buildPlaybackCard(context),
+                _buildSectionHeader('Library & Cache'),
+                _buildLibraryCard(context),
+                _buildSectionHeader('Account'),
+                _buildAccountCard(context),
+                _buildSectionHeader('About'),
+                _buildAboutCard(context),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-      child: Text(
-        title,
-        style: OmnisonicTypography.overline.copyWith(
-          color: scheme.onSurfaceVariant,
+  /// Eyebrow over each group, in line with the group's rows.
+  Widget _buildSectionHeader(String title, {bool first = false}) =>
+      SectionHeader(
+        title: title,
+        size: SectionHeaderSize.small,
+        padding: EdgeInsets.fromLTRB(
+          OmnisonicSpacing.xs,
+          first ? 0 : OmnisonicSpacing.lg,
+          OmnisonicSpacing.xs,
+          OmnisonicSpacing.sm,
         ),
+      );
+
+  /// One glass group of settings rows, with dividers inset to the text so
+  /// they separate rows without cutting through the icon column.
+  static Widget _group(List<Widget> rows) {
+    return GlassSurface(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+      padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.xs),
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 56),
+            rows[i],
+          ],
+        ],
       ),
     );
   }
@@ -71,142 +101,133 @@ class SettingsPage extends StatelessWidget {
       ThemeMode.dark: (OmnisonicIcons.darkMode, 'Dark'),
     };
 
-    return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: EdgeInsets.zero,
-      child: RadioGroup<ThemeMode>(
-        groupValue: current,
-        onChanged: (mode) {
-          if (mode != null) {
-            ThemeModeController.instance.setThemeMode(mode);
-          }
-        },
+    // Three exclusive options side by side: a segmented control, not three
+    // radio rows.
+    return _group([
+      Padding(
+        padding: const EdgeInsets.all(OmnisonicSpacing.md),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final entry in options.entries)
-              RadioListTile<ThemeMode>(
-                value: entry.key,
-                secondary: Icon(entry.value.$1),
-                title: Text(entry.value.$2),
+            Text(
+              'Theme',
+              style: OmnisonicTypography.titleMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
+            ),
+            const SizedBox(height: OmnisonicSpacing.ms),
+            OmnisonicSegmented<ThemeMode>(
+              options: [
+                for (final entry in options.entries)
+                  SegmentOption(
+                    value: entry.key,
+                    icon: entry.value.$1,
+                    label: entry.value.$2,
+                  ),
+              ],
+              selected: current,
+              onChanged: ThemeModeController.instance.setThemeMode,
+            ),
           ],
         ),
       ),
-    );
+    ]);
   }
 
   Widget _buildPlaybackCard(BuildContext context) {
-    return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Consumer<PlaybackViewModel>(
-            builder: (context, vm, child) {
-              final streaming = getIt.isRegistered<AdaptiveStreamingService>()
-                  ? getIt<AdaptiveStreamingService>()
-                  : null;
-              final cap = streaming?.qualityCap;
-              return ListTile(
-                leading: const Icon(OmnisonicIcons.graphicEq),
-                title: const Text('Streaming quality'),
-                subtitle: Text(
-                  cap == null
-                      ? 'Automatic — adapts to your connection. Now: '
-                            '${vm.currentQuality.displayName}'
-                      : 'Up to ${cap.displayName}, lower when the '
-                            'connection struggles',
-                ),
-                trailing: const Icon(OmnisonicIcons.chevronRight),
-                onTap: streaming == null
-                    ? null
-                    : () => _chooseQuality(context, streaming, cap),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          AnimatedBuilder(
-            animation: Haptics.instance,
-            builder: (context, child) {
-              return SwitchListTile(
-                secondary: const Icon(OmnisonicIcons.touchApp),
-                title: const Text('Haptic feedback'),
-                subtitle: const Text(
-                  'A short tap when playback or the queue changes',
-                ),
-                value: Haptics.instance.enabled,
-                onChanged: Haptics.instance.setEnabled,
-              );
-            },
-          ),
-        ],
+    return _group([
+      Consumer<PlaybackViewModel>(
+        builder: (context, vm, child) {
+          final streaming = getIt.isRegistered<AdaptiveStreamingService>()
+              ? getIt<AdaptiveStreamingService>()
+              : null;
+          final cap = streaming?.qualityCap;
+          return ListTile(
+            leading: const Icon(OmnisonicIcons.graphicEq),
+            title: const Text('Streaming quality'),
+            subtitle: Text(
+              cap == null
+                  ? 'Automatic — adapts to your connection. Now: '
+                        '${vm.currentQuality.displayName}'
+                  : 'Up to ${cap.displayName}, lower when the '
+                        'connection struggles',
+            ),
+            trailing: const Icon(OmnisonicIcons.chevronRight),
+            onTap: streaming == null
+                ? null
+                : () => _chooseQuality(context, streaming, cap),
+          );
+        },
       ),
-    );
+      AnimatedBuilder(
+        animation: Haptics.instance,
+        builder: (context, child) {
+          return SwitchListTile(
+            secondary: const Icon(OmnisonicIcons.touchApp),
+            title: const Text('Haptic feedback'),
+            subtitle: const Text(
+              'A short tap when playback or the queue changes',
+            ),
+            value: Haptics.instance.enabled,
+            onChanged: Haptics.instance.setEnabled,
+          );
+        },
+      ),
+    ]);
   }
 
   Widget _buildLibraryCard(BuildContext context) {
-    return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: DownloadPreferencesService.instance,
-            builder: (context, child) {
-              return SwitchListTile(
-                secondary: const Icon(OmnisonicIcons.wifi),
-                title: const Text('Wi-Fi only downloads'),
-                subtitle: const Text('Only download new content on Wi-Fi'),
-                value: DownloadPreferencesService.instance.wifiOnlyEnabled,
-                onChanged: (value) => DownloadPreferencesService.instance
-                    .setWifiOnlyEnabled(value),
-              );
-            },
-          ),
-          if (_hasProvider<OfflineModeViewModel>(context))
-            const Divider(height: 1),
-          if (_hasProvider<OfflineModeViewModel>(context))
-            Consumer<OfflineModeViewModel>(
-              builder: (context, offline, child) => SwitchListTile(
-                secondary: const Icon(OmnisonicIcons.cloudOff),
-                title: const Text('Offline mode'),
-                subtitle: const Text(
-                  'Use only what is downloaded, even with a connection',
-                ),
-                value: offline.isForcedOffline,
-                onChanged: offline.setOfflineMode,
-              ),
-            ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(OmnisonicIcons.image),
-            title: const Text('Clear artwork cache'),
-            subtitle: const Text(
-              'Frees space; covers download again as you browse',
-            ),
-            onTap: () => _clearArtworkCache(context),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(OmnisonicIcons.downloadOutline),
-            title: const Text('Downloads'),
-            subtitle: const Text('Manage offline content'),
-            trailing: const Icon(OmnisonicIcons.chevronRight),
-            onTap: () => context.push(AppRouter.downloads),
-          ),
-        ],
+    return _group([
+      AnimatedBuilder(
+        animation: DownloadPreferencesService.instance,
+        builder: (context, child) {
+          return SwitchListTile(
+            secondary: const Icon(OmnisonicIcons.wifi),
+            title: const Text('Wi-Fi only downloads'),
+            subtitle: const Text('Only download new content on Wi-Fi'),
+            value: DownloadPreferencesService.instance.wifiOnlyEnabled,
+            onChanged: (value) =>
+                DownloadPreferencesService.instance.setWifiOnlyEnabled(value),
+          );
+        },
       ),
-    );
+      if (_hasProvider<OfflineModeViewModel>(context))
+        if (_hasProvider<OfflineModeViewModel>(context))
+          Consumer<OfflineModeViewModel>(
+            builder: (context, offline, child) => SwitchListTile(
+              secondary: const Icon(OmnisonicIcons.cloudOff),
+              title: const Text('Offline mode'),
+              subtitle: const Text(
+                'Use only what is downloaded, even with a connection',
+              ),
+              value: offline.isForcedOffline,
+              onChanged: offline.setOfflineMode,
+            ),
+          ),
+      ListTile(
+        leading: const Icon(OmnisonicIcons.image),
+        title: const Text('Clear artwork cache'),
+        subtitle: const Text(
+          'Frees space; covers download again as you browse',
+        ),
+        onTap: () => _clearArtworkCache(context),
+      ),
+      ListTile(
+        leading: const Icon(OmnisonicIcons.downloadOutline),
+        title: const Text('Downloads'),
+        subtitle: const Text('Manage offline content'),
+        trailing: const Icon(OmnisonicIcons.chevronRight),
+        onTap: () => context.push(AppRouter.downloads),
+      ),
+    ]);
   }
 
   Widget _buildAccountCard(BuildContext context) {
     return Consumer<ServerManagementViewModel>(
       builder: (context, viewModel, child) {
         final count = viewModel.serverCount;
-        return GlassSurface(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-          padding: EdgeInsets.zero,
-          child: ListTile(
+        return _group([
+          ListTile(
             leading: const Icon(OmnisonicIcons.dnsOutline),
             title: const Text('Servers'),
             subtitle: Text(
@@ -217,7 +238,7 @@ class SettingsPage extends StatelessWidget {
             trailing: const Icon(OmnisonicIcons.chevronRight),
             onTap: () => context.push(AppRouter.servers),
           ),
-        );
+        ]);
       },
     );
   }
@@ -236,6 +257,7 @@ class SettingsPage extends StatelessWidget {
     ];
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: RadioGroup<AudioQuality?>(
@@ -279,35 +301,35 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _buildAboutCard(BuildContext context) {
-    return GlassSurface(
-      borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(OmnisonicIcons.info),
-            title: const Text('About Omnisonic'),
-            subtitle: const Text(
-              'One library across all your Subsonic servers',
-            ),
-            onTap: () => showAboutDialog(
-              context: context,
-              applicationName: 'Omnisonic',
-              applicationLegalese:
-                  'A client for Subsonic-compatible music servers.',
-            ),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(OmnisonicIcons.description),
-            title: const Text('Open-source licences'),
-            trailing: const Icon(OmnisonicIcons.chevronRight),
-            onTap: () =>
-                showLicensePage(context: context, applicationName: 'Omnisonic'),
-          ),
-        ],
+    return _group([
+      ListTile(
+        leading: const Icon(OmnisonicIcons.info),
+        title: const Text('About Omnisonic'),
+        subtitle: const Text('One library across all your Subsonic servers'),
+        onTap: () => showAboutDialog(
+          context: context,
+          applicationName: 'Omnisonic',
+          applicationLegalese:
+              'A client for Subsonic-compatible music servers.',
+        ),
       ),
-    );
+      ListTile(
+        leading: const Icon(OmnisonicIcons.description),
+        title: const Text('Open-source licences'),
+        trailing: const Icon(OmnisonicIcons.chevronRight),
+        onTap: () =>
+            showLicensePage(context: context, applicationName: 'Omnisonic'),
+      ),
+      // The route only exists in debug builds; so does its way in.
+      if (kDebugMode)
+        ListTile(
+          leading: const Icon(OmnisonicIcons.palette),
+          title: const Text('Component gallery'),
+          subtitle: const Text('Debug builds only'),
+          trailing: const Icon(OmnisonicIcons.chevronRight),
+          onTap: () => context.push(AppRouter.devGallery),
+        ),
+    ]);
   }
 
   static bool _hasProvider<T>(BuildContext context) {

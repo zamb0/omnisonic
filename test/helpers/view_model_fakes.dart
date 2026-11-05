@@ -139,6 +139,12 @@ class FakeMusicLibraryViewModel extends ChangeNotifier
   @override
   List<Artist> get artists => _collection?.artists ?? const [];
   @override
+  List<Artist> get allArtists => artists;
+  @override
+  List<String> artistMemberIds(String artistId) => [artistId];
+  @override
+  Artist? artistById(String id) => artists.where((a) => a.id == id).firstOrNull;
+  @override
   List<Album> get filteredAlbums => albums;
   @override
   List<Track> get recentlyPlayed => _recentlyPlayed;

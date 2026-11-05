@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/utils/animation_utils.dart';
+import 'art_tint.dart';
 import 'cover_art.dart';
 
 /// The one card for albums, artists and playlists.
@@ -45,6 +46,7 @@ class MediaCard extends StatefulWidget {
     this.onShowActions,
     this.badge,
     this.semanticLabel,
+    this.seed,
   });
 
   final String title;
@@ -77,6 +79,9 @@ class MediaCard extends StatefulWidget {
 
   /// Overrides the label a screen reader announces.
   final String? semanticLabel;
+
+  /// What the placeholder cover's hue follows. Defaults to [title].
+  final String? seed;
 
   /// Height of the text block under the art for the given lines, at the
   /// current text scale. Grid cells are `width + textBlockHeight`.
@@ -115,9 +120,13 @@ class MediaCard extends StatefulWidget {
   State<MediaCard> createState() => _MediaCardState();
 }
 
-class _MediaCardState extends State<MediaCard> {
+class _MediaCardState extends State<MediaCard> with ArtTintMixin {
   bool _hovering = false;
   bool _focusWithin = false;
+  bool _pressed = false;
+
+  /// Distance between the portrait's edge and the hover ring.
+  static const double _ringGap = 4;
 
   bool get _overlayVisible => _hovering || _focusWithin;
 
@@ -138,57 +147,90 @@ class _MediaCardState extends State<MediaCard> {
       AnimationManager.fastDuration,
     );
 
+    // The cover's own colour lights the shadow under it while the card is
+    // active. Extraction (cached per URL) only starts on the first hover,
+    // not for every card in a long grid.
+    if (_overlayVisible) updateArtTint(widget.imageUrl);
+    final glow = artTint ?? scheme.primary;
+    final shadow = _hovering
+        ? OmnisonicShadows.artGlow(glow, alpha: 0.5)
+        : OmnisonicShadows.art;
+
     final art = AspectRatio(
       aspectRatio: 1,
       child: AnimatedScale(
         scale: _hovering ? 1.03 : 1.0,
         duration: fast,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CoverArt(
-              url: widget.imageUrl,
-              shape: widget.shape,
-              fallbackIcon: widget.fallbackIcon,
-              elevated: true,
-            ),
-            if (widget.badge != null)
-              Positioned(
-                left: 6,
-                bottom: 6,
-                child: GlassSurface(
-                  borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
-                  ),
-                  child: widget.badge!,
-                ),
+        curve: AnimationManager.standardCurve,
+        child: AnimatedContainer(
+          duration: fast,
+          decoration: BoxDecoration(borderRadius: radius, boxShadow: shadow),
+          child: Stack(
+            fit: StackFit.expand,
+            // The artist ring sits outside the portrait.
+            clipBehavior: Clip.none,
+            children: [
+              CoverArt(
+                url: widget.imageUrl,
+                shape: widget.shape,
+                fallbackIcon: widget.fallbackIcon,
+                seed: widget.seed ?? widget.title,
               ),
-            if (_hasOverlay)
-              // A transparent overlay still takes taps, so it is only hit
-              // testable while it is showing.
-              IgnorePointer(
-                ignoring: !_overlayVisible,
-                child: AnimatedOpacity(
-                  opacity: _overlayVisible ? 1 : 0,
-                  duration: fast,
-                  child: ClipRRect(
-                    borderRadius: radius,
-                    child: ColoredBox(
-                      color: OmnisonicColors.scrim,
-                      child: Center(child: _buildOverlayActions(scheme)),
+              if (isCircle)
+                // An artist: no Play disc, so the hover answer is a soft
+                // Aurora ring 2 px outside the portrait.
+                Positioned(
+                  left: -_ringGap,
+                  top: -_ringGap,
+                  right: -_ringGap,
+                  bottom: -_ringGap,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _hovering ? 1 : 0,
+                      duration: fast,
+                      child: const AuroraRing(),
                     ),
                   ),
                 ),
-              ),
-          ],
+              if (widget.badge != null)
+                // Top-left: the bottom-right belongs to the Play disc.
+                Positioned(
+                  left: OmnisonicSpacing.sm,
+                  top: OmnisonicSpacing.sm,
+                  child: GlassSurface(
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                      vertical: OmnisonicSpacing.xs,
+                    ),
+                    child: widget.badge!,
+                  ),
+                ),
+              if (_hasOverlay)
+                // A transparent overlay still takes taps, so it is only hit
+                // testable while it is showing.
+                IgnorePointer(
+                  ignoring: !_overlayVisible,
+                  child: AnimatedOpacity(
+                    opacity: _overlayVisible ? 1 : 0,
+                    duration: fast,
+                    child: ClipRRect(
+                      borderRadius: radius,
+                      child: ColoredBox(
+                        color: OmnisonicColors.scrimHover,
+                        child: _buildOverlayActions(fast),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
 
     final text = Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
       child: Column(
         crossAxisAlignment: isCircle
             ? CrossAxisAlignment.center
@@ -214,7 +256,7 @@ class _MediaCardState extends State<MediaCard> {
               overflow: TextOverflow.ellipsis,
             ),
           if (widget.meta != null) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: OmnisonicSpacing.xxs),
             Text(
               widget.meta!,
               style: OmnisonicTypography.cardMeta.copyWith(
@@ -279,11 +321,29 @@ class _MediaCardState extends State<MediaCard> {
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                borderRadius: BorderRadius.circular(OmnisonicRadius.md),
+                // Ink on the card is a soft glow, not a grey slab: the art
+                // already answers the hover with its lift and overlay.
+                borderRadius: BorderRadius.circular(OmnisonicRadius.art),
+                hoverColor: Colors.transparent,
                 onTap: widget.onTap,
                 onLongPress: widget.onShowActions,
                 onSecondaryTap: widget.onShowActions,
-                child: body,
+                // Highlight is only the card itself being pressed, not one of
+                // the overlay's buttons winning the tap.
+                onHighlightChanged: (value) => setState(() => _pressed = value),
+                child: AnimatedScale(
+                  scale: _pressed ? PressScale.pressedScale : 1,
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    _pressed
+                        ? AnimationManager.instantDuration
+                        : AnimationManager.quickDuration,
+                  ),
+                  curve: _pressed
+                      ? AnimationManager.enterCurve
+                      : AnimationManager.springCurve,
+                  child: body,
+                ),
               ),
             ),
           ),
@@ -296,77 +356,85 @@ class _MediaCardState extends State<MediaCard> {
     return card;
   }
 
-  Widget _buildOverlayActions(ColorScheme scheme) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
+  /// Over the cover: the Aurora Play disc rises 8 px into the bottom-right
+  /// corner; star and shuffle are translucent scrim buttons in the top-right.
+  Widget _buildOverlayActions(Duration fast) {
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        if (widget.onStar != null)
-          _OverlayButton(
-            icon: widget.isStarred
-                ? OmnisonicIcons.star
-                : OmnisonicIcons.starOutline,
-            tooltip: widget.isStarred
-                ? 'Remove from favorites'
-                : 'Add to favorites',
-            toggled: widget.isStarred,
-            onPressed: widget.onStar!,
-          ),
-        if (widget.onShuffle != null)
-          _OverlayButton(
-            icon: OmnisonicIcons.shuffle,
-            tooltip: 'Shuffle ${widget.title}',
-            onPressed: widget.onShuffle!,
+        if (widget.onStar != null || widget.onShuffle != null)
+          Positioned(
+            top: OmnisonicSpacing.sm,
+            right: OmnisonicSpacing.sm,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.onStar != null)
+                  _OverlayButton(
+                    icon: widget.isStarred
+                        ? OmnisonicIcons.star
+                        : OmnisonicIcons.starOutline,
+                    tooltip: widget.isStarred
+                        ? 'Remove from favorites'
+                        : 'Add to favorites',
+                    toggled: widget.isStarred,
+                    onPressed: widget.onStar!,
+                  ),
+                if (widget.onShuffle != null) ...[
+                  const SizedBox(width: OmnisonicSpacing.xs),
+                  _OverlayButton(
+                    icon: OmnisonicIcons.shuffle,
+                    tooltip: 'Shuffle ${widget.title}',
+                    onPressed: widget.onShuffle!,
+                  ),
+                ],
+              ],
+            ),
           ),
         if (widget.onPlay != null)
-          _OverlayButton(
-            icon: OmnisonicIcons.playArrow,
-            tooltip: 'Play ${widget.title}',
-            primary: true,
-            onPressed: widget.onPlay!,
+          Positioned(
+            right: OmnisonicSpacing.sm,
+            bottom: OmnisonicSpacing.sm,
+            child: AnimatedSlide(
+              // 8 px of rise, as a fraction of the 48 px disc.
+              offset: _overlayVisible ? Offset.zero : const Offset(0, 8 / 48),
+              duration: fast,
+              curve: AnimationManager.enterCurve,
+              child: PlayDisc(
+                onPressed: widget.onPlay,
+                tooltip: 'Play ${widget.title}',
+              ),
+            ),
           ),
       ],
     );
   }
 }
 
-/// A round button on the card's hover overlay.
+/// A small scrim control on the card's hover overlay.
 class _OverlayButton extends StatelessWidget {
   const _OverlayButton({
     required this.icon,
     required this.tooltip,
     required this.onPressed,
-    this.primary = false,
     this.toggled,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-  final bool primary;
   final bool? toggled;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final size = primary ? 48.0 : 40.0;
-    return IconButton(
-      onPressed: onPressed,
+    final button = OmnisonicIconButton(
+      variant: OmnisonicIconButtonVariant.onScrim,
+      icon: icon,
       tooltip: tooltip,
-      isSelected: toggled,
-      icon: Icon(icon),
-      iconSize: primary ? OmnisonicIconSizes.lg : OmnisonicIconSizes.smd,
-      style: IconButton.styleFrom(
-        fixedSize: Size.square(size),
-        minimumSize: Size.square(size),
-        backgroundColor: primary ? scheme.primary : scheme.surface,
-        foregroundColor: primary ? scheme.onPrimary : scheme.onSurface,
-        hoverColor: primary
-            ? scheme.onPrimary.withValues(alpha: 0.08)
-            : scheme.onSurface.withValues(alpha: 0.08),
-      ),
+      onPressed: onPressed,
+      dimension: 36,
     );
+    if (toggled == null) return button;
+    return Semantics(toggled: toggled, child: button);
   }
 }

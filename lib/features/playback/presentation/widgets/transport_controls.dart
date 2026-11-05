@@ -152,48 +152,35 @@ class SkipNextButton extends StatelessWidget {
   );
 }
 
-/// The round play/pause button.
-///
-/// [prominent] is the full player's large primary-coloured button; otherwise
-/// it is the bar's solid-ink one, the one element allowed to be fully
-/// opaque against the glass.
+/// The round play/pause button: the Aurora [PlayDisc], the same disc in the
+/// mini player (44), the transport bar and queue (48) and Now Playing (64),
+/// so the control does not change look as the player opens.
 class PlayPauseButton extends StatelessWidget {
   const PlayPauseButton({
     super.key,
     required this.playback,
     this.prominent = false,
+    this.size,
   });
 
   final PlaybackViewModel playback;
+
+  /// The full player's large disc (64).
   final bool prominent;
+
+  /// Overrides the diameter; defaults to 64 when [prominent], else 48.
+  final PlayDiscSize? size;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final playing = playback.isPlaying;
-    final diameter = prominent ? 72.0 : OmnisonicTouchTargets.iconButton;
-    final background = prominent ? scheme.primary : scheme.onSurface;
-    final foreground = prominent ? scheme.onPrimary : scheme.surface;
-
-    return SizedBox.square(
-      dimension: diameter,
-      child: IconButton(
-        onPressed: () {
-          Haptics.impact();
-          playback.togglePlayPause();
-        },
-        tooltip: playing ? 'Pause' : 'Play',
-        icon: Icon(playing ? OmnisonicIcons.pause : OmnisonicIcons.playArrow),
-        iconSize: prominent ? OmnisonicIconSizes.lg : OmnisonicIconSizes.md,
-        style: IconButton.styleFrom(
-          backgroundColor: background,
-          foregroundColor: foreground,
-          shape: const CircleBorder(),
-          elevation: prominent ? 0 : 6,
-          shadowColor: OmnisonicColors.scrimStrong,
-          fixedSize: Size.square(diameter),
-        ),
-      ),
+    return PlayDisc(
+      size: size ?? (prominent ? PlayDiscSize.s64 : PlayDiscSize.s48),
+      playing: playing,
+      onPressed: () {
+        Haptics.impact();
+        playback.togglePlayPause();
+      },
     );
   }
 }

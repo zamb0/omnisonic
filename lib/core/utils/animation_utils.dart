@@ -84,6 +84,7 @@ class AnimationUtils {
   }) {
     return showModalBottomSheet<T>(
       context: context,
+      useRootNavigator: true,
       builder: builder,
       backgroundColor: backgroundColor,
       isScrollControlled: isScrollControlled,

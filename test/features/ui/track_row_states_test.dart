@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/design_system/design_system.dart';
-import 'package:omnisonic/features/ui/presentation/widgets/now_playing_equalizer.dart';
 import 'package:omnisonic/features/ui/presentation/widgets/widgets.dart';
 
 import '../../helpers/entity_factories.dart';

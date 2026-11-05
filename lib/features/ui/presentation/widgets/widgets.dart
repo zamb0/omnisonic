@@ -1,5 +1,6 @@
 // Core UI Components
 export 'track_row.dart';
+export 'now_playing_equalizer.dart';
 export 'album_card.dart';
 export 'artist_card.dart';
 export 'media_card.dart';

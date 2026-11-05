@@ -34,10 +34,29 @@ class LibraryStatsRail extends StatelessWidget {
                   const SizedBox(height: OmnisonicSpacing.ms),
                   _StatGrid(
                     stats: [
-                      _Stat(_compact(viewModel.albumCount), 'albums'),
-                      _Stat(_compact(viewModel.artistCount), 'artists'),
-                      _Stat(_compact(viewModel.trackCount), 'tracks'),
-                      _Stat(_compact(viewModel.duplicateGroupCount), 'merged'),
+                      _Stat(
+                        OmnisonicIcons.albumOutline,
+                        _compact(viewModel.albumCount),
+                        'albums',
+                      ),
+                      _Stat(
+                        OmnisonicIcons.personOutline,
+                        _compact(viewModel.artistCount),
+                        'artists',
+                      ),
+                      _Stat(
+                        OmnisonicIcons.musicNote,
+                        _compact(viewModel.trackCount),
+                        'tracks',
+                      ),
+                      // Favourites are `heat`, wherever they appear. (The
+                      // merged count lives in the sync card below.)
+                      _Stat(
+                        OmnisonicIcons.favorite,
+                        _compact(viewModel.starredTracks.length),
+                        'favorites',
+                        role: StatRole.favorites,
+                      ),
                     ],
                   ),
                   const SizedBox(height: OmnisonicSpacing.lg),
@@ -114,11 +133,22 @@ class LibraryStatsRail extends StatelessWidget {
   }
 }
 
-class _Stat {
-  const _Stat(this.value, this.label);
+/// What a stat is about, for the colour of its icon (§9.5): favourites are
+/// `heat`, offline/cache is aqua (`tertiary`); everything else is muted.
+enum StatRole { neutral, favorites, offline }
 
+class _Stat {
+  const _Stat(
+    this.icon,
+    this.value,
+    this.label, {
+    this.role = StatRole.neutral,
+  });
+
+  final IconData icon;
   final String value;
   final String label;
+  final StatRole role;
 }
 
 class _StatGrid extends StatelessWidget {
@@ -153,13 +183,29 @@ class _StatGrid extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  stat.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: OmnisonicTypography.statValue.copyWith(
-                    color: scheme.onSurface,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      stat.icon,
+                      size: OmnisonicIconSizes.inline,
+                      color: switch (stat.role) {
+                        StatRole.favorites => OmnisonicBrand.of(context).heat,
+                        StatRole.offline => scheme.tertiary,
+                        StatRole.neutral => scheme.onSurfaceVariant,
+                      },
+                    ),
+                    const SizedBox(width: OmnisonicSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        stat.value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: OmnisonicTypography.statValue.copyWith(
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: OmnisonicSpacing.xxs),
                 Text(

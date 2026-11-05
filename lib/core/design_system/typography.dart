@@ -324,11 +324,11 @@ class OmnisonicTypography {
   static TextStyle get glassButton => button;
 
   /// Big number in a stat tile.
-  static TextStyle get statValue => _gabarito(
-    fontSize: 21,
-    fontWeight: extraBold,
-    letterSpacing: -0.2,
-    height: 1.1,
+  ///
+  /// The same face and size as [sectionTitleSmall], with tabular figures so
+  /// a count that changes while a sync runs does not jitter its tile.
+  static TextStyle get statValue => sectionTitleSmall.copyWith(
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   /// Inline technical string — bitrate, server id, count, timestamp.

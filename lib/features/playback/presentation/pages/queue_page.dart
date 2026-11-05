@@ -167,7 +167,7 @@ class QueuePage extends StatelessWidget {
       padding: const EdgeInsets.all(OmnisonicSpacing.ms),
       child: Row(
         children: [
-          CoverArt(url: track.coverArtUrl, size: 56, elevated: true),
+          CoverArt(url: track.coverArtUrl, seed: track.albumId ?? track.id, size: 56, elevated: true),
           const SizedBox(width: OmnisonicSpacing.md),
           Expanded(
             child: Column(

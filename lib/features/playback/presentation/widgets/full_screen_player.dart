@@ -416,7 +416,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             child: AspectRatio(
               aspectRatio: 1,
               child: CoverArt(
-                url: track.coverArtUrl,
+                url: track.coverArtUrl, seed: track.albumId ?? track.id,
                 radius: OmnisonicRadius.overlay,
                 elevated: true,
               ),

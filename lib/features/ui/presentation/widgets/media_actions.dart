@@ -271,7 +271,7 @@ Future<void> _showActionSheet(
               ),
               child: Row(
                 children: [
-                  CoverArt(url: imageUrl, size: 56, elevated: true),
+                  CoverArt(url: imageUrl, seed: title, size: 56, elevated: true),
                   const SizedBox(width: OmnisonicSpacing.md),
                   Expanded(
                     child: Column(

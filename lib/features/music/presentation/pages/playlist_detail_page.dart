@@ -209,7 +209,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
       eyebrow: playlist.isPublic ? 'Public playlist' : 'Private playlist',
       title: playlist.name,
       artwork: CoverArt(
-        url: playlist.coverArtUrl,
+        url: playlist.coverArtUrl, seed: playlist.id,
         fallbackIcon: OmnisonicIcons.playlistPlay,
         elevated: true,
       ),

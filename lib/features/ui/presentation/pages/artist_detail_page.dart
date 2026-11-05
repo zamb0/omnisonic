@@ -248,7 +248,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     return Hero(
       tag: 'artist-${widget.artist.id}',
       child: CoverArt(
-        url: widget.artist.imageUrl,
+        url: widget.artist.imageUrl, seed: widget.artist.id,
         size: size,
         shape: CoverArtShape.circle,
         elevated: true,

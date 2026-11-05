@@ -235,7 +235,7 @@ class _TrackRowState extends State<TrackRow> {
     Widget art() => Stack(
       alignment: Alignment.center,
       children: [
-        CoverArt(url: track.coverArtUrl, size: artSize),
+        CoverArt(url: track.coverArtUrl, seed: track.albumId ?? track.id, size: artSize),
         if (isCurrent)
           SizedBox.square(
             dimension: artSize,

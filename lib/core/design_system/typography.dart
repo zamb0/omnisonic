@@ -218,8 +218,18 @@ class OmnisonicTypography {
     height: 1.3,
   );
 
-  static TextStyle get duration =>
-      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.4, height: 1.2);
+  /// Times: track lengths, player position. JetBrains Mono 12/500 with
+  /// tabular figures, so a ticking position never jitters the layout.
+  static TextStyle get timecode =>
+      _mono(
+        fontSize: 12,
+        fontWeight: medium,
+        letterSpacing: 0.4,
+        height: 1.2,
+      ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
+  /// The length of a track in a list; same voice as [timecode].
+  static TextStyle get duration => timecode;
 
   static TextStyle get metadata =>
       _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.3, height: 1.3);

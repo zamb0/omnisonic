@@ -45,10 +45,12 @@ class AnimationManager {
   static Duration exitOf(Duration enter) =>
       Duration(microseconds: (enter.inMicroseconds * 0.7).round());
 
-  /// One bar of the "now playing" equalizer. Out of phase on purpose: three
-  /// bars on the same period read as a single pulsing block.
+  /// One bar of the "now playing" equalizer, half a cycle (it reverses).
+  /// 400 / 450 / 500 ms: full loops of 800 / 900 / 1000 ms, about 900 on
+  /// average, and out of phase on purpose — three bars on one period read as
+  /// a single pulsing block.
   static Duration equalizerBarDuration(int index) =>
-      Duration(milliseconds: 320 + index * 90);
+      Duration(milliseconds: 400 + index * 50);
 
   // ---------------------------------------------------------------------
   // Stagger

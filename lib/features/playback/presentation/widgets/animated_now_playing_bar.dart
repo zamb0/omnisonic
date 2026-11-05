@@ -12,6 +12,7 @@ import 'full_screen_player.dart' show NowPlayingPanel;
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../ui/presentation/widgets/cover_art.dart';
+import '../../../ui/presentation/widgets/now_playing_equalizer.dart';
 import 'transport_controls.dart';
 import '../../../ui/presentation/widgets/art_tint.dart';
 
@@ -324,9 +325,10 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                             height: 16,
                             // A small equalizer sized for an icon slot.
                             child: Center(
-                              child: _MiniEqualizer(
-                                isPlaying: vm.isPlaying,
+                              child: NowPlayingEqualizer(
+                                playing: vm.isPlaying,
                                 color: tint,
+                                excludeSemantics: true,
                               ),
                             ),
                           ),
@@ -864,105 +866,3 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }
 }
 
-/// Tiny 3-bar equalizer indicator, sized for an icon-sized slot next to the
-/// play/pause button (unlike a full-width equalizer, which
-/// assumes a much wider layout).
-class _MiniEqualizer extends StatefulWidget {
-  const _MiniEqualizer({required this.isPlaying, required this.color});
-
-  final bool isPlaying;
-  final Color color;
-
-  @override
-  State<_MiniEqualizer> createState() => _MiniEqualizerState();
-}
-
-class _MiniEqualizerState extends State<_MiniEqualizer>
-    with TickerProviderStateMixin {
-  static const _barCount = 3;
-  late final List<AnimationController> _controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(
-      _barCount,
-      (i) => AnimationController(
-        duration: AnimationManager.equalizerBarDuration(i),
-        vsync: this,
-      ),
-    );
-  }
-
-  bool _reduceMotion = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // An endless loop is exactly what "reduce motion" asks to stop; the bars
-    // then hold still at mid height.
-    _reduceMotion = MediaQuery.disableAnimationsOf(context);
-    widget.isPlaying ? _start() : _stop();
-  }
-
-  void _start() {
-    if (_reduceMotion) {
-      for (final controller in _controllers) {
-        controller.value = 0.5;
-      }
-      return;
-    }
-    for (final controller in _controllers) {
-      if (!controller.isAnimating) controller.repeat(reverse: true);
-    }
-  }
-
-  void _stop() {
-    for (final controller in _controllers) {
-      controller.stop();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _MiniEqualizer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying != oldWidget.isPlaying) {
-      widget.isPlaying ? _start() : _stop();
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (var i = 0; i < _barCount; i++) ...[
-          if (i > 0) const SizedBox(width: 2),
-          AnimatedBuilder(
-            animation: _controllers[i],
-            builder: (context, child) {
-              final height = 4 + _controllers[i].value * 10;
-              return Container(
-                width: 3,
-                height: height,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  borderRadius: BorderRadius.circular(1),
-                ),
-              );
-            },
-          ),
-        ],
-      ],
-    );
-  }
-}

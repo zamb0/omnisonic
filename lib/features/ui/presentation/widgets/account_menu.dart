@@ -35,23 +35,20 @@ class AccountButton extends StatelessWidget {
     final color = active ? scheme.onSurface : scheme.onSurfaceVariant;
     final vertical = axis == Axis.vertical;
 
-    // Active, the avatar takes the ink pill the nav items use, so Settings
-    // or Servers being open reads exactly like any other destination.
+    // Active, the sidebar footer avatar takes the `wellHover` pill. In the
+    // bottom bar the shared sliding indicator sits behind this slot, so the
+    // avatar stays bare there.
     final avatar = Container(
       width: vertical ? 52 : 28,
       height: 28,
       decoration: BoxDecoration(
-        // In the bottom bar an idle slot is bare, like its neighbours; in
-        // the sidebar footer the well marks the avatar as one.
-        color: active
-            ? surfaces.ink
-            : (vertical ? Colors.transparent : surfaces.well),
+        color: vertical ? null : (active ? surfaces.wellHover : surfaces.well),
         borderRadius: BorderRadius.circular(OmnisonicRadius.full),
       ),
       child: Icon(
         active ? OmnisonicIcons.person : OmnisonicIcons.personOutline,
         size: vertical ? OmnisonicIconSizes.smd : OmnisonicIconSizes.sm,
-        color: active ? surfaces.onInk : color,
+        color: color,
       ),
     );
 

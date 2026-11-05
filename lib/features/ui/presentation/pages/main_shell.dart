@@ -183,36 +183,119 @@ class MainShell extends StatelessWidget {
 
   Widget _buildBottomNavigation(BuildContext context) {
     final path = GoRouterState.of(context).uri.path;
-    final currentIndex = AppDestinations.selectedPrimaryIndex(path);
     final destinations = AppDestinations.primary;
+    // The Account slot sits after the primary destinations and shares the
+    // one sliding indicator: any page behind it lights it.
+    final accountIndex = destinations.length;
+    final currentIndex =
+        AppDestinations.selectedPrimaryIndex(path) ??
+        (AppDestinations.isSecondary(path) ? accountIndex : null);
 
     return GlassPanel(
       padding: const EdgeInsets.symmetric(
         horizontal: OmnisonicSpacing.xs,
         vertical: OmnisonicSpacing.sm,
       ),
-      // Expanded rather than fixed: five slots on a 375px phone at the
-      // largest chrome text size do not fit side by side, and the labels
-      // have to ellipsize rather than overflow. Expanded, not Flexible —
-      // loose slots bunched up on the left with the right of the bar empty.
-      child: Row(
+      child: Stack(
         children: [
-          for (var i = 0; i < destinations.length; i++)
-            Expanded(
-              child: _NavPillItem(
-                destination: destinations[i],
-                selected: currentIndex == i,
-                onTap: () {
-                  if (currentIndex == i) return;
-                  Haptics.selection();
-                  context.go(destinations[i].route);
-                },
-              ),
+          Positioned.fill(
+            child: _SlidingIndicator(
+              index: currentIndex,
+              slots: destinations.length + 1,
             ),
-          const Expanded(
-            child: AccountButton(axis: Axis.vertical, showLabel: true),
+          ),
+          // Expanded rather than fixed: five slots on a 375px phone at the
+          // largest chrome text size do not fit side by side, and the labels
+          // have to ellipsize rather than overflow. Expanded, not Flexible —
+          // loose slots bunched up on the left with the right of the bar
+          // empty.
+          Row(
+            children: [
+              for (var i = 0; i < destinations.length; i++)
+                Expanded(
+                  child: _NavPillItem(
+                    destination: destinations[i],
+                    selected: currentIndex == i,
+                    onTap: () {
+                      if (currentIndex == i) return;
+                      Haptics.selection();
+                      context.go(destinations[i].route);
+                    },
+                  ),
+                ),
+              const Expanded(
+                child: AccountButton(axis: Axis.vertical, showLabel: true),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The `wellHover` pill behind the current bottom-bar item. One pill slides
+/// between slots (`normal`, `spring`) instead of each item fading its own,
+/// so the eye follows where it went. It fades out when no slot is current
+/// (the queue, Now Playing) and does not move with reduce motion.
+class _SlidingIndicator extends StatelessWidget {
+  const _SlidingIndicator({required this.index, required this.slots});
+
+  /// The lit slot, or null.
+  final int? index;
+  final int slots;
+
+  /// The pill around an icon: wide enough for the glyph with air.
+  static const double pillWidth = 52;
+  static const double pillHeight = 28;
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaces = OmnisonicSurfaces.of(context);
+    final slot = index ?? 0;
+    final duration = AnimationUtils.adjustedDuration(
+      context,
+      AnimationManager.normalDuration,
+    );
+    return ExcludeSemantics(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The pill is centred on its slot: the slots are equal fifths
+            // of the bar, like the Expanded items in front of it.
+            final slotWidth = constraints.maxWidth / slots;
+            return Stack(
+              children: [
+                AnimatedPositioned(
+                  // The icon sits one `xs` below the top of its slot.
+                  top: OmnisonicSpacing.xs,
+                  left: slotWidth * (slot + 0.5) - pillWidth / 2,
+                  duration: duration,
+                  curve: AnimationManager.springCurve,
+                  child: AnimatedOpacity(
+                    opacity: index == null ? 0 : 1,
+                    duration: AnimationUtils.adjustedDuration(
+                      context,
+                      AnimationManager.fastDuration,
+                    ),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: surfaces.wellHover,
+                        borderRadius: BorderRadius.circular(
+                          OmnisonicRadius.full,
+                        ),
+                      ),
+                      child: const SizedBox(
+                        width: pillWidth,
+                        height: pillHeight,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -232,7 +315,6 @@ class _NavPillItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final surfaces = OmnisonicSurfaces.of(context);
     final color = selected
         ? colorScheme.onSurface
         : colorScheme.onSurfaceVariant;
@@ -248,24 +330,14 @@ class _NavPillItem extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // The "you are here" marker is the ink pill everywhere — the
-              // sidebar, the rail and this bar — rather than an accent tint
-              // here and an inverted row there.
-              AnimatedContainer(
-                duration: AnimationUtils.adjustedDuration(
-                  context,
-                  AnimationManager.fastDuration,
-                ),
-                curve: AnimationManager.fastCurve,
-                width: 52,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: selected ? surfaces.ink : Colors.transparent,
-                  borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-                ),
+              // The pill itself is the sliding indicator behind the row;
+              // this only holds the icon in its 52 x 28 footprint.
+              SizedBox(
+                width: _SlidingIndicator.pillWidth,
+                height: _SlidingIndicator.pillHeight,
                 child: Icon(
                   selected ? destination.activeIcon : destination.icon,
-                  color: selected ? surfaces.onInk : color,
+                  color: color,
                   size: OmnisonicIconSizes.smd,
                 ),
               ),

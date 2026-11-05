@@ -156,6 +156,79 @@ void main() {
     });
   });
 
+  group('bottom bar indicator', () {
+    // The animated position, not the widget's `left`, which is the target.
+    Finder pill() => find.descendant(
+      of: find.byType(AnimatedPositioned),
+      matching: find.byType(DecoratedBox),
+    );
+    double pillCenter(WidgetTester t) => t.getCenter(pill()).dx;
+    double labelCenter(WidgetTester t, String label) =>
+        t.getCenter(find.text(label)).dx;
+    double opacity(WidgetTester t) => t
+        .widget<AnimatedOpacity>(
+          find.descendant(
+            of: find.byType(AnimatedPositioned),
+            matching: find.byType(AnimatedOpacity),
+          ),
+        )
+        .opacity;
+
+    testWidgets('is centred on the current item, then slides', (tester) async {
+      await pumpShell(tester, size: TestSizes.phone, viewModels: models());
+      expect(pillCenter(tester), closeTo(labelCenter(tester, 'Home'), 0.5));
+      expect(opacity(tester), 1);
+      final start = pillCenter(tester);
+
+      await tester.tap(find.text('Library'));
+      await tester.pump(); // navigation rebuilds; the slide starts here
+      await tester.pump(const Duration(milliseconds: 80));
+      final midway = pillCenter(tester);
+      await tester.pumpAndSettle();
+      final end = pillCenter(tester);
+
+      expect(end, closeTo(labelCenter(tester, 'Library'), 0.5));
+      expect(midway, greaterThan(start), reason: 'it has left Home');
+      expect(midway, lessThan(end), reason: 'and is not there yet: it slides');
+    });
+
+    testWidgets('fades out where no slot is current', (tester) async {
+      await pumpShell(
+        tester,
+        location: AppRouter.queue,
+        size: TestSizes.phone,
+        viewModels: models(),
+      );
+      expect(opacity(tester), 0);
+    });
+
+    testWidgets('a secondary page lights the Account slot', (tester) async {
+      await pumpShell(
+        tester,
+        location: AppRouter.settings,
+        size: TestSizes.phone,
+        viewModels: models(),
+      );
+      expect(pillCenter(tester), closeTo(labelCenter(tester, 'Account'), 0.5));
+      expect(opacity(tester), 1);
+    });
+
+    testWidgets('does not animate with reduce motion', (tester) async {
+      await pumpShell(
+        tester,
+        size: TestSizes.phone,
+        viewModels: models(),
+        disableAnimations: true,
+      );
+      expect(
+        tester
+            .widget<AnimatedPositioned>(find.byType(AnimatedPositioned))
+            .duration,
+        Duration.zero,
+      );
+    });
+  });
+
   group('sidebar', () {
     // The account affordance has to exist in the rail too. Settings was
     // previously only reachable through DesktopTopBar, which is hidden below

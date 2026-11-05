@@ -181,9 +181,11 @@ class OmnisonicShadows {
   ];
 
   /// The cover "lights" the canvas: [color] is the cover's dominant colour.
-  static List<BoxShadow> artGlow(Color color) => [
+  ///
+  /// [alpha] is 35 % at rest and 50 % under a hovering pointer.
+  static List<BoxShadow> artGlow(Color color, {double alpha = 0.35}) => [
     BoxShadow(
-      color: color.withValues(alpha: 0.35),
+      color: color.withValues(alpha: alpha),
       blurRadius: 40,
       offset: const Offset(0, 16),
     ),

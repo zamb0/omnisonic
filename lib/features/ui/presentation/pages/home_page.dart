@@ -302,7 +302,8 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     children: [
                       CoverArt(
-                        url: track.coverArtUrl, seed: track.albumId ?? track.id,
+                        url: track.coverArtUrl,
+                        seed: track.albumId ?? track.id,
                         size: 64,
                         elevated: true,
                       ),

@@ -81,44 +81,46 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadAlbums,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              leading: BackButton(
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go(AppRouter.library);
-                  }
-                },
+        child: EntranceScope(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                leading: BackButton(
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(AppRouter.library);
+                    }
+                  },
+                ),
+                title: Text(
+                  widget.artist.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                actions: [
+                  if (_albums.isNotEmpty)
+                    IconButton(
+                      tooltip: 'Play All',
+                      icon: const Icon(OmnisonicIcons.playArrow),
+                      onPressed: _playArtist,
+                    ),
+                  if (_albums.isNotEmpty)
+                    IconButton(
+                      tooltip: 'Shuffle',
+                      icon: const Icon(OmnisonicIcons.shuffle),
+                      onPressed: _shuffleArtist,
+                    ),
+                ],
               ),
-              title: Text(
-                widget.artist.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              actions: [
-                if (_albums.isNotEmpty)
-                  IconButton(
-                    tooltip: 'Play All',
-                    icon: const Icon(OmnisonicIcons.playArrow),
-                    onPressed: _playArtist,
-                  ),
-                if (_albums.isNotEmpty)
-                  IconButton(
-                    tooltip: 'Shuffle',
-                    icon: const Icon(OmnisonicIcons.shuffle),
-                    onPressed: _shuffleArtist,
-                  ),
-              ],
-            ),
-            SliverToBoxAdapter(child: _buildArtistHeader(context)),
+              SliverToBoxAdapter(child: _buildArtistHeader(context)),
 
-            const SliverToBoxAdapter(child: SectionHeader(title: 'Albums')),
-            _buildAlbumsContent(),
-          ],
+              const SliverToBoxAdapter(child: SectionHeader(title: 'Albums')),
+              _buildAlbumsContent(),
+            ],
+          ),
         ),
       ),
     );
@@ -171,10 +173,13 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final album = _albums[index];
-              return AlbumCard(
-                key: ValueKey(album.id),
-                album: album,
-                onTap: () => _onAlbumTapped(album),
+              return Staggered(
+                index: index,
+                child: AlbumCard(
+                  key: ValueKey(album.id),
+                  album: album,
+                  onTap: () => _onAlbumTapped(album),
+                ),
               );
             }, childCount: _albums.length),
           );
@@ -248,7 +253,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     return Hero(
       tag: 'artist-${widget.artist.id}',
       child: CoverArt(
-        url: widget.artist.imageUrl, seed: widget.artist.id,
+        url: widget.artist.imageUrl,
+        seed: widget.artist.id,
         size: size,
         shape: CoverArtShape.circle,
         elevated: true,

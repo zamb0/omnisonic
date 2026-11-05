@@ -235,21 +235,26 @@ void main() {
         ..playback.emitPlaying(tracks[1], queue: tracks, currentIndex: 1);
       await pumpPage(
         tester,
-        Material(
-          color: Colors.transparent,
-          child: ListView(
-            children: [
-              for (var i = 0; i < tracks.length; i++)
-                TrackRow(
-                  track: tracks[i],
-                  leading: TrackRowLeading.trackNumber,
-                  qualityLabel: 'FLAC',
-                  unavailable: i == 3,
-                  selected: i == 2,
-                  onTap: () {},
-                  onShowActions: () {},
-                ),
-            ],
+        Builder(
+          builder: (context) => ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: Material(
+              type: MaterialType.transparency,
+              child: ListView(
+                children: [
+                  for (var i = 0; i < tracks.length; i++)
+                    TrackRow(
+                      track: tracks[i],
+                      leading: TrackRowLeading.trackNumber,
+                      qualityLabel: 'FLAC',
+                      unavailable: i == 3,
+                      selected: i == 2,
+                      onTap: () {},
+                      onShowActions: () {},
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
         viewModels: models,

@@ -62,9 +62,58 @@ class _PressScaleState extends State<PressScale> {
   }
 }
 
+/// Marks the first frame of a grid or list as its "first load".
+///
+/// A [Staggered] under it animates only if it is built in that first frame;
+/// items built later — scrolled into view, or rebuilt on return — just
+/// appear. Without it, the entrance would replay all down a long grid as it
+/// scrolls. No timers: the window is the first frame.
+class EntranceScope extends StatefulWidget {
+  const EntranceScope({super.key, required this.child});
+
+  final Widget child;
+
+  /// Whether a [Staggered] built now should play its entrance.
+  static bool isEntering(BuildContext context) =>
+      context
+          .getInheritedWidgetOfExactType<_EntranceInherited>()
+          ?.state
+          ._entering ??
+      true;
+
+  @override
+  State<EntranceScope> createState() => _EntranceScopeState();
+}
+
+class _EntranceScopeState extends State<EntranceScope> {
+  bool _entering = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _entering = false);
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _EntranceInherited(state: this, child: widget.child);
+}
+
+class _EntranceInherited extends InheritedWidget {
+  const _EntranceInherited({required this.state, required super.child});
+
+  final _EntranceScopeState state;
+
+  // The flag is read once, at build; nothing needs to rebuild when it flips.
+  @override
+  bool updateShouldNotify(_EntranceInherited old) => false;
+}
+
 /// Fades [child] in and lifts it 8 px, delayed by [index] steps
 /// ([AnimationManager.staggered]). Plays once, on first build — for grids
-/// and lists on first load. Shows the child immediately with reduce motion.
+/// and lists on first load. Shows the child immediately with reduce motion,
+/// past [AnimationManager.staggerMaxItems], and (under an [EntranceScope])
+/// when built after the first frame.
 class Staggered extends StatefulWidget {
   const Staggered({super.key, required this.index, required this.child});
 
@@ -90,6 +139,8 @@ class _StaggeredState extends State<Staggered>
     if (_started) return;
     _started = true;
     if (MediaQuery.disableAnimationsOf(context)) return;
+    if (widget.index >= AnimationManager.staggerMaxItems) return;
+    if (!EntranceScope.isEntering(context)) return;
     final delay = AnimationManager.staggered(widget.index);
     final total = delay + AnimationManager.quickDuration;
     final controller = AnimationController(vsync: this, duration: total);

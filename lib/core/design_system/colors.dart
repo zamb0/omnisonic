@@ -159,6 +159,10 @@ class OmnisonicColors {
   /// Behind controls over artwork — the card hover overlay.
   static const Color scrim = Color(0x8C000000);
 
+  /// Over artwork while a card is hovered: 35 %, enough to seat the Play
+  /// disc without hiding the cover.
+  static const Color scrimHover = Color(0x59000000);
+
   /// Under text over artwork — the bottom of a hero image.
   static const Color scrimStrong = Color(0xB3000000);
 

@@ -79,6 +79,7 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite albums to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
+            staggered: true,
             padding: EdgeInsets.fromLTRB(
               OmnisonicSpacing.gutter(context),
               OmnisonicLayout.headerGap + OmnisonicSpacing.xs,
@@ -122,6 +123,7 @@ class _FavoritesPageState extends State<FavoritesPage>
             subtitle: 'Star your favorite artists to see them here',
           ),
           builder: (context) => ResponsiveGridView.media(
+            staggered: true,
             padding: EdgeInsets.fromLTRB(
               OmnisonicSpacing.gutter(context),
               OmnisonicLayout.headerGap + OmnisonicSpacing.xs,

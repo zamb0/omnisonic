@@ -149,6 +149,56 @@ void main() {
     });
   });
 
+  group('EntranceScope', () {
+    testWidgets('animates what is built in the first frame, not later', (
+      t,
+    ) async {
+      final items = ValueNotifier<int>(2);
+      await t.pumpWidget(
+        MaterialApp(
+          home: EntranceScope(
+            child: ValueListenableBuilder<int>(
+              valueListenable: items,
+              builder: (context, count, _) => Column(
+                children: [
+                  for (var i = 0; i < count; i++)
+                    Staggered(index: i, child: Text('item $i')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.byType(Opacity),
+        findsNWidgets(2),
+        reason: 'first frame animates',
+      );
+      await t.pumpAndSettle();
+
+      items.value = 4; // scrolled into view / added after the first frame
+      await t.pump();
+      expect(find.text('item 3'), findsOneWidget);
+      expect(
+        find.byType(Opacity),
+        findsNWidgets(2),
+        reason: 'late items appear without an entrance',
+      );
+    });
+
+    testWidgets('items past the cap never animate', (t) async {
+      await t.pumpWidget(
+        MaterialApp(
+          home: Staggered(
+            index: AnimationManager.staggerMaxItems,
+            child: const Text('far'),
+          ),
+        ),
+      );
+      expect(find.byType(Opacity), findsNothing);
+    });
+  });
+
   group('Staggered', () {
     Widget host(int index, {bool reduce = false}) => MaterialApp(
       builder: (c, child) => MediaQuery(

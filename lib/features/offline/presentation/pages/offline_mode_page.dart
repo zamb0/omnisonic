@@ -401,6 +401,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,
@@ -431,6 +432,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,
@@ -462,6 +464,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,

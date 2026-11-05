@@ -241,7 +241,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         Hero(
                           tag: 'now-playing-artwork-${track.id}',
                           child: CoverArt(
-                            url: track.coverArtUrl, seed: track.albumId ?? track.id,
+                            url: track.coverArtUrl,
+                            seed: track.albumId ?? track.id,
                             size: 44,
                             radius: OmnisonicRadius.sm,
                           ),
@@ -452,7 +453,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               Hero(
                 tag: 'now-playing-artwork-${track.id}',
                 child: CoverArt(
-                  url: track.coverArtUrl, seed: track.albumId ?? track.id,
+                  url: track.coverArtUrl,
+                  seed: track.albumId ?? track.id,
                   size: 56,
                   radius: OmnisonicRadius.md,
                   elevated: true,
@@ -865,4 +867,3 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     }
   }
 }
-

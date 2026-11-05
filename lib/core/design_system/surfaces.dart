@@ -53,7 +53,11 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
     for (final unit in seed.codeUnits) {
       hash = (hash * 31 + unit) & 0x7fffffff;
     }
-    return HSLColor.fromAHSL(1, (hash % 360).toDouble(), 0.7, 0.55).toColor();
+    // Consecutive ids ("Album 1", "Album 2") hash to neighbouring numbers;
+    // stepping by the golden angle spreads them around the wheel instead of
+    // giving a row of near-identical covers.
+    final hue = ((hash % 1000) * 137.508) % 360;
+    return HSLColor.fromAHSL(1, hue, 0.7, 0.55).toColor();
   }
 
   /// The primary action and the "you are here" marker: the filled button,

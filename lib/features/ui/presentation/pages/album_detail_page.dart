@@ -781,7 +781,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return Hero(
       tag: 'album-${widget.album.id}',
       child: CoverArt(
-        url: _album.coverArtUrl, seed: _album.id,
+        url: _album.coverArtUrl,
+        seed: _album.id,
         size: size,
         radius: OmnisonicRadius.art,
         elevated: true,

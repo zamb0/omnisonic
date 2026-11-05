@@ -1,10 +1,11 @@
 # Omnisonic — Design System
 
-> **v2 · "Aurora Glass"** — novembre 2026. Questo documento descrive il
-> sistema **target**: i token qui sotto sostituiscono quelli della v1 ("liquid
-> glass" monocromo) e vengono portati nel codice dall'epica
-> #90 (sotto-task D1–D12 = #78–#89). Finché una sotto-issue non è chiusa, il codice può ancora usare
-> il valore v1; la tabella in §12 dice cosa cambia e dove.
+> **v2 · "Aurora Glass"** — novembre 2026. Il sistema qui descritto è quello
+> **implementato** (epica #90, D1–D12 = #78–#89). Un token citato qui esiste
+> in codice e un token del vocabolario v2 esiste qui:
+> `test/core/design_system/doc_alignment_test.dart` lo verifica. La mappa
+> componente → file è in §12; la galleria di tutti i componenti, in chiaro e
+> in scuro, è la route di debug `/dev/gallery`.
 
 Fonte di verità per tema, componenti e impaginazione. Il codice vive in
 `lib/core/design_system/` (barrel `design_system.dart`); questo documento dice
@@ -34,7 +35,10 @@ Aurora — e una tela con temperatura, senza togliere il palco alle copertine.
    - **Aurora** (gradiente violet → magenta → coral): la *firma*. Solo per il
      Play principale di una schermata, il marchio, l'avanzamento del brano in
      riproduzione e lo sfondo di riserva quando non c'è copertina.
-     **Al massimo un elemento Aurora pieno per schermata.**
+     **Al massimo un elemento Aurora pieno per schermata.** Non contano il
+     player persistente (mini player / transport bar, chrome presente su ogni
+     schermata mentre si ascolta) e il `PlayDisc` delle card, che appare solo
+     su hover o focus.
    - **Ink** (`onSurface`): le azioni primarie statiche (Salva, Aggiungi,
      Connetti) e il testo. Bottone bianco su scuro / quasi-nero su chiaro.
    - **Accent** (`primary`, violetto elettrico): **stato vivo** — brano in
@@ -73,7 +77,8 @@ stesso tono, così vetro, pozzetti e overlay sembrano dello stesso materiale.
 | L3 | Overlay (dialog, sheet, menu) | `#1C1A29` opaco | `#FFFFFF` opaco | `scheme.surfaceContainerHigh` |
 | — | Pozzetto (input, stat tile, righe server) | bianco 6 % | `#2A1F5C` 5 % | `surfaces.well` |
 | — | Pozzetto hover / selezionato | bianco 10 % | `#2A1F5C` 9 % | `surfaces.wellHover` |
-| — | Segnaposto copertina | gradiente `#1C1A29 → #262338` | gradiente `#E9E5F1 → #DED8EA` | `surfaces.placeholder` + hue del seed |
+| — | Ink: bottone primario, segmento attivo, disco `filled` (testo su di esso: `onInk`) | `#F3F1F8` (`onInk` `#0B0A12`) | `#17141F` (`onInk` `#F6F4FA`) | `surfaces.ink` / `surfaces.onInk` |
+| — | Segnaposto copertina | gradiente `#1C1A29 → #262338` | gradiente `#E9E5F1 → #DED8EA` | `surfaces.placeholder` / `placeholderEnd` + hue del seed (`placeholderGradient(seed)`) |
 
 Gli overlay restano **opachi**: si distinguono per raggio 24, filo e ombra.
 
@@ -95,7 +100,7 @@ vetro senza ombra pesante. In chiaro il filo è `white 90 %`.
 |---|---|---|---|
 | `onSurface` (testo, ink) | `#F3F1F8` | `#17141F` | 17.6 · 16.6 |
 | `onSurfaceVariant` (secondario) | `#A9A4BC` | `#5C5670` | 8.2 · 6.4 (7.1 / 5.6 su contenitore) |
-| `outline` (bordo input, ≥ 3:1) | `#6E6885` | `#8C869E` | 3.7 · 3.2 |
+| `outline` (bordo input, ≥ 3:1 anche sul pozzetto) | `#6E6885` | `#827B96` | 3.7 · 3.7 (3.35 sul pozzetto) |
 | `outlineVariant` / `surfaces.hairline` | bianco 10 % | `#2A1F5C` 10 % | decorativo |
 
 ### 2.3 Accent, ruoli e semantici
@@ -170,7 +175,7 @@ e i numeri **tabulari** ovunque ci sia un tempo.
 
 | Ruolo | Token | Famiglia | Size / peso / tracking | Dove |
 |---|---|---|---|---|
-| **Hero** *(nuovo)* | `heroTitle` | Gabarito | 56 / 800 / −1.6 (40 su telefono) | DetailHeader album/artista, Now Playing desktop |
+| **Hero** *(nuovo)* | `heroTitle` | Gabarito | 56 / 800 / −1.6; `heroTitleCompact` 40 / 800 / −1.2 (telefono, copertina sopra) | DetailHeader album/artista |
 | Titolo pagina | `pageTitle` | Gabarito | 40 / 800 / −0.8 | header schermata (≥ 480 px) |
 | Titolo sezione | `sectionTitle` | Gabarito | 28 / 800 / −0.5 | sezioni Home |
 | Titolo sezione compatto | `sectionTitleSmall` | Gabarito | 22 / 800 / −0.2 | telefono, rail |
@@ -234,7 +239,7 @@ aggiunge la **luce colorata**: le cose vive emettono.
 
 | Token | Valore | Uso |
 |---|---|---|
-| `OmnisonicShadows.art` / `artCompact` | invariati | copertine |
+| `OmnisonicShadows.art` / `OmnisonicShadows.artCompact` | invariati | copertine |
 | `OmnisonicShadows.artGlow` *(nuovo)* | colore dominante copertina, alpha 35 %, blur 40, y 16 | copertina hero e Now Playing: la copertina "illumina" la tela |
 | `OmnisonicShadows.glow` *(nuovo)* | `#C04BE8` 40 % blur 24 y 8 (scuro) / 22 % (chiaro) | bottone Aurora, focus del player |
 | `OmnisonicShadows.focusRing` *(nuovo)* | 2 px `primary` + alone `auroraSoft` 4 px | focus da tastiera, ovunque |
@@ -324,10 +329,10 @@ Sempre `tooltip` + `Semantics(label)`.
 | **TextField** | pozzetto `well`, raggio 12, filo `hairline`; focus = filo `primary` 2 px + `focusRing`; errore = filo `error` + testo sotto |
 | **SearchField** | stadio, h 48, icona 20; focus: alone `auroraSoft`; pulsante clear 44 |
 | **Chip / FilterChip** | stadio, `well`, `labelMedium`; selezionato = `primaryContainer` + bordo `primary` 1 px + check |
-| **Segmented** | contenitore `well` a stadio; segmento attivo = pillola ink che **scivola** (`quick`, `spring`) |
-| **Switch** | track spento `surfaceContainerHighest`; acceso track `primary`, thumb `onPrimary`; 48 × 28 |
-| **Checkbox / Radio** | 20, bordo `outline` 1.5; acceso `primary` |
-| **Slider** (volume, generico) | track 4 `surfaceContainerHighest`, attivo `primary`; thumb 14 → 18 al drag |
+| **Segmented** (`OmnisonicSegmented`) | contenitore `well` a stadio h 44; segmento attivo = pillola ink che **scivola** (`quick`, `spring`); ogni segmento è un bottone focalizzabile annunciato come selezionato |
+| **Switch** | track spento `surfaceContainerHighest` + filo `outline`; acceso track `primary`, thumb `onPrimary`; dimensioni Material (52 × 32: il tema non le espone) |
+| **Checkbox / Radio** | bordo `outline` 1.5; acceso `primary`; dimensioni Material (18) |
+| **Slider** (volume, generico) | track 4 `surfaceContainerHighest`, attivo `primary`; thumb 14 → 18 al drag (`GrowingThumbShape`) |
 | **Progress del brano** | track 4 → 6 al hover/drag, attivo **`aurora`**, buffer `onSurface` 20 %, thumb nascosto → 14 al hover/drag; tempi `timecode` |
 
 ### 9.4 Navigazione
@@ -335,7 +340,7 @@ Sempre `tooltip` + `Semantics(label)`.
 | Componente | Spec |
 |---|---|
 | **Sidebar / rail** | vetro L1; voce h 44 raggio 12; selezionata = pillola `wellHover` + **barra Aurora 3 × 20** a sinistra + icona filled `onSurface`; hover = `well` |
-| **Bottom nav** | vetro L2 a stadio, flottante a `chromeInset`; selezionata = pillola `wellHover` + icona filled + etichetta; indicatore che scivola |
+| **Bottom nav** | vetro L2 a stadio, flottante a `chromeInset`; un'unica pillola `wellHover` che scivola (`normal`, `spring`) dietro la voce corrente (anche Account per le pagine secondarie), icona filled; le etichette restano su tutte le voci |
 | **DesktopTopBar** | trasparente su tela, vetro L2 dopo 8 px di scroll (fade `fast`) |
 | **AccountMenu** | menu L3; avatar con anello stato server (success/warning/error) |
 
@@ -350,7 +355,7 @@ diventa vetro + barra Aurora (più leggibile e non compete col Primary).
 | **MediaCard / AlbumCard** | copertina + ombra `art`; hover: scala 1.03, overlay scrim 0→35 %, `PlayDisc` 48 che sale di 8 px in basso a destra; testo `cardTitle` 8 sotto; server dot in alto a sinistra solo se multi-sorgente |
 | **ArtistCard** | cerchio, hover anello `auroraSoft` 2 px; nome centrato |
 | **TrackRow** | h 56, thumb 48; hover `well`; **vivo** = equalizer al posto dell'indice + titolo `primary` + fondo `primaryContainer` 40 %; selezionato = `wellHover`; non disponibile (server offline) = 50 % + icona cloud-off + tooltip |
-| **DetailHeader** | `ArtTintBackground` saturazione +15 % che sfuma nella tela; copertina `artHero` 240 (160 telefono) con `artGlow`; eyebrow `primary` ("ALBUM · 2024"); `heroTitle`; meta mono; riga azioni: `AuroraButton` Play + Tonal Shuffle + toggle preferito `heat` + overflow |
+| **DetailHeader** | `ArtTintBackground` saturazione +15 % che sfuma nella tela; copertina `artHero` 240 (160 impilata, 120 accanto al titolo sul telefono) con `artGlow` (tonda per l'artista); eyebrow `primary` ("ALBUM · 2024"); `heroTitle` (`heroTitleCompact` impilato, `sectionTitle` accanto alla copertina), max 2 righe + tooltip; meta mono; riga azioni: `AuroraButton` Play + Tonal Shuffle + toggle preferito `heat` + overflow |
 | **SectionHeader** | invariato (large/medium/small + TextButton) |
 | **LibraryStatsRail** | tile `well` raggio 12; numero `sectionTitleSmall` tabulare; icona colore di ruolo (aqua per offline, heat per preferiti) |
 
@@ -359,8 +364,9 @@ diventa vetro + barra Aurora (più leggibile e non compete col Primary).
 | Componente | Spec |
 |---|---|
 | **Mini player** (telefono) | vetro L2 a stadio sopra la bottom nav; tinta copertina 12 % nel vetro; progress 2 px `aurora` sul bordo inferiore; `PlayDisc` 44 |
-| **Transport bar** (desktop) | vetro L2; sinistra copertina 56 + titolo/artista; centro `PlayDisc` 48 + prev/next/shuffle/repeat (toggle `primary`) + progress Aurora; destra volume, coda, testi, output |
-| **Now Playing** | `ArtTintBackground` piena + `auroraMesh` 30 % sopra; copertina `artHero` con `artGlow`; titolo `sectionTitle`; progress Aurora 6; `PlayDisc` 64; azioni secondarie `onScrim` |
+| **Tablet bar** (barra < 900 pt: iPad, finestra Mac stretta) | il mini player, largo: una riga alta 72 su una sola linea; sinistra copertina 48 + titolo/artista; al centro della barra prev/`PlayDisc` 48/next; destra testi, coda, preferito, espandi; progress 2 px `aurora` sul bordo inferiore; seek, shuffle, repeat e volume in Now Playing |
+| **Transport bar** (desktop, barra ≥ 900 pt) | vetro L2; colonne laterali di uguale larghezza, così il trasporto è al centro della barra; sinistra copertina 48 + titolo/artista/qualità; centro `PlayDisc` 48 + prev/next/shuffle/repeat (toggle `primary`) sopra il progress Aurora largo quanto la colonna, tempi in slot fissi; destra testi, coda, preferito, volume, espandi, sulla linea del trasporto; tutte icone 44 senza disco |
+| **Now Playing** | `ArtTintBackground` piena + `auroraMesh` 30 % sopra; copertina `artHero` con `artGlow`; titolo `sectionTitle`; progress Aurora 6; `PlayDisc` 64; shuffle/repeat toggle `primary`; badge qualità `QualityBadge` |
 | **Badge qualità** | `MetadataChip` mono (`FLAC · 24/96`), `well`; lossless con bordo `tertiary` |
 
 ### 9.7 Overlay e feedback
@@ -381,7 +387,7 @@ diventa vetro + barra Aurora (più leggibile e non compete col Primary).
 |---|---|
 | **Empty state** | `auroraMesh` tenue dietro; icona `xl` in disco `well` 80 con anello `auroraSoft`; `groupTitle`; corpo; azione Primary (o Signature se è l'unica azione, es. "Aggiungi server") |
 | **Error state** | come empty, icona `error`, azione "Riprova" Tonal |
-| **Skeleton** | `SkeletonBox` su `surfaceContainerHighest`, shimmer diagonale `white 6 %` 1500 ms; forme = componenti reali (card, riga, header) |
+| **Skeleton** | `SkeletonBox` su `surfaceContainerHighest`, shimmer diagonale bianco, 6 % in scuro (55 % in chiaro, dove il 6 % non si vede), 1500 ms; forme = componenti reali (card, riga, header) |
 | **Loading inline** | `CircularProgressIndicator` 2 px `primary`; mai spinner a schermo pieno sopra contenuto già mostrato |
 
 ---
@@ -432,18 +438,42 @@ Invariata dalla v1.
 
 ---
 
-## 12. Migrazione v1 → v2
+## 12. Dove vive nel codice
 
-| Area | v1 | v2 | Issue |
-|---|---|---|---|
-| Tela scura | `#0D0E10` neutro | `#0B0A12` Midnight | D1 |
-| Tela chiara | `#EFEDEA` greige | `#F6F4FA` Pearl | D1 |
-| Accent | `#A5A8FF` / `#4F46E5` | `#B49CFF` / `#6A3DF0` | D1 |
-| Gradienti | 14 gradienti sparsi, quasi tutti inutilizzati | `aurora`, `auroraSoft`, `auroraMesh` | D1 |
-| Preferito | `#EC4899` | `heat` `#FF8A6B` / `#B83A1F` | D1, D2 |
-| In riproduzione | verde `#1DB954` | `primary` + equalizer | D1, D6 |
-| Play principale | ink | `AuroraButton` / `PlayDisc` | D2 |
-| Nav selezionata | pillola ink | `wellHover` + barra Aurora | D4 |
-| Progress brano | `primary` piatto | `aurora`, 4 → 6 al hover | D7 |
-| Focus | filo `primary` 2 px | `focusRing` (filo + alone) | D3 |
-| Empty state / pagine senza copertine | tela piatta | `auroraMesh` | D10 |
+Tutto sotto `lib/core/design_system/` (barrel `design_system.dart`), salvo
+dove indicato.
+
+| Cosa | Dove |
+|---|---|
+| Palette, schemi chiaro/scuro, server dot | `colors.dart` |
+| Firma Aurora: `OmnisonicBrand` (`aurora`, `auroraSoft`, `auroraMesh`, `onAurora`, `heat`, `glow`) | `brand.dart` |
+| Pozzetti e segnaposto: `OmnisonicSurfaces` | `surfaces.dart` |
+| Spaziatura, raggi, ombre (`OmnisonicShadows`), touch target | `spacing.dart` |
+| Tipografia, `timecode`, `heroTitle` | `typography.dart` |
+| Durate, curve, stagger, `SpringCurve` | `animation_manager.dart` |
+| `PressScale`, `Staggered`, `EntranceScope` | `motion.dart` |
+| `AuroraButton`, `PlayDisc` | `aurora_button.dart` |
+| `OmnisonicButton` (primary / tonal / destructive, loading) | `omnisonic_button.dart` |
+| `OmnisonicIconButton` (5 varianti, toggle con burst) | `omnisonic_icon_button.dart` |
+| `OmnisonicSegmented` | `omnisonic_segmented.dart` |
+| `FocusDecoration` (anello di focus per controlli custom) | `focus_decoration.dart` |
+| `GrowingThumbShape` (slider) | `slider_thumb.dart` |
+| `AuroraProgress` (seek), `AuroraProgressLine` (mini player) | `aurora_progress.dart` |
+| `AuroraMesh`, `AuroraRing` | `aurora_mesh.dart`, `aurora_ring.dart` |
+| Vetro e bordo luce, "riduci trasparenza" | `glass_surface.dart` |
+| Tinta della copertina / sfondo di riserva | `art_tint_background.dart` |
+| Tema Material (bottoni, input, chip, overlay, slider…) | `theme.dart` |
+
+Nelle feature (`lib/features/ui/presentation/widgets/`, barrel `widgets.dart`):
+`CoverArt`, `MediaCard` / `AlbumCard` / `ArtistCard`, `TrackRow`,
+`NowPlayingEqualizer`, `QualityBadge`, `MetadataChip`, `InlineBanner`,
+`DetailHeader` + `HeaderCollapseMixin`, `AuroraBar` (selezione nav),
+`ServerHealth` (anello dell'avatar), `EmptyState` / `ErrorStateView` /
+skeleton, `SearchField`. La galleria è `ComponentGalleryPage`
+(`/dev/gallery`, solo debug).
+
+Verifica: `contrast_test.dart` (coppie colore), `token_guardrail_test.dart`
+(nessun letterale di colore, font o durata fuori da qui; un solo
+`AuroraButton` per pagina), `aurora_budget_test.dart` (un solo elemento
+Aurora pieno sullo schermo, pagina per pagina), `doc_alignment_test.dart`
+(questo documento) e i golden della galleria.

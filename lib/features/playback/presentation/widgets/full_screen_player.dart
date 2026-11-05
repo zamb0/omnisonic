@@ -21,6 +21,9 @@ import 'package:flutter/services.dart';
 class FullScreenPlayer extends StatefulWidget {
   const FullScreenPlayer({super.key, this.initialPanel});
 
+  /// Strength of the Aurora mesh over the cover tint (§9.6: 30 %).
+  static const double meshOpacity = 0.3;
+
   /// Which of Queue/Lyrics/Visualizer to open on, so callers (e.g. the
   /// desktop transport bar's Lyrics quick action) can deep-link straight to
   /// a panel instead of always landing on Queue.
@@ -31,8 +34,8 @@ class FullScreenPlayer extends StatefulWidget {
 }
 
 class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
-  bool _isDraggingSeek = false;
-  double _seekValue = 0.0;
+  /// Position under the finger while scrubbing, or null.
+  Duration? _scrub;
   late NowPlayingPanel _panel;
 
   /// Accumulated downward drag on the header, used to swipe-dismiss the
@@ -75,7 +78,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         }
 
         updateArtTint(currentTrack.coverArtUrl);
-        final tint = artTint ?? OmnisonicColors.nowPlayingGradient.colors.first;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -87,14 +89,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: Theme(
-            data: Theme.of(context).copyWith(
-              brightness: Brightness.dark,
-              colorScheme: darkScheme,
-              textTheme: OmnisonicTypography.textTheme.apply(
-                bodyColor: darkScheme.onSurface,
-                displayColor: darkScheme.onSurface,
-              ),
-            ),
+            // The whole dark theme, not a copy of the ambient one with a dark
+            // colour scheme: a copy kept the light ThemeExtensions (surfaces,
+            // brand) and component themes, so in the light app theme the
+            // lyrics' segmented control and chips came out light-on-dark.
+            data: OmnisonicTheme.darkTheme,
             // A fresh context, positioned below the Theme above, so every
             // Theme.of(context) call made further down (including inside this
             // class's own helper methods, which aren't separate widgets and
@@ -124,42 +123,50 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                           : Duration.zero,
                       child: Scaffold(
                         backgroundColor: darkScheme.surface,
-                        body: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: const Alignment(0, -0.4),
-                              radius: 1.3,
-                              colors: [
-                                tint.withValues(alpha: 0.55),
-                                darkScheme.surface,
-                              ],
-                            ),
-                          ),
-                          child: SafeArea(
-                            // Two columns from the shell's tablet breakpoint (768),
-                            // not ResponsiveLayout's 480: between the two, the side
-                            // panel was 85–200px wide and its tabs overflowed.
-                            child: LayoutBuilder(
-                              builder: (context, constraints) =>
-                                  constraints.maxWidth >=
-                                      ResponsiveBreakpoints.tablet
-                                  ? _buildDesktopLayout(
-                                      context,
-                                      currentTrack,
-                                      playbackViewModel,
-                                      position,
-                                      duration,
-                                      progress,
-                                    )
-                                  : _buildMobileLayout(
-                                      context,
-                                      currentTrack,
-                                      playbackViewModel,
-                                      position,
-                                      duration,
-                                      progress,
-                                    ),
-                            ),
+                        // The cover's tint fills the screen, with the Aurora mesh
+                        // over it at 30 % so a dark or flat cover still has a
+                        // glow behind it.
+                        body: ArtTintBackground(
+                          seed: artTint,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // Without a cover tint the background already
+                              // is the (drifting) mesh: do not double it.
+                              if (artTint != null)
+                                Positioned.fill(
+                                  child: AuroraMesh(
+                                    brand: OmnisonicBrand.dark,
+                                    opacity: FullScreenPlayer.meshOpacity,
+                                  ),
+                                ),
+                              SafeArea(
+                                // Two columns from the shell's tablet breakpoint (768),
+                                // not ResponsiveLayout's 480: between the two, the side
+                                // panel was 85–200px wide and its tabs overflowed.
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) =>
+                                      constraints.maxWidth >=
+                                          ResponsiveBreakpoints.tablet
+                                      ? _buildDesktopLayout(
+                                          context,
+                                          currentTrack,
+                                          playbackViewModel,
+                                          position,
+                                          duration,
+                                          progress,
+                                        )
+                                      : _buildMobileLayout(
+                                          context,
+                                          currentTrack,
+                                          playbackViewModel,
+                                          position,
+                                          duration,
+                                          progress,
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -385,7 +392,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                             ? OmnisonicIcons.favorite
                             : OmnisonicIcons.favoriteOutline,
                         color: isStarred
-                            ? OmnisonicColors.favoriteIndicator
+                            ? OmnisonicBrand.of(context).heat
                             : scheme.onSurfaceVariant,
                       ),
                       tooltip: isStarred
@@ -415,10 +422,19 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             constraints: BoxConstraints(maxWidth: maxSize, maxHeight: maxSize),
             child: AspectRatio(
               aspectRatio: 1,
-              child: CoverArt(
-                url: track.coverArtUrl,
-                radius: OmnisonicRadius.overlay,
-                elevated: true,
+              // The cover lights the screen around it.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(OmnisonicRadius.artHero),
+                  boxShadow: OmnisonicShadows.artGlow(
+                    artTint ?? OmnisonicColors.primaryDark,
+                  ),
+                ),
+                child: CoverArt(
+                  url: track.coverArtUrl,
+                  seed: track.albumId ?? track.id,
+                  radius: OmnisonicRadius.artHero,
+                ),
               ),
             ),
           ),
@@ -458,9 +474,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         Text(
           track.title,
-          style: OmnisonicTypography.sectionTitleSmall.copyWith(
-            color: scheme.onSurface,
-          ),
+          // sectionTitle (28) with room, sectionTitleSmall (22) on a phone.
+          style:
+              (MediaQuery.sizeOf(context).width >= ResponsiveBreakpoints.tablet
+                      ? OmnisonicTypography.sectionTitle
+                      : OmnisonicTypography.sectionTitleSmall)
+                  .copyWith(color: scheme.onSurface),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -502,10 +521,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     if (playbackViewModel.isRestoring && position == Duration.zero) {
       return const SizedBox(height: 56);
     }
-    final activeValue = _isDraggingSeek ? _seekValue : progress.clamp(0.0, 1.0);
-    final elapsed = _isDraggingSeek
-        ? Duration(milliseconds: (_seekValue * duration.inMilliseconds).round())
-        : position;
+    final elapsed = _scrub ?? position;
 
     return Column(
       children: [
@@ -527,31 +543,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.sm),
-        // The theme's slider: accent progress on a faint track.
-        SliderTheme(
-          data: SliderTheme.of(context),
-          child: Slider(
-            // No inset of its own, so the track spans the same width as the
-            // time labels above it.
-            padding: EdgeInsets.zero,
-            value: activeValue,
-            // Read as a time, not as "37%".
-            semanticFormatterCallback: (value) =>
-                '${formatDuration(duration * value)} of '
-                '${formatDuration(duration)}',
-            onChanged: (value) {
-              setState(() {
-                _isDraggingSeek = true;
-                _seekValue = value;
-              });
-            },
-            onChangeEnd: (value) {
-              playbackViewModel.seekToProgress(value);
-              setState(() {
-                _isDraggingSeek = false;
-              });
-            },
-          ),
+        AuroraProgress(
+          position: position,
+          duration: duration,
+          onChanged: (value) => setState(() => _scrub = value),
+          onSeek: playbackViewModel.seek,
         ),
         const SizedBox(height: OmnisonicSpacing.xs),
         _buildQualityIndicator(context, playbackViewModel),
@@ -573,15 +569,23 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
 
     return Align(
       alignment: Alignment.centerRight,
-      child: Text(
-        reduced
-            ? '${quality.displayName} · reduced from ${maxQuality.displayName}'
-            : quality.displayName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: OmnisonicTypography.technicalSmall.copyWith(
-          color: scheme.onSurfaceVariant,
-        ),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: OmnisonicSpacing.sm,
+        runSpacing: OmnisonicSpacing.xs,
+        children: [
+          if (reduced)
+            Text(
+              'reduced from ${maxQuality.displayName}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OmnisonicTypography.technicalSmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          QualityBadge(quality: quality),
+        ],
       ),
     );
   }
@@ -638,7 +642,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
   }
 
   /// Bottom glass panel showing where the current track is streaming from:
-  /// source server, quality, whether the server is transcoding it, and
+  /// source server, whether the server is transcoding it, and
   /// whether it's been scrobbled yet.
   Widget _buildSourceInfoPanel(
     BuildContext context,
@@ -665,9 +669,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ServerDot(serverId: track.serverId, size: 8),
           const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
+            // The quality is the QualityBadge's job, just above: repeated
+            // here it pushed "Direct/Transcoded" out to an ellipsis.
             child: Text(
-              '$serverName · ${quality.displayName} · '
-              '${isDirect ? 'Direct' : 'Transcoded'}',
+              '$serverName · ${isDirect ? 'Direct' : 'Transcoded'}',
               style: OmnisonicTypography.technicalSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -778,23 +783,22 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             builder: (context, constraints) {
               // Icons alone where the labels would not fit.
               final iconsOnly = constraints.maxWidth < 220;
-              return SegmentedButton<NowPlayingPanel>(
-                showSelectedIcon: false,
-                segments: [
+              return OmnisonicSegmented<NowPlayingPanel>(
+                iconsOnly: iconsOnly,
+                options: [
                   for (final panel in NowPlayingPanel.values)
-                    ButtonSegment(
+                    SegmentOption(
                       value: panel,
-                      icon: Icon(panel.icon),
-                      tooltip: iconsOnly ? panel.label : null,
-                      label: iconsOnly ? null : Text(panel.label),
+                      icon: panel.icon,
+                      label: panel.label,
                     ),
                 ],
-                selected: {_panel},
-                onSelectionChanged: (value) {
+                selected: _panel,
+                onChanged: (value) {
                   if (onPanelChanged != null) {
-                    onPanelChanged(value.first);
+                    onPanelChanged(value);
                   } else {
-                    setState(() => _panel = value.first);
+                    setState(() => _panel = value);
                   }
                 },
               );

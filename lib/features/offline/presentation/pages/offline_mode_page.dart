@@ -188,9 +188,9 @@ class _OfflineModePageState extends State<OfflineModePage>
     if (totalCached == 0) return const SizedBox.shrink();
 
     final segments = <(String, int, Color)>[
-      ('Tracks', stats.cachedTracks, OmnisonicColors.primaryTeal),
-      ('Albums', stats.cachedAlbums, OmnisonicColors.primaryPurple),
-      ('Artists', stats.cachedArtists, OmnisonicColors.accentPink),
+      ('Tracks', stats.cachedTracks, scheme.tertiary),
+      ('Albums', stats.cachedAlbums, scheme.primary),
+      ('Artists', stats.cachedArtists, OmnisonicBrand.of(context).heat),
     ].where((s) => s.$2 > 0).toList();
 
     return Padding(
@@ -401,6 +401,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,
@@ -431,6 +432,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,
@@ -462,6 +464,7 @@ class _OfflineModePageState extends State<OfflineModePage>
     }
 
     return ResponsiveGridView.media(
+      staggered: true,
       padding: EdgeInsets.fromLTRB(
         PageGutter.of(context),
         OmnisonicSpacing.md,

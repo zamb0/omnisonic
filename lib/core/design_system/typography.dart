@@ -218,8 +218,17 @@ class OmnisonicTypography {
     height: 1.3,
   );
 
-  static TextStyle get duration =>
-      _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.4, height: 1.2);
+  /// Times: track lengths, player position. JetBrains Mono 12/500 with
+  /// tabular figures, so a ticking position never jitters the layout.
+  static TextStyle get timecode => _mono(
+    fontSize: 12,
+    fontWeight: medium,
+    letterSpacing: 0.4,
+    height: 1.2,
+  ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
+  /// The length of a track in a list; same voice as [timecode].
+  static TextStyle get duration => timecode;
 
   static TextStyle get metadata =>
       _mono(fontSize: 12, fontWeight: regular, letterSpacing: 0.3, height: 1.3);
@@ -232,6 +241,23 @@ class OmnisonicTypography {
   // heading, a Gabarito nav/button label, and JetBrains Mono for every
   // technical string (counts, bitrates, server ids, timestamps).
   // ---------------------------------------------------------------------
+
+  /// The hero of a detail page — an album's or an artist's name. Gabarito
+  /// 800 at 56. Phones use [heroTitleCompact].
+  static TextStyle get heroTitle => _gabarito(
+    fontSize: 56,
+    fontWeight: extraBold,
+    letterSpacing: -1.6,
+    height: 1.0,
+  );
+
+  /// [heroTitle] on a phone: 40.
+  static TextStyle get heroTitleCompact => _gabarito(
+    fontSize: 40,
+    fontWeight: extraBold,
+    letterSpacing: -1.2,
+    height: 1.0,
+  );
 
   /// Screen title — "Home", "Library". Gabarito 800 at display size.
   static TextStyle get pageTitle => _gabarito(
@@ -298,11 +324,11 @@ class OmnisonicTypography {
   static TextStyle get glassButton => button;
 
   /// Big number in a stat tile.
-  static TextStyle get statValue => _gabarito(
-    fontSize: 21,
-    fontWeight: extraBold,
-    letterSpacing: -0.2,
-    height: 1.1,
+  ///
+  /// The same face and size as [sectionTitleSmall], with tabular figures so
+  /// a count that changes while a sync runs does not jitter its tile.
+  static TextStyle get statValue => sectionTitleSmall.copyWith(
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   /// Inline technical string — bitrate, server id, count, timestamp.
@@ -423,6 +449,8 @@ extension OmnisonicTextTheme on TextTheme {
   TextStyle get pageTitle => OmnisonicTypography.pageTitle;
   TextStyle get sectionTitle => OmnisonicTypography.sectionTitle;
   TextStyle get sectionTitleSmall => OmnisonicTypography.sectionTitleSmall;
+  TextStyle get heroTitle => OmnisonicTypography.heroTitle;
+  TextStyle get timecode => OmnisonicTypography.timecode;
   TextStyle get eyebrow => OmnisonicTypography.eyebrow;
   TextStyle get navLabel => OmnisonicTypography.navLabel;
   TextStyle get glassButton => OmnisonicTypography.glassButton;

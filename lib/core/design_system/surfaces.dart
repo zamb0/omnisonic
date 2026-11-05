@@ -15,6 +15,7 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
     required this.wellHover,
     required this.hairline,
     required this.placeholder,
+    required this.placeholderEnd,
     required this.ink,
     required this.onInk,
   });
@@ -29,8 +30,35 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
   /// Dividers and the 1px edge of wells and overlays.
   final Color hairline;
 
-  /// Behind artwork that has not loaded or does not exist.
+  /// Behind artwork that has not loaded or does not exist (gradient start).
   final Color placeholder;
+
+  /// Gradient end of the artwork placeholder.
+  final Color placeholderEnd;
+
+  /// Artwork placeholder: a diagonal gradient whose hue follows [seed]
+  /// (typically the album id), so covers without art are distinguishable.
+  LinearGradient placeholderGradient([String? seed]) {
+    final tint = seed == null ? null : _seedHue(seed);
+    Color mix(Color c) => tint == null ? c : Color.lerp(c, tint, 0.18)!;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [mix(placeholder), mix(placeholderEnd)],
+    );
+  }
+
+  static Color _seedHue(String seed) {
+    var hash = 0;
+    for (final unit in seed.codeUnits) {
+      hash = (hash * 31 + unit) & 0x7fffffff;
+    }
+    // Consecutive ids ("Album 1", "Album 2") hash to neighbouring numbers;
+    // stepping by the golden angle spreads them around the wheel instead of
+    // giving a row of near-identical covers.
+    final hue = ((hash % 1000) * 137.508) % 360;
+    return HSLColor.fromAHSL(1, hue, 0.7, 0.55).toColor();
+  }
 
   /// The primary action and the "you are here" marker: the filled button,
   /// the selected nav pill. Same as `onSurface`, named for its role.
@@ -43,18 +71,20 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
     well: Color(0x0FFFFFFF), // white 6%
     wellHover: Color(0x1AFFFFFF), // white 10%
     hairline: Color(0x1AFFFFFF),
-    placeholder: Color(0xFF1D1E22),
-    ink: Color(0xFFF4F2EF),
-    onInk: Color(0xFF0D0E10),
+    placeholder: Color(0xFF1C1A29),
+    placeholderEnd: Color(0xFF262338),
+    ink: Color(0xFFF3F1F8),
+    onInk: Color(0xFF0B0A12),
   );
 
   static const OmnisonicSurfaces light = OmnisonicSurfaces(
-    well: Color(0x8CFFFFFF), // white 55%
-    wellHover: Color(0xC7FFFFFF), // white 78%
-    hairline: Color(0x14000000), // black 8%
-    placeholder: Color(0xFFDEDAD4),
-    ink: Color(0xFF141414),
-    onInk: Color(0xFFEFEDEA),
+    well: Color(0x0D2A1F5C), // #2A1F5C 5%
+    wellHover: Color(0x172A1F5C), // #2A1F5C 9%
+    hairline: Color(0x1A2A1F5C), // #2A1F5C 10%
+    placeholder: Color(0xFFE9E5F1),
+    placeholderEnd: Color(0xFFDED8EA),
+    ink: Color(0xFF17141F),
+    onInk: Color(0xFFF6F4FA),
   );
 
   static OmnisonicSurfaces of(BuildContext context) {
@@ -69,6 +99,7 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
     Color? wellHover,
     Color? hairline,
     Color? placeholder,
+    Color? placeholderEnd,
     Color? ink,
     Color? onInk,
   }) => OmnisonicSurfaces(
@@ -76,6 +107,7 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
     wellHover: wellHover ?? this.wellHover,
     hairline: hairline ?? this.hairline,
     placeholder: placeholder ?? this.placeholder,
+    placeholderEnd: placeholderEnd ?? this.placeholderEnd,
     ink: ink ?? this.ink,
     onInk: onInk ?? this.onInk,
   );
@@ -88,6 +120,7 @@ class OmnisonicSurfaces extends ThemeExtension<OmnisonicSurfaces> {
       wellHover: Color.lerp(wellHover, other.wellHover, t)!,
       hairline: Color.lerp(hairline, other.hairline, t)!,
       placeholder: Color.lerp(placeholder, other.placeholder, t)!,
+      placeholderEnd: Color.lerp(placeholderEnd, other.placeholderEnd, t)!,
       ink: Color.lerp(ink, other.ink, t)!,
       onInk: Color.lerp(onInk, other.onInk, t)!,
     );

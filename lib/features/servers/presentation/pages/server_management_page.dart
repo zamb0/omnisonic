@@ -115,10 +115,10 @@ class _ServerManagementPageState extends State<ServerManagementPage>
         subtitle:
             'Add a Subsonic-compatible server — Navidrome, Airsonic, '
             'Gonic — to start listening.',
-        action: FilledButton.icon(
+        action: AuroraButton(
           onPressed: () => showServerFormDialog(context),
-          icon: const Icon(OmnisonicIcons.add),
-          label: const Text('Add server'),
+          icon: OmnisonicIcons.add,
+          label: 'Add server',
         ),
       );
     }

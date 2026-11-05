@@ -10,6 +10,8 @@ import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/debouncer.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import '../../../servers/presentation/widgets/server_form_dialog.dart';
 import '../models/library_sort_state.dart';
 import '../models/library_tab.dart';
 import '../models/sort_option.dart';
@@ -196,54 +198,66 @@ class _LibraryPageState extends State<LibraryPage> {
     final error = viewModel.errorMessage;
     return RefreshIndicator(
       onRefresh: () => viewModel.syncCollection(),
-      child: CustomScrollView(
-        controller: _scrollControllers[tab],
-        // So pull-to-refresh works on the empty and error states too.
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          if (error != null && isEmptyLibrary)
-            ErrorStateView.sliver(message: error, onRetry: _syncLibrary)
-          else if (isEmptyLibrary)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(
-                icon: tab == LibraryTab.albums
-                    ? OmnisonicIcons.album
-                    : OmnisonicIcons.person,
-                title: emptyTitle,
-                subtitle: 'Add a server and sync your library to see it here.',
-                action: FilledButton(
-                  onPressed: _syncLibrary,
-                  child: const Text('Sync library'),
+      // The first cards fade in one after the other when the grid first shows.
+      child: EntranceScope(
+        child: CustomScrollView(
+          controller: _scrollControllers[tab],
+          // So pull-to-refresh works on the empty and error states too.
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            if (error != null && isEmptyLibrary)
+              ErrorStateView.sliver(message: error, onRetry: _syncLibrary)
+            else if (isEmptyLibrary)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: tab == LibraryTab.albums
+                      ? OmnisonicIcons.album
+                      : OmnisonicIcons.person,
+                  title: emptyTitle,
+                  subtitle:
+                      'Add a server and sync your library to see it here.',
+                  // With no server a sync has nothing to read: the way out
+                  // is adding one, straight to the form.
+                  action: context.watch<ServerManagementViewModel>().hasServers
+                      ? FilledButton(
+                          onPressed: _syncLibrary,
+                          child: const Text('Sync library'),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => showServerFormDialog(context),
+                          icon: const Icon(OmnisonicIcons.add),
+                          label: const Text('Add server'),
+                        ),
                 ),
-              ),
-            )
-          else ...[
-            // With a library on screen, a failed sync is a banner, not a
-            // page: what was there stays usable.
-            if (error != null)
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  OmnisonicSpacing.gutter(context),
-                  OmnisonicSpacing.sm,
-                  OmnisonicSpacing.gutter(context),
-                  OmnisonicSpacing.xs,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: InlineBanner(
-                    kind: BannerKind.warning,
-                    message: error,
-                    action: TextButton(
-                      onPressed: _syncLibrary,
-                      child: const Text('Retry'),
+              )
+            else ...[
+              // With a library on screen, a failed sync is a banner, not a
+              // page: what was there stays usable.
+              if (error != null)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    OmnisonicSpacing.gutter(context),
+                    OmnisonicSpacing.sm,
+                    OmnisonicSpacing.gutter(context),
+                    OmnisonicSpacing.xs,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: InlineBanner(
+                      kind: BannerKind.warning,
+                      message: error,
+                      action: TextButton(
+                        onPressed: _syncLibrary,
+                        child: const Text('Retry'),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            for (final widget in header) SliverToBoxAdapter(child: widget),
-            ...body,
+              for (final widget in header) SliverToBoxAdapter(child: widget),
+              ...body,
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -425,7 +439,8 @@ class _LibraryPageState extends State<LibraryPage> {
               ),
             ),
             itemCount: itemCount,
-            itemBuilder: itemBuilder,
+            itemBuilder: (context, index) =>
+                Staggered(index: index, child: itemBuilder(context, index)),
           );
         },
       ),

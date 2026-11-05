@@ -100,10 +100,7 @@ void main() {
     // token clears the text threshold on the dark surface too.
     test('favourite indicator on dark surface reaches 4.5:1', () {
       expect(
-        contrastRatio(
-          OmnisonicColors.favoriteIndicator,
-          OmnisonicColors.surfaceDark,
-        ),
+        contrastRatio(OmnisonicColors.heatDark, OmnisonicColors.surfaceDark),
         greaterThanOrEqualTo(4.5),
       );
     });

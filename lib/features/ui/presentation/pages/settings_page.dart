@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -115,19 +116,17 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: OmnisonicSpacing.ms),
-            SegmentedButton<ThemeMode>(
-              showSelectedIcon: false,
-              segments: [
+            OmnisonicSegmented<ThemeMode>(
+              options: [
                 for (final entry in options.entries)
-                  ButtonSegment(
+                  SegmentOption(
                     value: entry.key,
-                    icon: Icon(entry.value.$1),
-                    label: Text(entry.value.$2),
+                    icon: entry.value.$1,
+                    label: entry.value.$2,
                   ),
               ],
-              selected: {current},
-              onSelectionChanged: (value) =>
-                  ThemeModeController.instance.setThemeMode(value.single),
+              selected: current,
+              onChanged: ThemeModeController.instance.setThemeMode,
             ),
           ],
         ),
@@ -321,6 +320,15 @@ class SettingsPage extends StatelessWidget {
         onTap: () =>
             showLicensePage(context: context, applicationName: 'Omnisonic'),
       ),
+      // The route only exists in debug builds; so does its way in.
+      if (kDebugMode)
+        ListTile(
+          leading: const Icon(OmnisonicIcons.palette),
+          title: const Text('Component gallery'),
+          subtitle: const Text('Debug builds only'),
+          trailing: const Icon(OmnisonicIcons.chevronRight),
+          onTap: () => context.push(AppRouter.devGallery),
+        ),
     ]);
   }
 

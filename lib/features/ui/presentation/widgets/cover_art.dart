@@ -29,6 +29,7 @@ class CoverArt extends StatelessWidget {
     this.radius,
     this.fallbackIcon = OmnisonicIcons.musicNote,
     this.elevated = false,
+    this.seed,
   });
 
   final String? url;
@@ -51,6 +52,13 @@ class CoverArt extends StatelessWidget {
   /// Adds the cover-art drop shadow, for art that floats over the backdrop.
   final bool elevated;
 
+  /// What the placeholder's hue follows — the album or artist id, or the
+  /// title — so two covers without art are told apart. Falls back to [url].
+  final String? seed;
+
+  /// From this edge up, art is a hero cover and takes the `artHero` radius.
+  static const double heroThreshold = 200;
+
   /// Server-side sizes worth asking for: the cache key includes the size, so
   /// rounding up to a few buckets keeps one cached copy per bucket rather
   /// than one per layout width.
@@ -71,7 +79,9 @@ class CoverArt extends StatelessWidget {
     final r =
         radius ??
         (edge == null || edge >= 96
-            ? OmnisonicRadius.art
+            ? (edge != null && edge >= heroThreshold
+                  ? OmnisonicRadius.artHero
+                  : OmnisonicRadius.art)
             : edge >= 48
             ? OmnisonicRadius.sm
             : OmnisonicRadius.xs);
@@ -91,26 +101,19 @@ class CoverArt extends StatelessWidget {
         final iconSize = shortest.isFinite
             ? (shortest * 0.32).clamp(16.0, 48.0)
             : 32.0;
-        // A soft top-left light on the placeholder, so a missing cover
-        // still reads as an object rather than a hole in the grid. Both
-        // stops opaque: a translucent one let the art's drop shadow show
-        // through as a square inside the square.
+        // A diagonal gradient whose hue follows the seed, so a missing
+        // cover still reads as an object — and a different one per album —
+        // rather than as a hole in the grid. Both stops are opaque: a
+        // translucent one let the art's drop shadow show through as a square
+        // inside the square.
         return DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.alphaBlend(surfaces.wellHover, surfaces.placeholder),
-                surfaces.placeholder,
-              ],
-              stops: const [0, 0.7],
-            ),
+            gradient: surfaces.placeholderGradient(seed ?? url),
           ),
           child: Center(
             child: Icon(
               fallbackIcon,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+              color: scheme.onSurface.withValues(alpha: 0.4),
               size: iconSize,
             ),
           ),

@@ -22,13 +22,13 @@ void main() {
                   Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      gradient: OmnisonicColors.primaryGradient,
+                      gradient: OmnisonicBrand.dark.aurora,
                       borderRadius: BorderRadius.circular(OmnisonicRadius.md),
                     ),
                     child: const Center(
                       child: Text(
                         'Color System Test',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: OmnisonicColors.onAurora),
                       ),
                     ),
                   ),

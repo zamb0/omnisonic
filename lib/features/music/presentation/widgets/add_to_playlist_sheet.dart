@@ -67,6 +67,7 @@ Future<void> showAddToPlaylistSheet(BuildContext context, Track track) async {
                   ),
                   leading: CoverArt(
                     url: playlist.coverArtUrl,
+                    seed: playlist.id,
                     size: 40,
                     fallbackIcon: OmnisonicIcons.playlistPlay,
                   ),

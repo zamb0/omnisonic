@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/full_screen_player.dart';
 
 import '../../helpers/entity_factories.dart';
@@ -45,7 +46,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(BottomSheet), findsOneWidget);
-    expect(find.byType(SegmentedButton<NowPlayingPanel>), findsOneWidget);
+    expect(find.byType(OmnisonicSegmented<NowPlayingPanel>), findsOneWidget);
   });
 
   testWidgets('opening on a panel shows it straight away', (tester) async {

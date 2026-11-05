@@ -1,97 +1,83 @@
-# Omnisonic Design System
+# Omnisonic Design System — v2 "Aurora Glass"
 
-Colors, typography, spacing, icons and responsive layout helpers for the Omnisonic music streaming client, wired into `OmnisonicTheme` and used by `MaterialApp` in `lib/main.dart`.
+Colour, type, spacing, motion and the shared controls of the Omnisonic client,
+wired into `OmnisonicTheme` and used by `MaterialApp` in `lib/main.dart`.
+
+The spec is `docs/design-system.md` (Italian); this file is the developer's
+entry point. `test/core/design_system/doc_alignment_test.dart` keeps the two
+honest. Every component, light and dark side by side, is the debug-only route
+**`/dev/gallery`** (`ComponentGalleryPage`).
 
 ## Quick Start
 
-### Import
-
 ```dart
 import 'package:omnisonic/core/design_system/design_system.dart';
-```
 
-### Apply the theme
-
-```dart
 MaterialApp(
-  theme: OmnisonicTheme.lightTheme,
-  darkTheme: OmnisonicTheme.darkTheme,
+  theme: OmnisonicTheme.lightTheme,   // Pearl
+  darkTheme: OmnisonicTheme.darkTheme, // Midnight
   themeMode: ThemeMode.system,
-  // ... rest of your app
 )
 ```
 
-### Colors
+## Three voices, separate jobs
+
+| Voice | What it is | Where it appears |
+|---|---|---|
+| **Aurora** | the gradient violet → magenta → coral | the one main Play of a screen, the playing track's progress, the Aurora mesh behind screens with no artwork. **At most one filled Aurora control per screen**, and the text on it is always `onAurora` (never white). |
+| **Ink** | `surfaces.ink` / `scheme.onSurface` | static primary actions (Save, Add) and the active segment |
+| **Accent** | `scheme.primary`, electric violet | live state: the playing track, focus, selected chips, toggles |
+
+Plus two role colours that are never decorative: **Heat** (coral, favourites)
+and **Aqua** (`scheme.tertiary`, info / offline / cache).
 
 ```dart
-Container(
-  decoration: BoxDecoration(gradient: OmnisonicColors.primaryGradient),
-  child: Text('Hello', style: TextStyle(color: OmnisonicColors.favoriteIndicator)),
-)
+final brand = OmnisonicBrand.of(context);   // aurora, auroraSoft, auroraMesh,
+                                            // onAurora, heat, glow
+final surfaces = OmnisonicSurfaces.of(context); // well, wellHover, hairline,
+                                                // placeholder, ink, onInk
+Icon(OmnisonicIcons.favorite, color: brand.heat)
 ```
 
-### Typography
+Never `Colors.*` or a `Color(0x…)` outside this folder — the guardrail test
+fails the build. Status colours used as text on light use the `*Accessible`
+variants; a tinted chip's label is darkened with `TintedChip.labelColorFor`.
+
+## Buttons
 
 ```dart
-Text('Album Title', style: OmnisonicTypography.trackTitle)
-Text('Artist Name', style: OmnisonicTypography.artistName)
+AuroraButton(label: 'Play', icon: OmnisonicIcons.playArrow, onPressed: play)   // one per page
+PlayDisc(playing: isPlaying, size: PlayDiscSize.s48, onPressed: toggle)
+OmnisonicButton(label: 'Save', loading: saving, onPressed: save)               // ink
+OmnisonicButton(label: 'Shuffle', variant: OmnisonicButtonVariant.tonal, onPressed: shuffle)
+OmnisonicButton(label: 'Delete', variant: OmnisonicButtonVariant.destructive, onPressed: del)
+OmnisonicIconButton(icon: i, tooltip: 'Add', variant: OmnisonicIconButtonVariant.tonal, onPressed: add)
+OmnisonicIconButton(                                                           // toggle
+  icon: OmnisonicIcons.favoriteOutline, selectedIcon: OmnisonicIcons.favorite,
+  selectedColor: OmnisonicBrand.of(context).heat, tooltip: 'Favourite',
+  variant: OmnisonicIconButtonVariant.toggle, selected: starred, onPressed: star)
 ```
 
-### Spacing
+Loading keeps the button's width (a spinner replaces the icon, or sits over the
+label) and the button announces itself as a live region. Every icon button needs
+a `tooltip` — it is also the screen-reader label.
 
-```dart
-Padding(
-  padding: const EdgeInsets.all(OmnisonicSpacing.md), // 16px
-  child: Column(
-    children: [
-      Text('Title'),
-      const SizedBox(height: OmnisonicSpacing.sm), // 8px
-      Text('Subtitle'),
-    ],
-  ),
-)
-```
+## Selection and input
 
-### Icons
+`OmnisonicSegmented<T>` (an ink pill that slides between options),
+`FilterChip`/`ChoiceChip` (selected = `primaryContainer` + 1 px accent edge + a
+check), `SearchField` (48 px, halo on focus), and the themed `TextField`,
+`Switch`, `Checkbox`, `Radio`, `Slider`. For a custom control with its own
+`InkWell`, wrap it in `FocusDecoration` to get the keyboard focus ring.
 
-```dart
-Icon(OmnisonicIcons.shuffle, size: OmnisonicIconSizes.md)
-```
+## Progress and playback
 
-Always `OmnisonicIcons`, never `Icons.*` directly — the token file is the
-only thing keeping one shape language across the app. Sizes come from the
-ladder, not from a literal.
-
-### Responsive layout
-
-```dart
-ResponsiveLayout(
-  mobile: MobileView(),
-  tablet: TabletView(),
-  desktop: DesktopView(),
-)
-```
-
-## Color System
-
-### Primary Colors
-- **Primary Purple**: `#7C7CFF` — main brand color
-- **Primary Blue**: `#5A67D8` — secondary brand color
-- **Primary Teal**: `#4DD0E1` — accent color
-
-### Semantic Colors
-- **Success**: `#10B981`
-- **Warning**: `#F59E0B`
-- **Error**: `#EF4444`
-- **Info**: `#3B82F6`
-
-### Music-Specific Colors
-- **Playing Indicator**: `#1DB954`
-- **Paused Indicator**: `#F59E0B`
-- **Queue Indicator**: `#8B5CF6`
-- **Favorite Indicator**: `#EC4899`
-
-The light color scheme uses darkened `*Light` variants of the brand colors (`primaryLight`, `secondaryLight`, `tertiaryLight`) so white foreground text on them clears WCAG AA — see `color_contrast_test.dart`.
+`AuroraProgress` is the seek bar (4 → 6 px, 14 px thumb on hover/drag/focus;
+drags report live through `onChanged` and commit once through `onSeek`;
+arrow keys ±5 s; slider semantics). `AuroraProgressLine` is the 2 px line on
+the mini player's bottom edge. `NowPlayingEqualizer` marks the playing track.
+`AuroraMesh` is the background blob set; `ArtTintBackground` falls back to it
+when there is no cover.
 
 ## Typography
 
@@ -106,16 +92,15 @@ network to draw text. Only the weights the type ramp asks for are shipped;
 `typography_system_test.dart` fails if a style requests a weight that isn't
 bundled.
 
-### Music-Specific Styles
-- **Track Title**: 16px, Medium, Manrope
-- **Artist Name**: 14px, Regular, Manrope
-- **Album Title**: 14px, Medium, Manrope
+Two roles are v2: `heroTitle` (56, `heroTitleCompact` 40) for detail pages, and
+`timecode` (mono, tabular figures) for every time and duration.
 
-## Spacing System
+## Spacing, radii, icons
 
-8px grid, via `OmnisonicSpacing`:
-
-- **XS**: 4px, **SM**: 8px, **MD**: 16px (most common), **LG**: 24px, **XL**: 32px
+4 pt grid via `OmnisonicSpacing`; radii via `OmnisonicRadius` (`artHero` 20 for
+a hero cover); shadows via `OmnisonicShadows` (`art`, `artGlow(color)`,
+`glow`, `focusRing`, `overlay`). Icons come from `OmnisonicIcons` only
+(never `Icons.*`), sizes from `OmnisonicIconSizes`.
 
 ## Responsive Design
 
@@ -172,87 +157,107 @@ act on is not expressible. `screen_states_test.dart` holds every screen to it.
 
 ## Motion
 
-`animation_manager.dart` holds every duration and curve the app uses:
-`fast` (150ms) / `quick` (200ms) / `normal` (300ms) / `slow` (500ms) /
-`loading` (1500ms), plus a curve per role (`standard`, `fast`, `slow`,
-`dialog`, `sheet`, `loading`). These are values only — anything that has to
-*decide* (reduced motion, sheet vs dialog presentation) lives in
-`core/utils/animation_utils.dart` and reads from here.
+`AnimationManager` holds every duration and curve: `instant` 100 (press),
+`fast` 150, `quick` 200, `normal` 300, `emphasis` 450 (Now Playing, Hero),
+`tint` 600; curves `standard`, `enter`, `exit` (`exitOf` = 70 % of the enter),
+`spring` (mass 1, stiffness 380, damping 30). `PressScale` (0.97) and
+`Staggered` (40 ms steps, first 12 only, once per grid via `EntranceScope`) are
+the shared motion widgets. Everything goes through
+`AnimationUtils.adjustedDuration`; with reduce motion the equalizer, the mesh,
+the shimmer and every transition are static.
 
-There used to be three overlapping sets of these under different names, so
-the same transition was 200ms or 300ms depending on which file the author
-reached for. A per-platform set also existed and was read by nothing.
+The guardrail rejects a literal `Duration(milliseconds: …)` in
+`lib/features/**/presentation/`.
 
 ## Rules
 
-- **No literals outside this folder.** Font sizes, weights, `Colors.*` and
-  `Color(0x…)` belong here; `test/core/design_system/token_guardrail_test.dart`
-  fails on any that appear in `lib/` elsewhere. Add a token instead.
+- **No literals outside this folder.** Font sizes, weights, `Colors.*`,
+  `Color(0x…)` and animation durations belong here;
+  `test/core/design_system/token_guardrail_test.dart` fails on any that appear
+  in `lib/` elsewhere. Add a token instead.
+- **One Aurora control per page** (`AuroraButton`): the same guardrail counts
+  them.
 - **Text floor.** Nothing below 11px; informative text (counts, metadata) at
-  12px or larger. Card text uses `cardTitle` / `cardSubtitle` / `cardMeta`;
-  tight technical text uses `technicalSmall`.
-- **On-colours.** Text on a vivid `warning`/`success` fill uses `onWarning` /
-  `onSuccess`; text over artwork sits on `scrim` and uses `onScrim`. Status
-  colours as text use the `*Accessible` variants in light mode.
+  12px or larger.
+- **Never colour alone.** Status is an icon and a label, selection is a check
+  or a bar, "playing" is an equalizer and a semantic label.
 - **Gutter.** Page edges use `OmnisonicSpacing.gutter(context)` (16/24/32).
-- **Glass.** `GlassSurface` gives its child a transparent `Material`, so ink
-  from controls inside it is visible; for a pane that *is* the button use
-  `GlassInkButton`.
+- **Glass.** `GlassSurface` gives its child a transparent `Material`; with the
+  platform's high-contrast setting it becomes an opaque `surfaceContainer`.
 
 ## Components
 
-Shared widgets live in `lib/features/ui/presentation/widgets/` and are
-exported from `widgets.dart`. Pages compose these rather than rebuilding
-cards, rows, artwork or headers by hand.
+Shared widgets live in `lib/features/ui/presentation/widgets/` (barrel
+`widgets.dart`). Pages compose these rather than rebuilding cards, rows,
+artwork or headers by hand.
 
 | Component | Use it for | Notes |
 |---|---|---|
-| `MediaCard` | Any album/artist/playlist card | Hover/focus overlay, long press & right-click → actions, one semantics label, server badge slot. `MediaCard.extentFor` sizes grid cells so the art stays square. |
-| `AlbumCard` / `ArtistCard` | Domain adapters over `MediaCard` | Work with no callbacks: tap opens, overlay plays/shuffles. |
-| `ResponsiveGridView.media` / `MediaGridPreset` | Every card grid and its skeleton | Columns bounded by min/max card width. |
-| `CoverArt` | Every piece of artwork | One placeholder/error state, size-aware request, excluded from semantics. |
-| `TrackRow` | Every track list | Variants: art / track number / position; `dense`; `reorderIndex` adds a drag handle (drag starts only there). |
-| `showTrackActions` / `showAlbumActions` | Long press / more button | One action set everywhere; `extra` adds context actions. |
-| `DetailHeader` | Album, artist, playlist headers | Title size by width; actions in a `Wrap`. |
-| `PageHeaderAppBar` | Every top-level page | Transparent 72px header; `PageHeaderAppBar.tabBar` for tabs. |
-| `SectionHeader` | Section titles | `large` (Home), `medium`, `small`; `meta` counter; one action. |
-| `StatusChip` / `ServerStatusVisuals` | Server status | Icon + label, never colour alone. |
-| `MetadataChip` | Facts in a header | Outlined, neutral. |
-| `InlineBanner` | Messages that stay in the layout | info / success / warning / error, optional action. |
-| `showFeedback` | Every snackbar | Kind as an icon on the inverse surface; `actionLabel` for Retry/Undo. |
-| `ActionErrorListener` | View-model action errors | Mounted app-wide in `main.dart`; failed actions never replace a page. |
-| `showConfirmDialog` / `showTextInputDialog` | Confirmations, one-line input | Max width 440, scrollable, Enter submits. Prefer Undo for reversible actions. |
-| `ServerDot` | Which server something is on | Colour by server index, server name as tooltip/semantics. |
+| `MediaCard` / `AlbumCard` / `ArtistCard` | Any album / artist / playlist card | Hover: lift 1.03, glow from the cover's colour, 35 % scrim and a rising `PlayDisc` (artists: an Aurora ring). Server badge only for multi-source albums. Long press / right-click → actions. |
+| `ResponsiveGridView.media` / `MediaGridPreset` | Every card grid and its skeleton | `staggered: true` fades the first cards in once. |
+| `CoverArt` | Every piece of artwork | Placeholder is a gradient whose hue follows `seed`; `artHero` radius from 200 px. |
+| `TrackRow` | Every track list | Live (equalizer, accent title), paused, selected, unavailable, hover-play. |
+| `DetailHeader` | Album, artist, playlist headers | Cover tint wash, `artGlow`, hero title (2 lines + tooltip). Pair with `HeaderCollapseMixin` + `collapsingAppBar`. |
+| `PageHeaderAppBar` / `SectionHeader` | Page and section titles | |
+| `StatusChip` / `TintedChip` / `QualityBadge` / `MetadataChip` | Status, quality, facts | Icon + label; mono metadata. |
+| `InlineBanner` | Messages that stay in the layout | A well with a 3 px semantic bar and an icon. |
+| `showFeedback` | Every snackbar | Icon in the semantic colour that reads on the inverse bar. |
+| `showConfirmDialog` / `showTextInputDialog` | Confirmations, one-line input | Max width 440; destructive confirm is `OmnisonicButton`. |
+| `EmptyState` / `ErrorStateView` / `Skeleton*` | Empty, error, loading | Aurora halo, 80 px disc with ring; `hero: true` for first run. |
 | `ArtTintMixin` | Following a cover's dominant colour | Stale results are dropped. |
-| Transport (`playback/.../transport_controls.dart`) | Play/pause, skip, shuffle, repeat | Tooltips, 0.38 disabled, distinct icon per mode, toggled semantics. |
 
-Formatting lives in `lib/core/utils/formatters.dart` (`formatDuration` with
-hours, `formatTotalDuration`, `formatRelativeTime`, `pluralize`); readable
-error text in `lib/core/errors/user_messages.dart` (`describeFailure`,
-`describeUnexpected`) — never show `$e` or `failure.message` raw.
+Formatting lives in `lib/core/utils/formatters.dart`; readable error text in
+`lib/core/errors/user_messages.dart` — never show `$e` or `failure.message`
+raw.
 
 ## Testing
 
 ```bash
-flutter test test/core/design_system/
+flutter test test/core/design_system/   # contrast, guardrail, doc alignment, controls
+flutter test test/features/ui/          # component, state and golden tests
+flutter test --update-goldens test/features/ui   # after an intended visual change
 ```
+
+- `contrast_test.dart` — every text / border / dot pair of the doc, both themes.
+- `token_guardrail_test.dart` — literals, durations, one Aurora button per page.
+- `test/features/ui/aurora_budget_test.dart` — each page pumped in the shell:
+  at most one `AuroraButton`/`PlayDisc` on screen, player bar and card hover
+  discs excepted.
+- `doc_alignment_test.dart` — `docs/design-system.md` ⇄ code.
+- `component_gallery_test.dart` — the gallery and its per-section goldens.
+
+Goldens render with shadows blurless (`debugDisableShadows`), so a glow looks
+like a hard offset there; on a device it is soft.
 
 ## File Structure
 
 ```
 lib/core/design_system/
-├── colors.dart                     # Color palette and schemes
-├── typography.dart                 # Text styles and bundled font families
-├── spacing.dart                    # Spacing, grid, touch targets
-├── icons.dart                      # Icon system and sizes
-├── theme.dart                      # ThemeData assembly (light/dark)
-├── animation_manager.dart          # Durations and curves
-├── responsive_layout.dart          # Breakpoints and ResponsiveLayout
-├── glass_surface.dart              # Blur/saturate glass panes
-├── art_tint_background.dart        # Cover-art tint wash
-├── theme_mode_controller.dart      # Persisted light/dark/system choice
-├── design_system.dart              # Barrel export
-└── README.md                       # This documentation
+├── colors.dart                 # palette, schemes, server hues
+├── brand.dart                  # OmnisonicBrand: Aurora signature
+├── surfaces.dart               # OmnisonicSurfaces: wells, ink, placeholder
+├── typography.dart             # text styles, bundled font families
+├── spacing.dart                # spacing, radii, shadows, touch targets
+├── icons.dart                  # OmnisonicIcons and sizes
+├── theme.dart                  # ThemeData assembly (light/dark)
+├── animation_manager.dart      # durations, curves, SpringCurve, stagger
+├── motion.dart                 # PressScale, Staggered, EntranceScope
+├── aurora_button.dart          # AuroraButton, PlayDisc
+├── omnisonic_button.dart       # OmnisonicButton
+├── omnisonic_icon_button.dart  # OmnisonicIconButton
+├── omnisonic_segmented.dart    # OmnisonicSegmented
+├── focus_decoration.dart       # FocusDecoration
+├── slider_thumb.dart           # GrowingThumbShape
+├── aurora_progress.dart        # AuroraProgress, AuroraProgressLine
+├── aurora_mesh.dart            # AuroraMesh
+├── aurora_ring.dart            # AuroraRing
+├── glass_surface.dart          # blur/saturate glass, light edge
+├── art_tint_background.dart    # cover tint, mesh fallback
+├── responsive_layout.dart      # breakpoints, ResponsiveLayout
+├── theme_mode_controller.dart  # persisted light/dark/system choice
+├── design_system.dart          # barrel export
+└── README.md                   # this file
 ```
 
-Every file here has a real consumer — anything without one gets deleted rather than kept "for later" (see issue A5 in the UX/UI audit).
+Every file here has a real consumer — anything without one gets deleted rather
+than kept "for later".

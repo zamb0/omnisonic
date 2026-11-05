@@ -179,14 +179,10 @@ class _PlaylistFormDialogState extends State<PlaylistFormDialog> {
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_editing ? 'Save' : 'Create'),
+        OmnisonicButton(
+          onPressed: _submit,
+          loading: _saving,
+          label: _editing ? 'Save' : 'Create',
         ),
       ],
     );

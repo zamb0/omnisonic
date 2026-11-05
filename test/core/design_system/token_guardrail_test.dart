@@ -33,6 +33,56 @@ void main() {
       .where((f) => !f.path.contains('/core/design_system/'))
       .toList();
 
+  // Animation lengths (milliseconds) belong to AnimationManager. Only UI code
+  // is scanned; display times in seconds (snackbar) are not motion. Logic like
+  // debounce, polling and position maths in view models and data sources is
+  // not motion either.
+  final uiFiles = files.where((f) => f.path.contains('/presentation/'));
+  test('no literal animation Duration in UI code (use AnimationManager)', () {
+    final pattern = RegExp(r'\bDuration\(\s*milliseconds:\s*[0-9]');
+    final hits = <String>[];
+    for (final file in uiFiles.where(
+      (f) =>
+          !f.path.contains('/viewmodels/') &&
+          !f.path.contains('/bloc/') &&
+          !f.path.contains('/datasources/'),
+    )) {
+      final lines = file.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (pattern.hasMatch(lines[i].split('//').first)) {
+          hits.add('${file.path}:${i + 1}: ${lines[i].trim()}');
+        }
+      }
+    }
+    expect(
+      hits,
+      isEmpty,
+      reason: 'Found literal Durations:\n${hits.join('\n')}',
+    );
+  });
+
+  // Aurora is the signature: at most one filled Aurora button per page, or
+  // none of them is the main action any more.
+  test('at most one AuroraButton per page (docs/design-system.md §1)', () {
+    final hits = <String>[];
+    for (final file in files.where(
+      (f) =>
+          f.path.contains('/pages/') &&
+          // The gallery shows every variant, so it has many by design.
+          !f.path.endsWith('component_gallery_page.dart'),
+    )) {
+      final count = RegExp(
+        r'\bAuroraButton\(',
+      ).allMatches(file.readAsStringSync()).length;
+      if (count > 1) hits.add('${file.path}: $count');
+    }
+    expect(
+      hits,
+      isEmpty,
+      reason: 'More than one AuroraButton:\n${hits.join('\n')}',
+    );
+  });
+
   for (final MapEntry(key: what, value: pattern) in rules.entries) {
     test('no $what outside the design system', () {
       final hits = <String>[];

@@ -1,5 +1,6 @@
 // Core UI Components
 export 'track_row.dart';
+export 'now_playing_equalizer.dart';
 export 'album_card.dart';
 export 'artist_card.dart';
 export 'media_card.dart';
@@ -14,6 +15,9 @@ export 'responsive_grid.dart';
 export 'section_header.dart';
 export 'page_header.dart';
 export 'detail_header.dart';
+export 'header_collapse.dart';
+export 'nav_selection.dart';
+export 'server_health.dart';
 export 'dialogs.dart';
 export 'art_tint.dart';
 export 'desktop_top_bar.dart';

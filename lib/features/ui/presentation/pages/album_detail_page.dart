@@ -26,7 +26,8 @@ class AlbumDetailPage extends StatefulWidget {
   State<AlbumDetailPage> createState() => _AlbumDetailPageState();
 }
 
-class _AlbumDetailPageState extends State<AlbumDetailPage> {
+class _AlbumDetailPageState extends State<AlbumDetailPage>
+    with ArtTintMixin, HeaderCollapseMixin {
   late Album _album;
   List<Album> _albumVariants = [];
   List<Track> _tracks = [];
@@ -124,13 +125,16 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadTracks,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
-              return _buildDesktopScaffold(context);
-            }
-            return _buildMobileScaffold(context);
-          },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: onHeaderScroll,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= ResponsiveBreakpoints.desktop) {
+                return _buildDesktopScaffold(context);
+              }
+              return _buildMobileScaffold(context);
+            },
+          ),
         ),
       ),
     );
@@ -207,10 +211,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
   }
 
   SliverAppBar _buildSliverAppBar() {
-    return SliverAppBar(
-      pinned: true,
-      // Left-aligned always: centred, a long title flipped it to the left.
-      centerTitle: false,
+    return collapsingAppBar(
+      context,
+      collapsed: headerCollapsed,
+      scrolledUnder: headerScrolledUnder,
+      title: _album.title,
       leading: BackButton(
         onPressed: () {
           if (context.canPop()) {
@@ -220,8 +225,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           }
         },
       ),
-      title: Text(_album.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      actions: [
+      collapsedActions: [
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Play',
@@ -682,15 +686,22 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
     final scheme = Theme.of(context).colorScheme;
     final canPlay = _tracks.isNotEmpty;
     final artistId = _album.artistId;
+    // The header takes its colour from the cover (cached per URL).
+    updateArtTint(_album.coverArtUrl);
 
     return DetailHeader(
+      bleedTop: DetailHeader.pageBleed,
       forceNarrow: desktop,
-      artworkSize: desktop ? 220 : null,
+      artworkSize: desktop ? 240 : null,
+      tint: artTint,
       // Eyebrow states the aggregation up front — this is the one screen
       // where "the same album lives on N servers" is the point.
-      eyebrow: _albumVariants.length > 1
-          ? 'Album · merged from ${_albumVariants.length} servers'
-          : 'Album',
+      eyebrow: [
+        'Album',
+        if (_album.year != null) '${_album.year}',
+        if (_albumVariants.length > 1)
+          'merged from ${_albumVariants.length} servers',
+      ].join(' · '),
       title: _album.title,
       artwork: LayoutBuilder(
         builder: (context, constraints) =>
@@ -745,22 +756,24 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
           ),
       ],
       actions: [
-        FilledButton.icon(
+        AuroraButton(
           onPressed: canPlay ? _playAlbum : null,
-          icon: const Icon(OmnisonicIcons.playArrow),
-          label: const Text('Play'),
+          icon: OmnisonicIcons.playArrow,
+          label: 'Play',
         ),
-        OutlinedButton.icon(
+        OmnisonicButton(
+          variant: OmnisonicButtonVariant.tonal,
           onPressed: canPlay ? _shuffleAlbum : null,
-          icon: const Icon(OmnisonicIcons.shuffle),
-          label: const Text('Shuffle'),
+          icon: OmnisonicIcons.shuffle,
+          label: 'Shuffle',
         ),
         // Icon-only: with a label the third button wrapped onto a row of
         // its own on phones. The app bar has the same action.
-        IconButton.outlined(
+        OmnisonicIconButton(
+          variant: OmnisonicIconButtonVariant.tonal,
           onPressed: canPlay ? _downloadAlbum : null,
           tooltip: 'Download album',
-          icon: const Icon(OmnisonicIcons.downloadOutline),
+          icon: OmnisonicIcons.downloadOutline,
         ),
       ],
       below: !desktop && _albumVariants.length > 1
@@ -780,9 +793,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage> {
       tag: 'album-${widget.album.id}',
       child: CoverArt(
         url: _album.coverArtUrl,
+        seed: _album.id,
         size: size,
-        radius: OmnisonicRadius.art,
-        elevated: true,
+        radius: OmnisonicRadius.artHero,
         fallbackIcon: OmnisonicIcons.album,
       ),
     );

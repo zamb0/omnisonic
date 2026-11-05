@@ -145,12 +145,15 @@ class ErrorStateView extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: OmnisonicIcons.errorOutline,
+      accent: Theme.of(context).colorScheme.error,
       title: title,
       subtitle: message,
-      action: FilledButton.icon(
+      // Retrying is the way out, not the screen's signature: tonal.
+      action: OmnisonicButton(
+        variant: OmnisonicButtonVariant.tonal,
         onPressed: onRetry,
-        icon: const Icon(OmnisonicIcons.refresh),
-        label: const Text('Try again'),
+        icon: OmnisonicIcons.refresh,
+        label: 'Try again',
       ),
     );
   }
@@ -263,6 +266,10 @@ class SkeletonBox extends StatefulWidget {
   final BorderRadius? borderRadius;
   final BoxShape shape;
 
+  /// Alpha of the white sheen over the base, per brightness.
+  static const double sheenAlphaDark = 0.06;
+  static const double sheenAlphaLight = 0.55;
+
   @override
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
@@ -307,12 +314,19 @@ class _SkeletonBoxState extends State<SkeletonBox>
     final scheme = Theme.of(context).colorScheme;
     final isCircle = widget.shape == BoxShape.circle;
 
-    // Tinted from onSurface rather than the surfaceContainer roles. In this
-    // app's dark scheme surfaceContainerHighest is cardDark, which is within
-    // a shade of the scaffold background — a skeleton painted with it is
-    // invisible in the mode most of the app runs in.
-    final base = scheme.onSurface.withValues(alpha: 0.08);
-    final highlight = scheme.onSurface.withValues(alpha: 0.16);
+    // The container ladder's top rung, with a diagonal white sheen sweeping
+    // across (§9.8). The sheen is the 6 % the spec gives on dark; on light a
+    // white wash that faint is invisible against a pale base, so it is
+    // stronger there.
+    final base = scheme.surfaceContainerHighest;
+    final sheen = Color.alphaBlend(
+      OmnisonicColors.neutralWhite.withValues(
+        alpha: scheme.brightness == Brightness.dark
+            ? SkeletonBox.sheenAlphaDark
+            : SkeletonBox.sheenAlphaLight,
+      ),
+      base,
+    );
 
     return AnimatedBuilder(
       animation: _sweep,
@@ -326,9 +340,9 @@ class _SkeletonBoxState extends State<SkeletonBox>
               : widget.borderRadius ??
                     BorderRadius.circular(OmnisonicRadius.sm),
           gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [base, highlight, base],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [base, sheen, base],
             stops: [
               _sweep.value - 0.3,
               _sweep.value,
@@ -503,7 +517,8 @@ class _SkeletonDetailHeader extends StatelessWidget {
               SkeletonBox(
                 width: 160,
                 height: 160,
-                borderRadius: BorderRadius.circular(OmnisonicRadius.art),
+                // The real header's cover: artHero.
+                borderRadius: BorderRadius.circular(OmnisonicRadius.artHero),
               ),
               const SizedBox(width: OmnisonicSpacing.lg),
               const Expanded(

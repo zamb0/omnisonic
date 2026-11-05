@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/destinations.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import 'chips.dart';
+import 'server_health.dart';
 
 /// The way into every destination that doesn't get a permanent slot —
 /// Starred, Downloads, Servers, Settings.
@@ -35,24 +39,39 @@ class AccountButton extends StatelessWidget {
     final color = active ? scheme.onSurface : scheme.onSurfaceVariant;
     final vertical = axis == Axis.vertical;
 
-    // Active, the avatar takes the ink pill the nav items use, so Settings
-    // or Servers being open reads exactly like any other destination.
-    final avatar = Container(
-      width: vertical ? 52 : 28,
+    // The ring is the aggregate server state (success / warning / error).
+    // Its colour is never alone: the semantics label says it too.
+    final health = context.select<ServerManagementViewModel, ServerHealth>(
+      (vm) => ServerHealth.of(vm.servers.map((server) => server.status)),
+    );
+    final healthStatus = health.status;
+    final ringColor = healthStatus == null
+        ? null
+        : ServerStatusVisuals.of(context, healthStatus).color;
+
+    // Active, the sidebar footer avatar takes the `wellHover` fill. In the
+    // bottom bar the shared sliding indicator sits behind this slot, so the
+    // avatar stays bare there.
+    final disc = Container(
+      width: 28,
       height: 28,
       decoration: BoxDecoration(
-        // In the bottom bar an idle slot is bare, like its neighbours; in
-        // the sidebar footer the well marks the avatar as one.
-        color: active
-            ? surfaces.ink
-            : (vertical ? Colors.transparent : surfaces.well),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        shape: BoxShape.circle,
+        color: vertical ? null : (active ? surfaces.wellHover : surfaces.well),
+        border: ringColor == null
+            ? null
+            : Border.all(color: ringColor, width: 2),
       ),
       child: Icon(
         active ? OmnisonicIcons.person : OmnisonicIcons.personOutline,
-        size: vertical ? OmnisonicIconSizes.smd : OmnisonicIconSizes.sm,
-        color: active ? surfaces.onInk : color,
+        size: OmnisonicIconSizes.sm,
+        color: color,
       ),
+    );
+    final avatar = SizedBox(
+      width: vertical ? 52 : 28,
+      height: 28,
+      child: Center(child: disc),
     );
 
     final label = Text(
@@ -67,7 +86,7 @@ class AccountButton extends StatelessWidget {
     Widget button(VoidCallback onTap) => Semantics(
       button: true,
       selected: active,
-      label: 'Account and settings',
+      label: 'Account and settings, ${health.description}',
       excludeSemantics: true,
       child: Tooltip(
         message: 'Account and settings',
@@ -141,6 +160,9 @@ void showAccountMenu(BuildContext context) {
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
+    // The glass panel is the sheet: without this the theme's hairline drew a
+    // second, empty outline around it.
+    shape: const RoundedRectangleBorder(),
     showDragHandle: false,
     builder: (sheetContext) => SafeArea(
       top: false,
@@ -151,18 +173,48 @@ void showAccountMenu(BuildContext context) {
           OmnisonicLayout.chromeInset,
           OmnisonicLayout.chromeInset,
         ),
-        child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
-          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final destination in AppDestinations.secondary)
-                _AccountMenuItem(
-                  destination: destination,
-                  selected: destination.matches(currentPath),
+        // An L3 overlay, like the menu the same destinations open on a
+        // tablet: glass over the modal scrim read as a muddy grey.
+        // A Material, not a decorated box, so the rows' ink shows; the same
+        // values as the menu theme.
+        child: Material(
+          color: Theme.of(sheetContext).colorScheme.surfaceContainerHigh,
+          surfaceTintColor: Colors.transparent,
+          elevation: 16,
+          shadowColor: OmnisonicColors.overlayShadow,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+            side: BorderSide(
+              color: OmnisonicSurfaces.of(sheetContext).hairline,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // The sheet's 36 × 4 handle (docs/design-system.md, "Bottom
+                // sheet"), inside the floating panel rather than on an
+                // invisible sheet above it.
+                ExcludeSemantics(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).colorScheme.outline,
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                    ),
+                  ),
                 ),
-            ],
+                for (final destination in AppDestinations.secondary)
+                  _AccountMenuItem(
+                    destination: destination,
+                    selected: destination.matches(currentPath),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

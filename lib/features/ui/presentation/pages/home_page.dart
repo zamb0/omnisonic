@@ -276,7 +276,6 @@ class _HomePageState extends State<HomePage> {
         final track = current ?? recent.first;
         final scheme = Theme.of(context).colorScheme;
 
-        final surfaces = OmnisonicSurfaces.of(context);
         final gutter = PageGutter.of(context);
         // Resumes a paused deck; while it plays, opens the player.
         void play() => current != null
@@ -304,6 +303,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       CoverArt(
                         url: track.coverArtUrl,
+                        seed: track.albumId ?? track.id,
                         size: 64,
                         elevated: true,
                       ),
@@ -312,11 +312,23 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'PICK UP WHERE YOU LEFT OFF',
-                              style: OmnisonicTypography.eyebrow.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
+                            Row(
+                              children: [
+                                if (current != null && playback.isPlaying) ...[
+                                  const NowPlayingEqualizer(playing: true),
+                                  const SizedBox(width: OmnisonicSpacing.sm),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    'PICK UP WHERE YOU LEFT OFF',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: OmnisonicTypography.eyebrow.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: OmnisonicSpacing.xs),
                             Text(
@@ -352,19 +364,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(width: OmnisonicSpacing.sm),
-                      IconButton(
-                        tooltip: 'Play ${track.title}',
+                      // The page's one Aurora control.
+                      PlayDisc(
                         onPressed: play,
-                        icon: const Icon(OmnisonicIcons.playArrow),
-                        iconSize: OmnisonicIconSizes.md,
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size.square(
-                            OmnisonicTouchTargets.comfortable,
-                          ),
-                          backgroundColor: surfaces.ink,
-                          foregroundColor: surfaces.onInk,
-                          hoverColor: surfaces.onInk.withValues(alpha: 0.08),
-                        ),
+                        tooltip: current != null && playback.isPlaying
+                            ? 'Open player'
+                            : 'Play ${track.title}',
                       ),
                     ],
                   ),
@@ -485,6 +490,7 @@ class _HomePageState extends State<HomePage> {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: EmptyState(
+            hero: true,
             icon: OmnisonicIcons.dnsOutline,
             title: 'No music server yet',
             subtitle:
@@ -492,10 +498,10 @@ class _HomePageState extends State<HomePage> {
                 'playing your library.',
             // Straight to the form: the Servers list it used to open was
             // empty and had its own "Add server" button, two taps for one.
-            action: FilledButton.icon(
+            action: AuroraButton(
               onPressed: () => showServerFormDialog(context),
-              icon: const Icon(OmnisonicIcons.add),
-              label: const Text('Add server'),
+              icon: OmnisonicIcons.add,
+              label: 'Add server',
             ),
           ),
         );

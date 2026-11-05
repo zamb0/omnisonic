@@ -239,7 +239,12 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
                 onNotification: (n) => _onScrollMetrics(n.metrics),
                 child: NotificationListener<ScrollUpdateNotification>(
                   onNotification: (n) => _onScrollMetrics(n.metrics),
-                  child: SingleChildScrollView(child: _buildForm(busy, result)),
+                  child: SingleChildScrollView(
+                    // Room for the focused field's floating label, which
+                    // sits above the field and was clipped by the viewport.
+                    padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
+                    child: _buildForm(busy, result),
+                  ),
                 ),
               ),
             ),
@@ -252,14 +257,11 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
+        // Saving swaps the label for a spinner without changing the width.
+        OmnisonicButton(
           onPressed: busy ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_editing ? 'Save' : 'Add server'),
+          loading: _saving,
+          label: _editing ? 'Save' : 'Add server',
         ),
       ],
     );

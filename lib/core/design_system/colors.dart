@@ -2,206 +2,87 @@ import 'package:flutter/material.dart';
 
 /// Comprehensive color palette system for Omnisonic UI Enhancement
 class OmnisonicColors {
-  // Primary Brand Colors
-  static const Color primaryPurple = Color(0xFF7C7CFF);
-  static const Color primaryBlue = Color(0xFF5A67D8);
-  static const Color primaryTeal = Color(0xFF4DD0E1);
+  // ---------------------------------------------------------------------
+  // Aurora Glass v2 palette (docs/design-system.md §2)
+  // ---------------------------------------------------------------------
 
-  // Secondary Colors
-  static const Color secondaryIndigo = Color(0xFF6D6DFF);
-  static const Color secondaryViolet = Color(0xFF8B7BFF);
-  static const Color secondaryCyan = Color(0xFF3DB6C6);
+  // Canvas
+  static const Color midnight = Color(0xFF0B0A12);
+  static const Color pearl = Color(0xFFF6F4FA);
 
-  // Accent Colors
-  static const Color accentPink = Color(0xFFEC6BA6);
-  static const Color accentOrange = Color(0xFFF59E0B);
-  static const Color accentGreen = Color(0xFF10B981);
+  // Accent (electric violet): live state, focus, selection.
+  static const Color primaryDark = Color(0xFFB49CFF); // 8.6:1 on Midnight
+  static const Color primaryLight = Color(0xFF6A3DF0); // 5.4:1 on Pearl
+  static const Color onPrimaryDark = Color(0xFF1A0F3D);
+  static const Color onPrimaryLight = Color(0xFFFFFFFF);
 
-  // Semantic Colors
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  // Secondary (magenta): second Aurora stop, "new" badges.
+  static const Color secondaryDark = Color(0xFFF07BFF);
+  static const Color secondaryLight = Color(0xFFB026C9);
 
-  // Semantic Colors - accessible on light surfaces.
-  // The vivid variants above stay too light for white foreground text; these
-  // keep the same hue while clearing WCAG AA (4.5:1) against white.
-  static const Color successAccessible = Color(0xFF047857); // 5.48:1 on white
-  static const Color warningAccessible = Color(0xFFB45309); // 5.02:1 on white
-  static const Color errorAccessible = Color(0xFFDC2626); // 4.83:1 on white
-  static const Color infoAccessible = Color(0xFF1D4ED8); // 6.70:1 on white
+  // Heat (coral): favourites / love only.
+  static const Color heatDark = Color(0xFFFF8A6B);
+  static const Color heatLight = Color(0xFFB83A1F);
 
-  // Brand Colors - accessible on light surfaces.
-  // Same hues as the primary/secondary/tertiary brand colors, darkened so that
-  // white foreground text and `primary`-coloured text on white both clear AA.
-  static const Color primaryLight = Color(0xFF4F46E5); // 6.29:1 on white
-  static const Color secondaryLight = Color(0xFF4338CA); // 7.68:1 on white
-  static const Color tertiaryLight = Color(0xFF0E7490); // 5.36:1 on white
+  // Tertiary (aqua): info, download, offline, cache.
+  static const Color tertiaryDark = Color(0xFF4FE3D0);
+  static const Color tertiaryLight = Color(0xFF0A7268);
 
-  // Neutral Colors - Light Mode
+  // Aurora signature gradient stops.
+  static const Color auroraViolet = Color(0xFF9479FF);
+  static const Color auroraMagenta = Color(0xFFE07BFF);
+  static const Color auroraCoral = Color(0xFFFF8F6B);
+
+  /// Text and icons on Aurora, in both themes (5.9–8.7:1 on the stops).
+  static const Color onAurora = Color(0xFF14081F);
+
+  // Semantic colours: vivid on dark, `*Accessible` on light.
+  static const Color success = Color(0xFF4ADE9B);
+  static const Color warning = Color(0xFFFFC25C);
+  static const Color error = Color(0xFFFF6B7F);
+  static const Color info = tertiaryDark;
+
+  static const Color successAccessible = Color(0xFF13784B);
+  static const Color warningAccessible = Color(0xFFA55A00);
+  static const Color errorAccessible = Color(0xFFD12A45);
+  static const Color infoAccessible = tertiaryLight;
+
+  // Neutrals
   static const Color neutralWhite = Color(0xFFFFFFFF);
-  static const Color neutralGray50 = Color(0xFFF9FAFB);
-  static const Color neutralGray100 = Color(0xFFF3F4F6);
-  static const Color neutralGray200 = Color(0xFFE5E7EB);
-  static const Color neutralGray300 = Color(0xFFD1D5DB);
-  static const Color neutralGray400 = Color(0xFF9CA3AF);
-  static const Color neutralGray500 = Color(0xFF6B7280);
-  static const Color neutralGray600 = Color(0xFF4B5563);
-  static const Color neutralGray700 = Color(0xFF374151);
-  static const Color neutralGray800 = Color(0xFF1F2937);
-  static const Color neutralGray900 = Color(0xFF111827);
   static const Color neutralBlack = Color(0xFF000000);
 
-  // Surface Colors - Light Mode (warm greige, liquid-glass redesign)
-  static const Color surfaceLight = Color(0xFFEFEDEA);
-  static const Color cardLight = Color(0xFFEFEDEA);
-  static const Color backgroundLight = Color(0xFFE8E6E2);
-  static const Color onSurfaceLight = Color(0xFF141414);
-  static const Color onBackgroundLight = Color(0xFF141414);
+  // Surfaces
+  static const Color surfaceLight = pearl;
+  static const Color surfaceDark = midnight;
+  static const Color onSurfaceLight = Color(0xFF17141F);
+  static const Color onSurfaceDark = Color(0xFFF3F1F8);
 
-  // Container Colors - Light Mode
-  static const Color primaryContainerLight = Color(0xFFE6E7FF);
-  static const Color onPrimaryContainerLight = Color(0xFF20204D);
-  static const Color secondaryContainerLight = Color(0xFFEDEAFF);
-  static const Color onSecondaryContainerLight = Color(0xFF24245A);
-  static const Color tertiaryContainerLight = Color(0xFFD4F4F8);
-  static const Color onTertiaryContainerLight = Color(0xFF003544);
-  static const Color errorContainerLight = Color(0xFFFEE2E2);
-  static const Color onErrorContainerLight = Color(0xFF7F1D1D);
+  // Containers - Light Mode
+  static const Color primaryContainerLight = Color(0xFFECE6FF);
+  static const Color onPrimaryContainerLight = Color(0xFF2A1F5C);
+  static const Color secondaryContainerLight = Color(0xFFF7E4FB);
+  static const Color onSecondaryContainerLight = Color(0xFF4A0F57);
+  static const Color tertiaryContainerLight = Color(0xFFD4F4F0);
+  static const Color onTertiaryContainerLight = Color(0xFF00332E);
+  static const Color errorContainerLight = Color(0xFFFEE2E6);
+  static const Color onErrorContainerLight = Color(0xFF6B0F20);
 
-  // Surface Colors - Dark Mode (near-black, liquid-glass redesign)
-  static const Color surfaceDark = Color(0xFF0D0E10);
-  static const Color cardDark = Color(0xFF0D0E10);
-  static const Color backgroundDark = Color(0xFF0C0D0F);
-  static const Color onSurfaceDark = Color(0xFFF4F2EF);
-  static const Color onBackgroundDark = Color(0xFFF4F2EF);
+  // Containers - Dark Mode
+  static const Color primaryContainerDark = Color(0xFF2B2350);
+  static const Color onPrimaryContainerDark = Color(0xFFE9E1FF);
+  static const Color secondaryContainerDark = Color(0xFF45204F);
+  static const Color onSecondaryContainerDark = Color(0xFFF9E1FF);
+  static const Color tertiaryContainerDark = Color(0xFF0A3B38);
+  static const Color onTertiaryContainerDark = Color(0xFFCFF8F3);
+  static const Color errorContainerDark = Color(0xFF4F1520);
+  static const Color onErrorContainerDark = Color(0xFFFFDDE2);
 
-  // Container Colors - Dark Mode
-  static const Color primaryContainerDark = Color(0xFF2A2A46);
-  static const Color onPrimaryContainerDark = Color(0xFFE6E7FF);
-  static const Color secondaryContainerDark = Color(0xFF2B2B4D);
-  static const Color onSecondaryContainerDark = Color(0xFFEDEAFF);
-  static const Color tertiaryContainerDark = Color(0xFF003B4D);
-  static const Color onTertiaryContainerDark = Color(0xFFD4F4F8);
-  static const Color errorContainerDark = Color(0xFF5F1D1D);
-  static const Color onErrorContainerDark = Color(0xFFFEE2E2);
-
-  // Gradient Definitions
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryPurple, primaryBlue],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient accentGradient = LinearGradient(
-    colors: [primaryBlue, primaryTeal],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  static const LinearGradient heroGradient = LinearGradient(
-    colors: [primaryPurple, secondaryViolet, accentPink],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient subtleGradient = LinearGradient(
-    colors: [Color(0xFFF5F5F5), Color(0xFFEAEAEA)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  static const LinearGradient darkSubtleGradient = LinearGradient(
-    colors: [Color(0xFF141414), Color(0xFF1F1F21)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  // Animated gradient definitions for smooth transitions
-  static const LinearGradient primaryAnimatedGradient = LinearGradient(
-    colors: [primaryPurple, primaryBlue, primaryTeal],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    stops: [0.0, 0.5, 1.0],
-  );
-
-  static const LinearGradient accentAnimatedGradient = LinearGradient(
-    colors: [accentPink, primaryPurple, primaryBlue],
-    begin: Alignment.topRight,
-    end: Alignment.bottomLeft,
-    stops: [0.0, 0.6, 1.0],
-  );
-
-  // Radial gradients for depth effects
-  static const RadialGradient cardDepthGradient = RadialGradient(
-    colors: [Color(0xFFFFFFFF), Color(0xFFF0F0F0)],
-    center: Alignment.topLeft,
-    radius: 1.5,
-  );
-
-  static const RadialGradient darkCardDepthGradient = RadialGradient(
-    colors: [Color(0xFF1F1F21), Color(0xFF141414)],
-    center: Alignment.topLeft,
-    radius: 1.5,
-  );
-
-  // Shimmer gradients for loading states
-  static const LinearGradient shimmerGradient = LinearGradient(
-    colors: [Color(0xFFE2E8F0), Color(0xFFF1F5F9), Color(0xFFE2E8F0)],
-    stops: [0.0, 0.5, 1.0],
-    begin: Alignment(-1.0, 0.0),
-    end: Alignment(1.0, 0.0),
-  );
-
-  static const LinearGradient darkShimmerGradient = LinearGradient(
-    colors: [Color(0xFF2B2B2B), Color(0xFF3B3B3B), Color(0xFF2B2B2B)],
-    stops: [0.0, 0.5, 1.0],
-    begin: Alignment(-1.0, 0.0),
-    end: Alignment(1.0, 0.0),
-  );
-
-  // Glass morphism gradients
-  static const LinearGradient glassMorphismLight = LinearGradient(
-    colors: [Color(0x40FFFFFF), Color(0x20FFFFFF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient glassMorphismDark = LinearGradient(
-    colors: [Color(0x40000000), Color(0x20000000)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  // Music player specific gradients
-  static const LinearGradient nowPlayingGradient = LinearGradient(
-    colors: [primaryPurple, secondaryIndigo],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-  );
-
-  static const LinearGradient albumArtOverlay = LinearGradient(
-    colors: [Color(0x00000000), Color(0x80000000)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  static const LinearGradient progressBarGradient = LinearGradient(
-    colors: [primaryTeal, primaryBlue, primaryPurple],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-  );
-
-  // Light Theme Color Scheme
-  //
-  // Neutrals are warm, to sit on the greige canvas: the cool Tailwind greys
-  // read as a different material. The surfaceContainer ladder is spelled out
-  // because Material's defaults collapse every level onto `surface`, which
-  // made inputs and artwork placeholders vanish into the canvas.
+  // Light Theme Color Scheme (Pearl). The surfaceContainer ladder is spelled
+  // out because Material's defaults collapse every level onto `surface`.
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
     primary: primaryLight,
-    onPrimary: neutralWhite,
+    onPrimary: onPrimaryLight,
     primaryContainer: primaryContainerLight,
     onPrimaryContainer: onPrimaryContainerLight,
     secondary: secondaryLight,
@@ -218,64 +99,60 @@ class OmnisonicColors {
     onErrorContainer: onErrorContainerLight,
     surface: surfaceLight,
     onSurface: onSurfaceLight,
-    surfaceContainerLowest: neutralWhite,
-    surfaceContainerLow: Color(0xFFF6F4F1),
-    surfaceContainer: Color(0xFFEAE7E3),
-    surfaceContainerHigh: Color(0xFFF7F5F2),
-    surfaceContainerHighest: Color(0xFFDEDAD4),
-    onSurfaceVariant: Color(0xFF5A554E), // 6.3:1 on the canvas
-    outline: Color(0xFF8A847B), // 3.2:1, the floor for an input's edge
-    outlineVariant: Color(0xFFD6D1CA),
+    surfaceContainerLowest: Color(0xFFFFFFFF),
+    surfaceContainerLow: Color(0xFFFBFAFD),
+    surfaceContainer: Color(0xFFEFECF5),
+    surfaceContainerHigh: Color(0xFFFFFFFF),
+    surfaceContainerHighest: Color(0xFFE9E5F1),
+    onSurfaceVariant: Color(0xFF5C5670), // 6.4:1 on the canvas
+    // 3.7:1 on Pearl and 3.35:1 on an input's well (the v2 doc's #8C869E was
+    // 2.9:1 there): the floor for an input's edge.
+    outline: Color(0xFF827B96),
+    outlineVariant: Color(0x1A2A1F5C),
     shadow: Color(0x1A000000),
     scrim: Color(0x80000000),
-    inverseSurface: Color(0xFF1D1E22),
-    onInverseSurface: Color(0xFFF4F2EF),
-    inversePrimary: Color(0xFFA5A8FF),
+    inverseSurface: Color(0xFF1C1A29),
+    onInverseSurface: Color(0xFFF3F1F8),
+    inversePrimary: primaryDark,
     surfaceTint: Colors.transparent,
   );
 
-  // Dark Theme Color Scheme
+  // Dark Theme Color Scheme (Midnight)
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: Color(0xFFA5A8FF),
-    onPrimary: Color(0xFF15163A), // 8.0:1 on primary
+    primary: primaryDark,
+    onPrimary: onPrimaryDark,
     primaryContainer: primaryContainerDark,
     onPrimaryContainer: onPrimaryContainerDark,
-    secondary: Color(0xFF7C7CFF),
-    onSecondary: Color(0xFF1A1A3A),
+    secondary: secondaryDark,
+    onSecondary: Color(0xFF2A0833),
     secondaryContainer: secondaryContainerDark,
     onSecondaryContainer: onSecondaryContainerDark,
-    tertiary: Color(0xFF4DD0E1),
-    onTertiary: Color(0xFF003544),
+    tertiary: tertiaryDark,
+    onTertiary: Color(0xFF00332E),
     tertiaryContainer: tertiaryContainerDark,
     onTertiaryContainer: onTertiaryContainerDark,
-    error: Color(0xFFFF6B6B),
-    onError: Color(0xFF3A0A0A),
+    error: error,
+    onError: Color(0xFF3A0A12),
     errorContainer: errorContainerDark,
     onErrorContainer: onErrorContainerDark,
     surface: surfaceDark,
     onSurface: onSurfaceDark,
-    surfaceContainerLowest: Color(0xFF08090A),
-    surfaceContainerLow: Color(0xFF121316),
-    surfaceContainer: Color(0xFF17181B),
-    surfaceContainerHigh: Color(0xFF1D1E22),
-    surfaceContainerHighest: Color(0xFF24252A),
-    onSurfaceVariant: Color(0xFFA8A49E), // 7.8:1 on the canvas
-    outline: Color(0xFF6A665F),
-    outlineVariant: Color(0xFF2A2B2F),
+    surfaceContainerLowest: Color(0xFF07060C),
+    surfaceContainerLow: Color(0xFF100F19),
+    surfaceContainer: Color(0xFF15141F),
+    surfaceContainerHigh: Color(0xFF1C1A29),
+    surfaceContainerHighest: Color(0xFF262338),
+    onSurfaceVariant: Color(0xFFA9A4BC), // 8.2:1 on the canvas
+    outline: Color(0xFF6E6885), // 3.7:1
+    outlineVariant: Color(0x1AFFFFFF),
     shadow: Color(0x80000000),
     scrim: Color(0xCC000000),
-    inverseSurface: Color(0xFFF4F2EF),
-    onInverseSurface: Color(0xFF141414),
+    inverseSurface: Color(0xFFF3F1F8),
+    onInverseSurface: Color(0xFF17141F),
     inversePrimary: primaryLight,
     surfaceTint: Colors.transparent,
   );
-
-  // Music-specific colors
-  static const Color playingIndicator = Color(0xFF1DB954); // Spotify-like green
-  static const Color pausedIndicator = Color(0xFFF59E0B);
-  static const Color queueIndicator = Color(0xFF8B5CF6);
-  static const Color favoriteIndicator = Color(0xFFEC4899);
 
   // Scrims and the colours that sit on them. Artwork can be any colour, so
   // anything drawn over it goes on a dark scrim and uses the on-scrim
@@ -283,6 +160,13 @@ class OmnisonicColors {
 
   /// Behind controls over artwork — the card hover overlay.
   static const Color scrim = Color(0x8C000000);
+
+  /// The shadow under dialogs, sheets and menus (`overlay` in §6).
+  static const Color overlayShadow = Color(0x59000000);
+
+  /// Over artwork while a card is hovered: 35 %, enough to seat the Play
+  /// disc without hiding the cover.
+  static const Color scrimHover = Color(0x59000000);
 
   /// Under text over artwork — the bottom of a hero image.
   static const Color scrimStrong = Color(0xB3000000);
@@ -294,7 +178,7 @@ class OmnisonicColors {
   static const Color onScrimMuted = Color(0xCCFFFFFF);
 
   /// Icons on a solid [onScrim] disc — the play button over a cover.
-  static const Color onScrimFill = Color(0xFF0D0E10);
+  static const Color onScrimFill = Color(0xFF0B0A12);
 
   /// A translucent control on a [scrim] — the secondary buttons over a
   /// cover.
@@ -306,15 +190,15 @@ class OmnisonicColors {
   static const Color onSuccess = Color(0xFF00210F);
 
   // Status colors with opacity variants
-  static const Color successLight = Color(0xFFD1FAE5);
-  static const Color warningLight = Color(0xFFFEF3C7);
-  static const Color errorLight = Color(0xFFFEE2E2);
-  static const Color infoLight = Color(0xFFDBEAFE);
+  static const Color successLight = Color(0xFFD6F5E6);
+  static const Color warningLight = Color(0xFFFFEFCC);
+  static const Color errorLight = Color(0xFFFEE2E6);
+  static const Color infoLight = Color(0xFFD4F4F0);
 
-  static const Color successDark = Color(0xFF064E3B);
-  static const Color warningDark = Color(0xFF78350F);
-  static const Color errorDark = Color(0xFF7F1D1D);
-  static const Color infoDark = Color(0xFF1E3A8A);
+  static const Color successDark = Color(0xFF0B3D2A);
+  static const Color warningDark = Color(0xFF4A3000);
+  static const Color errorDark = Color(0xFF4F1520);
+  static const Color infoDark = Color(0xFF0A3B38);
 
   // ---------------------------------------------------------------------
   // Liquid-glass surfaces
@@ -348,41 +232,53 @@ class OmnisonicColors {
   // Per-server accent hues
   // ---------------------------------------------------------------------
 
-  /// Precomputed sRGB stand-ins for an oklch(.68 .16 H) sweep, used to give
-  /// each source server a stable, distinguishable accent dot without a
-  /// runtime oklch->sRGB conversion.
-  ///
-  /// The red, orange, yellow and red-pink hues (H 0, 30, 60, 330) are left
-  /// out: the first server's dot was red, and beside "1 server · up to date"
-  /// it read as an error. Ordered so neighbouring servers get distant hues.
+  /// Server dot hues for dark themes (oklch L .74 C .15; 7.8–11.5:1 on
+  /// Midnight). Avoid red/orange/yellow (read as errors) and the Aurora
+  /// violet/magenta (read as brand / "now playing"). Ordered so neighbouring
+  /// servers get distant hues.
   static const List<Color> serverHueSwatches = [
-    Color(0xFF649ED8), // H 210
-    Color(0xFF64D864), // H 120
-    Color(0xFF9E64D8), // H 270
-    Color(0xFF64D8D8), // H 180
-    Color(0xFF9ED864), // H 90
-    Color(0xFFD864D8), // H 300
-    Color(0xFF64D89E), // H 150
-    Color(0xFF6464D8), // H 240
+    Color(0xFF5AA9F0),
+    Color(0xFF4FD6A0),
+    Color(0xFF4FD0DE),
+    Color(0xFFA7D45A),
+    Color(0xFF8FA2FF),
+    Color(0xFF5CC9C0),
+    Color(0xFFC6B25A),
+    Color(0xFF7FB8E8),
   ];
 
-  /// Deterministic accent color for a server ID, used to tag which source
-  /// server a track/album came from in the aggregated view. Hashes
-  /// `serverId`'s code units directly (rather than `String.hashCode`, which
-  /// is not guaranteed stable across platforms/isolates) so the same server
-  /// always gets the same dot everywhere.
-  ///
-  /// Pass [index] — the server's position in the user's server list — where
-  /// it is known: hashing ~12 swatches collides as soon as there are a few
-  /// servers, and two servers with the same dot defeat the point of it.
-  static Color serverColorFor(String serverId, {int? index}) {
+  /// Same hues for light themes (oklch L .52; >= 3:1 on Pearl).
+  static const List<Color> serverHueSwatchesLight = [
+    Color(0xFF2E78C7),
+    Color(0xFF0F8A5F),
+    Color(0xFF0F7F8C),
+    Color(0xFF5E7F10),
+    Color(0xFF4F63D6),
+    Color(0xFF0F7F77),
+    Color(0xFF78650A),
+    Color(0xFF2F73A8),
+  ];
+
+  /// Deterministic accent color for a server ID. Hashes `serverId`'s code
+  /// units directly (`String.hashCode` is not stable across platforms).
+  /// Pass [index] — the server's position in the user's list — where known:
+  /// hashing eight swatches collides quickly. Pass [brightness] to get the
+  /// variant that clears 3:1 on the theme's canvas.
+  static Color serverColorFor(
+    String serverId, {
+    int? index,
+    Brightness brightness = Brightness.dark,
+  }) {
+    final swatches = brightness == Brightness.dark
+        ? serverHueSwatches
+        : serverHueSwatchesLight;
     if (index != null && index >= 0) {
-      return serverHueSwatches[index % serverHueSwatches.length];
+      return swatches[index % swatches.length];
     }
     var hash = 0;
     for (final unit in serverId.codeUnits) {
       hash = (hash * 31 + unit) & 0x7fffffff;
     }
-    return serverHueSwatches[hash % serverHueSwatches.length];
+    return swatches[hash % swatches.length];
   }
 }

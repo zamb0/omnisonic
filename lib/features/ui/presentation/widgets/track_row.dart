@@ -6,6 +6,7 @@ import '../../../../core/entities/track.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import 'cover_art.dart';
+import 'now_playing_equalizer.dart';
 import 'server_dot.dart';
 
 /// What sits at the start of a [TrackRow].
@@ -32,7 +33,7 @@ enum TrackRowLeading {
 /// - Pass [reorderIndex] inside a reorderable list to show a drag handle;
 ///   only the handle starts a drag, so the list still scrolls on touch.
 /// - Announced as one button: title, artist and length.
-class TrackRow extends StatelessWidget {
+class TrackRow extends StatefulWidget {
   const TrackRow({
     super.key,
     required this.track,
@@ -50,6 +51,9 @@ class TrackRow extends StatelessWidget {
     this.trailing,
     this.dense = false,
     this.showDuration = true,
+    this.selected = false,
+    this.unavailable = false,
+    this.unavailableReason = 'Server offline',
   });
 
   final Track track;
@@ -96,18 +100,45 @@ class TrackRow extends StatelessWidget {
 
   final bool showDuration;
 
+  /// Picked in a multi-selection: the `wellHover` fill.
+  final bool selected;
+
+  /// The track's server is offline: the row is dimmed to half, shows a
+  /// cloud-off icon and explains itself in a tooltip. Still tappable — the
+  /// source selection may have another copy to play.
+  final bool unavailable;
+
+  /// The tooltip and announcement for [unavailable].
+  final String unavailableReason;
+
+  @override
+  State<TrackRow> createState() => _TrackRowState();
+}
+
+class _TrackRowState extends State<TrackRow> {
+  bool _hovered = false;
+
   @override
   Widget build(BuildContext context) {
+    final track = widget.track;
+    final onTap = widget.onTap;
+    final onShowActions = widget.onShowActions;
+    final leading = widget.leading;
+    final dense = widget.dense;
+    final showDuration = widget.showDuration;
+    final surfaces = OmnisonicSurfaces.of(context);
     final scheme = Theme.of(context).colorScheme;
     final gutter = PageGutter.of(context);
-    final isCurrent = this.isCurrent ?? _isPlaying(context);
+    final isCurrent = widget.isCurrent ?? _isCurrentTrack(context);
+    // Paused: the bars stay, but still.
+    final audible = isCurrent && _isAudible(context);
     final artSize = dense ? 40.0 : 48.0;
     final titleColor = isCurrent ? scheme.primary : scheme.onSurface;
-    final sources = sourceServerIds;
+    final sources = widget.sourceServerIds;
 
     final subtitleParts = <String>[
       track.artist,
-      if (showAlbum && track.album.isNotEmpty) track.album,
+      if (widget.showAlbum && track.album.isNotEmpty) track.album,
     ];
 
     final info = Column(
@@ -116,14 +147,6 @@ class TrackRow extends StatelessWidget {
       children: [
         Row(
           children: [
-            if (isCurrent) ...[
-              Icon(
-                OmnisonicIcons.graphicEq,
-                size: OmnisonicIconSizes.inline,
-                color: scheme.primary,
-              ),
-              const SizedBox(width: OmnisonicSpacing.xs),
-            ],
             Expanded(
               child: Text(
                 track.title,
@@ -144,8 +167,8 @@ class TrackRow extends StatelessWidget {
             if (sources != null && sources.length > 1) ...[
               ServerDotStack(serverIds: sources, dotSize: 8),
               const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
-            ] else if (serverId != null) ...[
-              ServerDot(serverId: serverId!, size: 8),
+            ] else if (widget.serverId != null) ...[
+              ServerDot(serverId: widget.serverId!, size: 8),
               const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
             ],
             Flexible(
@@ -158,10 +181,10 @@ class TrackRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (qualityLabel != null) ...[
+            if (widget.qualityLabel != null) ...[
               const SizedBox(width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs),
               Text(
-                '· $qualityLabel',
+                '· ${widget.qualityLabel}',
                 style: OmnisonicTypography.technicalSmall.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -169,11 +192,11 @@ class TrackRow extends StatelessWidget {
             ],
           ],
         ),
-        if (sourceNote != null)
+        if (widget.sourceNote != null)
           Padding(
             padding: const EdgeInsets.only(top: OmnisonicSpacing.xxs),
             child: Text(
-              sourceNote!,
+              widget.sourceNote!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: OmnisonicTypography.caption.copyWith(
@@ -185,33 +208,66 @@ class TrackRow extends StatelessWidget {
       ],
     );
 
-    final Widget lead = switch (leading) {
-      TrackRowLeading.art => CoverArt(url: track.coverArtUrl, size: artSize),
-      TrackRowLeading.trackNumber => SizedBox(
-        width: 32,
-        child: Text(
-          track.trackNumber?.toString() ?? '—',
-          textAlign: TextAlign.center,
-          style: OmnisonicTypography.metadata.copyWith(
-            color: isCurrent ? scheme.primary : scheme.onSurfaceVariant,
+    // The index slot: number, or — where the row can be played — a play
+    // glyph under the pointer, or the equalizer when this is the live track.
+    Widget indexSlot(String text, double width) => SizedBox(
+      width: width,
+      child: Center(
+        child: isCurrent
+            ? NowPlayingEqualizer(playing: audible, excludeSemantics: true)
+            : _hovered && onTap != null
+            ? Icon(
+                OmnisonicIcons.playArrow,
+                size: OmnisonicIconSizes.smd,
+                color: scheme.onSurface,
+              )
+            : Text(
+                text,
+                textAlign: TextAlign.center,
+                style: OmnisonicTypography.timecode.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+      ),
+    );
+
+    // On a thumbnail the live track is marked by the bars over a scrim.
+    Widget art() => Stack(
+      alignment: Alignment.center,
+      children: [
+        CoverArt(url: track.coverArtUrl, size: artSize),
+        if (isCurrent)
+          SizedBox.square(
+            dimension: artSize,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: OmnisonicColors.scrim,
+                borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
+              ),
+              child: Center(
+                child: NowPlayingEqualizer(
+                  playing: audible,
+                  color: OmnisonicColors.onScrim,
+                  excludeSemantics: true,
+                ),
+              ),
+            ),
           ),
-        ),
+      ],
+    );
+
+    final Widget lead = switch (leading) {
+      TrackRowLeading.art => art(),
+      TrackRowLeading.trackNumber => indexSlot(
+        track.trackNumber?.toString() ?? '—',
+        32,
       ),
       TrackRowLeading.positionAndArt => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 24,
-            child: Text(
-              position?.toString() ?? '',
-              textAlign: TextAlign.center,
-              style: OmnisonicTypography.metadata.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ),
+          indexSlot(widget.position?.toString() ?? '', 24),
           const SizedBox(width: OmnisonicSpacing.sm),
-          CoverArt(url: track.coverArtUrl, size: artSize),
+          art(),
         ],
       ),
     };
@@ -221,99 +277,143 @@ class TrackRow extends StatelessWidget {
       track.artist,
       if (showDuration) formatDuration(track.duration),
       if (isCurrent) 'now playing',
+      if (widget.unavailable) widget.unavailableReason.toLowerCase(),
     ].join(', ');
 
     // The row's content sits on the page gutter; its hover and press ink
     // reaches a little past it on each side, as a rounded tile rather than a
     // full-bleed band.
     const inkBleed = OmnisonicSpacing.sm;
-    return Padding(
+    final radius = BorderRadius.circular(OmnisonicRadius.tile);
+    // Live > selected > hover. The live fill is the accent container at 40 %.
+    final fill = isCurrent
+        ? scheme.primaryContainer.withValues(alpha: 0.4)
+        : widget.selected
+        ? surfaces.wellHover
+        : _hovered
+        ? surfaces.well
+        : Colors.transparent;
+
+    Widget row = Padding(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 0 : (gutter - inkBleed).clamp(0, gutter),
       ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onShowActions,
-          onSecondaryTap: onShowActions,
-          borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: dense ? OmnisonicSpacing.xs : inkBleed,
-              vertical: dense
-                  ? OmnisonicSpacing.xs
-                  : OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    button: onTap != null,
-                    label: label,
-                    excludeSemantics: true,
-                    child: Row(
-                      children: [
-                        lead,
-                        SizedBox(
-                          width: dense
-                              ? OmnisonicSpacing.sm
-                              : OmnisonicSpacing.ms,
-                        ),
-                        Expanded(child: info),
-                        if (showDuration) ...[
-                          const SizedBox(width: OmnisonicSpacing.sm),
-                          Text(
-                            formatDuration(track.duration),
-                            style: OmnisonicTypography.duration.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: fill, borderRadius: radius),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              onLongPress: onShowActions,
+              onSecondaryTap: onShowActions,
+              borderRadius: radius,
+              // The fill above is the hover state.
+              hoverColor: Colors.transparent,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: dense ? OmnisonicSpacing.xs : inkBleed,
+                  vertical: dense
+                      ? OmnisonicSpacing.xs
+                      : OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
                 ),
-                ?trailing,
-                if (onShowActions != null)
-                  IconButton(
-                    icon: const Icon(OmnisonicIcons.moreVert),
-                    iconSize: OmnisonicIconSizes.smd,
-                    tooltip: 'More actions for ${track.title}',
-                    onPressed: onShowActions,
-                  ),
-                if (reorderIndex != null)
-                  ReorderableDragStartListener(
-                    index: reorderIndex!,
-                    child: Semantics(
-                      label: 'Reorder ${track.title}',
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.grab,
-                        child: SizedBox.square(
-                          dimension: OmnisonicTouchTargets.minimum,
-                          child: Icon(
-                            OmnisonicIcons.dragHandle,
-                            color: scheme.onSurfaceVariant,
-                          ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        button: onTap != null,
+                        label: label,
+                        excludeSemantics: true,
+                        child: Row(
+                          children: [
+                            lead,
+                            SizedBox(
+                              width: dense
+                                  ? OmnisonicSpacing.sm
+                                  : OmnisonicSpacing.ms,
+                            ),
+                            Expanded(child: info),
+                            if (showDuration) ...[
+                              const SizedBox(width: OmnisonicSpacing.sm),
+                              Text(
+                                formatDuration(track.duration),
+                                style: OmnisonicTypography.timecode.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                            if (widget.unavailable) ...[
+                              const SizedBox(width: OmnisonicSpacing.sm),
+                              Icon(
+                                OmnisonicIcons.cloudOff,
+                                size: OmnisonicIconSizes.sm,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
-                  ),
-              ],
+                    ?widget.trailing,
+                    if (onShowActions != null)
+                      IconButton(
+                        icon: const Icon(OmnisonicIcons.moreVert),
+                        iconSize: OmnisonicIconSizes.smd,
+                        tooltip: 'More actions for ${track.title}',
+                        onPressed: onShowActions,
+                      ),
+                    if (widget.reorderIndex != null)
+                      ReorderableDragStartListener(
+                        index: widget.reorderIndex!,
+                        child: Semantics(
+                          label: 'Reorder ${track.title}',
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.grab,
+                            child: SizedBox.square(
+                              dimension: OmnisonicTouchTargets.minimum,
+                              child: Icon(
+                                OmnisonicIcons.dragHandle,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
+
+    if (widget.unavailable) {
+      row = Tooltip(
+        message: widget.unavailableReason,
+        child: Opacity(opacity: 0.5, child: row),
+      );
+    }
+    return row;
   }
 
-  bool _isPlaying(BuildContext context) {
+  bool _isCurrentTrack(BuildContext context) {
     try {
       return context.select<PlaybackViewModel, bool>(
-        (vm) => vm.currentTrack?.id == track.id,
+        (vm) => vm.currentTrack?.id == widget.track.id,
       );
     } on ProviderNotFoundException {
       return false;
+    }
+  }
+
+  bool _isAudible(BuildContext context) {
+    try {
+      return context.select<PlaybackViewModel, bool>((vm) => vm.isPlaying);
+    } on ProviderNotFoundException {
+      return true;
     }
   }
 }

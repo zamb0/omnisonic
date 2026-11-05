@@ -31,6 +31,9 @@ class FullScreenPlayer extends StatefulWidget {
 }
 
 class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
+  /// Strength of the Aurora mesh over the cover tint (§9.6: 30 %).
+  static const double _meshOpacity = 0.3;
+
   /// Position under the finger while scrubbing, or null.
   Duration? _scrub;
   late NowPlayingPanel _panel;
@@ -75,7 +78,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         }
 
         updateArtTint(currentTrack.coverArtUrl);
-        final tint = artTint ?? OmnisonicColors.primaryDark;
         final darkScheme = OmnisonicColors.darkColorScheme;
 
         // Now Playing always renders as a dark, art-driven surface regardless
@@ -124,42 +126,47 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                           : Duration.zero,
                       child: Scaffold(
                         backgroundColor: darkScheme.surface,
-                        body: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: const Alignment(0, -0.4),
-                              radius: 1.3,
-                              colors: [
-                                tint.withValues(alpha: 0.55),
-                                darkScheme.surface,
-                              ],
-                            ),
-                          ),
-                          child: SafeArea(
-                            // Two columns from the shell's tablet breakpoint (768),
-                            // not ResponsiveLayout's 480: between the two, the side
-                            // panel was 85–200px wide and its tabs overflowed.
-                            child: LayoutBuilder(
-                              builder: (context, constraints) =>
-                                  constraints.maxWidth >=
-                                      ResponsiveBreakpoints.tablet
-                                  ? _buildDesktopLayout(
-                                      context,
-                                      currentTrack,
-                                      playbackViewModel,
-                                      position,
-                                      duration,
-                                      progress,
-                                    )
-                                  : _buildMobileLayout(
-                                      context,
-                                      currentTrack,
-                                      playbackViewModel,
-                                      position,
-                                      duration,
-                                      progress,
-                                    ),
-                            ),
+                        // The cover's tint fills the screen, with the Aurora mesh
+                        // over it at 30 % so a dark or flat cover still has a
+                        // glow behind it.
+                        body: ArtTintBackground(
+                          seed: artTint,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Positioned.fill(
+                                child: AuroraMesh(
+                                  brand: OmnisonicBrand.dark,
+                                  opacity: _meshOpacity,
+                                ),
+                              ),
+                              SafeArea(
+                                // Two columns from the shell's tablet breakpoint (768),
+                                // not ResponsiveLayout's 480: between the two, the side
+                                // panel was 85–200px wide and its tabs overflowed.
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) =>
+                                      constraints.maxWidth >=
+                                          ResponsiveBreakpoints.tablet
+                                      ? _buildDesktopLayout(
+                                          context,
+                                          currentTrack,
+                                          playbackViewModel,
+                                          position,
+                                          duration,
+                                          progress,
+                                        )
+                                      : _buildMobileLayout(
+                                          context,
+                                          currentTrack,
+                                          playbackViewModel,
+                                          position,
+                                          duration,
+                                          progress,
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -415,11 +422,19 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             constraints: BoxConstraints(maxWidth: maxSize, maxHeight: maxSize),
             child: AspectRatio(
               aspectRatio: 1,
-              child: CoverArt(
-                url: track.coverArtUrl,
-                seed: track.albumId ?? track.id,
-                radius: OmnisonicRadius.overlay,
-                elevated: true,
+              // The cover lights the screen around it.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(OmnisonicRadius.artHero),
+                  boxShadow: OmnisonicShadows.artGlow(
+                    artTint ?? OmnisonicColors.primaryDark,
+                  ),
+                ),
+                child: CoverArt(
+                  url: track.coverArtUrl,
+                  seed: track.albumId ?? track.id,
+                  radius: OmnisonicRadius.artHero,
+                ),
               ),
             ),
           ),
@@ -459,9 +474,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
       children: [
         Text(
           track.title,
-          style: OmnisonicTypography.sectionTitleSmall.copyWith(
-            color: scheme.onSurface,
-          ),
+          // sectionTitle (28) with room, sectionTitleSmall (22) on a phone.
+          style:
+              (MediaQuery.sizeOf(context).width >= ResponsiveBreakpoints.tablet
+                      ? OmnisonicTypography.sectionTitle
+                      : OmnisonicTypography.sectionTitleSmall)
+                  .copyWith(color: scheme.onSurface),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -551,15 +569,23 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
 
     return Align(
       alignment: Alignment.centerRight,
-      child: Text(
-        reduced
-            ? '${quality.displayName} · reduced from ${maxQuality.displayName}'
-            : quality.displayName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: OmnisonicTypography.technicalSmall.copyWith(
-          color: scheme.onSurfaceVariant,
-        ),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: OmnisonicSpacing.sm,
+        runSpacing: OmnisonicSpacing.xs,
+        children: [
+          if (reduced)
+            Text(
+              'reduced from ${maxQuality.displayName}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OmnisonicTypography.technicalSmall.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          QualityBadge(quality: quality),
+        ],
       ),
     );
   }

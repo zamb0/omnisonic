@@ -124,6 +124,46 @@ class MetadataChip extends StatelessWidget {
   }
 }
 
+/// The quality of what is playing, in mono on a `well` pill
+/// (`FLAC · Lossless`). Lossless and better take a `tertiary` edge: a
+/// glanceable "this is the good copy" that the words also say.
+class QualityBadge extends StatelessWidget {
+  const QualityBadge({super.key, required this.quality});
+
+  final AudioQuality quality;
+
+  /// Whether the badge gets the lossless edge.
+  bool get lossless =>
+      quality.qualityScore >= AudioQuality.lossless.qualityScore;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final surfaces = OmnisonicSurfaces.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.ms,
+        vertical: OmnisonicSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: surfaces.well,
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        border: Border.all(
+          color: lossless ? scheme.tertiary : surfaces.hairline,
+        ),
+      ),
+      child: Text(
+        quality.displayName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: OmnisonicTypography.technicalSmall.copyWith(
+          color: scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
 /// A small status pill in a semantic colour: tinted fill, tinted edge,
 /// icon and label in the colour itself. Status, count and offline badges all
 /// use it, so "online" looks the same wherever it is said.

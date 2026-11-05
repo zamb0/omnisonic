@@ -215,27 +215,27 @@ class AppRouter {
         pageBuilder: (context, state) => CustomTransitionPage<void>(
           key: state.pageKey,
           child: NowPlayingPage(initialPanel: state.extra as NowPlayingPanel?),
+          // The cover Hero flies between the mini player and the full
+          // player over this: `emphasis` in, 70 % of it out.
           transitionDuration: AnimationUtils.adjustedDuration(
             context,
-            AnimationManager.normalDuration,
+            AnimationManager.emphasisDuration,
           ),
           reverseTransitionDuration: AnimationUtils.adjustedDuration(
             context,
-            AnimationManager.normalDuration,
+            AnimationManager.exitOf(AnimationManager.emphasisDuration),
           ),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             // Slide up when entering, slide down when exiting
-            const begin = Offset(0.0, 1.0);
-            const end = Offset.zero;
-            const curve = Curves.easeInOutCubic;
-
-            var tween = Tween(
-              begin: begin,
-              end: end,
-            ).chain(CurveTween(curve: curve));
-
             return SlideTransition(
-              position: animation.drive(tween),
+              position: Tween(begin: const Offset(0.0, 1.0), end: Offset.zero)
+                  .animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: AnimationManager.enterCurve,
+                      reverseCurve: AnimationManager.exitCurve,
+                    ),
+                  ),
               child: child,
             );
           },

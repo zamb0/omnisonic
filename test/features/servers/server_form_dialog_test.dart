@@ -70,9 +70,7 @@ void main() {
     expect(find.text('Enter your username'), findsOneWidget);
   });
 
-  testWidgets('typing in one field flags no other field (#71)', (
-    tester,
-  ) async {
+  testWidgets('typing in one field flags no other field (#71)', (tester) async {
     await pumpForm(tester);
     await tester.enterText(field('Username'), 'ada');
     await tester.enterText(field('Username'), '');
@@ -83,9 +81,7 @@ void main() {
     expect(find.text('Enter your password'), findsNothing);
   });
 
-  testWidgets('submitting still flags every empty field (#71)', (
-    tester,
-  ) async {
+  testWidgets('submitting still flags every empty field (#71)', (tester) async {
     await pumpForm(tester);
     await tester.showKeyboard(field('Password'));
     await tester.testTextInput.receiveAction(TextInputAction.done);

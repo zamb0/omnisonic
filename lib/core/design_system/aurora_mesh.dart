@@ -33,6 +33,10 @@ class AuroraMesh extends StatefulWidget {
   /// that is always dark.
   final OmnisonicBrand? brand;
 
+  /// Whether any mesh drifts at all. Tests turn this off: a loop that never
+  /// ends would stop `pumpAndSettle` from ever settling.
+  static bool driftEnabled = true;
+
   /// How far a blob wanders from its base position, in alignment units.
   static const double driftRadius = 0.12;
 
@@ -64,7 +68,7 @@ class _AuroraMeshState extends State<AuroraMesh>
   }
 
   void _sync() {
-    final moving = widget.drift && !_reduceMotion;
+    final moving = widget.drift && AuroraMesh.driftEnabled && !_reduceMotion;
     if (moving) {
       if (!_controller.isAnimating) _controller.repeat();
     } else {

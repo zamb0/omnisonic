@@ -24,6 +24,8 @@ List<Alignment> _centres(WidgetTester t) => [
 ];
 
 void main() {
+  tearDown(() => AuroraMesh.driftEnabled = true);
+
   testWidgets('draws the three Aurora blobs', (t) async {
     await t.pumpWidget(_host(const AuroraMesh()));
     expect(_centres(t), hasLength(3));
@@ -55,6 +57,7 @@ void main() {
   });
 
   testWidgets('drifts when asked, within its radius', (t) async {
+    AuroraMesh.driftEnabled = true;
     await t.pumpWidget(_host(const AuroraMesh(drift: true)));
     final base = _centres(t);
     await t.pump(const Duration(seconds: 5));

@@ -38,12 +38,20 @@ void main() {
     ('desktop', TestSizes.desktop),
   ]) {
     group(name, () {
-      testWidgets('tint background with the Aurora mesh at 30 %', (t) async {
-        await pumpPlayer(t, size: size);
-        expect(find.byType(ArtTintBackground), findsOneWidget);
-        final mesh = t.widget<AuroraMesh>(find.byType(AuroraMesh));
-        expect(mesh.opacity, 0.3);
-        expect(mesh.brand, OmnisonicBrand.dark);
+      testWidgets(
+        'rests on the tint background; no cover tint, the drifting mesh',
+        (t) async {
+          await pumpPlayer(t, size: size);
+          expect(find.byType(ArtTintBackground), findsOneWidget);
+          // The test cover has no colour to extract, so the background is the
+          // fallback mesh — and the player does not stack a second one on it.
+          final mesh = t.widget<AuroraMesh>(find.byType(AuroraMesh));
+          expect(mesh.drift, isTrue);
+        },
+      );
+
+      test('the mesh over a cover tint is 30 %', () {
+        expect(FullScreenPlayer.meshOpacity, 0.3);
       });
 
       testWidgets('the cover is an artHero with the artGlow shadow', (t) async {

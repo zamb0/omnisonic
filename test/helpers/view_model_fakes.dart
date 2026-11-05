@@ -143,8 +143,7 @@ class FakeMusicLibraryViewModel extends ChangeNotifier
   @override
   List<String> artistMemberIds(String artistId) => [artistId];
   @override
-  Artist? artistById(String id) =>
-      artists.where((a) => a.id == id).firstOrNull;
+  Artist? artistById(String id) => artists.where((a) => a.id == id).firstOrNull;
   @override
   List<Album> get filteredAlbums => albums;
   @override

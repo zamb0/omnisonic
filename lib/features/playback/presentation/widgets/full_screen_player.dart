@@ -21,6 +21,9 @@ import 'package:flutter/services.dart';
 class FullScreenPlayer extends StatefulWidget {
   const FullScreenPlayer({super.key, this.initialPanel});
 
+  /// Strength of the Aurora mesh over the cover tint (§9.6: 30 %).
+  static const double meshOpacity = 0.3;
+
   /// Which of Queue/Lyrics/Visualizer to open on, so callers (e.g. the
   /// desktop transport bar's Lyrics quick action) can deep-link straight to
   /// a panel instead of always landing on Queue.
@@ -31,9 +34,6 @@ class FullScreenPlayer extends StatefulWidget {
 }
 
 class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
-  /// Strength of the Aurora mesh over the cover tint (§9.6: 30 %).
-  static const double _meshOpacity = 0.3;
-
   /// Position under the finger while scrubbing, or null.
   Duration? _scrub;
   late NowPlayingPanel _panel;
@@ -134,12 +134,15 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Positioned.fill(
-                                child: AuroraMesh(
-                                  brand: OmnisonicBrand.dark,
-                                  opacity: _meshOpacity,
+                              // Without a cover tint the background already
+                              // is the (drifting) mesh: do not double it.
+                              if (artTint != null)
+                                Positioned.fill(
+                                  child: AuroraMesh(
+                                    brand: OmnisonicBrand.dark,
+                                    opacity: FullScreenPlayer.meshOpacity,
+                                  ),
                                 ),
-                              ),
                               SafeArea(
                                 // Two columns from the shell's tablet breakpoint (768),
                                 // not ResponsiveLayout's 480: between the two, the side

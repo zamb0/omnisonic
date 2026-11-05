@@ -81,6 +81,8 @@ Future<TestViewModels> pumpPage(
 }) async {
   final models = viewModels ?? TestViewModels();
   _sizeSurface(tester, size);
+  // The no-cover background drifts forever; that would stop settling.
+  AuroraMesh.driftEnabled = false;
 
   await tester.pumpWidget(
     MultiProvider(
@@ -121,6 +123,8 @@ Future<TestViewModels> pumpShell(
 }) async {
   final models = viewModels ?? TestViewModels();
   _sizeSurface(tester, size);
+  // The no-cover background drifts forever; that would stop settling.
+  AuroraMesh.driftEnabled = false;
 
   final router = GoRouter(
     initialLocation: location,

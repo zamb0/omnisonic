@@ -16,6 +16,8 @@ export 'section_header.dart';
 export 'page_header.dart';
 export 'detail_header.dart';
 export 'header_collapse.dart';
+export 'nav_selection.dart';
+export 'server_health.dart';
 export 'dialogs.dart';
 export 'art_tint.dart';
 export 'desktop_top_bar.dart';

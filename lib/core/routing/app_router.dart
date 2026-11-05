@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +6,7 @@ import '../design_system/design_system.dart';
 
 import '../../core/entities/entities.dart';
 import '../../core/utils/animation_utils.dart';
+import '../../features/ui/presentation/pages/component_gallery_page.dart';
 import '../../features/ui/presentation/pages/home_page.dart';
 import '../../features/ui/presentation/pages/library_page.dart';
 import '../../features/ui/presentation/pages/search_page.dart';
@@ -38,6 +40,9 @@ class AppRouter {
   static const String settings = '/settings';
   static const String playlistManagement = '/playlist-management';
   static const String playlistDetail = '/playlist-detail';
+
+  /// Every design-system component, light and dark. Debug builds only.
+  static const String devGallery = '/dev/gallery';
 
   /// The `?id=` a deep link carries. Detail routes are linkable by id even
   /// when no entity travelled with the navigation.
@@ -209,6 +214,13 @@ class AppRouter {
           ),
         ],
       ),
+      // The component gallery: not registered at all in a release build.
+      if (kDebugMode)
+        GoRoute(
+          path: devGallery,
+          name: 'devGallery',
+          builder: (context, state) => const ComponentGalleryPage(),
+        ),
       GoRoute(
         path: nowPlaying,
         name: 'nowPlaying',

@@ -100,6 +100,19 @@ void main() {
       await pumpLibrary(tester, models);
 
       expect(find.byType(EmptyState), findsWidgets);
+      expect(find.text('Sync library'), findsOneWidget);
+    });
+
+    testWidgets('with no server the way out is adding one, not a sync', (
+      tester,
+    ) async {
+      final models = TestViewModels();
+      models.library.emitCollection();
+
+      await pumpLibrary(tester, models);
+
+      expect(find.text('Add server'), findsOneWidget);
+      expect(find.text('Sync library'), findsNothing);
     });
   });
 

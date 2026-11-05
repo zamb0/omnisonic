@@ -90,6 +90,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage>
                 collapsingAppBar(
                   context,
                   collapsed: headerCollapsed,
+                  scrolledUnder: headerScrolledUnder,
                   title: widget.artist.name,
                   leading: BackButton(
                     onPressed: () {
@@ -100,7 +101,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage>
                       }
                     },
                   ),
-                  actions: [
+                  collapsedActions: [
                     if (_albums.isNotEmpty)
                       IconButton(
                         tooltip: 'Play All',

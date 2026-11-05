@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -319,6 +320,15 @@ class SettingsPage extends StatelessWidget {
         onTap: () =>
             showLicensePage(context: context, applicationName: 'Omnisonic'),
       ),
+      // The route only exists in debug builds; so does its way in.
+      if (kDebugMode)
+        ListTile(
+          leading: const Icon(OmnisonicIcons.palette),
+          title: const Text('Component gallery'),
+          subtitle: const Text('Debug builds only'),
+          trailing: const Icon(OmnisonicIcons.chevronRight),
+          onTap: () => context.push(AppRouter.devGallery),
+        ),
     ]);
   }
 

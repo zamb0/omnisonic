@@ -214,6 +214,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
     return collapsingAppBar(
       context,
       collapsed: headerCollapsed,
+      scrolledUnder: headerScrolledUnder,
       title: _album.title,
       leading: BackButton(
         onPressed: () {
@@ -224,7 +225,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
           }
         },
       ),
-      actions: [
+      collapsedActions: [
         if (_tracks.isNotEmpty)
           IconButton(
             tooltip: 'Play',

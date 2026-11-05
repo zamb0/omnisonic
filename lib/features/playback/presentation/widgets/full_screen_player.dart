@@ -645,7 +645,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
   }
 
   /// Bottom glass panel showing where the current track is streaming from:
-  /// source server, quality, whether the server is transcoding it, and
+  /// source server, whether the server is transcoding it, and
   /// whether it's been scrobbled yet.
   Widget _buildSourceInfoPanel(
     BuildContext context,
@@ -672,9 +672,10 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ServerDot(serverId: track.serverId, size: 8),
           const SizedBox(width: OmnisonicSpacing.sm),
           Expanded(
+            // The quality is the QualityBadge's job, just above: repeated
+            // here it pushed "Direct/Transcoded" out to an ellipsis.
             child: Text(
-              '$serverName · ${quality.displayName} · '
-              '${isDirect ? 'Direct' : 'Transcoded'}',
+              '$serverName · ${isDirect ? 'Direct' : 'Transcoded'}',
               style: OmnisonicTypography.technicalSmall.copyWith(
                 color: scheme.onSurfaceVariant,
               ),

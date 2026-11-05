@@ -158,6 +158,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage>
     return collapsingAppBar(
       context,
       collapsed: headerCollapsed,
+      scrolledUnder: headerScrolledUnder,
       title: playlist.name,
       leading: BackButton(onPressed: _leave),
       actions: [

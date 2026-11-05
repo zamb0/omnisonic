@@ -27,8 +27,16 @@ class _PageState extends State<_Page> with HeaderCollapseMixin {
               collapsingAppBar(
                 context,
                 collapsed: headerCollapsed,
+                scrolledUnder: headerScrolledUnder,
                 title: 'Kind of Blue',
                 leading: const BackButton(),
+                collapsedActions: [
+                  IconButton(
+                    tooltip: 'Play',
+                    icon: const Icon(Icons.play_arrow),
+                    onPressed: () {},
+                  ),
+                ],
               ),
             SliverToBoxAdapter(
               child: SizedBox(
@@ -77,6 +85,11 @@ void main() {
         await t.drag(find.byType(CustomScrollView), const Offset(0, -100));
         await t.pump();
         expect(titleOpacity(t), 0, reason: 'still under the threshold');
+        expect(
+          glassOpacity(t),
+          1,
+          reason: 'content is under the bar: glass, never see-through',
+        );
 
         await t.drag(find.byType(CustomScrollView), const Offset(0, -400));
         await t.pump();
@@ -90,6 +103,23 @@ void main() {
           0,
           reason: 'back at the top, the bar is bare again',
         );
+      },
+    );
+
+    testWidgets(
+      "the header's actions join the bar only once the header is gone",
+      (t) async {
+        await pumpPage(t, const _Page(), settle: false);
+        await t.pumpAndSettle();
+        expect(
+          find.byTooltip('Play'),
+          findsNothing,
+          reason: 'the header shows its own Play: not twice on screen',
+        );
+
+        await t.drag(find.byType(CustomScrollView), const Offset(0, -400));
+        await t.pumpAndSettle();
+        expect(find.byTooltip('Play'), findsOneWidget);
       },
     );
 

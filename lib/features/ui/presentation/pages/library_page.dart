@@ -10,6 +10,8 @@ import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/debouncer.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import '../../../servers/presentation/widgets/server_form_dialog.dart';
 import '../models/library_sort_state.dart';
 import '../models/library_tab.dart';
 import '../models/sort_option.dart';
@@ -215,10 +217,18 @@ class _LibraryPageState extends State<LibraryPage> {
                   title: emptyTitle,
                   subtitle:
                       'Add a server and sync your library to see it here.',
-                  action: FilledButton(
-                    onPressed: _syncLibrary,
-                    child: const Text('Sync library'),
-                  ),
+                  // With no server a sync has nothing to read: the way out
+                  // is adding one, straight to the form.
+                  action: context.watch<ServerManagementViewModel>().hasServers
+                      ? FilledButton(
+                          onPressed: _syncLibrary,
+                          child: const Text('Sync library'),
+                        )
+                      : FilledButton.icon(
+                          onPressed: () => showServerFormDialog(context),
+                          icon: const Icon(OmnisonicIcons.add),
+                          label: const Text('Add server'),
+                        ),
                 ),
               )
             else ...[

@@ -160,6 +160,9 @@ void showAccountMenu(BuildContext context) {
     context: context,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
+    // The glass panel is the sheet: without this the theme's hairline drew a
+    // second, empty outline around it.
+    shape: const RoundedRectangleBorder(),
     showDragHandle: false,
     builder: (sheetContext) => SafeArea(
       top: false,
@@ -176,6 +179,20 @@ void showAccountMenu(BuildContext context) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // The sheet's 36 × 4 handle (docs/design-system.md, "Bottom
+              // sheet"), inside the
+              // floating panel rather than on an invisible sheet above it.
+              ExcludeSemantics(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: Theme.of(sheetContext).colorScheme.outline,
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                  ),
+                ),
+              ),
               for (final destination in AppDestinations.secondary)
                 _AccountMenuItem(
                   destination: destination,

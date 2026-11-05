@@ -239,7 +239,12 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
                 onNotification: (n) => _onScrollMetrics(n.metrics),
                 child: NotificationListener<ScrollUpdateNotification>(
                   onNotification: (n) => _onScrollMetrics(n.metrics),
-                  child: SingleChildScrollView(child: _buildForm(busy, result)),
+                  child: SingleChildScrollView(
+                    // Room for the focused field's floating label, which
+                    // sits above the field and was clipped by the viewport.
+                    padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
+                    child: _buildForm(busy, result),
+                  ),
                 ),
               ),
             ),

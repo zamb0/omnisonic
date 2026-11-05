@@ -4,6 +4,7 @@ import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/animated_now_playing_bar.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/transport_controls.dart';
 import 'package:omnisonic/features/ui/presentation/pages/main_shell.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/cover_art.dart';
 
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
@@ -87,35 +88,79 @@ void main() {
     });
   });
 
-  group('transport bar (desktop)', () {
-    testWidgets(
-      'every transport control is on screen at portrait-tablet width',
-      (tester) async {
-        // An 11" iPad in portrait leaves the bar ~690 pt beside the rail:
-        // the centre row used to scroll there, with Repeat clipped out.
-        await pumpBar(
-          tester,
-          size: const Size(690, 1100),
-          shell: ShellMode.collapsedSidebar,
-        );
-        expect(tester.getSize(find.byType(PlayDisc)), const Size(48, 48));
-
-        final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
-        final repeat = tester.getRect(find.byType(RepeatModeButton));
-        final shuffle = tester.getRect(find.byType(ShuffleModeButton));
-        final lyrics = tester.getRect(find.byTooltip('Lyrics'));
-        for (final rect in [repeat, shuffle]) {
-          expect(bar.contains(rect.topLeft), isTrue);
-          expect(bar.contains(rect.bottomRight), isTrue);
-        }
-        expect(
-          repeat.right,
-          lessThanOrEqualTo(lyrics.left),
-          reason: 'Repeat must not run under the right-hand actions',
-        );
-        expect(find.byType(RepeatModeButton).hitTestable(), findsOneWidget);
-      },
+  group('tablet bar', () {
+    // An 11" iPad in portrait leaves the bar ~690 pt beside the rail. The
+    // three-column bar squeezed in there lost Repeat to a scroll, put Play,
+    // the actions and the track on three different lines and shrank the
+    // scrubber to ~100 pt.
+    Future<void> pumpTablet(WidgetTester tester) => pumpBar(
+      tester,
+      size: const Size(690, 1100),
+      shell: ShellMode.collapsedSidebar,
     );
+
+    testWidgets('is one row: Play on the bar centre, everything on its line', (
+      tester,
+    ) async {
+      await pumpTablet(tester);
+      final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
+      final play = tester.getRect(find.byType(PlayDisc));
+      expect(play.size, const Size(48, 48));
+      expect(play.center.dx, closeTo(bar.center.dx, 1));
+
+      final line = play.center.dy;
+      for (final finder in [
+        find.byType(SkipPreviousButton),
+        find.byType(SkipNextButton),
+        find.byTooltip('Lyrics'),
+        find.byTooltip('Queue'),
+        find.byTooltip('Expand player'),
+        find.byType(CoverArt),
+      ]) {
+        expect(tester.getRect(finder).center.dy, closeTo(line, 1));
+        expect(bar.contains(tester.getRect(finder).bottomRight), isTrue);
+      }
+    });
+
+    testWidgets('progress is the 2 px Aurora line, as on the phone', (
+      tester,
+    ) async {
+      await pumpTablet(tester);
+      expect(find.byType(AuroraProgressLine), findsOneWidget);
+      expect(find.byType(AuroraProgress), findsNothing);
+      final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
+      expect(
+        tester.getRect(find.byType(AuroraProgressLine)).bottom,
+        closeTo(bar.bottom, 1),
+      );
+    });
+  });
+
+  group('transport bar (desktop)', () {
+    testWidgets('Play on the bar centre; side controls on the transport line', (
+      tester,
+    ) async {
+      await pumpBar(tester, size: TestSizes.desktop);
+      final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
+      final play = tester.getRect(find.byType(PlayDisc));
+      expect(play.center.dx, closeTo(bar.center.dx, 1));
+      for (final finder in [
+        find.byType(ShuffleModeButton),
+        find.byType(RepeatModeButton),
+        find.byTooltip('Expand player'),
+        find.byTooltip('Mute'),
+      ]) {
+        expect(tester.getRect(finder).center.dy, closeTo(play.center.dy, 1));
+      }
+      // The scrubber spans the column, at least as wide as the transport.
+      final transport =
+          tester.getRect(find.byType(RepeatModeButton)).right -
+          tester.getRect(find.byType(ShuffleModeButton)).left;
+      expect(
+        tester.getRect(find.byType(AuroraProgress)).width,
+        greaterThanOrEqualTo(transport),
+      );
+    });
 
     testWidgets('has a 48 PlayDisc and the Aurora seek bar', (tester) async {
       await pumpBar(tester, size: TestSizes.desktop);

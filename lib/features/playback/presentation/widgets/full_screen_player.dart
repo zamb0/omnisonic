@@ -89,14 +89,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: Theme(
-            data: Theme.of(context).copyWith(
-              brightness: Brightness.dark,
-              colorScheme: darkScheme,
-              textTheme: OmnisonicTypography.textTheme.apply(
-                bodyColor: darkScheme.onSurface,
-                displayColor: darkScheme.onSurface,
-              ),
-            ),
+            // The whole dark theme, not a copy of the ambient one with a dark
+            // colour scheme: a copy kept the light ThemeExtensions (surfaces,
+            // brand) and component themes, so in the light app theme the
+            // lyrics' segmented control and chips came out light-on-dark.
+            data: OmnisonicTheme.darkTheme,
             // A fresh context, positioned below the Theme above, so every
             // Theme.of(context) call made further down (including inside this
             // class's own helper methods, which aren't separate widgets and

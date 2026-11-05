@@ -21,12 +21,17 @@ void main() {
     return models;
   }
 
-  Future<void> pumpPlayer(WidgetTester t, {Size size = TestSizes.phone}) async {
+  Future<void> pumpPlayer(
+    WidgetTester t, {
+    Size size = TestSizes.phone,
+    ThemeMode themeMode = ThemeMode.dark,
+  }) async {
     await pumpPage(
       t,
       const FullScreenPlayer(),
       viewModels: populated(),
       size: size,
+      themeMode: themeMode,
       settle: false,
       disableAnimations: true,
     );
@@ -156,4 +161,16 @@ void main() {
       );
     });
   }
+
+  testWidgets('in the light app theme the player is dark all the way down', (
+    t,
+  ) async {
+    // A dark colour scheme over the light theme kept the light extensions:
+    // the lyrics' segmented control and chips came out light-on-dark.
+    await pumpPlayer(t, size: TestSizes.desktop, themeMode: ThemeMode.light);
+    final inside = t.element(find.byType(QualityBadge));
+    expect(Theme.of(inside).brightness, Brightness.dark);
+    expect(OmnisonicSurfaces.of(inside), OmnisonicSurfaces.dark);
+    expect(OmnisonicBrand.of(inside), OmnisonicBrand.dark);
+  });
 }

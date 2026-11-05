@@ -364,7 +364,8 @@ diventa vetro + barra Aurora (più leggibile e non compete col Primary).
 | Componente | Spec |
 |---|---|
 | **Mini player** (telefono) | vetro L2 a stadio sopra la bottom nav; tinta copertina 12 % nel vetro; progress 2 px `aurora` sul bordo inferiore; `PlayDisc` 44 |
-| **Transport bar** (desktop) | vetro L2; sinistra copertina 56 + titolo/artista; centro `PlayDisc` 48 + prev/next/shuffle/repeat (toggle `primary`) + progress Aurora; destra volume, coda, testi, output |
+| **Tablet bar** (barra < 900 pt: iPad, finestra Mac stretta) | il mini player, largo: una riga alta 72 su una sola linea; sinistra copertina 48 + titolo/artista; al centro della barra prev/`PlayDisc` 48/next; destra testi, coda, preferito, espandi; progress 2 px `aurora` sul bordo inferiore; seek, shuffle, repeat e volume in Now Playing |
+| **Transport bar** (desktop, barra ≥ 900 pt) | vetro L2; colonne laterali di uguale larghezza, così il trasporto è al centro della barra; sinistra copertina 48 + titolo/artista/qualità; centro `PlayDisc` 48 + prev/next/shuffle/repeat (toggle `primary`) sopra il progress Aurora largo quanto la colonna, tempi in slot fissi; destra testi, coda, preferito, volume, espandi, sulla linea del trasporto; tutte icone 44 senza disco |
 | **Now Playing** | `ArtTintBackground` piena + `auroraMesh` 30 % sopra; copertina `artHero` con `artGlow`; titolo `sectionTitle`; progress Aurora 6; `PlayDisc` 64; shuffle/repeat toggle `primary`; badge qualità `QualityBadge` |
 | **Badge qualità** | `MetadataChip` mono (`FLAC · 24/96`), `well`; lossless con bordo `tertiary` |
 

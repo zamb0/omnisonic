@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
@@ -371,4 +372,21 @@ void main() {
       });
     }
   });
+
+  for (final (mode, expected) in [
+    (ThemeMode.light, SystemUiOverlayStyle.dark),
+    (ThemeMode.dark, SystemUiOverlayStyle.light),
+  ]) {
+    testWidgets('the status bar follows the ${mode.name} theme on every page', (
+      tester,
+    ) async {
+      // Only AppBars set it otherwise: closing the always-dark Now Playing
+      // left white status-bar text over Pearl on pages with their own title.
+      await pumpShell(tester, viewModels: models(), themeMode: mode);
+      final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+        find.byType(AnnotatedRegion<SystemUiOverlayStyle>).first,
+      );
+      expect(region.value, expected);
+    });
+  }
 }

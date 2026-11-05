@@ -134,15 +134,27 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   progress,
                   tint,
                 )
-              : _buildDesktopBar(
-                  context,
-                  vm,
-                  track,
-                  scheme,
-                  position,
-                  duration,
-                  progress,
-                  tint,
+              // The bar's own width, not the window's: beside a sidebar the
+              // two differ by up to 234pt.
+              : LayoutBuilder(
+                  builder: (context, constraints) =>
+                      constraints.maxWidth < _desktopBarMinWidth
+                      ? _buildTabletBar(
+                          context,
+                          vm,
+                          track,
+                          scheme,
+                          progress,
+                          tint,
+                        )
+                      : _buildDesktopBar(
+                          context,
+                          vm,
+                          track,
+                          scheme,
+                          position,
+                          duration,
+                        ),
                 ),
         );
       },
@@ -151,6 +163,22 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
 
   /// Window heights below this get the compact one-row bar.
   static const double _compactBarMaxHeight = 500;
+
+  /// Below this bar width (an iPad, a narrow Mac window) the three-column
+  /// transport bar gives way to the tablet bar: one row, like the phone's
+  /// mini player, with scrubbing left to Now Playing. Squeezed into ~690pt
+  /// the three columns lost their alignment and the scrubber shrank to
+  /// ~100pt.
+  static const double _desktopBarMinWidth = 900;
+
+  /// Height of the tablet bar's row, progress line excluded.
+  static const double _tabletBarHeight = 72;
+
+  /// What sits under the desktop bar's transport row: the gap and the
+  /// scrubber. The side sections are lifted by this much so their icons
+  /// share the transport's centre line instead of the bar's.
+  static const double _scrubberBlock =
+      OmnisonicSpacing.xs + AuroraProgress.hitHeight;
 
   /// Flick speed, in logical pixels per second, that counts as a gesture
   /// rather than a stray drag while scrolling the page behind.
@@ -342,8 +370,73 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
-  /// Full desktop 3-section bar: left (artwork+info), center
-  /// (controls+scrubber), right (lyrics/queue/volume).
+  /// Tablet bar: the phone's mini player, wider. One row on one centre line —
+  /// track, transport, actions — with the Aurora progress line on the bottom
+  /// edge. Equal flex either side keeps Play on the bar's centre whatever the
+  /// title's length.
+  Widget _buildTabletBar(
+    BuildContext context,
+    PlaybackViewModel vm,
+    Track track,
+    ColorScheme scheme,
+    double progress,
+    Color tint,
+  ) {
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+      padding: EdgeInsets.zero,
+      child: ColoredBox(
+        // The cover's colour tints the glass at 12 %, as on the phone.
+        color: tint.withValues(alpha: 0.12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: _tabletBarHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: OmnisonicSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildTrackInfo(
+                        track,
+                        scheme,
+                        artworkSize: 48,
+                        showQuality: false,
+                      ),
+                    ),
+                    const SizedBox(width: OmnisonicSpacing.md),
+                    _buildTransport(vm, withModes: false),
+                    const SizedBox(width: OmnisonicSpacing.md),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _buildRightSection(
+                          context,
+                          scheme,
+                          showTextActions: false,
+                          showVolume: false,
+                          showVolumeSlider: false,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AuroraProgressLine(fraction: progress),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Desktop bar: three columns, the outer two of equal width so the
+  /// transport is centred on the bar. The centre column is the transport row
+  /// over a scrubber as wide as the column; the side sections are lifted to
+  /// the transport row's centre line.
   ///
   /// A floating pill inset from the window edges, not a full-bleed footer —
   /// the art-tinted background has to stay visible around it.
@@ -354,8 +447,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     ColorScheme scheme,
     Duration position,
     Duration duration,
-    double progress,
-    Color tint,
   ) {
     return GlassPanel(
       borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
@@ -369,43 +460,55 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               padding: const EdgeInsets.symmetric(
                 horizontal: OmnisonicSpacing.md,
               ),
-              // The side sections are fixed-width so the centre controls stay
-              // put as the track title changes; that only works while the
-              // window is wide enough to hold them, so the trailing controls
-              // drop out in order as it narrows.
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final width = constraints.maxWidth;
-                  final showTextActions = width >= 900;
-                  final showVolumeSlider = width >= 1040;
+                  final centre = (width * 0.42).clamp(340.0, 560.0);
+                  // What each side section actually gets: the trailing
+                  // controls drop out in order as it narrows.
+                  final side = (width - centre) / 2 - OmnisonicSpacing.md;
+                  final showTextActions = side >= 330;
+                  final showVolumeSlider =
+                      side >= (showTextActions ? 420 : 320);
+                  final lift = EdgeInsets.only(bottom: _scrubberBlock);
                   return Row(
                     children: [
-                      // === LEFT: Artwork + Track Info ===
-                      _buildLeftSection(
-                        track,
-                        scheme,
-                        width: showTextActions ? 260 : 180,
-                      ),
-                      // Without a gap the quality label ran into the
-                      // elapsed time at ~800px.
-                      const SizedBox(width: OmnisonicSpacing.md),
-                      // === CENTER: Controls + Progress ===
                       Expanded(
+                        child: Padding(
+                          padding: lift,
+                          child: _buildTrackInfo(
+                            track,
+                            scheme,
+                            artworkSize: 48,
+                            showQuality: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: OmnisonicSpacing.md),
+                      SizedBox(
+                        width: centre,
                         child: _buildCenterSection(
                           vm,
                           scheme,
                           position,
                           duration,
-                          progress,
-                          tint,
                         ),
                       ),
-                      // === RIGHT: Utility Icons ===
-                      _buildRightSection(
-                        context,
-                        scheme,
-                        showTextActions: showTextActions,
-                        showVolumeSlider: showVolumeSlider,
+                      const SizedBox(width: OmnisonicSpacing.md),
+                      Expanded(
+                        child: Padding(
+                          padding: lift,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _buildRightSection(
+                              context,
+                              scheme,
+                              showTextActions: showTextActions,
+                              showVolume: true,
+                              showVolumeSlider: showVolumeSlider,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   );
@@ -425,10 +528,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     return widget.onTap == null ? base : '$base. Open player';
   }
 
-  Widget _buildLeftSection(
+  /// Artwork and track text; the whole block opens the full player.
+  Widget _buildTrackInfo(
     Track track,
     ColorScheme scheme, {
-    required double width,
+    required double artworkSize,
+    required bool showQuality,
   }) {
     return Semantics(
       button: widget.onTap != null,
@@ -437,47 +542,46 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       excludeSemantics: true,
       child: GestureDetector(
         onTap: widget.onTap,
-        child: SizedBox(
-          width: width,
-          child: Row(
-            children: [
-              // Album artwork. Tag matches full_screen_player.dart's
-              // artwork so opening the player animates the cover
-              // continuously instead of a hard cut.
-              Hero(
-                tag: 'now-playing-artwork-${track.id}',
-                child: CoverArt(
-                  url: track.coverArtUrl,
-                  seed: track.albumId ?? track.id,
-                  size: 56,
-                  radius: OmnisonicRadius.md,
-                  elevated: true,
-                ),
+        behavior: HitTestBehavior.opaque,
+        child: Row(
+          children: [
+            // Tag matches full_screen_player.dart's artwork so opening the
+            // player animates the cover continuously instead of a hard cut.
+            Hero(
+              tag: 'now-playing-artwork-${track.id}',
+              child: CoverArt(
+                url: track.coverArtUrl,
+                seed: track.albumId ?? track.id,
+                size: artworkSize,
+                radius: OmnisonicRadius.md,
+                elevated: true,
               ),
-              const SizedBox(width: OmnisonicSpacing.ms),
-              // Track info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      track.title,
-                      style: OmnisonicTypography.titleSmall.copyWith(
-                        color: scheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(width: OmnisonicSpacing.ms),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    track.title,
+                    style: OmnisonicTypography.cardTitle.copyWith(
+                      color: scheme.onSurface,
                     ),
-                    Text(
-                      track.artist,
-                      style: OmnisonicTypography.bodySmall.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: OmnisonicSpacing.xxs),
+                  Text(
+                    track.artist,
+                    style: OmnisonicTypography.bodySmall.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: OmnisonicSpacing.xs),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (showQuality) ...[
+                    const SizedBox(height: OmnisonicSpacing.xxs),
                     // Source + quality: the only place the multi-server
                     // machinery surfaces during ordinary playback.
                     Row(
@@ -499,101 +603,88 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       ],
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  /// Previous, Play, Next; with [withModes] also Shuffle and Repeat outside
+  /// them. Every target 44 or more, 8 apart.
+  Widget _buildTransport(PlaybackViewModel vm, {required bool withModes}) {
+    const gap = SizedBox(width: OmnisonicSpacing.sm);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (withModes) ...[
+          ShuffleModeButton(playback: vm, size: OmnisonicIconSizes.smd),
+          gap,
+        ],
+        SkipPreviousButton(playback: vm),
+        gap,
+        PlayPauseButton(playback: vm),
+        gap,
+        SkipNextButton(playback: vm),
+        if (withModes) ...[
+          gap,
+          RepeatModeButton(playback: vm, size: OmnisonicIconSizes.smd),
+        ],
+      ],
+    );
+  }
+
+  /// Transport row over a scrubber as wide as the column, its timestamps in
+  /// fixed slots so the line does not shift as the numbers change.
   Widget _buildCenterSection(
     PlaybackViewModel vm,
     ColorScheme scheme,
     Duration position,
     Duration duration,
-    double progress,
-    Color tint,
   ) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
       color: scheme.onSurfaceVariant,
+    );
+    Widget time(Duration value, Alignment alignment) => SizedBox(
+      width: _timeSlotWidth,
+      child: Align(
+        alignment: alignment,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(formatDuration(value), maxLines: 1, style: timeStyle),
+        ),
+      ),
     );
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Playback controls row. This section only gets what is left after
-        // the fixed-width side sections, and on a portrait tablet that is
-        // less than five touch targets with 8px gaps: the gaps tighten
-        // first, and only then does the row scale down. It used to scroll
-        // instead, which clipped Repeat out of view with no sign it was there.
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final gap = constraints.maxWidth < 280
-                ? OmnisonicSpacing.xxs
-                : OmnisonicSpacing.sm;
-            return FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ShuffleModeButton(playback: vm, size: OmnisonicIconSizes.smd),
-                  SizedBox(width: gap),
-                  SkipPreviousButton(playback: vm),
-                  SizedBox(width: gap),
-                  PlayPauseButton(playback: vm),
-                  SizedBox(width: gap),
-                  SkipNextButton(playback: vm),
-                  SizedBox(width: gap),
-                  RepeatModeButton(playback: vm, size: OmnisonicIconSizes.smd),
-                ],
-              ),
-            );
-          },
-        ),
+        _buildTransport(vm, withModes: true),
         const SizedBox(height: OmnisonicSpacing.xs),
-        // Scrubber: a 4px hairline with mono timestamps either side, capped
-        // at the design's 520px so it stays a line rather than a bar.
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Row(
-            children: [
-              // Flexible (not a bare Text) so at narrow desktop widths this
-              // shrinks instead of forcing a hard overflow alongside the
-              // Expanded slider.
-              Flexible(
-                child: Text(
-                  formatDuration(_scrub ?? position),
-                  overflow: TextOverflow.clip,
-                  softWrap: false,
-                  style: timeStyle,
-                ),
+        Row(
+          children: [
+            time(_scrub ?? position, Alignment.centerRight),
+            const SizedBox(width: OmnisonicSpacing.ms),
+            Expanded(
+              child: AuroraProgress(
+                position: position,
+                duration: duration,
+                onChanged: (value) => setState(() => _scrub = value),
+                onSeek: vm.seek,
               ),
-              const SizedBox(width: OmnisonicSpacing.ms),
-              Expanded(
-                child: AuroraProgress(
-                  position: position,
-                  duration: duration,
-                  onChanged: (value) => setState(() => _scrub = value),
-                  onSeek: vm.seek,
-                ),
-              ),
-              const SizedBox(width: OmnisonicSpacing.ms),
-              Flexible(
-                child: Text(
-                  formatDuration(duration),
-                  overflow: TextOverflow.clip,
-                  softWrap: false,
-                  style: timeStyle,
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: OmnisonicSpacing.ms),
+            time(duration, Alignment.centerLeft),
+          ],
         ),
       ],
     );
   }
+
+  /// Room for "59:59"; longer times scale down rather than shift the line.
+  static const double _timeSlotWidth = 44;
 
   /// The volume slider's hairline: 4 px, with a thumb only while the pointer
   /// is over it or dragging. (The seek bar is [AuroraProgress]; a generic
@@ -629,6 +720,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     BuildContext context,
     ColorScheme scheme, {
     required bool showTextActions,
+    required bool showVolume,
     required bool showVolumeSlider,
   }) {
     return Row(
@@ -678,65 +770,59 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
             );
           },
         ),
-        Consumer<PlaybackViewModel>(
-          builder: (context, vm, child) {
-            final volume = vm.volume.clamp(0.0, 1.0);
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _iconBtn(
-                  _volumeIcon(volume),
-                  OmnisonicIconSizes.smd,
-                  scheme.onSurfaceVariant,
-                  () => _toggleMute(vm),
-                  label: volume > 0 ? 'Mute' : 'Unmute',
-                ),
-                // Below the threshold the icon alone stays as a mute toggle;
-                // the slider is the first thing worth giving up.
-                if (showVolumeSlider)
-                  SizedBox(
-                    width: 80,
-                    child: MouseRegion(
-                      onEnter: (_) => setState(() => _hoveringVolume = true),
-                      onExit: (_) => setState(() => _hoveringVolume = false),
-                      child: SliderTheme(
-                        data: _hairlineSliderTheme(
-                          context,
-                          activeColor: scheme.onSurface,
-                          inactiveColor: scheme.onSurface.withValues(
-                            alpha: 0.14,
+        // Hardware buttons own the volume on a tablet.
+        if (showVolume)
+          Consumer<PlaybackViewModel>(
+            builder: (context, vm, child) {
+              final volume = vm.volume.clamp(0.0, 1.0);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _iconBtn(
+                    _volumeIcon(volume),
+                    OmnisonicIconSizes.smd,
+                    scheme.onSurfaceVariant,
+                    () => _toggleMute(vm),
+                    label: volume > 0 ? 'Mute' : 'Unmute',
+                  ),
+                  // Below the threshold the icon alone stays as a mute toggle;
+                  // the slider is the first thing worth giving up.
+                  if (showVolumeSlider)
+                    SizedBox(
+                      width: 80,
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => _hoveringVolume = true),
+                        onExit: (_) => setState(() => _hoveringVolume = false),
+                        child: SliderTheme(
+                          data: _hairlineSliderTheme(
+                            context,
+                            activeColor: scheme.onSurface,
+                            inactiveColor: scheme.onSurface.withValues(
+                              alpha: 0.14,
+                            ),
+                            active: _hoveringVolume,
                           ),
-                          active: _hoveringVolume,
-                        ),
-                        child: Slider(
-                          value: volume,
-                          semanticFormatterCallback: (value) =>
-                              'Volume ${(value * 100).round()}%',
-                          onChanged: (value) => vm.setVolume(value),
+                          child: Slider(
+                            value: volume,
+                            semanticFormatterCallback: (value) =>
+                                'Volume ${(value * 100).round()}%',
+                            onChanged: (value) => vm.setVolume(value),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(width: OmnisonicSpacing.sm),
-        // Expand: a well-filled disc rather than a bare icon — drawn at
-        // 32px, hit-tested at 44.
-        IconButton(
-          onPressed: widget.onTap,
-          tooltip: 'Expand player',
-          icon: const Icon(OmnisonicIcons.openInFull),
-          iconSize: OmnisonicIconSizes.sm,
-          color: scheme.onSurface,
-          style: IconButton.styleFrom(
-            fixedSize: const Size.square(32),
-            minimumSize: const Size.square(32),
-            tapTargetSize: MaterialTapTargetSize.padded,
-            backgroundColor: OmnisonicSurfaces.of(context).well,
-            side: BorderSide(color: OmnisonicSurfaces.of(context).hairline),
+                ],
+              );
+            },
           ),
+        // Expand: a plain icon like its neighbours — the well-filled disc it
+        // had was the one control in the row with a different weight.
+        _iconBtn(
+          OmnisonicIcons.openInFull,
+          OmnisonicIconSizes.smd,
+          scheme.onSurfaceVariant,
+          widget.onTap,
+          label: 'Expand player',
         ),
       ],
     );

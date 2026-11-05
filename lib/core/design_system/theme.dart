@@ -329,7 +329,11 @@ class OmnisonicTheme {
       // Overlays are opaque, one step up the container ladder, with a
       // hairline edge instead of a Material elevation tint.
       dialogTheme: DialogThemeData(
-        elevation: 0,
+        // Opaque, hairline-edged, lifted by a deep shadow rather than a
+        // Material tint. 440 is as wide as a dialog gets.
+        elevation: 24,
+        shadowColor: OmnisonicColors.overlayShadow,
+        constraints: const BoxConstraints(maxWidth: 440),
         shape: overlayShape,
         backgroundColor: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
@@ -363,18 +367,20 @@ class OmnisonicTheme {
         modalBackgroundColor: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
-        dragHandleColor: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+        dragHandleColor: scheme.outline,
         dragHandleSize: const Size(36, 4),
       ),
       menuTheme: MenuThemeData(
         style: MenuStyle(
           backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
           surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-          elevation: const WidgetStatePropertyAll(8),
-          shadowColor: WidgetStatePropertyAll(scheme.shadow),
+          elevation: const WidgetStatePropertyAll(16),
+          shadowColor: const WidgetStatePropertyAll(
+            OmnisonicColors.overlayShadow,
+          ),
           shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+              borderRadius: BorderRadius.circular(OmnisonicRadius.control),
               side: BorderSide(color: surfaces.hairline),
             ),
           ),
@@ -388,7 +394,16 @@ class OmnisonicTheme {
           textStyle: WidgetStatePropertyAll(OmnisonicTypography.titleSmall),
           foregroundColor: WidgetStatePropertyAll(scheme.onSurface),
           iconColor: WidgetStatePropertyAll(scheme.onSurfaceVariant),
-          overlayColor: overlayOn(scheme.onSurface),
+          // Hover and keyboard focus are the `well`; a press is one step
+          // up. (On L3 the usual onSurface wash read as grey.)
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return surfaces.wellHover;
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused)) {
+              return surfaces.well;
+            }
+            return null;
+          }),
           minimumSize: const WidgetStatePropertyAll(
             Size(180, OmnisonicTouchTargets.minimum),
           ),
@@ -401,9 +416,10 @@ class OmnisonicTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
-        elevation: 8,
+        elevation: 16,
+        shadowColor: OmnisonicColors.overlayShadow,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.lg),
+          borderRadius: BorderRadius.circular(OmnisonicRadius.control),
           side: BorderSide(color: surfaces.hairline),
         ),
         textStyle: OmnisonicTypography.titleSmall.copyWith(
@@ -433,7 +449,7 @@ class OmnisonicTheme {
           color: scheme.inverseSurface,
           borderRadius: BorderRadius.circular(OmnisonicRadius.sm),
         ),
-        textStyle: OmnisonicTypography.labelMedium.copyWith(
+        textStyle: OmnisonicTypography.bodySmall.copyWith(
           color: scheme.onInverseSurface,
         ),
         padding: const EdgeInsets.symmetric(

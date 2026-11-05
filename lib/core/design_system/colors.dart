@@ -159,6 +159,9 @@ class OmnisonicColors {
   /// Behind controls over artwork — the card hover overlay.
   static const Color scrim = Color(0x8C000000);
 
+  /// The shadow under dialogs, sheets and menus (`overlay` in §6).
+  static const Color overlayShadow = Color(0x59000000);
+
   /// Over artwork while a card is hovered: 35 %, enough to seat the Play
   /// disc without hiding the cover.
   static const Color scrimHover = Color(0x59000000);

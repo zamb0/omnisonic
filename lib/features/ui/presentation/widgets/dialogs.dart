@@ -23,7 +23,6 @@ Future<bool> showConfirmDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
-      final scheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
         title: Text(title),
         content: ConstrainedBox(
@@ -36,17 +35,18 @@ Future<bool> showConfirmDialog(
             onPressed: () => Navigator.pop(dialogContext, false),
             child: Text(cancelLabel),
           ),
-          FilledButton(
-            autofocus: !destructive,
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: scheme.error,
-                    foregroundColor: scheme.onError,
-                  )
-                : null,
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(confirmLabel),
-          ),
+          if (destructive)
+            OmnisonicButton(
+              variant: OmnisonicButtonVariant.destructive,
+              onPressed: () => Navigator.pop(dialogContext, true),
+              label: confirmLabel,
+            )
+          else
+            FilledButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(confirmLabel),
+            ),
         ],
       );
     },

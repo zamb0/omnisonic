@@ -7,6 +7,8 @@ import '../../../ui/presentation/widgets/chips.dart';
 
 /// A list tile widget for displaying server information
 class ServerListTile extends StatelessWidget {
+  static const double _leadingSize = 48;
+
   final MusicServer server;
   final bool isLoading;
   final VoidCallback? onTap;
@@ -42,6 +44,9 @@ class ServerListTile extends StatelessWidget {
         padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          // Stretched, so the stats line starts on the text column rather
+          // than floating in the middle of the card.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [_buildTile(context), _buildStatTrio(context)],
         ),
       ),
@@ -128,8 +133,10 @@ class ServerListTile extends StatelessWidget {
   /// (and is left out for a server that is online).
   Widget _buildStatTrio(BuildContext context) {
     return Padding(
+      // Indented to the tile's text column: content padding, the 48 badge
+      // and the title gap.
       padding: const EdgeInsets.fromLTRB(
-        OmnisonicSpacing.md,
+        OmnisonicSpacing.md + _leadingSize + OmnisonicSpacing.ms,
         0,
         OmnisonicSpacing.md,
         OmnisonicSpacing.ms,
@@ -187,8 +194,8 @@ class ServerListTile extends StatelessWidget {
   Widget _buildLeading(BuildContext context) {
     final color = ServerStatusVisuals.of(context, server.status).color;
     return Container(
-      width: 48,
-      height: 48,
+      width: _leadingSize,
+      height: _leadingSize,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
         color: color.withValues(alpha: 0.12),

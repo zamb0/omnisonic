@@ -173,32 +173,48 @@ void showAccountMenu(BuildContext context) {
           OmnisonicLayout.chromeInset,
           OmnisonicLayout.chromeInset,
         ),
-        child: GlassPanel(
-          borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
-          padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // The sheet's 36 × 4 handle (docs/design-system.md, "Bottom
-              // sheet"), inside the
-              // floating panel rather than on an invisible sheet above it.
-              ExcludeSemantics(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: Theme.of(sheetContext).colorScheme.outline,
-                    borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        // An L3 overlay, like the menu the same destinations open on a
+        // tablet: glass over the modal scrim read as a muddy grey.
+        // A Material, not a decorated box, so the rows' ink shows; the same
+        // values as the menu theme.
+        child: Material(
+          color: Theme.of(sheetContext).colorScheme.surfaceContainerHigh,
+          surfaceTintColor: Colors.transparent,
+          elevation: 16,
+          shadowColor: OmnisonicColors.overlayShadow,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(OmnisonicRadius.overlay),
+            side: BorderSide(
+              color: OmnisonicSurfaces.of(sheetContext).hairline,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: OmnisonicSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // The sheet's 36 × 4 handle (docs/design-system.md, "Bottom
+                // sheet"), inside the floating panel rather than on an
+                // invisible sheet above it.
+                ExcludeSemantics(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: OmnisonicSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).colorScheme.outline,
+                      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+                    ),
                   ),
                 ),
-              ),
-              for (final destination in AppDestinations.secondary)
-                _AccountMenuItem(
-                  destination: destination,
-                  selected: destination.matches(currentPath),
-                ),
-            ],
+                for (final destination in AppDestinations.secondary)
+                  _AccountMenuItem(
+                    destination: destination,
+                    selected: destination.matches(currentPath),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

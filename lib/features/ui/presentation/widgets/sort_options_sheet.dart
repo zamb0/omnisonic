@@ -74,22 +74,21 @@ class _SortOptionsSheetState extends State<SortOptionsSheet> {
                 onTap: () => _set(SortOption.natural(field)),
               ),
             const SizedBox(height: OmnisonicSpacing.sm),
-            SegmentedButton<bool>(
-              segments: [
-                ButtonSegment(
+            OmnisonicSegmented<bool>(
+              options: [
+                SegmentOption(
                   value: false,
-                  icon: const Icon(OmnisonicIcons.arrowUpward),
-                  label: Text(_directionLabel(false)),
+                  icon: OmnisonicIcons.arrowUpward,
+                  label: _directionLabel(false),
                 ),
-                ButtonSegment(
+                SegmentOption(
                   value: true,
-                  icon: const Icon(OmnisonicIcons.arrowDownward),
-                  label: Text(_directionLabel(true)),
+                  icon: OmnisonicIcons.arrowDownward,
+                  label: _directionLabel(true),
                 ),
               ],
-              selected: {_option.descending},
-              onSelectionChanged: (value) =>
-                  _set(_option.withDescending(value.single)),
+              selected: _option.descending,
+              onChanged: (value) => _set(_option.withDescending(value)),
             ),
           ],
         ),

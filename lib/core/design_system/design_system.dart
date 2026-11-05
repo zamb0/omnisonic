@@ -23,5 +23,8 @@ export 'aurora_button.dart';
 export 'aurora_progress.dart';
 export 'aurora_mesh.dart';
 export 'aurora_ring.dart';
+export 'focus_decoration.dart';
+export 'omnisonic_segmented.dart';
+export 'slider_thumb.dart';
 export 'omnisonic_button.dart';
 export 'omnisonic_icon_button.dart';

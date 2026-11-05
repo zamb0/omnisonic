@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../utils/haptics.dart';
 import 'animation_manager.dart';
-import 'brand.dart';
 import 'colors.dart';
 import 'icons.dart';
+import 'focus_decoration.dart';
 import 'motion.dart';
 import 'spacing.dart';
 import 'surfaces.dart';
@@ -93,8 +93,6 @@ class _OmnisonicIconButtonState extends State<OmnisonicIconButton>
     ),
   ]).animate(_burst);
 
-  bool _focused = false;
-
   @override
   void didUpdateWidget(OmnisonicIconButton old) {
     super.didUpdateWidget(old);
@@ -119,7 +117,6 @@ class _OmnisonicIconButtonState extends State<OmnisonicIconButton>
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final surfaces = OmnisonicSurfaces.of(context);
-    final brand = OmnisonicBrand.of(context);
     final variant = widget.variant;
     final enabled = widget.onPressed != null;
 
@@ -151,14 +148,6 @@ class _OmnisonicIconButtonState extends State<OmnisonicIconButton>
     final on = isToggle && widget.selected;
     final foreground = on ? (widget.selectedColor ?? scheme.primary) : fg;
 
-    final ring = OmnisonicShadows.focusRing(
-      scheme.primary,
-      brand.auroraSoft.colors[1],
-    );
-    final showRing =
-        _focused &&
-        FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
-
     Widget glyph = Icon(
       on ? (widget.selectedIcon ?? widget.icon) : widget.icon,
     );
@@ -186,20 +175,9 @@ class _OmnisonicIconButtonState extends State<OmnisonicIconButton>
       ),
     );
 
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onFocusChange: (value) => setState(() => _focused = value),
-      child: PressScale(
-        enabled: enabled,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: showRing ? ring : null,
-          ),
-          child: button,
-        ),
-      ),
+    return FocusDecoration(
+      shape: BoxShape.circle,
+      child: PressScale(enabled: enabled, child: button),
     );
   }
 }

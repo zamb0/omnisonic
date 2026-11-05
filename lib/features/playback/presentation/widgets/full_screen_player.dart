@@ -785,23 +785,22 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             builder: (context, constraints) {
               // Icons alone where the labels would not fit.
               final iconsOnly = constraints.maxWidth < 220;
-              return SegmentedButton<NowPlayingPanel>(
-                showSelectedIcon: false,
-                segments: [
+              return OmnisonicSegmented<NowPlayingPanel>(
+                iconsOnly: iconsOnly,
+                options: [
                   for (final panel in NowPlayingPanel.values)
-                    ButtonSegment(
+                    SegmentOption(
                       value: panel,
-                      icon: Icon(panel.icon),
-                      tooltip: iconsOnly ? panel.label : null,
-                      label: iconsOnly ? null : Text(panel.label),
+                      icon: panel.icon,
+                      label: panel.label,
                     ),
                 ],
-                selected: {_panel},
-                onSelectionChanged: (value) {
+                selected: _panel,
+                onChanged: (value) {
                   if (onPanelChanged != null) {
-                    onPanelChanged(value.first);
+                    onPanelChanged(value);
                   } else {
-                    setState(() => _panel = value.first);
+                    setState(() => _panel = value);
                   }
                 },
               );

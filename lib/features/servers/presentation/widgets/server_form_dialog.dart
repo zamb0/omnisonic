@@ -252,14 +252,11 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
+        // Saving swaps the label for a spinner without changing the width.
+        OmnisonicButton(
           onPressed: busy ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_editing ? 'Save' : 'Add server'),
+          loading: _saving,
+          label: _editing ? 'Save' : 'Add server',
         ),
       ],
     );

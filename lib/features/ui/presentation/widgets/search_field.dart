@@ -31,78 +31,94 @@ class SearchField extends StatelessWidget {
   final VoidCallback? onClear;
   final bool autofocus;
 
-  /// Height of the field at 1x text.
+  /// Outer height of the field at 1x text, glass edge included.
   static const double height = 48;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return GlassSurface(
+    // Focused — by click or by key — the field glows with a soft Aurora halo;
+    // the 48 px stadium is the control, so that is what is haloed.
+    return FocusDecoration(
+      ring: false,
+      keyboardOnly: false,
       borderRadius: BorderRadius.circular(OmnisonicRadius.full),
-      padding: const EdgeInsets.only(
-        left: OmnisonicSpacing.md,
-        right: OmnisonicSpacing.xs,
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: height),
-        child: Row(
-          children: [
-            ExcludeSemantics(
-              child: Icon(
-                OmnisonicIcons.search,
-                size: OmnisonicIconSizes.smd,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: OmnisonicSpacing.sm),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                autofocus: autofocus,
-                style: OmnisonicTypography.bodyMedium.copyWith(
-                  color: scheme.onSurface,
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        padding: const EdgeInsets.only(
+          left: OmnisonicSpacing.md,
+          right: OmnisonicSpacing.xs,
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: height - 2),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  OmnisonicIcons.search,
+                  size: OmnisonicIconSizes.smd,
+                  color: scheme.onSurfaceVariant,
                 ),
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: hint,
-                  isDense: true,
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  // 14 + a 20px line + 14: the field itself is the 48px
-                  // target, not just the pill around it.
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: OmnisonicSpacing.ms + OmnisonicSpacing.xxs,
+              ),
+              const SizedBox(width: OmnisonicSpacing.sm),
+              Expanded(
+                // The field fills the stadium's whole inner height (46, plus
+                // the glass's 1px edge each side = 48) and centres its text,
+                // so the entire pill is the tap target.
+                child: SizedBox(
+                  height: height - 2,
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    autofocus: autofocus,
+                    // Fill the 46 and centre the line in it.
+                    expands: true,
+                    maxLines: null,
+                    minLines: null,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: OmnisonicTypography.bodyMedium.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                    // One line: `expands` would otherwise make Enter a newline.
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: hint,
+                      isDense: true,
+                      filled: false,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: onChanged,
+                    onSubmitted: onSubmitted,
                   ),
                 ),
-                onChanged: onChanged,
-                onSubmitted: onSubmitted,
               ),
-            ),
-            // Driven by the controller, not the parent's build: typing does
-            // not rebuild the page, so reading `.text` here would go stale.
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (context, value, child) => value.text.isEmpty
-                  ? const SizedBox(
-                      width: OmnisonicSpacing.sm,
-                      height: OmnisonicTouchTargets.minimum,
-                    )
-                  : IconButton(
-                      icon: const Icon(OmnisonicIcons.close),
-                      iconSize: OmnisonicIconSizes.sm,
-                      color: scheme.onSurfaceVariant,
-                      tooltip: 'Clear search',
-                      onPressed: () {
-                        controller.clear();
-                        onChanged?.call('');
-                        onClear?.call();
-                      },
-                    ),
-            ),
-          ],
+              // Driven by the controller, not the parent's build: typing does
+              // not rebuild the page, so reading `.text` here would go stale.
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, child) => value.text.isEmpty
+                    ? const SizedBox(
+                        width: OmnisonicSpacing.sm,
+                        height: OmnisonicTouchTargets.minimum,
+                      )
+                    : IconButton(
+                        icon: const Icon(OmnisonicIcons.close),
+                        iconSize: OmnisonicIconSizes.sm,
+                        color: scheme.onSurfaceVariant,
+                        tooltip: 'Clear search',
+                        onPressed: () {
+                          controller.clear();
+                          onChanged?.call('');
+                          onClear?.call();
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

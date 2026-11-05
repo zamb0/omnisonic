@@ -115,19 +115,17 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: OmnisonicSpacing.ms),
-            SegmentedButton<ThemeMode>(
-              showSelectedIcon: false,
-              segments: [
+            OmnisonicSegmented<ThemeMode>(
+              options: [
                 for (final entry in options.entries)
-                  ButtonSegment(
+                  SegmentOption(
                     value: entry.key,
-                    icon: Icon(entry.value.$1),
-                    label: Text(entry.value.$2),
+                    icon: entry.value.$1,
+                    label: entry.value.$2,
                   ),
               ],
-              selected: {current},
-              onSelectionChanged: (value) =>
-                  ThemeModeController.instance.setThemeMode(value.single),
+              selected: current,
+              onChanged: ThemeModeController.instance.setThemeMode,
             ),
           ],
         ),

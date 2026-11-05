@@ -6,6 +6,7 @@ import 'spacing.dart';
 import 'icons.dart';
 import 'surfaces.dart';
 import 'brand.dart';
+import 'slider_thumb.dart';
 
 /// The app's [ThemeData], light and dark.
 ///
@@ -267,8 +268,10 @@ class OmnisonicTheme {
         filled: true,
         fillColor: surfaces.well,
         hoverColor: surfaces.wellHover,
-        border: inputBorder(surfaces.hairline),
-        enabledBorder: inputBorder(surfaces.hairline),
+        // A field's edge is what says "type here": 3:1 or better against the
+        // canvas it sits on (`outline`), not the decorative hairline.
+        border: inputBorder(scheme.outline),
+        enabledBorder: inputBorder(scheme.outline),
         focusedBorder: inputBorder(scheme.primary, 2),
         errorBorder: inputBorder(scheme.error),
         focusedErrorBorder: inputBorder(scheme.error, 2),
@@ -295,16 +298,17 @@ class OmnisonicTheme {
       ),
 
       // A selected chip is a toggle that is on: live state, so the accent —
-      // as a tint, keeping the label and icon in the text colour.
+      // `primaryContainer` with a 1 px `primary` edge *and* a check, so the
+      // state survives greyscale.
       chipTheme: ChipThemeData(
         backgroundColor: surfaces.well,
-        selectedColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
+        selectedColor: scheme.primaryContainer,
         disabledColor: surfaces.well,
         checkmarkColor: scheme.primary,
         side: WidgetStateBorderSide.resolveWith(
           (states) => BorderSide(
             color: states.contains(WidgetState.selected)
-                ? scheme.primary.withValues(alpha: 0.6)
+                ? scheme.primary
                 : surfaces.hairline,
           ),
         ),
@@ -323,7 +327,7 @@ class OmnisonicTheme {
           color: scheme.onSurface,
           size: OmnisonicIconSizes.sm,
         ),
-        showCheckmark: false,
+        showCheckmark: true,
       ),
 
       // Overlays are opaque, one step up the container ladder, with a
@@ -475,10 +479,11 @@ class OmnisonicTheme {
       // Live state: the accent.
       sliderTheme: SliderThemeData(
         trackHeight: 4,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-        overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+        // 14 px thumb that grows to 18 under the finger.
+        thumbShape: const GrowingThumbShape(),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
         activeTrackColor: scheme.primary,
-        inactiveTrackColor: scheme.onSurface.withValues(alpha: 0.14),
+        inactiveTrackColor: scheme.surfaceContainerHighest,
         thumbColor: scheme.primary,
         overlayColor: scheme.primary.withValues(alpha: 0.16),
       ),
@@ -495,10 +500,12 @@ class OmnisonicTheme {
               ? scheme.onPrimary
               : scheme.onSurfaceVariant,
         ),
+        // Off: the top rung of the container ladder, readable on glass, with
+        // the `outline` edge below; on: the accent.
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? scheme.primary
-              : surfaces.well,
+              : scheme.surfaceContainerHighest,
         ),
         trackOutlineColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)

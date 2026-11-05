@@ -105,7 +105,9 @@ class OmnisonicColors {
     surfaceContainerHigh: Color(0xFFFFFFFF),
     surfaceContainerHighest: Color(0xFFE9E5F1),
     onSurfaceVariant: Color(0xFF5C5670), // 6.4:1 on the canvas
-    outline: Color(0xFF8C869E), // 3.2:1, the floor for an input's edge
+    // 3.7:1 on Pearl and 3.35:1 on an input's well (the v2 doc's #8C869E was
+    // 2.9:1 there): the floor for an input's edge.
+    outline: Color(0xFF827B96),
     outlineVariant: Color(0x1A2A1F5C),
     shadow: Color(0x1A000000),
     scrim: Color(0x80000000),

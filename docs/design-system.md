@@ -95,7 +95,7 @@ vetro senza ombra pesante. In chiaro il filo è `white 90 %`.
 |---|---|---|---|
 | `onSurface` (testo, ink) | `#F3F1F8` | `#17141F` | 17.6 · 16.6 |
 | `onSurfaceVariant` (secondario) | `#A9A4BC` | `#5C5670` | 8.2 · 6.4 (7.1 / 5.6 su contenitore) |
-| `outline` (bordo input, ≥ 3:1) | `#6E6885` | `#8C869E` | 3.7 · 3.2 |
+| `outline` (bordo input, ≥ 3:1 anche sul pozzetto) | `#6E6885` | `#827B96` | 3.7 · 3.7 (3.35 sul pozzetto) |
 | `outlineVariant` / `surfaces.hairline` | bianco 10 % | `#2A1F5C` 10 % | decorativo |
 
 ### 2.3 Accent, ruoli e semantici

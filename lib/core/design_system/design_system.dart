@@ -22,5 +22,6 @@ export 'motion.dart';
 export 'aurora_button.dart';
 export 'aurora_progress.dart';
 export 'aurora_mesh.dart';
+export 'aurora_ring.dart';
 export 'omnisonic_button.dart';
 export 'omnisonic_icon_button.dart';

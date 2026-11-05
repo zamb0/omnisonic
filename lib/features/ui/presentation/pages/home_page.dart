@@ -490,6 +490,7 @@ class _HomePageState extends State<HomePage> {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: EmptyState(
+            hero: true,
             icon: OmnisonicIcons.dnsOutline,
             title: 'No music server yet',
             subtitle:
@@ -497,10 +498,10 @@ class _HomePageState extends State<HomePage> {
                 'playing your library.',
             // Straight to the form: the Servers list it used to open was
             // empty and had its own "Add server" button, two taps for one.
-            action: FilledButton.icon(
+            action: AuroraButton(
               onPressed: () => showServerFormDialog(context),
-              icon: const Icon(OmnisonicIcons.add),
-              label: const Text('Add server'),
+              icon: OmnisonicIcons.add,
+              label: 'Add server',
             ),
           ),
         );

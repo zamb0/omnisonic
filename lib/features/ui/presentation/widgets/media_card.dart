@@ -188,11 +188,7 @@ class _MediaCardState extends State<MediaCard> with ArtTintMixin {
                     child: AnimatedOpacity(
                       opacity: _hovering ? 1 : 0,
                       duration: fast,
-                      child: CustomPaint(
-                        painter: _AuroraRingPainter(
-                          OmnisonicBrand.of(context).auroraSoft,
-                        ),
-                      ),
+                      child: const AuroraRing(),
                     ),
                   ),
                 ),
@@ -441,28 +437,4 @@ class _OverlayButton extends StatelessWidget {
     if (toggled == null) return button;
     return Semantics(toggled: toggled, child: button);
   }
-}
-
-/// A 2 px stroke in the `auroraSoft` gradient, around a circular portrait.
-class _AuroraRingPainter extends CustomPainter {
-  const _AuroraRingPainter(this.gradient);
-
-  final LinearGradient gradient;
-
-  static const double width = 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawOval(
-      rect.deflate(width / 2),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..shader = gradient.createShader(rect),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_AuroraRingPainter old) => old.gradient != gradient;
 }

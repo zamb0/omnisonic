@@ -18,6 +18,7 @@ class AuroraMesh extends StatefulWidget {
     this.drift = false,
     this.driftPeriod = const Duration(seconds: 20),
     this.brand,
+    this.vignette = false,
   });
 
   /// Scales the blobs' own alpha (35 % dark, 22 % light): 1 keeps the brand
@@ -32,6 +33,10 @@ class AuroraMesh extends StatefulWidget {
   /// Overrides the ambient [OmnisonicBrand], e.g. the dark one on a surface
   /// that is always dark.
   final OmnisonicBrand? brand;
+
+  /// Fades the mesh to nothing toward its edges, so a mesh that fills a
+  /// *part* of the screen reads as a glow and not as a rectangle.
+  final bool vignette;
 
   /// Whether any mesh drifts at all. Tests turn this off: a loop that never
   /// ends would stop `pumpAndSettle` from ever settling.
@@ -94,12 +99,21 @@ class _AuroraMeshState extends State<AuroraMesh>
             animation: _controller,
             builder: (context, _) {
               final t = _controller.value * 2 * math.pi;
-              return Stack(
+              final blobs = Stack(
                 fit: StackFit.expand,
                 children: [
                   for (var i = 0; i < brand.auroraMesh.length; i++)
                     _blob(brand.auroraMesh[i], i, t),
                 ],
+              );
+              if (!widget.vignette) return blobs;
+              return ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) => const RadialGradient(
+                  colors: [Color(0xFFFFFFFF), Color(0x00FFFFFF)],
+                  stops: [0.35, 1],
+                ).createShader(bounds),
+                child: blobs,
               );
             },
           ),

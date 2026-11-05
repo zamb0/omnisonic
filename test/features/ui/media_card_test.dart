@@ -286,9 +286,7 @@ void main() {
           final fades = tester.widgetList<AnimatedOpacity>(
             find.ancestor(
               of: find.byWidgetPredicate(
-                (w) =>
-                    w is CustomPaint &&
-                    w.painter.runtimeType.toString() == '_AuroraRingPainter',
+                (w) => w is CustomPaint && w.painter is AuroraRingPainter,
               ),
               matching: find.byType(AnimatedOpacity),
             ),

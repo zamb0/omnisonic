@@ -145,12 +145,15 @@ class ErrorStateView extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: OmnisonicIcons.errorOutline,
+      accent: Theme.of(context).colorScheme.error,
       title: title,
       subtitle: message,
-      action: FilledButton.icon(
+      // Retrying is the way out, not the screen's signature: tonal.
+      action: OmnisonicButton(
+        variant: OmnisonicButtonVariant.tonal,
         onPressed: onRetry,
-        icon: const Icon(OmnisonicIcons.refresh),
-        label: const Text('Try again'),
+        icon: OmnisonicIcons.refresh,
+        label: 'Try again',
       ),
     );
   }

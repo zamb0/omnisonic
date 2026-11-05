@@ -38,6 +38,7 @@ class DetailHeader extends StatelessWidget {
     this.forceNarrow = false,
     this.tint,
     this.circularArtwork = false,
+    this.bleedTop = 0,
   });
 
   final String title;
@@ -70,6 +71,16 @@ class DetailHeader extends StatelessWidget {
 
   /// The artwork is a circle (an artist), so its glow is round too.
   final bool circularArtwork;
+
+  /// How far the tint wash reaches up past the header's top edge, at full
+  /// strength. A detail page passes [pageBleed]: starting at the header, the
+  /// wash met the bare canvas behind the transparent top bar in a hard
+  /// horizontal line.
+  final double bleedTop;
+
+  /// Enough to cover any top bar plus status bar; the scroll view clips the
+  /// rest.
+  static const double pageBleed = 240;
 
   /// Below this width the header stacks.
   static const double narrowBreakpoint = 720;
@@ -107,23 +118,32 @@ class DetailHeader extends StatelessWidget {
         Positioned(
           left: -gutter,
           right: -gutter,
-          top: 0,
+          top: -bleedTop,
           bottom: 0,
           child: IgnorePointer(
             child: ExcludeSemantics(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      wash.withValues(
-                        alpha: isDark ? washAlphaDark : washAlphaLight,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final full = wash.withValues(
+                    alpha: isDark ? washAlphaDark : washAlphaLight,
+                  );
+                  // Full strength over the bleed, then the fade across the
+                  // header itself, exactly as without a bleed.
+                  final height = constraints.maxHeight;
+                  final start = height.isFinite && height > 0
+                      ? (bleedTop / height).clamp(0.0, 1.0)
+                      : 0.0;
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [full, full, wash.withValues(alpha: 0)],
+                        stops: [0, start, 1],
                       ),
-                      wash.withValues(alpha: 0),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

@@ -690,6 +690,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
     updateArtTint(_album.coverArtUrl);
 
     return DetailHeader(
+      bleedTop: DetailHeader.pageBleed,
       forceNarrow: desktop,
       artworkSize: desktop ? 240 : null,
       tint: artTint,

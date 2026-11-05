@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/animated_now_playing_bar.dart';
 import 'package:omnisonic/features/playback/presentation/widgets/transport_controls.dart';
+import 'package:omnisonic/features/ui/presentation/pages/main_shell.dart';
 
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
@@ -14,6 +15,7 @@ void main() {
     required Size size,
     Duration position = const Duration(seconds: 51),
     bool isPlaying = true,
+    ShellMode? shell,
   }) async {
     final models = TestViewModels();
     final track = testTrack(duration: const Duration(minutes: 3, seconds: 24));
@@ -24,9 +26,15 @@ void main() {
     );
     await pumpPage(
       tester,
-      Align(
-        alignment: Alignment.bottomCenter,
-        child: AnimatedNowPlayingBar(onTap: () {}),
+      Builder(
+        builder: (context) {
+          final bar = Align(
+            alignment: Alignment.bottomCenter,
+            child: AnimatedNowPlayingBar(onTap: () {}),
+          );
+          // Without a shell the bar picks its layout from the width.
+          return shell == null ? bar : ShellLayout(mode: shell, child: bar);
+        },
       ),
       viewModels: models,
       size: size,
@@ -80,6 +88,35 @@ void main() {
   });
 
   group('transport bar (desktop)', () {
+    testWidgets(
+      'every transport control is on screen at portrait-tablet width',
+      (tester) async {
+        // An 11" iPad in portrait leaves the bar ~690 pt beside the rail:
+        // the centre row used to scroll there, with Repeat clipped out.
+        await pumpBar(
+          tester,
+          size: const Size(690, 1100),
+          shell: ShellMode.collapsedSidebar,
+        );
+        expect(tester.getSize(find.byType(PlayDisc)), const Size(48, 48));
+
+        final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
+        final repeat = tester.getRect(find.byType(RepeatModeButton));
+        final shuffle = tester.getRect(find.byType(ShuffleModeButton));
+        final lyrics = tester.getRect(find.byTooltip('Lyrics'));
+        for (final rect in [repeat, shuffle]) {
+          expect(bar.contains(rect.topLeft), isTrue);
+          expect(bar.contains(rect.bottomRight), isTrue);
+        }
+        expect(
+          repeat.right,
+          lessThanOrEqualTo(lyrics.left),
+          reason: 'Repeat must not run under the right-hand actions',
+        );
+        expect(find.byType(RepeatModeButton).hitTestable(), findsOneWidget);
+      },
+    );
+
     testWidgets('has a 48 PlayDisc and the Aurora seek bar', (tester) async {
       await pumpBar(tester, size: TestSizes.desktop);
       expect(tester.getSize(find.byType(PlayDisc)), const Size(48, 48));

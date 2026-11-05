@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'colors.dart';
 import 'spacing.dart';
 
 /// How prominent a glass surface should read: [card] for content surfaces
@@ -301,96 +302,39 @@ class GlassPanel extends StatelessWidget {
   }
 }
 
-/// The third glass layer: a slow specular sweep travelling across a pane.
+/// The third glass layer: a still diagonal reflection across a pane
+/// (docs/design-system.md §6).
 ///
-/// Purely decorative and always [IgnorePointer]-wrapped, so it can be
-/// stacked over any glass surface without stealing taps. Stack it *inside*
-/// the surface's clip — it draws a full-height band and relies on the parent
-/// to crop it.
-class GlassSheen extends StatefulWidget {
-  const GlassSheen({
-    super.key,
-    this.period = const Duration(seconds: 6),
-    this.bandWidthFactor = 0.18,
-    this.opacity = 0.5,
-  });
+/// Dark theme only, at 4 % white: on Pearl glass a white sheen has nothing to
+/// lift and reads as a smear. It does not move — the motion rules allow no
+/// decorative loops besides the live equalizer and the Aurora drift, and a
+/// sweep crossing the player bar every few seconds was exactly that.
+///
+/// Purely decorative and [IgnorePointer]-wrapped, so it can be stacked over
+/// any glass surface without stealing taps. Stack it *inside* the surface's
+/// clip.
+class GlassSheen extends StatelessWidget {
+  const GlassSheen({super.key});
 
-  /// One full left-to-right pass.
-  final Duration period;
-
-  /// Band width as a fraction of the pane width.
-  final double bandWidthFactor;
-
-  /// Peak white alpha at the centre of the band.
-  final double opacity;
-
-  @override
-  State<GlassSheen> createState() => _GlassSheenState();
-}
-
-class _GlassSheenState extends State<GlassSheen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    duration: widget.period,
-    vsync: this,
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Honours "reduce motion": a continuously repeating sweep is exactly the
-    // kind of ambient animation that setting exists to suppress.
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _controller.stop();
-    } else if (!_controller.isAnimating) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  /// Peak white alpha of the reflection, dark theme.
+  static const double peakAlpha = 0.04;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final peak = Colors.white.withValues(
-      alpha: isDark ? widget.opacity * 0.24 : widget.opacity,
-    );
-
+    if (Theme.of(context).brightness != Brightness.dark) {
+      return const SizedBox.shrink();
+    }
+    final peak = OmnisonicColors.neutralWhite.withValues(alpha: peakAlpha);
     return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          if (!width.isFinite || width <= 0) return const SizedBox.shrink();
-          final bandWidth = width * widget.bandWidthFactor;
-
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final dx = -bandWidth + _controller.value * (width + bandWidth);
-              return Transform.translate(offset: Offset(dx, 0), child: child);
-            },
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                width: bandWidth,
-                height: double.infinity,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [Colors.transparent, peak, Colors.transparent],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.transparent, peak, Colors.transparent],
+            stops: const [0.25, 0.45, 0.65],
+          ),
+        ),
       ),
     );
   }

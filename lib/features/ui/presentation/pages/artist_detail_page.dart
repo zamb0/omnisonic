@@ -211,6 +211,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage>
         0,
       ),
       child: DetailHeader(
+        bleedTop: DetailHeader.pageBleed,
         tint: artTint,
         circularArtwork: true,
         eyebrow: 'Artist',

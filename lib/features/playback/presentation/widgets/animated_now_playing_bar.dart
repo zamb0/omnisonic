@@ -523,29 +523,34 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Playback controls row. Horizontally scrollable rather than a
-        // plain Row: at narrower "desktop" widths (this section only gets
-        // whatever's left after the fixed-width left/right sections) five
-        // 44px touch targets don't always fit, so this degrades to a
-        // scroll instead of a hard overflow.
-        Center(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ShuffleModeButton(playback: vm, size: OmnisonicIconSizes.smd),
-                const SizedBox(width: OmnisonicSpacing.sm),
-                SkipPreviousButton(playback: vm),
-                const SizedBox(width: OmnisonicSpacing.sm),
-                PlayPauseButton(playback: vm),
-                const SizedBox(width: OmnisonicSpacing.sm),
-                SkipNextButton(playback: vm),
-                const SizedBox(width: OmnisonicSpacing.sm),
-                RepeatModeButton(playback: vm, size: OmnisonicIconSizes.smd),
-              ],
-            ),
-          ),
+        // Playback controls row. This section only gets what is left after
+        // the fixed-width side sections, and on a portrait tablet that is
+        // less than five touch targets with 8px gaps: the gaps tighten
+        // first, and only then does the row scale down. It used to scroll
+        // instead, which clipped Repeat out of view with no sign it was there.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final gap = constraints.maxWidth < 280
+                ? OmnisonicSpacing.xxs
+                : OmnisonicSpacing.sm;
+            return FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShuffleModeButton(playback: vm, size: OmnisonicIconSizes.smd),
+                  SizedBox(width: gap),
+                  SkipPreviousButton(playback: vm),
+                  SizedBox(width: gap),
+                  PlayPauseButton(playback: vm),
+                  SizedBox(width: gap),
+                  SkipNextButton(playback: vm),
+                  SizedBox(width: gap),
+                  RepeatModeButton(playback: vm, size: OmnisonicIconSizes.smd),
+                ],
+              ),
+            );
+          },
         ),
         const SizedBox(height: OmnisonicSpacing.xs),
         // Scrubber: a 4px hairline with mono timestamps either side, capped

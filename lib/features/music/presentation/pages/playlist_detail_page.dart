@@ -214,6 +214,7 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage>
     updateArtTint(playlist.coverArtUrl);
 
     return DetailHeader(
+      bleedTop: DetailHeader.pageBleed,
       tint: artTint,
       eyebrow: playlist.isPublic ? 'Public playlist' : 'Private playlist',
       title: playlist.name,

@@ -6,6 +6,7 @@ import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
 import 'package:omnisonic/core/routing/destinations.dart';
 import 'package:omnisonic/features/ui/presentation/widgets/account_menu.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/desktop_top_bar.dart';
 import 'package:omnisonic/features/ui/presentation/widgets/nav_selection.dart';
 
 import '../../helpers/entity_factories.dart';
@@ -226,6 +227,76 @@ void main() {
             .duration,
         Duration.zero,
       );
+    });
+  });
+
+  group('desktop top bar', () {
+    double glass(WidgetTester t) => t
+        .widget<AnimatedOpacity>(
+          find.descendant(
+            of: find.byType(DesktopTopBar),
+            matching: find.byType(AnimatedOpacity),
+          ),
+        )
+        .opacity;
+
+    Future<void> pumpScrolling(WidgetTester tester) => pumpShell(
+      tester,
+      size: TestSizes.desktop,
+      viewModels: models(),
+      routes: testShellRoutes(
+        builders: {
+          AppRouter.home: (context, state) => ListView(
+            children: [
+              for (var i = 0; i < 60; i++)
+                SizedBox(height: 56, child: Text('row $i')),
+            ],
+          ),
+        },
+      ),
+    );
+
+    testWidgets('is transparent at rest and turns to glass past 8 px', (
+      tester,
+    ) async {
+      await pumpScrolling(tester);
+      expect(glass(tester), 0);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -6));
+      await tester.pumpAndSettle();
+      expect(glass(tester), 0, reason: '6 px is under the threshold');
+
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pumpAndSettle();
+      expect(glass(tester), 1);
+
+      await tester.drag(find.byType(ListView), const Offset(0, 1000));
+      await tester.pumpAndSettle();
+      expect(glass(tester), 0, reason: 'back at the top it is bare again');
+    });
+
+    testWidgets('a carousel scrolling sideways does not trigger it', (
+      tester,
+    ) async {
+      await pumpShell(
+        tester,
+        size: TestSizes.desktop,
+        viewModels: models(),
+        routes: testShellRoutes(
+          builders: {
+            AppRouter.home: (context, state) => ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (var i = 0; i < 60; i++)
+                  SizedBox(width: 120, child: Text('c $i')),
+              ],
+            ),
+          },
+        ),
+      );
+      await tester.drag(find.byType(ListView), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(glass(tester), 0);
     });
   });
 

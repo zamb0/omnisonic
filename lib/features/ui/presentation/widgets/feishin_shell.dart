@@ -75,11 +75,9 @@ class FeishinShell extends StatelessWidget {
                       padding: const EdgeInsets.only(
                         top: OmnisonicLayout.chromeInset,
                       ),
-                      child: Column(
-                        children: [
-                          if (extended) const DesktopTopBar(),
-                          Expanded(child: child),
-                        ],
+                      child: _ContentWithTopBar(
+                        showTopBar: extended,
+                        child: child,
                       ),
                     ),
                   ),
@@ -400,6 +398,57 @@ class FeishinShell extends StatelessWidget {
 
   void _goToLibraryTab(BuildContext context, LibraryTab tab) {
     context.go('${AppRouter.library}?tab=${tab.name}');
+  }
+}
+
+/// The page and, on wide windows, the top bar above it. Watches the page's
+/// vertical scroll so the bar can turn from transparent into glass once
+/// content passes under it (docs/design-system.md §9.4).
+class _ContentWithTopBar extends StatefulWidget {
+  const _ContentWithTopBar({required this.showTopBar, required this.child});
+
+  final bool showTopBar;
+  final Widget child;
+
+  @override
+  State<_ContentWithTopBar> createState() => _ContentWithTopBarState();
+}
+
+class _ContentWithTopBarState extends State<_ContentWithTopBar> {
+  bool _scrolled = false;
+  String? _path;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A new page starts at the top, and says nothing until it scrolls.
+    final path = GoRouterState.of(context).uri.path;
+    if (path != _path) {
+      _path = path;
+      _scrolled = false;
+    }
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    // Only the page's own vertical scrollable: not a carousel inside it.
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final scrolled =
+        notification.metrics.pixels > DesktopTopBar.scrolledThreshold;
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: Column(
+        children: [
+          if (widget.showTopBar) DesktopTopBar(scrolled: _scrolled),
+          Expanded(child: widget.child),
+        ],
+      ),
+    );
   }
 }
 

@@ -6,6 +6,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/routing/search_focus.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
+import '../../../../core/utils/animation_utils.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 
 /// Desktop content-column header: a glass search field, the last-sync
@@ -15,8 +16,18 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 ///
 /// The sidebar deliberately carries no search entry of its own — search is a
 /// content-area concern in the redesign, reachable from anywhere with ⌘K.
+///
+/// Transparent over the canvas at rest; once the page has scrolled
+/// [scrolledThreshold] px it fades into a glass bar (L2, `fast`), so rows
+/// passing underneath do not collide with the controls.
 class DesktopTopBar extends StatelessWidget {
-  const DesktopTopBar({super.key});
+  const DesktopTopBar({super.key, this.scrolled = false});
+
+  /// Scroll distance after which the bar becomes glass.
+  static const double scrolledThreshold = 8;
+
+  /// Whether content has scrolled under the bar.
+  final bool scrolled;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +37,35 @@ class DesktopTopBar extends StatelessWidget {
     final gutter = PageGutter.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(gutter, 0, gutter, OmnisonicSpacing.sm),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: AnimatedOpacity(
+                  opacity: scrolled ? 1 : 0,
+                  duration: AnimationUtils.adjustedDuration(
+                    context,
+                    AnimationManager.fastDuration,
+                  ),
+                  child: GlassSurface(
+                    intensity: GlassIntensity.pill,
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _buildRow(context, scheme, onSearch),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, ColorScheme scheme, bool onSearch) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: OmnisonicSpacing.xs),
       child: Row(
         children: [
           // Not on /search, which has its own field: two search boxes on

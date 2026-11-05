@@ -220,6 +220,9 @@ flutter test --update-goldens test/features/ui   # after an intended visual chan
 
 - `contrast_test.dart` — every text / border / dot pair of the doc, both themes.
 - `token_guardrail_test.dart` — literals, durations, one Aurora button per page.
+- `test/features/ui/aurora_budget_test.dart` — each page pumped in the shell:
+  at most one `AuroraButton`/`PlayDisc` on screen, player bar and card hover
+  discs excepted.
 - `doc_alignment_test.dart` — `docs/design-system.md` ⇄ code.
 - `component_gallery_test.dart` — the gallery and its per-section goldens.
 

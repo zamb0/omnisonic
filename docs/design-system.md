@@ -35,7 +35,10 @@ Aurora — e una tela con temperatura, senza togliere il palco alle copertine.
    - **Aurora** (gradiente violet → magenta → coral): la *firma*. Solo per il
      Play principale di una schermata, il marchio, l'avanzamento del brano in
      riproduzione e lo sfondo di riserva quando non c'è copertina.
-     **Al massimo un elemento Aurora pieno per schermata.**
+     **Al massimo un elemento Aurora pieno per schermata.** Non contano il
+     player persistente (mini player / transport bar, chrome presente su ogni
+     schermata mentre si ascolta) e il `PlayDisc` delle card, che appare solo
+     su hover o focus.
    - **Ink** (`onSurface`): le azioni primarie statiche (Salva, Aggiungi,
      Connetti) e il testo. Bottone bianco su scuro / quasi-nero su chiaro.
    - **Accent** (`primary`, violetto elettrico): **stato vivo** — brano in
@@ -470,5 +473,6 @@ skeleton, `SearchField`. La galleria è `ComponentGalleryPage`
 
 Verifica: `contrast_test.dart` (coppie colore), `token_guardrail_test.dart`
 (nessun letterale di colore, font o durata fuori da qui; un solo
-`AuroraButton` per pagina), `doc_alignment_test.dart` (questo documento) e i
-golden della galleria.
+`AuroraButton` per pagina), `aurora_budget_test.dart` (un solo elemento
+Aurora pieno sullo schermo, pagina per pagina), `doc_alignment_test.dart`
+(questo documento) e i golden della galleria.

@@ -11,6 +11,7 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import '../models/library_tab.dart';
 import '../widgets/account_menu.dart';
 import '../widgets/desktop_top_bar.dart';
+import 'nav_selection.dart';
 import '../widgets/server_dot.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 
@@ -55,41 +56,49 @@ class FeishinShell extends StatelessWidget {
           ),
         ),
         Expanded(
-          // Pages lay themselves out at the gutter, measured from the
-          // sidebar's glass edge; the player bar is chrome and keeps the
-          // chrome inset, so it no longer butts against the sidebar.
-          child: PageGutter(
-            value: OmnisonicLayout.sidebarGutter,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      top: OmnisonicLayout.chromeInset,
-                    ),
-                    child: Column(
-                      children: [
-                        if (extended) const DesktopTopBar(),
-                        Expanded(child: child),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    OmnisonicLayout.chromeInset,
-                    OmnisonicSpacing.sm,
-                    OmnisonicLayout.chromeInset,
-                    OmnisonicLayout.chromeInset,
-                  ),
-                  child: OmnisonicTextScale.clampChrome(
-                    context,
-                    AnimatedNowPlayingBar(
-                      onTap: () => context.push(AppRouter.nowPlaying),
+          // The content column is its own semantics boundary. Its nested
+          // Navigator carries a modal barrier that blocks semantics of
+          // whatever was painted before it — which, as the sidebar is the
+          // earlier sibling, hid every nav item from screen readers.
+          child: Semantics(
+            container: true,
+            explicitChildNodes: true,
+            // Pages lay themselves out at the gutter, measured from the
+            // sidebar's glass edge; the player bar is chrome and keeps the
+            // chrome inset, so it no longer butts against the sidebar.
+            child: PageGutter(
+              value: OmnisonicLayout.sidebarGutter,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: OmnisonicLayout.chromeInset,
+                      ),
+                      child: Column(
+                        children: [
+                          if (extended) const DesktopTopBar(),
+                          Expanded(child: child),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      OmnisonicLayout.chromeInset,
+                      OmnisonicSpacing.sm,
+                      OmnisonicLayout.chromeInset,
+                      OmnisonicLayout.chromeInset,
+                    ),
+                    child: OmnisonicTextScale.clampChrome(
+                      context,
+                      AnimatedNowPlayingBar(
+                        onTap: () => context.push(AppRouter.nowPlaying),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -531,12 +540,12 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final surfaces = OmnisonicSurfaces.of(context);
-    // The selected row is the solid ink pill — the single strongest mark in
-    // the chrome, the same one the bottom bar uses, so it always means "you
-    // are here".
-    final background = selected ? surfaces.ink : Colors.transparent;
-    final foreground = selected ? surfaces.onInk : scheme.onSurface;
-    final muted = selected ? surfaces.onInk : scheme.onSurfaceVariant;
+    // Selected: a `wellHover` pill, a filled icon and the Aurora bar on the
+    // left edge. Hover is `well`. The bar and the filled icon mean the state
+    // is not carried by colour alone.
+    final background = navPillColor(context, selected: selected);
+    final foreground = scheme.onSurface;
+    final muted = selected ? scheme.onSurface : scheme.onSurfaceVariant;
     final radius = BorderRadius.circular(OmnisonicRadius.pill);
 
     if (!extended) {
@@ -545,45 +554,54 @@ class _NavItem extends StatelessWidget {
         child: Semantics(
           selected: selected,
           button: true,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: OmnisonicSpacing.xs,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: background,
-                      borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+          container: true,
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: radius,
+                  hoverColor: surfaces.well,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: OmnisonicSpacing.xs,
                     ),
-                    child: Icon(
-                      selected ? activeIcon : icon,
-                      size: OmnisonicIconSizes.smd,
-                      color: selected
-                          ? surfaces.onInk
-                          : scheme.onSurfaceVariant,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: background,
+                            borderRadius: BorderRadius.circular(
+                              OmnisonicRadius.full,
+                            ),
+                          ),
+                          child: Icon(
+                            selected ? activeIcon : icon,
+                            size: OmnisonicIconSizes.smd,
+                            color: muted,
+                          ),
+                        ),
+                        const SizedBox(height: OmnisonicSpacing.xs),
+                        Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: OmnisonicTypography.labelSmall.copyWith(
+                            color: muted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: OmnisonicSpacing.xs),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: OmnisonicTypography.labelSmall.copyWith(
-                      color: selected
-                          ? scheme.onSurface
-                          : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              AuroraBar(visible: selected),
+            ],
           ),
         ),
       );
@@ -594,48 +612,54 @@ class _NavItem extends StatelessWidget {
       child: Semantics(
         selected: selected,
         button: true,
-        child: Material(
-          color: background,
-          borderRadius: radius,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: OmnisonicSpacing.ms,
-                vertical: OmnisonicSpacing.sm + OmnisonicSpacing.xxs,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    selected ? activeIcon : icon,
-                    size: OmnisonicIconSizes.smd,
-                    color: muted,
+        container: true,
+        child: Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Material(
+              color: background,
+              borderRadius: radius,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: radius,
+                hoverColor: surfaces.well,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OmnisonicSpacing.ms,
+                    vertical: OmnisonicSpacing.sm + OmnisonicSpacing.xxs,
                   ),
-                  const SizedBox(width: OmnisonicSpacing.ms),
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OmnisonicTypography.navLabel.copyWith(
-                        color: foreground,
-                      ),
-                    ),
-                  ),
-                  if (count != null && count! > 0)
-                    Text(
-                      '$count',
-                      // Full-strength on the pill: muted, the count was under
-                      // 3:1 against the ink.
-                      style: OmnisonicTypography.technicalSmall.copyWith(
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected ? activeIcon : icon,
+                        size: OmnisonicIconSizes.smd,
                         color: muted,
                       ),
-                    ),
-                ],
+                      const SizedBox(width: OmnisonicSpacing.ms),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: OmnisonicTypography.navLabel.copyWith(
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                      if (count != null && count! > 0)
+                        Text(
+                          '$count',
+                          style: OmnisonicTypography.technicalSmall.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+            AuroraBar(visible: selected),
+          ],
         ),
       ),
     );

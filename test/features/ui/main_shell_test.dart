@@ -1,9 +1,12 @@
 import 'dart:ui' show Tristate;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:omnisonic/core/design_system/design_system.dart';
 import 'package:omnisonic/core/routing/app_router.dart';
 import 'package:omnisonic/core/routing/destinations.dart';
 import 'package:omnisonic/features/ui/presentation/widgets/account_menu.dart';
+import 'package:omnisonic/features/ui/presentation/widgets/nav_selection.dart';
 
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
@@ -183,5 +186,45 @@ void main() {
       expect(find.text('Artists'), findsOneWidget);
       expect(find.text('Playlists'), findsOneWidget);
     });
+
+    // The same grammar on the extended sidebar and the rail: a wellHover
+    // pill, a filled icon and the 3 x 20 Aurora bar — never the ink pill.
+    for (final (name, size) in [
+      ('rail', TestSizes.tablet),
+      ('extended', TestSizes.desktop),
+    ]) {
+      testWidgets('$name: only the current item shows the Aurora bar', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        await pumpShell(tester, size: size, viewModels: models());
+
+        final bars = tester
+            .widgetList<AnimatedScale>(
+              find.descendant(
+                of: find.byType(AuroraBar),
+                matching: find.byType(AnimatedScale),
+              ),
+            )
+            .where((b) => b.scale == 1);
+        expect(bars, hasLength(1), reason: 'exactly one item is current');
+        expect(
+          tester.getSemantics(find.text('Home')).flagsCollection.isSelected,
+          Tristate.isTrue,
+        );
+        semantics.dispose();
+      });
+
+      testWidgets('$name: the selection is not the ink pill', (tester) async {
+        await pumpShell(tester, size: size, viewModels: models());
+        final surfaces = OmnisonicSurfaces.of(
+          tester.element(find.text('Home').first),
+        );
+        final inked = tester
+            .widgetList<Material>(find.byType(Material))
+            .where((m) => m.color == surfaces.ink);
+        expect(inked, isEmpty);
+      });
+    }
   });
 }

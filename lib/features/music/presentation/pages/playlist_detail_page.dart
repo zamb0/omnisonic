@@ -30,7 +30,8 @@ class PlaylistDetailPage extends StatefulWidget {
   State<PlaylistDetailPage> createState() => _PlaylistDetailPageState();
 }
 
-class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
+class _PlaylistDetailPageState extends State<PlaylistDetailPage>
+    with ArtTintMixin, HeaderCollapseMixin {
   bool _isReorderMode = false;
 
   @override
@@ -83,45 +84,48 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
           final tracks = viewModel.selectedPlaylistTracks;
           return RefreshIndicator(
             onRefresh: () async => _reload(viewModel),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                _buildAppBar(playlist),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    PageGutter.of(context),
-                    OmnisonicSpacing.sm,
-                    PageGutter.of(context),
-                    OmnisonicSpacing.lg,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: _buildHeader(playlist, tracks),
-                  ),
-                ),
-                if (viewModel.errorMessage != null)
+            child: NotificationListener<ScrollNotification>(
+              onNotification: onHeaderScroll,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  _buildAppBar(playlist),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
                       PageGutter.of(context),
-                      0,
+                      OmnisonicSpacing.sm,
                       PageGutter.of(context),
-                      OmnisonicSpacing.ms,
+                      OmnisonicSpacing.lg,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: InlineBanner(
-                        kind: BannerKind.warning,
-                        message: viewModel.errorMessage!,
-                        action: TextButton(
-                          onPressed: () => _reload(viewModel),
-                          child: const Text('Try again'),
+                      child: _buildHeader(playlist, tracks),
+                    ),
+                  ),
+                  if (viewModel.errorMessage != null)
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        PageGutter.of(context),
+                        0,
+                        PageGutter.of(context),
+                        OmnisonicSpacing.ms,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: InlineBanner(
+                          kind: BannerKind.warning,
+                          message: viewModel.errorMessage!,
+                          action: TextButton(
+                            onPressed: () => _reload(viewModel),
+                            child: const Text('Try again'),
+                          ),
                         ),
                       ),
                     ),
+                  _buildTrackList(playlist, viewModel, tracks),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: OmnisonicLayout.pageBottom),
                   ),
-                _buildTrackList(playlist, viewModel, tracks),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: OmnisonicLayout.pageBottom),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -151,8 +155,10 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   }
 
   Widget _buildAppBar(Playlist playlist) {
-    return SliverAppBar(
-      pinned: true,
+    return collapsingAppBar(
+      context,
+      collapsed: headerCollapsed,
+      title: playlist.name,
       leading: BackButton(onPressed: _leave),
       actions: [
         IconButton(
@@ -204,14 +210,17 @@ class _PlaylistDetailPageState extends State<PlaylistDetailPage> {
   Widget _buildHeader(Playlist playlist, List<Track> tracks) {
     final total = tracks.fold(Duration.zero, (sum, t) => sum + t.duration);
     final canPlay = tracks.isNotEmpty;
+    updateArtTint(playlist.coverArtUrl);
 
     return DetailHeader(
+      tint: artTint,
       eyebrow: playlist.isPublic ? 'Public playlist' : 'Private playlist',
       title: playlist.name,
       artwork: CoverArt(
-        url: playlist.coverArtUrl, seed: playlist.id,
+        url: playlist.coverArtUrl,
+        seed: playlist.id,
         fallbackIcon: OmnisonicIcons.playlistPlay,
-        elevated: true,
+        radius: OmnisonicRadius.artHero,
       ),
       subtitle: playlist.description?.isNotEmpty == true
           ? Text(

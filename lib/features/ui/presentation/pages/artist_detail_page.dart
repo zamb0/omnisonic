@@ -25,7 +25,8 @@ class ArtistDetailPage extends StatefulWidget {
   State<ArtistDetailPage> createState() => _ArtistDetailPageState();
 }
 
-class _ArtistDetailPageState extends State<ArtistDetailPage> {
+class _ArtistDetailPageState extends State<ArtistDetailPage>
+    with ArtTintMixin, HeaderCollapseMixin {
   List<Album> _albums = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -81,45 +82,45 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _loadAlbums,
-        child: EntranceScope(
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                leading: BackButton(
-                  onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go(AppRouter.library);
-                    }
-                  },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: onHeaderScroll,
+          child: EntranceScope(
+            child: CustomScrollView(
+              slivers: [
+                collapsingAppBar(
+                  context,
+                  collapsed: headerCollapsed,
+                  title: widget.artist.name,
+                  leading: BackButton(
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(AppRouter.library);
+                      }
+                    },
+                  ),
+                  actions: [
+                    if (_albums.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Play All',
+                        icon: const Icon(OmnisonicIcons.playArrow),
+                        onPressed: _playArtist,
+                      ),
+                    if (_albums.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Shuffle',
+                        icon: const Icon(OmnisonicIcons.shuffle),
+                        onPressed: _shuffleArtist,
+                      ),
+                  ],
                 ),
-                title: Text(
-                  widget.artist.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                actions: [
-                  if (_albums.isNotEmpty)
-                    IconButton(
-                      tooltip: 'Play All',
-                      icon: const Icon(OmnisonicIcons.playArrow),
-                      onPressed: _playArtist,
-                    ),
-                  if (_albums.isNotEmpty)
-                    IconButton(
-                      tooltip: 'Shuffle',
-                      icon: const Icon(OmnisonicIcons.shuffle),
-                      onPressed: _shuffleArtist,
-                    ),
-                ],
-              ),
-              SliverToBoxAdapter(child: _buildArtistHeader(context)),
+                SliverToBoxAdapter(child: _buildArtistHeader(context)),
 
-              const SliverToBoxAdapter(child: SectionHeader(title: 'Albums')),
-              _buildAlbumsContent(),
-            ],
+                const SliverToBoxAdapter(child: SectionHeader(title: 'Albums')),
+                _buildAlbumsContent(),
+              ],
+            ),
           ),
         ),
       ),
@@ -199,6 +200,7 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
     final scheme = Theme.of(context).colorScheme;
     final biography = widget.artist.biography?.trim();
     final hasAlbums = _albums.isNotEmpty;
+    updateArtTint(widget.artist.imageUrl);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -208,6 +210,8 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         0,
       ),
       child: DetailHeader(
+        tint: artTint,
+        circularArtwork: true,
         eyebrow: 'Artist',
         title: widget.artist.name,
         artwork: LayoutBuilder(
@@ -257,7 +261,6 @@ class _ArtistDetailPageState extends State<ArtistDetailPage> {
         seed: widget.artist.id,
         size: size,
         shape: CoverArtShape.circle,
-        elevated: true,
         fallbackIcon: OmnisonicIcons.person,
       ),
     );

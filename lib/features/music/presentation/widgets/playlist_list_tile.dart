@@ -125,7 +125,8 @@ class PlaylistListTile extends StatelessWidget {
   }
 
   Widget _buildPlaylistArt(ColorScheme scheme) => CoverArt(
-    url: playlist.coverArtUrl, seed: playlist.id,
+    url: playlist.coverArtUrl,
+    seed: playlist.id,
     size: 56,
     fallbackIcon: OmnisonicIcons.playlistPlay,
   );

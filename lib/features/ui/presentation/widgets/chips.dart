@@ -113,7 +113,8 @@ class MetadataChip extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: OmnisonicTypography.labelMedium.copyWith(
+              // Metadata is data: mono, like every other technical string.
+              style: OmnisonicTypography.technical.copyWith(
                 color: scheme.onSurface,
               ),
             ),

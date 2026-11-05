@@ -242,6 +242,23 @@ class OmnisonicTypography {
   // technical string (counts, bitrates, server ids, timestamps).
   // ---------------------------------------------------------------------
 
+  /// The hero of a detail page — an album's or an artist's name. Gabarito
+  /// 800 at 56. Phones use [heroTitleCompact].
+  static TextStyle get heroTitle => _gabarito(
+    fontSize: 56,
+    fontWeight: extraBold,
+    letterSpacing: -1.6,
+    height: 1.0,
+  );
+
+  /// [heroTitle] on a phone: 40.
+  static TextStyle get heroTitleCompact => _gabarito(
+    fontSize: 40,
+    fontWeight: extraBold,
+    letterSpacing: -1.2,
+    height: 1.0,
+  );
+
   /// Screen title — "Home", "Library". Gabarito 800 at display size.
   static TextStyle get pageTitle => _gabarito(
     fontSize: 40,
@@ -432,6 +449,8 @@ extension OmnisonicTextTheme on TextTheme {
   TextStyle get pageTitle => OmnisonicTypography.pageTitle;
   TextStyle get sectionTitle => OmnisonicTypography.sectionTitle;
   TextStyle get sectionTitleSmall => OmnisonicTypography.sectionTitleSmall;
+  TextStyle get heroTitle => OmnisonicTypography.heroTitle;
+  TextStyle get timecode => OmnisonicTypography.timecode;
   TextStyle get eyebrow => OmnisonicTypography.eyebrow;
   TextStyle get navLabel => OmnisonicTypography.navLabel;
   TextStyle get glassButton => OmnisonicTypography.glassButton;

@@ -65,7 +65,12 @@ void main() {
   // none of them is the main action any more.
   test('at most one AuroraButton per page (docs/design-system.md §1)', () {
     final hits = <String>[];
-    for (final file in files.where((f) => f.path.contains('/pages/'))) {
+    for (final file in files.where(
+      (f) =>
+          f.path.contains('/pages/') &&
+          // The gallery shows every variant, so it has many by design.
+          !f.path.endsWith('component_gallery_page.dart'),
+    )) {
       final count = RegExp(
         r'\bAuroraButton\(',
       ).allMatches(file.readAsStringSync()).length;

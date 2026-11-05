@@ -31,8 +31,8 @@ class FullScreenPlayer extends StatefulWidget {
 }
 
 class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
-  bool _isDraggingSeek = false;
-  double _seekValue = 0.0;
+  /// Position under the finger while scrubbing, or null.
+  Duration? _scrub;
   late NowPlayingPanel _panel;
 
   /// Accumulated downward drag on the header, used to swipe-dismiss the
@@ -503,10 +503,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     if (playbackViewModel.isRestoring && position == Duration.zero) {
       return const SizedBox(height: 56);
     }
-    final activeValue = _isDraggingSeek ? _seekValue : progress.clamp(0.0, 1.0);
-    final elapsed = _isDraggingSeek
-        ? Duration(milliseconds: (_seekValue * duration.inMilliseconds).round())
-        : position;
+    final elapsed = _scrub ?? position;
 
     return Column(
       children: [
@@ -528,31 +525,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
           ],
         ),
         const SizedBox(height: OmnisonicSpacing.sm),
-        // The theme's slider: accent progress on a faint track.
-        SliderTheme(
-          data: SliderTheme.of(context),
-          child: Slider(
-            // No inset of its own, so the track spans the same width as the
-            // time labels above it.
-            padding: EdgeInsets.zero,
-            value: activeValue,
-            // Read as a time, not as "37%".
-            semanticFormatterCallback: (value) =>
-                '${formatDuration(duration * value)} of '
-                '${formatDuration(duration)}',
-            onChanged: (value) {
-              setState(() {
-                _isDraggingSeek = true;
-                _seekValue = value;
-              });
-            },
-            onChangeEnd: (value) {
-              playbackViewModel.seekToProgress(value);
-              setState(() {
-                _isDraggingSeek = false;
-              });
-            },
-          ),
+        AuroraProgress(
+          position: position,
+          duration: duration,
+          onChanged: (value) => setState(() => _scrub = value),
+          onSeek: playbackViewModel.seek,
         ),
         const SizedBox(height: OmnisonicSpacing.xs),
         _buildQualityIndicator(context, playbackViewModel),

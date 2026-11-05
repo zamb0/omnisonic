@@ -282,3 +282,51 @@ class _ProgressPainter extends CustomPainter {
       old.showHalo != showHalo ||
       old.thumb != thumb;
 }
+
+/// A non-interactive 2 px Aurora progress line, for the bottom edge of the
+/// mini player. Shows the same revealed gradient as [AuroraProgress].
+class AuroraProgressLine extends StatelessWidget {
+  const AuroraProgressLine({
+    super.key,
+    required this.fraction,
+    this.height = 2,
+  });
+
+  /// 0–1.
+  final double fraction;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = OmnisonicBrand.of(context).aurora;
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: CustomPaint(
+          painter: _LinePainter(fraction.clamp(0.0, 1.0), gradient),
+        ),
+      ),
+    );
+  }
+}
+
+class _LinePainter extends CustomPainter {
+  _LinePainter(this.fraction, this.gradient);
+
+  final double fraction;
+  final LinearGradient gradient;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (fraction <= 0) return;
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width * fraction, size.height),
+      Paint()..shader = gradient.createShader(Offset.zero & size),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LinePainter old) =>
+      old.fraction != fraction || old.gradient != gradient;
+}

@@ -33,7 +33,6 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin, ArtTintMixin {
-  bool _hoveringSeek = false;
   bool _hoveringVolume = false;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
@@ -43,10 +42,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   /// Volume to restore when un-muting from the bar's volume icon.
   double _volumeBeforeMute = 1.0;
 
-  /// Progress being dragged on the desktop scrubber, or null when not dragging.
+  /// Position under the finger on the desktop scrubber, or null when not
+  /// dragging.
   /// While dragging we show the local value and only seek on release, so a drag
   /// costs one seek instead of one per pointer move.
-  double? _draggingProgress;
+  Duration? _scrub;
 
   @override
   void initState() {
@@ -214,133 +214,127 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
           padding: EdgeInsets.zero,
           child: SizedBox(
             height: 64,
-            child: Column(
-              children: [
-                // Thin progress bar at top
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(OmnisonicRadius.panel),
-                  ),
-                  child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 2,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(tint),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: OmnisonicSpacing.ms,
-                    ),
-                    child: Row(
-                      children: [
-                        // Artwork. Tag matches full_screen_player.dart's
-                        // artwork so opening the player animates the cover
-                        // continuously instead of a hard cut.
-                        Hero(
-                          tag: 'now-playing-artwork-${track.id}',
-                          child: CoverArt(
-                            url: track.coverArtUrl,
-                            seed: track.albumId ?? track.id,
-                            size: 44,
-                            radius: OmnisonicRadius.sm,
-                          ),
-                        ),
-                        const SizedBox(width: OmnisonicSpacing.ms),
-                        // Title + Artist
-                        Expanded(
-                          child: ExcludeSemantics(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  track.title,
-                                  style: OmnisonicTypography.cardTitle.copyWith(
-                                    color: scheme.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: OmnisonicSpacing.xxs),
-                                Text(
-                                  track.artist,
-                                  style: OmnisonicTypography.bodySmall.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+            // The cover's colour tints the glass at 12 %.
+            child: ColoredBox(
+              color: tint.withValues(alpha: 0.12),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: OmnisonicSpacing.ms,
+                      ),
+                      child: Row(
+                        children: [
+                          // Artwork. Tag matches full_screen_player.dart's
+                          // artwork so opening the player animates the cover
+                          // continuously instead of a hard cut.
+                          Hero(
+                            tag: 'now-playing-artwork-${track.id}',
+                            child: CoverArt(
+                              url: track.coverArtUrl,
+                              seed: track.albumId ?? track.id,
+                              size: 44,
+                              radius: OmnisonicRadius.sm,
                             ),
                           ),
-                        ),
-                        // Compact controls. Every target is at least 44x44 with an
-                        // 8px gap, so on the narrowest phones the favourite button
-                        // is dropped rather than squeezing the track title away.
-                        if (showFavorite) ...[
-                          Consumer<PlaybackViewModel>(
-                            builder: (context, vm, child) {
-                              // Read the live track: the one captured above
-                              // predates the optimistic flip.
-                              final live = vm.currentTrack ?? track;
-                              final isStarred = live.isStarred;
-                              final pending = vm.isFavoritePending(live.id);
-                              return _iconBtn(
-                                isStarred
-                                    ? OmnisonicIcons.favorite
-                                    : OmnisonicIcons.favoriteOutline,
-                                OmnisonicIconSizes.smd,
-                                isStarred
-                                    ? OmnisonicBrand.of(context).heat
-                                    : scheme.onSurfaceVariant,
-                                pending
-                                    ? null
-                                    : () {
-                                        Haptics.success();
-                                        vm.toggleFavorite(live);
-                                      },
-                                label: isStarred
-                                    ? 'Remove from favorites'
-                                    : 'Add to favorites',
-                                toggled: isStarred,
-                              );
-                            },
-                          ),
-                          const SizedBox(width: OmnisonicSpacing.sm),
-                        ],
-                        if (roomy) ...[
-                          SkipPreviousButton(playback: vm, size: 22),
-                          const SizedBox(width: OmnisonicSpacing.sm),
-                        ],
-                        PlayPauseButton(playback: vm),
-                        // Hidden while paused: three still bars read as an
-                        // overflow menu.
-                        if (roomy && vm.isPlaying) ...[
-                          const SizedBox(
-                            width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
-                          ),
-                          SizedBox(
-                            width: 18,
-                            height: 16,
-                            // A small equalizer sized for an icon slot.
-                            child: Center(
-                              child: NowPlayingEqualizer(
-                                playing: vm.isPlaying,
-                                color: tint,
-                                excludeSemantics: true,
+                          const SizedBox(width: OmnisonicSpacing.ms),
+                          // Title + Artist
+                          Expanded(
+                            child: ExcludeSemantics(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    track.title,
+                                    style: OmnisonicTypography.cardTitle
+                                        .copyWith(color: scheme.onSurface),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: OmnisonicSpacing.xxs),
+                                  Text(
+                                    track.artist,
+                                    style: OmnisonicTypography.bodySmall
+                                        .copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
+                          // Compact controls. Every target is at least 44x44 with an
+                          // 8px gap, so on the narrowest phones the favourite button
+                          // is dropped rather than squeezing the track title away.
+                          if (showFavorite) ...[
+                            Consumer<PlaybackViewModel>(
+                              builder: (context, vm, child) {
+                                // Read the live track: the one captured above
+                                // predates the optimistic flip.
+                                final live = vm.currentTrack ?? track;
+                                final isStarred = live.isStarred;
+                                final pending = vm.isFavoritePending(live.id);
+                                return _iconBtn(
+                                  isStarred
+                                      ? OmnisonicIcons.favorite
+                                      : OmnisonicIcons.favoriteOutline,
+                                  OmnisonicIconSizes.smd,
+                                  isStarred
+                                      ? OmnisonicBrand.of(context).heat
+                                      : scheme.onSurfaceVariant,
+                                  pending
+                                      ? null
+                                      : () {
+                                          Haptics.success();
+                                          vm.toggleFavorite(live);
+                                        },
+                                  label: isStarred
+                                      ? 'Remove from favorites'
+                                      : 'Add to favorites',
+                                  toggled: isStarred,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: OmnisonicSpacing.sm),
+                          ],
+                          if (roomy) ...[
+                            SkipPreviousButton(playback: vm, size: 22),
+                            const SizedBox(width: OmnisonicSpacing.sm),
+                          ],
+                          PlayPauseButton(playback: vm, size: PlayDiscSize.s44),
+                          // Hidden while paused: three still bars read as an
+                          // overflow menu.
+                          if (roomy && vm.isPlaying) ...[
+                            const SizedBox(
+                              width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
+                            ),
+                            SizedBox(
+                              width: 18,
+                              height: 16,
+                              // A small equalizer sized for an icon slot.
+                              child: Center(
+                                child: NowPlayingEqualizer(
+                                  playing: vm.isPlaying,
+                                  color: tint,
+                                  excludeSemantics: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: OmnisonicSpacing.sm),
+                          SkipNextButton(playback: vm, size: 22),
                         ],
-                        const SizedBox(width: OmnisonicSpacing.sm),
-                        SkipNextButton(playback: vm, size: 22),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  // Progress on the bottom edge, 2 px, Aurora.
+                  AuroraProgressLine(fraction: progress),
+                ],
+              ),
             ),
           ),
         ),
@@ -565,11 +559,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               // Expanded slider.
               Flexible(
                 child: Text(
-                  formatDuration(
-                    _draggingProgress == null
-                        ? position
-                        : duration * _draggingProgress!,
-                  ),
+                  formatDuration(_scrub ?? position),
                   overflow: TextOverflow.clip,
                   softWrap: false,
                   style: timeStyle,
@@ -577,32 +567,11 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
               ),
               const SizedBox(width: OmnisonicSpacing.ms),
               Expanded(
-                child: MouseRegion(
-                  onEnter: (_) => setState(() => _hoveringSeek = true),
-                  onExit: (_) => setState(() => _hoveringSeek = false),
-                  child: SliderTheme(
-                    data: _hairlineSliderTheme(
-                      context,
-                      activeColor: _legibleTint(context, tint),
-                      inactiveColor: scheme.onSurface.withValues(alpha: 0.14),
-                      active: _hoveringSeek || _draggingProgress != null,
-                    ),
-                    child: Slider(
-                      value: _draggingProgress ?? progress.clamp(0.0, 1.0),
-                      // Read as a time, not as "37%". (A `label` was set here
-                      // too; without divisions a Slider never shows it.)
-                      semanticFormatterCallback: (value) =>
-                          '${formatDuration(duration * value)} of '
-                          '${formatDuration(duration)}',
-                      onChanged: (value) {
-                        setState(() => _draggingProgress = value);
-                      },
-                      onChangeEnd: (value) {
-                        setState(() => _draggingProgress = null);
-                        vm.seekToProgress(value);
-                      },
-                    ),
-                  ),
+                child: AuroraProgress(
+                  position: position,
+                  duration: duration,
+                  onChanged: (value) => setState(() => _scrub = value),
+                  onSeek: vm.seek,
                 ),
               ),
               const SizedBox(width: OmnisonicSpacing.ms),
@@ -621,23 +590,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     );
   }
 
-  /// Thumbless 4px track — the redesign treats progress and volume as
-  /// hairlines, not as Material sliders. The thumb is sized to zero rather
-  /// than removed so [Slider]'s drag handling and semantics stay intact.
-  /// 4px hairline track. The thumb only appears while the pointer is over
-  /// the slider or dragging it — at rest it is a line, as the redesign
-  /// wants, but it was a line with no affordance at all and a ~20px hit
-  /// area. The overlay keeps the hit area at 28px either way.
-  /// The art tint, unless it is too close to the surface to see: a cream
-  /// cover gave a cream scrubber on the light theme.
-  Color _legibleTint(BuildContext context, Color tint) {
-    final theme = Theme.of(context);
-    final tintBrightness = ThemeData.estimateBrightnessForColor(tint);
-    return tintBrightness == theme.brightness
-        ? theme.colorScheme.primary
-        : tint;
-  }
-
+  /// The volume slider's hairline: 4 px, with a thumb only while the pointer
+  /// is over it or dragging. (The seek bar is [AuroraProgress]; a generic
+  /// slider token replaces this in D3.)
   SliderThemeData _hairlineSliderTheme(
     BuildContext context, {
     required Color activeColor,

@@ -56,19 +56,19 @@ class GlassSurface extends StatelessWidget {
     final blurSigma = isPill ? _pillBlurSigma : _cardBlurSigma;
     final saturation = isDark ? (isPill ? 1.7 : 1.6) : (isPill ? 1.9 : 1.8);
 
-    // Design spec, light: card fill .66 -> .38, pill fill .72 -> .46 with a
-    // .85/.90 border. Dark glass sits on a near-black base so it reads as a
-    // flat white wash instead of a gradient.
+    // docs/design-system.md §2.1. Light: L1 .66 -> .40, L2 .74 -> .48.
+    // Dark: L1 .06 -> .04, L2 .10 -> .06, on a near-black base, so it reads
+    // as a flat white wash rather than a gradient.
     final Color fillTop;
     final Color fillBottom;
     final Color borderColor;
     if (isDark) {
-      fillTop = Colors.white.withValues(alpha: isPill ? 0.09 : 0.06);
+      fillTop = Colors.white.withValues(alpha: isPill ? 0.10 : 0.06);
       fillBottom = Colors.white.withValues(alpha: isPill ? 0.06 : 0.04);
       borderColor = Colors.white.withValues(alpha: isPill ? 0.16 : 0.12);
     } else {
-      fillTop = Colors.white.withValues(alpha: isPill ? 0.72 : 0.66);
-      fillBottom = Colors.white.withValues(alpha: isPill ? 0.46 : 0.38);
+      fillTop = Colors.white.withValues(alpha: isPill ? 0.74 : 0.66);
+      fillBottom = Colors.white.withValues(alpha: isPill ? 0.48 : 0.40);
       borderColor = Colors.white.withValues(alpha: isPill ? 0.90 : 0.85);
     }
 
@@ -82,6 +82,30 @@ class GlassSurface extends StatelessWidget {
       spreadRadius: -18,
       offset: Offset(0, isPill ? 16 : 12),
     );
+
+    // "Reduce transparency": the platform's high-contrast setting is the
+    // closest signal Flutter exposes. Glass becomes an opaque container with
+    // a hairline, no blur: legible over any artwork and cheaper to paint.
+    if (MediaQuery.highContrastOf(context)) {
+      final scheme = Theme.of(context).colorScheme;
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: borderRadius,
+          border: Border.all(color: scheme.outlineVariant),
+          boxShadow: [shadow],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+        ),
+      );
+    }
+
+    // Floating chrome in the dark gets a light edge instead of a flat
+    // border: white 14 % at the top fading to nothing — thickness without a
+    // heavy shadow.
+    final lightEdge = isDark && isPill;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -103,7 +127,9 @@ class GlassSurface extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [fillTop, fillBottom],
               ),
-              border: Border.all(color: borderColor, width: 1),
+              border: lightEdge
+                  ? null
+                  : Border.all(color: borderColor, width: 1),
             ),
             child: Stack(
               children: [
@@ -118,7 +144,15 @@ class GlassSurface extends StatelessWidget {
                     child: child,
                   ),
                 ),
-                if (highlight)
+                if (lightEdge)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: _LightEdgePainter(borderRadius),
+                      ),
+                    ),
+                  ),
+                if (highlight && !lightEdge)
                   Positioned(
                     left: borderRadius.topLeft.x,
                     right: borderRadius.topRight.x,
@@ -360,4 +394,34 @@ class _GlassSheenState extends State<GlassSheen>
       ),
     );
   }
+}
+
+/// A 1 px outline fading from white 14 % at the top edge to transparent at
+/// the bottom: the "light edge" of floating dark chrome.
+class _LightEdgePainter extends CustomPainter {
+  const _LightEdgePainter(this.radius);
+
+  final BorderRadius radius;
+
+  static const Color _top = Color(0x24FFFFFF); // white 14 %
+  static const Color _bottom = Color(0x00FFFFFF);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRRect(
+      radius.toRRect(rect).deflate(0.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_top, _bottom],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LightEdgePainter old) => old.radius != radius;
 }

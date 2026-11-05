@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/routing/destinations.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
+import 'chips.dart';
+import 'server_health.dart';
 
 /// The way into every destination that doesn't get a permanent slot —
 /// Starred, Downloads, Servers, Settings.
@@ -35,21 +39,39 @@ class AccountButton extends StatelessWidget {
     final color = active ? scheme.onSurface : scheme.onSurfaceVariant;
     final vertical = axis == Axis.vertical;
 
-    // Active, the sidebar footer avatar takes the `wellHover` pill. In the
+    // The ring is the aggregate server state (success / warning / error).
+    // Its colour is never alone: the semantics label says it too.
+    final health = context.select<ServerManagementViewModel, ServerHealth>(
+      (vm) => ServerHealth.of(vm.servers.map((server) => server.status)),
+    );
+    final healthStatus = health.status;
+    final ringColor = healthStatus == null
+        ? null
+        : ServerStatusVisuals.of(context, healthStatus).color;
+
+    // Active, the sidebar footer avatar takes the `wellHover` fill. In the
     // bottom bar the shared sliding indicator sits behind this slot, so the
     // avatar stays bare there.
-    final avatar = Container(
-      width: vertical ? 52 : 28,
+    final disc = Container(
+      width: 28,
       height: 28,
       decoration: BoxDecoration(
+        shape: BoxShape.circle,
         color: vertical ? null : (active ? surfaces.wellHover : surfaces.well),
-        borderRadius: BorderRadius.circular(OmnisonicRadius.full),
+        border: ringColor == null
+            ? null
+            : Border.all(color: ringColor, width: 2),
       ),
       child: Icon(
         active ? OmnisonicIcons.person : OmnisonicIcons.personOutline,
-        size: vertical ? OmnisonicIconSizes.smd : OmnisonicIconSizes.sm,
+        size: OmnisonicIconSizes.sm,
         color: color,
       ),
+    );
+    final avatar = SizedBox(
+      width: vertical ? 52 : 28,
+      height: 28,
+      child: Center(child: disc),
     );
 
     final label = Text(
@@ -64,7 +86,7 @@ class AccountButton extends StatelessWidget {
     Widget button(VoidCallback onTap) => Semantics(
       button: true,
       selected: active,
-      label: 'Account and settings',
+      label: 'Account and settings, ${health.description}',
       excludeSemantics: true,
       child: Tooltip(
         message: 'Account and settings',

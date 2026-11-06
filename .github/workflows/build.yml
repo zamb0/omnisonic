@@ -1,11 +1,10 @@
 name: Build
 
 on:
-  push:
-    branches: [main, dev]
-    tags: ['v*']
   pull_request:
-  workflow_dispatch:
+    branches: [dev]
+  push:
+    tags: ['v*']
 
 concurrency:
   group: build-${{ github.ref }}
@@ -15,8 +14,25 @@ env:
   FLUTTER_VERSION: '3.47.8'
 
 jobs:
+  # Tags carry no branch, so check that a release tag points at a commit on main.
+  guard:
+    name: Tag on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+        with:
+          fetch-depth: 0
+      - if: github.event_name == 'push'
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag ${GITHUB_REF_NAME} is not on main."
+            exit 1
+          fi
+
   android:
     name: Android
+    needs: guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +80,7 @@ jobs:
 
   linux:
     name: Linux
+    needs: guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

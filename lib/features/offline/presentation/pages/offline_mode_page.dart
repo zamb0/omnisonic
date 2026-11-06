@@ -12,6 +12,7 @@ import '../widgets/offline_indicator.dart';
 import '../../../ui/presentation/widgets/widgets.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/web_support.dart';
 import '../../../../core/entities/entities.dart';
 
 /// Page for managing offline mode and viewing offline content
@@ -40,6 +41,16 @@ class _OfflineModePageState extends State<OfflineModePage>
 
   @override
   Widget build(BuildContext context) {
+    if (!supportsOfflineDownloads) {
+      return const Scaffold(
+        appBar: PageHeaderAppBar(title: 'Downloads'),
+        body: EmptyState(
+          icon: OmnisonicIcons.cloudOff,
+          title: 'Downloads unavailable',
+          subtitle: offlineUnavailableOnWebMessage,
+        ),
+      );
+    }
     return Scaffold(
       appBar: PageHeaderAppBar(
         title: 'Downloads',

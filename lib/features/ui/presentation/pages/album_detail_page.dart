@@ -7,6 +7,7 @@ import '../../../../core/routing/app_router.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/album_grouping.dart';
+import '../../../../core/utils/web_support.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
@@ -238,7 +239,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
             icon: const Icon(OmnisonicIcons.shuffle),
             onPressed: _shuffleAlbum,
           ),
-        if (_tracks.isNotEmpty)
+        if (_tracks.isNotEmpty && supportsOfflineDownloads)
           IconButton(
             tooltip: 'Download album',
             icon: const Icon(OmnisonicIcons.downloadOutline),
@@ -769,12 +770,13 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
         ),
         // Icon-only: with a label the third button wrapped onto a row of
         // its own on phones. The app bar has the same action.
-        OmnisonicIconButton(
-          variant: OmnisonicIconButtonVariant.tonal,
-          onPressed: canPlay ? _downloadAlbum : null,
-          tooltip: 'Download album',
-          icon: OmnisonicIcons.downloadOutline,
-        ),
+        if (supportsOfflineDownloads)
+          OmnisonicIconButton(
+            variant: OmnisonicIconButtonVariant.tonal,
+            onPressed: canPlay ? _downloadAlbum : null,
+            tooltip: 'Download album',
+            icon: OmnisonicIcons.downloadOutline,
+          ),
       ],
       below: !desktop && _albumVariants.length > 1
           ? _buildSourcePanel(context, scheme)

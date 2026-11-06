@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -296,6 +297,7 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
               ),
               validator: _validateUrl,
             ),
+            if (kIsWeb) _WebUrlWarning(controller: _url),
             const SizedBox(height: OmnisonicSpacing.md),
             TextFormField(
               key: _usernameKey,
@@ -388,6 +390,48 @@ class _ServerFormDialogState extends State<ServerFormDialog> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Explains, under the URL field of the web app, why an `http://` or LAN
+/// address will most likely fail: the browser blocks it before the request
+/// reaches the server, so the connection test can only report a bare
+/// network error.
+class _WebUrlWarning extends StatelessWidget {
+  const _WebUrlWarning({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final warning = ServerValidator.webUrlWarning(
+          ServerValidator.normalizeUrl(value.text),
+        );
+        if (warning == null) return const SizedBox.shrink();
+        final scheme = Theme.of(context).colorScheme;
+        return Padding(
+          padding: const EdgeInsets.only(top: OmnisonicSpacing.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(OmnisonicIcons.warning, size: 18, color: scheme.error),
+              const SizedBox(width: OmnisonicSpacing.sm),
+              Expanded(
+                child: Text(
+                  warning,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: scheme.error),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

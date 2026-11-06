@@ -4,7 +4,7 @@ Guidance for AI coding agents working in this repository.
 
 ## Project
 
-Omnisonic — a Flutter client that aggregates **multiple Subsonic-compatible servers** into one unified music collection (iOS, Android, macOS, Windows, Linux). Web is not supported: drift uses `NativeDatabase` (`dart:ffi`), and downloads, the cache and MPRIS use `dart:io`. The multi-server aspect drives most of the non-obvious design: IDs, deduplication, source selection, and credential storage all exist because the same track can live on several servers.
+Omnisonic — a Flutter client that aggregates **multiple Subsonic-compatible servers** into one unified music collection (iOS, Android, macOS, Windows, Linux, web). The web build streams only; see *Web* below. The multi-server aspect drives most of the non-obvious design: IDs, deduplication, source selection, and credential storage all exist because the same track can live on several servers.
 
 ## Commands
 
@@ -69,6 +69,14 @@ Both are registered in `injection_container` and wired in `main.dart` via `Multi
 - `AudioService.init()` is **skipped on Linux** (MPRIS/dbus is used instead) and is wrapped in a 5s timeout in `main.dart` because it can hang on iOS.
 
 `main.dart` also persists the play queue via `PlaybackTrackingService.savePlayQueue` on `paused`/`inactive`/`detached` lifecycle events.
+
+### Web
+
+Built with `flutter build web --base-href /app/` and deployed under `/app/` of the Pages site by `.github/workflows/pages.yml`.
+
+- **Database**: `lib/core/database/connection/` picks `NativeDatabase` on native and drift's `WasmDatabase` on web. `web/sqlite3.wasm` and `web/drift_worker.js` are downloaded from the `sqlite3` and `drift` GitHub releases matching `pubspec.lock`; update them when those packages change.
+- **`dart:io`**: dart2js still compiles code importing it, but every call throws. Platform checks go through `AppPlatform` (`core/utils/platform_info.dart`), never `Platform`. Downloads, the audio cache and the downloads UI are gated on `supportsOfflineDownloads` (`core/utils/web_support.dart`). MPRIS is Linux-only; playback uses `just_audio`.
+- **Server limits** (not fixable in code): the server must be `https://`, send CORS headers, and not be on a LAN/loopback address (Private Network Access). `ServerValidator.webUrlWarning` and `describeConnectionTestError` surface these in the add-server form.
 
 ### Credentials
 

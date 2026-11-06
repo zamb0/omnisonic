@@ -6,6 +6,7 @@ import '../app_database.dart';
 import '../../entities/cache_entry.dart';
 import '../../errors/result.dart';
 import '../../errors/failures.dart';
+import '../../utils/web_support.dart';
 
 /// Local data source for cache operations and offline content management
 class LocalCacheDataSource {
@@ -362,6 +363,10 @@ class LocalCacheDataSource {
     String trackId,
     String fileExtension,
   ) async {
+    // dart:io file access throws in a browser; the web build streams only.
+    if (!supportsOfflineDownloads) {
+      return ResultHelper.failure(CacheFailure(offlineUnavailableOnWebMessage));
+    }
     try {
       final cacheDir = await _getCacheDirectory();
       final fileName =

@@ -1,8 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'platform_info.dart';
 
 /// Physical feedback for the interactions that change something.
 ///
@@ -56,7 +56,7 @@ class Haptics extends ChangeNotifier {
   }
 
   static bool get _supported =>
-      !kIsWeb && instance._enabled && (Platform.isIOS || Platform.isAndroid);
+      instance._enabled && (AppPlatform.isIOS || AppPlatform.isAndroid);
 
   /// Moving between discrete options: a tab, a chip, a queue reorder.
   static Future<void> selection() async {

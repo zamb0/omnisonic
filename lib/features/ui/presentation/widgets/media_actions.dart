@@ -7,6 +7,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/web_support.dart';
 import '../../../music/presentation/viewmodels/music_library_view_model.dart';
 import '../../../music/presentation/widgets/add_to_playlist_sheet.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
@@ -41,7 +42,9 @@ Future<void> showTrackActions(
   List<MediaAction> extra = const [],
 }) {
   final playback = context.read<PlaybackViewModel>();
-  final offline = _maybeRead<OfflineModeViewModel>(context);
+  final offline = supportsOfflineDownloads
+      ? _maybeRead<OfflineModeViewModel>(context)
+      : null;
   final isDownloaded = offline?.isTrackAvailableOffline(track.id) ?? false;
   final isDownloading = offline?.isTrackDownloading(track.id) ?? false;
 
@@ -143,7 +146,9 @@ Future<void> showAlbumActions(
 }) {
   final library = context.read<MusicLibraryViewModel>();
   final starred = library.isAlbumStarred(album);
-  final offline = _maybeRead<OfflineModeViewModel>(context);
+  final offline = supportsOfflineDownloads
+      ? _maybeRead<OfflineModeViewModel>(context)
+      : null;
 
   return _showActionSheet(
     context,

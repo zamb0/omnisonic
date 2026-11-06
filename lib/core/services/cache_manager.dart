@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../entities/entities.dart';
 import '../errors/errors.dart';
+import '../utils/web_support.dart';
 
 /// Cache eviction strategy
 enum CacheEvictionStrategy {
@@ -242,6 +243,8 @@ class CacheManager {
 
   /// Gets cache directory size
   Future<Result<int>> getCacheDirectorySize() async {
+    // No disk cache in the web build.
+    if (!supportsOfflineDownloads) return ResultHelper.success(0);
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final cacheDir = Directory('${appDir.path}/omnisonic_cache');

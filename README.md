@@ -48,6 +48,7 @@ Prebuilt packages are attached to each
 | Android | `app-release.apk` or the per-ABI APKs | Most phones need `app-arm64-v8a-release.apk`. |
 | Linux | `omnisonic-<version>-linux-x64.tar.gz` | Extract, then run `./omnisonic`. Needs GTK 3, GStreamer and libsecret. |
 | iOS, macOS, Windows | — | Build from source for now (see below). |
+| Web | [zamb0.github.io/omnisonic/app](https://zamb0.github.io/omnisonic/app/) | Streaming only. See [Web app](#web-app) for the server requirements. |
 
 ## Build from source
 
@@ -69,6 +70,7 @@ flutter build linux        # Linux
 flutter build macos        # macOS
 flutter build ios          # iOS (needs signing)
 flutter build windows      # Windows
+flutter build web --base-href /app/   # Web, as deployed to Pages
 ```
 
 The `Makefile` wraps these with packaging targets (`make help`). On Linux,
@@ -79,8 +81,23 @@ sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev \
   libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libsecret-1-dev libjsoncpp-dev
 ```
 
-Web is not supported: the database, downloads and cache rely on `dart:ffi`
-and `dart:io`.
+### Web app
+
+The web build stores the library in the browser (drift on SQLite compiled to
+WebAssembly; `web/sqlite3.wasm` and `web/drift_worker.js` must match the
+`sqlite3` and `drift` package versions). It streams only: downloads, offline
+mode and the disk cache need the native apps, and there is no MPRIS.
+
+The browser decides which servers the page may talk to, so a server works
+with the web app only if it:
+
+- uses `https://` — an HTTPS page cannot call an `http://` server (mixed content);
+- sends CORS headers that allow the page's origin (Navidrome does);
+- is reachable from the internet — browsers block LAN and loopback addresses
+  from a public website (Private Network Access).
+
+The add-server form warns about `http://` and private addresses, and reports a
+blocked request as such instead of a bare network error.
 
 ## Development
 
@@ -115,7 +132,8 @@ Android release signing is used when the repository secrets
 key.
 
 The project website in [`site/`](site/) is deployed to GitHub Pages by
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml), on pushes to
+`main`. The same workflow builds the web app and serves it under `/app/`.
 
 ## Contributing
 

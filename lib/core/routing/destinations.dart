@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design_system/design_system.dart';
+import '../utils/web_support.dart';
 import 'app_router.dart';
 
 /// Where a destination lives in the navigation hierarchy.
@@ -91,13 +92,15 @@ class AppDestinations {
       label: 'Starred',
       scope: DestinationScope.secondary,
     ),
-    AppDestination(
-      route: AppRouter.downloads,
-      icon: OmnisonicIcons.downloadOutline,
-      activeIcon: OmnisonicIcons.download,
-      label: 'Downloads',
-      scope: DestinationScope.secondary,
-    ),
+    // The web build streams only; see web_support.dart.
+    if (supportsOfflineDownloads)
+      AppDestination(
+        route: AppRouter.downloads,
+        icon: OmnisonicIcons.downloadOutline,
+        activeIcon: OmnisonicIcons.download,
+        label: 'Downloads',
+        scope: DestinationScope.secondary,
+      ),
     AppDestination(
       route: AppRouter.servers,
       icon: OmnisonicIcons.dnsOutline,

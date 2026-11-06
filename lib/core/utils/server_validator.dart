@@ -27,6 +27,50 @@ class ServerValidator {
     return url;
   }
 
+  /// A warning for [url] when the app runs in a browser, or null.
+  ///
+  /// Not a validation error: the address may be fine for the native apps
+  /// sharing the same server list, and some setups (a local dev server,
+  /// a browser flag) do allow it. It only explains the likely failure.
+  static String? webUrlWarning(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return null;
+    if (uri.scheme == 'http') {
+      return 'Browsers block http:// servers from this HTTPS page. '
+          'Use an https:// address.';
+    }
+    if (isPrivateHost(uri.host)) {
+      return 'Browsers block LAN addresses from a public website. '
+          'Use an address reachable from the internet.';
+    }
+    return null;
+  }
+
+  /// Whether [host] is loopback, link-local, a private range or `.local`.
+  static bool isPrivateHost(String host) {
+    final h = host.toLowerCase();
+    if (h == 'localhost' || h.endsWith('.localhost') || h.endsWith('.local')) {
+      return true;
+    }
+    // Uri.host drops the IPv6 brackets.
+    if (h.contains(':')) {
+      return h == '::1' ||
+          h.startsWith('fc') ||
+          h.startsWith('fd') ||
+          h.startsWith('fe80');
+    }
+    final parts = h.split('.');
+    if (parts.length != 4) return false;
+    final octets = parts.map(int.tryParse).toList();
+    if (octets.any((o) => o == null || o < 0 || o > 255)) return false;
+    final a = octets[0]!, b = octets[1]!;
+    return a == 10 ||
+        a == 127 ||
+        (a == 172 && b >= 16 && b <= 31) ||
+        (a == 192 && b == 168) ||
+        (a == 169 && b == 254);
+  }
+
   /// Validates a server configuration
   static Result<void> validateServerConfig(MusicServer server) {
     // Check required fields

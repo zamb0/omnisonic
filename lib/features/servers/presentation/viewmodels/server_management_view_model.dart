@@ -222,9 +222,7 @@ class ServerManagementViewModel extends ChangeNotifier {
       },
       (connection) {
         if (connection.isSuccessful) return connection;
-        _actionError =
-            "Couldn't connect to the server: "
-            '${connection.errorMessage ?? 'check the URL and credentials.'}';
+        _actionError = describeConnectionTestError(connection.errorMessage);
         return null;
       },
     );

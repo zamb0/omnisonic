@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../entities/entities.dart';
 import '../errors/errors.dart';
+import '../utils/web_support.dart';
 
 /// Download progress callback
 typedef DownloadProgressCallback = void Function(int received, int total);
@@ -21,6 +22,10 @@ class DownloadManager {
     Track track, {
     DownloadProgressCallback? onProgress,
   }) async {
+    // dart:io file access throws in a browser; the web build streams only.
+    if (!supportsOfflineDownloads) {
+      return ResultHelper.failure(CacheFailure(offlineUnavailableOnWebMessage));
+    }
     try {
       // Check if already downloading
       if (_activeDownloads.containsKey(track.id)) {

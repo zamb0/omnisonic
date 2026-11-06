@@ -6,16 +6,23 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/repositories/playback_repository.dart'
     show PlaybackState, RepeatMode;
 import 'audio_player_data_source.dart';
+import 'media_library_browser.dart';
 
 /// Audio service handler for background playback and system integration
 class AudioServiceHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  AudioServiceHandler({required AudioPlayerDataSource audioPlayerDataSource})
-    : _audioPlayerDataSource = audioPlayerDataSource {
+  AudioServiceHandler({
+    required AudioPlayerDataSource audioPlayerDataSource,
+    MediaLibraryBrowser? mediaLibraryBrowser,
+  }) : _audioPlayerDataSource = audioPlayerDataSource,
+       _browser = mediaLibraryBrowser {
     _init();
   }
 
   final AudioPlayerDataSource _audioPlayerDataSource;
+
+  /// Serves the browse tree to Android Auto; null disables browsing.
+  final MediaLibraryBrowser? _browser;
   late StreamSubscription<PlaybackState> _playbackStateSubscription;
   late StreamSubscription<List<Track>> _queueSubscription;
 
@@ -131,6 +138,34 @@ class AudioServiceHandler extends BaseAudioHandler
     final enabled = shuffleMode == AudioServiceShuffleMode.all;
     final result = await _audioPlayerDataSource.setShuffleMode(enabled);
     result.fold((failure) => throw Exception(failure.toString()), (_) => null);
+  }
+
+  @override
+  Future<List<MediaItem>> getChildren(
+    String parentMediaId, [
+    Map<String, dynamic>? options,
+  ]) async => await _browser?.getChildren(parentMediaId) ?? const [];
+
+  @override
+  Future<List<MediaItem>> search(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async => await _browser?.search(query) ?? const [];
+
+  @override
+  Future<void> playFromMediaId(
+    String mediaId, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    await _browser?.playFromMediaId(mediaId);
+  }
+
+  @override
+  Future<void> playFromSearch(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    await _browser?.playFromSearch(query);
   }
 
   /// Updates the media session with current playback state

@@ -28,6 +28,8 @@ import '../../features/servers/data/repositories/server_repository_impl.dart';
 import '../../features/playback/data/repositories/playback_repository_impl.dart';
 import '../../features/playback/data/datasources/audio_player_data_source.dart';
 import '../../features/playback/data/datasources/audio_service_handler.dart';
+import '../../features/playback/data/datasources/media_library_browser.dart';
+import '../usecases/play_track_use_case.dart';
 import '../../features/playback/data/datasources/audio_focus_manager.dart';
 import '../../features/playback/data/datasources/adaptive_streaming_service.dart';
 import '../../features/playback/data/datasources/mpris_handler.dart';
@@ -119,9 +121,24 @@ abstract class AppModule {
       AudioPlayerDataSource(adaptiveStreamingService: adaptiveStreamingService);
 
   @lazySingleton
+  MediaLibraryBrowser mediaLibraryBrowser(
+    MusicRepository musicRepository,
+    PlaylistRepository playlistRepository,
+    PlayTrackUseCase playTrackUseCase,
+  ) => MediaLibraryBrowser(
+    musicRepository: musicRepository,
+    playlistRepository: playlistRepository,
+    playTrackUseCase: playTrackUseCase,
+  );
+
+  @lazySingleton
   AudioServiceHandler audioServiceHandler(
     AudioPlayerDataSource audioPlayerDataSource,
-  ) => AudioServiceHandler(audioPlayerDataSource: audioPlayerDataSource);
+    MediaLibraryBrowser mediaLibraryBrowser,
+  ) => AudioServiceHandler(
+    audioPlayerDataSource: audioPlayerDataSource,
+    mediaLibraryBrowser: mediaLibraryBrowser,
+  );
 
   @lazySingleton
   AudioFocusManager audioFocusManager(

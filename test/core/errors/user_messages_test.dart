@@ -20,4 +20,26 @@ void main() {
       "Couldn't save: Name is required",
     );
   });
+
+  group('describeConnectionTestError', () {
+    const raw =
+        'Connection error: The XMLHttpRequest onError callback was called.';
+
+    test('names the browser restrictions on the web', () {
+      final text = describeConnectionTestError(raw, isWeb: true);
+      expect(text, contains('CORS'));
+      expect(text, isNot(contains('XMLHttpRequest')));
+    });
+
+    test('keeps the raw message on native', () {
+      expect(describeConnectionTestError(raw, isWeb: false), contains(raw));
+    });
+
+    test('falls back when there is no message', () {
+      expect(
+        describeConnectionTestError(null, isWeb: true),
+        contains('check the URL'),
+      );
+    });
+  });
 }

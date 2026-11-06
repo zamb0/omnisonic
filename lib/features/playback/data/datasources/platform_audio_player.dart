@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:just_audio/just_audio.dart' as just_audio;
 import 'package:audioplayers/audioplayers.dart' as audio_players;
 
+import '../../../../core/utils/platform_info.dart';
+
 /// Platform-agnostic audio player interface
 abstract class PlatformAudioPlayer {
   factory PlatformAudioPlayer() {
-    if (Platform.isLinux) {
+    // AppPlatform rather than dart:io: web lands on just_audio.
+    if (AppPlatform.isLinux) {
       return _AudioPlayersImpl();
     } else {
       return _JustAudioImpl();
@@ -36,7 +38,7 @@ abstract class PlatformAudioPlayer {
 
 enum PlayerState { idle, loading, buffering, ready, completed }
 
-/// Implementation using just_audio (Android, iOS, macOS, Windows)
+/// Implementation using just_audio (Android, iOS, macOS, Windows, web)
 class _JustAudioImpl implements PlatformAudioPlayer {
   final just_audio.AudioPlayer _player = just_audio.AudioPlayer();
 

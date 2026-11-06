@@ -10,6 +10,7 @@ import '../../../../core/services/download_preferences_service.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../../../../core/utils/haptics.dart';
+import '../../../../core/utils/web_support.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
@@ -177,6 +178,16 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _buildLibraryCard(BuildContext context) {
+    if (!supportsOfflineDownloads) {
+      return _group([
+        const ListTile(
+          leading: Icon(OmnisonicIcons.downloadOutline),
+          title: Text('Downloads unavailable'),
+          subtitle: Text(offlineUnavailableOnWebMessage),
+        ),
+        _clearArtworkTile(context),
+      ]);
+    }
     return _group([
       AnimatedBuilder(
         animation: DownloadPreferencesService.instance,
@@ -204,14 +215,7 @@ class SettingsPage extends StatelessWidget {
               onChanged: offline.setOfflineMode,
             ),
           ),
-      ListTile(
-        leading: const Icon(OmnisonicIcons.image),
-        title: const Text('Clear artwork cache'),
-        subtitle: const Text(
-          'Frees space; covers download again as you browse',
-        ),
-        onTap: () => _clearArtworkCache(context),
-      ),
+      _clearArtworkTile(context),
       ListTile(
         leading: const Icon(OmnisonicIcons.downloadOutline),
         title: const Text('Downloads'),
@@ -220,6 +224,15 @@ class SettingsPage extends StatelessWidget {
         onTap: () => context.push(AppRouter.downloads),
       ),
     ]);
+  }
+
+  Widget _clearArtworkTile(BuildContext context) {
+    return ListTile(
+      leading: const Icon(OmnisonicIcons.image),
+      title: const Text('Clear artwork cache'),
+      subtitle: const Text('Frees space; covers download again as you browse'),
+      onTap: () => _clearArtworkCache(context),
+    );
   }
 
   Widget _buildAccountCard(BuildContext context) {

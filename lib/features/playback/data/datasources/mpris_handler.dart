@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dbus/dbus.dart';
 
 import '../../../../core/repositories/playback_repository.dart'
     show PlaybackState;
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/platform_info.dart';
 import 'audio_player_data_source.dart';
 
 /// MPRIS (Media Player Remote Interfacing Specification) handler for Linux
@@ -21,7 +21,7 @@ class MprisHandler extends DBusObject {
   PlaybackState? _currentState;
 
   Future<void> initialize() async {
-    if (!Platform.isLinux) return;
+    if (!AppPlatform.isLinux) return;
 
     try {
       AppLog.info('Initializing MPRIS for Linux desktop integration');

@@ -101,8 +101,8 @@ committed; never edit them by hand.
 ## Continuous integration
 
 [`.github/workflows/build.yml`](.github/workflows/build.yml) builds Android
-and Linux on every push and pull request. Pushing a `v*` tag publishes a
-GitHub Release with the packages attached:
+and Linux on pull requests to `dev`. Pushing a `v*` tag on a commit of `main`
+publishes a GitHub Release with the packages attached:
 
 ```bash
 git tag v1.0.0

@@ -13,6 +13,7 @@ import '../repositories/playback_repository_impl.dart';
 import 'audio_player_data_source.dart';
 import 'audio_service_handler.dart';
 import 'audio_focus_manager.dart';
+import 'media_library_browser.dart';
 import 'mpris_handler.dart';
 
 /// High-level playback service that coordinates all audio components
@@ -67,6 +68,7 @@ class PlaybackService {
             androidShowNotificationBadge: true,
             fastForwardInterval: Duration(seconds: 10),
             rewindInterval: Duration(seconds: 10),
+            androidBrowsableRootExtras: MediaLibraryBrowser.rootExtras,
           ),
         );
 

@@ -77,6 +77,8 @@ import 'package:omnisonic/features/playback/data/datasources/audio_player_data_s
     as _i516;
 import 'package:omnisonic/features/playback/data/datasources/audio_service_handler.dart'
     as _i648;
+import 'package:omnisonic/features/playback/data/datasources/media_library_browser.dart'
+    as _i417;
 import 'package:omnisonic/features/playback/data/datasources/mpris_handler.dart'
     as _i670;
 import 'package:omnisonic/features/playback/data/datasources/playback_service.dart'
@@ -154,9 +156,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i959.OfflineLocalDataSource>(),
       ),
     );
-    gh.lazySingleton<_i648.AudioServiceHandler>(
-      () => appModule.audioServiceHandler(gh<_i516.AudioPlayerDataSource>()),
-    );
     gh.lazySingleton<_i463.AudioFocusManager>(
       () => appModule.audioFocusManager(gh<_i516.AudioPlayerDataSource>()),
     );
@@ -183,14 +182,6 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i238.PlaylistRepositoryImpl(
         localPlaylistDataSource: gh<_i2.LocalPlaylistDataSource>(),
         localMusicDataSource: gh<_i963.LocalMusicDataSource>(),
-      ),
-    );
-    gh.lazySingleton<_i48.PlaybackService>(
-      () => appModule.playbackService(
-        gh<_i516.AudioPlayerDataSource>(),
-        gh<_i648.AudioServiceHandler>(),
-        gh<_i463.AudioFocusManager>(),
-        gh<_i670.MprisHandler>(),
       ),
     );
     gh.factory<_i631.ManagePlaylistUseCase>(
@@ -237,15 +228,18 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i759.SourceSelectionService>(),
       ),
     );
+    gh.factory<_i882.SyncMusicCollectionUseCase>(
+      () => _i882.SyncMusicCollectionUseCase(
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+      ),
+    );
     gh.factory<_i896.PlayTrackUseCase>(
       () => _i896.PlayTrackUseCase(
         gh<_i331.PlaybackRepository>(),
         gh<_i331.MusicRepository>(),
         gh<_i331.ServerRepository>(),
       ),
-    );
-    gh.factory<_i1063.SearchMusicUseCase>(
-      () => _i1063.SearchMusicUseCase(gh<_i331.MusicRepository>()),
     );
     gh.lazySingleton<_i840.ManageOfflineModeUseCase>(
       () => appModule.manageOfflineModeUseCase(
@@ -256,6 +250,22 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i902.OfflineContentFilter>(),
       ),
     );
+    gh.lazySingleton<_i417.MediaLibraryBrowser>(
+      () => appModule.mediaLibraryBrowser(
+        gh<_i102.MusicRepository>(),
+        gh<_i293.PlaylistRepository>(),
+        gh<_i896.PlayTrackUseCase>(),
+      ),
+    );
+    gh.lazySingleton<_i648.AudioServiceHandler>(
+      () => appModule.audioServiceHandler(
+        gh<_i516.AudioPlayerDataSource>(),
+        gh<_i417.MediaLibraryBrowser>(),
+      ),
+    );
+    gh.factory<_i1063.SearchMusicUseCase>(
+      () => _i1063.SearchMusicUseCase(gh<_i331.MusicRepository>()),
+    );
     gh.lazySingleton<_i942.OfflineModeViewModel>(
       () => _i942.OfflineModeViewModel(
         offlineModeService: gh<_i120.OfflineModeService>(),
@@ -263,10 +273,18 @@ extension GetItInjectableX on _i174.GetIt {
         offlineRepository: gh<_i763.OfflineRepository>(),
       ),
     );
-    gh.factory<_i882.SyncMusicCollectionUseCase>(
-      () => _i882.SyncMusicCollectionUseCase(
-        gh<_i331.MusicRepository>(),
+    gh.lazySingleton<_i48.PlaybackService>(
+      () => appModule.playbackService(
+        gh<_i516.AudioPlayerDataSource>(),
+        gh<_i648.AudioServiceHandler>(),
+        gh<_i463.AudioFocusManager>(),
+        gh<_i670.MprisHandler>(),
+      ),
+    );
+    gh.lazySingleton<_i502.ServerManagementViewModel>(
+      () => _i502.ServerManagementViewModel(
         gh<_i331.ServerRepository>(),
+        gh<_i503.SyncMusicCollectionUseCase>(),
       ),
     );
     gh.lazySingleton<_i984.PlaybackViewModel>(
@@ -289,12 +307,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i106.SearchBloc>(
       () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
-    );
-    gh.lazySingleton<_i502.ServerManagementViewModel>(
-      () => _i502.ServerManagementViewModel(
-        gh<_i331.ServerRepository>(),
-        gh<_i503.SyncMusicCollectionUseCase>(),
-      ),
     );
     return this;
   }

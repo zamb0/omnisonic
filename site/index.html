@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Omnisonic — one library from all your Subsonic servers</title>
+  <meta name="description" content="Omnisonic is a music client that merges every Subsonic-compatible server into one library, folds duplicates together and streams each song from the best copy online.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0B0A12" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F6F4FA" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="Omnisonic">
+  <meta property="og:description" content="Every server. One library.">
+  <meta property="og:image" content="logo.png">
+  <link rel="icon" href="logo.png">
+  <link rel="preload" href="fonts/Gabarito-800.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Manrope-400.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <div class="mesh" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="nav-wrap">
+    <nav class="nav glass-pill" aria-label="Main">
+      <a class="brand" href="#top">
+        <img src="logo.png" width="28" height="28" alt="">
+        <span>Omnisonic</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#download">Download</a></li>
+      </ul>
+      <a class="btn btn-ink btn-sm" href="https://github.com/zamb0/omnisonic">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.15-1.11-1.46-1.11-1.46-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" fill="currentColor" stroke="none"/></svg>
+        <span>GitHub</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Multi-server Subsonic client</p>
+          <h1 class="hero-title">Every server.<br>One library.</h1>
+          <p class="lead">
+            Omnisonic merges every Subsonic-compatible server you own into a
+            single collection, folds duplicate tracks together and streams each
+            song from the best copy that is online right now.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-aurora" href="https://github.com/zamb0/omnisonic/releases/latest">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg>
+              <span>Download</span>
+            </a>
+            <a class="btn btn-tonal" href="#how">See how it works</a>
+          </div>
+          <p class="platforms mono">Android · Linux · macOS · iOS · Windows</p>
+        </div>
+
+        <!-- Illustration: one track, three copies, one chosen -->
+        <figure class="player glass-card" aria-labelledby="player-cap">
+          <figcaption id="player-cap" class="sr-only">
+            Illustration: one track found on three servers. Omnisonic plays the
+            lossless copy on the server that is online.
+          </figcaption>
+          <div class="player-top">
+            <div class="cover" aria-hidden="true"></div>
+            <div class="player-meta">
+              <p class="eyebrow eyebrow-accent">Now playing</p>
+              <p class="track">Northern Drift</p>
+              <p class="artist">The Lantern Club</p>
+            </div>
+            <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <div class="progress" aria-hidden="true"><span></span></div>
+          <div class="times mono" aria-hidden="true"><span>1:42</span><span>4:07</span></div>
+
+          <p class="sources-title">3 copies found</p>
+          <ul class="sources">
+            <li class="source is-picked">
+              <span class="dot" style="--dot: var(--server-1)"></span>
+              <span class="src-name">home-nas</span>
+              <span class="badge mono">FLAC</span>
+              <span class="src-state state-ok">
+                <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                Playing
+              </span>
+            </li>
+            <li class="source">
+              <span class="dot" style="--dot: var(--server-2)"></span>
+              <span class="src-name">vps-eu</span>
+              <span class="badge mono">MP3 320</span>
+              <span class="src-state">Online</span>
+            </li>
+            <li class="source is-off">
+              <span class="dot" style="--dot: var(--server-3)"></span>
+              <span class="src-name">office</span>
+              <span class="badge mono">AAC 256</span>
+              <span class="src-state state-off">
+                <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                Offline
+              </span>
+            </li>
+          </ul>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <p class="eyebrow">Features</p>
+        <h2 class="section-title" id="features-title">Built for more than one server</h2>
+        <ul class="feature-grid">
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg>
+            <h3>Many servers, one library</h3>
+            <p>Navidrome, Gonic, Airsonic and any other Subsonic server. Albums, artists and playlists from all of them, side by side.</p>
+          </li>
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+            <h3>Duplicates, folded</h3>
+            <p>The same song on three servers shows up once. Tracks are matched by fuzzy metadata and duration, not just file names.</p>
+          </li>
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+            <h3>Best copy, always</h3>
+            <p>Playback picks the highest-quality copy on a server that answers, and switches when one goes down.</p>
+          </li>
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            <h3>Offline downloads</h3>
+            <p>Keep albums and tracks on the device for flights, trains and the basement gym.</p>
+          </li>
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h10M4 14h16M4 18h8"/></svg>
+            <h3>Lyrics</h3>
+            <p>Synced lyrics that follow the song when your server provides them, plain text otherwise.</p>
+          </li>
+          <li class="feature glass-card">
+            <svg class="ico ico-lg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+            <h3>At home on every OS</h3>
+            <p>Lock-screen and notification controls on mobile, MPRIS on Linux, keyboard navigation on desktop.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <p class="eyebrow">How it works</p>
+        <h2 class="section-title" id="how-title">Three steps, no migration</h2>
+        <ol class="steps">
+          <li class="step">
+            <span class="step-n mono" aria-hidden="true">01</span>
+            <h3>Connect your servers</h3>
+            <p>Add each server with its URL and account. Passwords stay in the platform's secure storage.</p>
+          </li>
+          <li class="step">
+            <span class="step-n mono" aria-hidden="true">02</span>
+            <h3>Sync and merge</h3>
+            <p>Omnisonic indexes every library locally and groups the tracks that are the same song.</p>
+          </li>
+          <li class="step">
+            <span class="step-n mono" aria-hidden="true">03</span>
+            <h3>Press play</h3>
+            <p>Each server keeps its own files. Omnisonic only decides which copy you hear.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="section" id="download" aria-labelledby="download-title">
+      <div class="container">
+        <p class="eyebrow">Download</p>
+        <h2 class="section-title" id="download-title">Get Omnisonic</h2>
+        <ul class="dl-grid">
+          <li class="dl glass-card">
+            <h3>Android</h3>
+            <p>APK for most phones (<span class="mono">arm64-v8a</span>), plus a universal build.</p>
+            <a class="btn btn-ink" href="https://github.com/zamb0/omnisonic/releases/latest">Download APK</a>
+          </li>
+          <li class="dl glass-card">
+            <h3>Linux</h3>
+            <p>x64 tarball. Needs GTK 3, GStreamer and libsecret.</p>
+            <a class="btn btn-ink" href="https://github.com/zamb0/omnisonic/releases/latest">Download .tar.gz</a>
+          </li>
+          <li class="dl glass-card">
+            <h3>macOS, iOS, Windows</h3>
+            <p>No prebuilt packages yet. Build from source with Flutter.</p>
+            <a class="btn btn-tonal" href="#source">Build from source</a>
+          </li>
+        </ul>
+
+        <div class="source-block glass-card" id="source">
+          <h3>Build from source</h3>
+          <pre class="code mono"><code>git clone https://github.com/zamb0/omnisonic.git
+cd omnisonic
+flutter pub get
+flutter run -d macos   <span class="c"># or ios, android, linux, windows</span></code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-row">
+      <span class="brand brand-sm">
+        <img src="logo.png" width="20" height="20" alt="">
+        <span>Omnisonic</span>
+      </span>
+      <ul class="footer-links">
+        <li><a href="https://github.com/zamb0/omnisonic">Source</a></li>
+        <li><a href="https://github.com/zamb0/omnisonic/releases">Releases</a></li>
+        <li><a href="https://github.com/zamb0/omnisonic/issues">Issues</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>

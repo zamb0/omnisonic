@@ -1,92 +1,125 @@
-# omnisonic
+<p align="center">
+  <img src="logo.png" width="112" alt="Omnisonic logo">
+</p>
 
-A new Flutter project.
+<h1 align="center">Omnisonic</h1>
 
-## Getting Started
+<p align="center">
+  One music library from all your Subsonic servers.
+</p>
 
-# Omnisonic
+<p align="center">
+  <a href="https://github.com/zamb0/omnisonic/actions/workflows/build.yml"><img src="https://github.com/zamb0/omnisonic/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/zamb0/omnisonic/releases/latest"><img src="https://img.shields.io/github/v/release/zamb0/omnisonic?include_prereleases&label=release" alt="Latest release"></a>
+  <a href="https://zamb0.github.io/omnisonic/"><img src="https://img.shields.io/badge/site-zamb0.github.io%2Fomnisonic-9479FF" alt="Website"></a>
+</p>
 
-A cross-platform music streaming client that provides a unified music collection experience across multiple Subsonic-compatible servers.
+---
+
+Omnisonic is a Flutter music client for Subsonic-compatible servers
+(Navidrome, Gonic, Airsonic, …). Connect as many servers as you like: their
+libraries merge into one collection, duplicate tracks are folded together,
+and each song streams from the best copy that is online right now.
 
 ## Features
 
-- **Multi-Server Support**: Connect to multiple Subsonic-compatible servers
-- **Unified Collection**: Aggregate music from all connected servers into one library
-- **Intelligent Deduplication**: Automatically detect and manage duplicate tracks
-- **Cross-Platform**: Available on iOS, Android, macOS, Windows, and Linux
-- **Modern UI**: Spotify-like interface with smooth animations
-- **Offline Support**: Cache music for offline listening
-- **Smart Collections**: Recently played, most played, and recently added playlists
+- **Many servers, one library.** Albums, artists and playlists from every
+  server appear in a single collection.
+- **Duplicate detection.** The same track on several servers is matched by
+  fuzzy metadata and duration, and shown once.
+- **Smart source selection.** Playback picks the copy with the best audio
+  quality on a server that is reachable, and falls back when one goes down.
+- **Offline downloads.** Save tracks and albums for listening without a
+  connection.
+- **Lyrics**, including synced lyrics where the server provides them.
+- **Playlists, favourites and scrobbling** back to your server.
+- **System integration.** Media notifications and lock-screen controls on
+  mobile, MPRIS on Linux.
+- **Aurora Glass design.** Light and dark themes, keyboard navigation,
+  screen-reader labels and reduced-motion support.
 
-## Architecture
+## Download
 
-This project follows Clean Architecture principles with clear separation between:
+Prebuilt packages are attached to each
+[GitHub Release](https://github.com/zamb0/omnisonic/releases/latest):
 
-- **Presentation Layer**: Flutter UI widgets and state management
-- **Domain Layer**: Business logic, entities, and use cases
-- **Data Layer**: Repository implementations and data sources
+| Platform | Package | Notes |
+|---|---|---|
+| Android | `app-release.apk` or the per-ABI APKs | Most phones need `app-arm64-v8a-release.apk`. |
+| Linux | `omnisonic-<version>-linux-x64.tar.gz` | Extract, then run `./omnisonic`. Needs GTK 3, GStreamer and libsecret. |
+| iOS, macOS, Windows | — | Build from source for now (see below). |
 
-## Getting Started
+## Build from source
 
-### Prerequisites
+Requirements: Flutter (stable, Dart `^3.9.2`) and the toolchain for your
+target platform.
 
-- Flutter SDK (3.9.2 or higher)
-- Dart SDK
-- Platform-specific development tools for target platforms
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   flutter pub get
-   ```
-3. Generate code:
-   ```bash
-   dart run build_runner build
-   ```
-4. Run the app:
-   ```bash
-   flutter run
-   ```
-
-### Building for Different Platforms
-
-- **Android**: `flutter build apk` or `flutter build appbundle`
-- **iOS**: `flutter build ios`
-- **macOS**: `flutter build macos`
-- **Windows**: `flutter build windows`
-- **Linux**: `flutter build linux`
-
-## Project Structure
-
+```bash
+git clone https://github.com/zamb0/omnisonic.git
+cd omnisonic
+flutter pub get
+flutter run                # add -d macos | ios | android | linux | windows
 ```
-lib/
-├── core/                 # Core functionality
-│   ├── constants/        # App constants
-│   ├── di/              # Dependency injection
-│   ├── errors/          # Error handling
-│   ├── routing/         # Navigation
-│   ├── usecases/        # Base use case classes
-│   └── utils/           # Utilities
-├── features/            # Feature modules
-│   ├── music/           # Music collection management
-│   ├── servers/         # Server connection management
-│   ├── playback/        # Audio playback
-│   ├── sync/            # Synchronization
-│   └── ui/              # User interface
-└── main.dart            # App entry point
+
+Release builds:
+
+```bash
+flutter build apk          # Android
+flutter build linux        # Linux
+flutter build macos        # macOS
+flutter build ios          # iOS (needs signing)
+flutter build windows      # Windows
 ```
+
+The `Makefile` wraps these with packaging targets (`make help`). On Linux,
+install the native build dependencies first:
+
+```bash
+sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev \
+  libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libsecret-1-dev libjsoncpp-dev
+```
+
+Web is not supported: the database, downloads and cache rely on `dart:ffi`
+and `dart:io`.
+
+## Development
+
+```bash
+flutter analyze
+flutter test
+dart run build_runner build --delete-conflicting-outputs   # after DI, drift or JSON model changes
+```
+
+Generated files (`*.g.dart`, `injection_container.config.dart`) are
+committed; never edit them by hand.
+
+- [`AGENTS.md`](AGENTS.md): architecture, multi-server invariants and repo conventions.
+- [`docs/design-system.md`](docs/design-system.md): the Aurora Glass design
+  system (in Italian); [`lib/core/design_system/README.md`](lib/core/design_system/README.md)
+  is the developer entry point.
+
+## Continuous integration
+
+[`.github/workflows/build.yml`](.github/workflows/build.yml) builds Android
+and Linux on every push and pull request. Pushing a `v*` tag publishes a
+GitHub Release with the packages attached:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Android release signing is used when the repository secrets
+`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD` are set; otherwise the APKs are signed with the debug
+key.
+
+The project website in [`site/`](site/) is deployed to GitHub Pages by
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+1. Fork the repository and create a branch from `dev`.
+2. Make your change, with tests.
+3. Run `flutter analyze` and `flutter test`.
+4. Open a pull request against `dev`.

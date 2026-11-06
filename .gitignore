@@ -54,3 +54,7 @@ app.*.map.json
 # Vendored GPL-3.0 Feishin client kept as a UI reference, not part of the build.
 feishin/
 test/**/failures/
+
+# GitHub Pages: copied from assets/ and logo.png by .github/workflows/pages.yml
+/site/fonts/
+/site/logo.png

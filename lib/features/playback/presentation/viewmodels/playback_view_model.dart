@@ -496,6 +496,15 @@ class PlaybackViewModel extends ChangeNotifier {
 
   /// Seeks to a specific position in the current track
   Future<void> seek(Duration position) async {
+    // Moved to the target straight away. A scrubber shows its own drag value
+    // only until release and then falls back to this position — which, until
+    // the player reported back, was still the pre-seek one: the thumb jumped
+    // back to where the drag began, then forward again.
+    _playbackState = _playbackState.copyWith(position: position);
+    _lastObservedPosition = position;
+    _lastPositionUpdate = DateTime.now();
+    notifyListeners();
+
     final result = await _playbackRepository.seek(position);
     result.fold(
       (failure) => _setError(describeFailure(failure, action: 'seek')),

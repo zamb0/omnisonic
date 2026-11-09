@@ -131,6 +131,7 @@ class MusicLibraryViewModel extends ChangeNotifier {
     final memberIds = artistMemberIds(id);
     return artists.where((a) => memberIds.contains(a.id)).firstOrNull;
   }
+
   List<Track> get recentlyPlayed => _recentlyPlayed;
   List<Track> get recentlyAdded => _recentlyAdded;
   List<Track> get mostPlayed => _mostPlayed;

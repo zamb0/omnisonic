@@ -17,6 +17,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../../core/services/subsonic_image_cache_manager.dart';
 import '../../../offline/presentation/viewmodels/offline_mode_view_model.dart';
 import '../../../playback/data/datasources/adaptive_streaming_service.dart';
+import '../../../playback/data/datasources/ble/ble_handoff_controller.dart';
 import '../widgets/widgets.dart';
 
 /// Settings screen. Every row here is backed by a real, already-persisted
@@ -209,7 +210,33 @@ class SettingsPage extends StatelessWidget {
             if (name != null) await identity.rename(name);
           },
         ),
+        if (getIt.isRegistered<BleHandoffController>() &&
+            getIt<BleHandoffController>().supported)
+          _buildBleHandoffTile(context, identity),
       ]),
+    );
+  }
+
+  Widget _buildBleHandoffTile(BuildContext context, DeviceIdentity identity) {
+    final controller = getIt<BleHandoffController>();
+    return SwitchListTile(
+      secondary: const Icon(OmnisonicIcons.bluetooth),
+      title: const Text('Bluetooth handoff'),
+      subtitle: Text(
+        controller.canBeStopped
+            ? 'Pressing play here stops your nearby devices at once, and '
+                  'they can stop this one. Without it, it takes a few '
+                  'seconds through the server.'
+            : 'Pressing play here stops your nearby devices at once. This '
+                  'device is still stopped through the server.',
+      ),
+      value: identity.bleHandoffEnabled,
+      onChanged: (enabled) async {
+        final error = await controller.setEnabled(enabled);
+        if (error != null && context.mounted) {
+          showFeedback(context, error, kind: FeedbackKind.error);
+        }
+      },
     );
   }
 

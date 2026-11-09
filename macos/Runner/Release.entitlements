@@ -7,5 +7,8 @@
 	<!-- Disable sandbox for development builds to avoid signing requirements -->
 	<key>com.apple.security.app-sandbox</key>
 	<false/>
+	<!-- Bluetooth handoff between the user's devices. -->
+	<key>com.apple.security.device.bluetooth</key>
+	<true/>
 </dict>
 </plist>

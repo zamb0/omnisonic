@@ -72,6 +72,15 @@ Both are registered in `injection_container` and wired in `main.dart` via `Multi
 
 `main.dart` also persists the play queue via `PlaybackTrackingService.savePlayQueue` on `paused`/`inactive`/`detached` lifecycle events.
 
+### Handoff between devices
+
+Playback moves between the user's devices through the Subsonic play queue (`HandoffService`, `features/playback/data/datasources/`):
+
+- **Identity**: `DeviceIdentity` (`core/services/`) gives each installation a random tag and an editable name; the Subsonic client name `c` is `Omnisonic (<name> · <tag>)`, which the server stores as the queue's `changedBy`. Set on `SubsonicApiClient.clientName` in `main.dart`.
+- **Only the active device saves the queue** — the one that last started playing. Never save it from elsewhere (restore, lifecycle, periodic timers): a save by an idle device looks like a takeover and stops the one playing. Go through `HandoffService` (`saveIfActive`, `localStateChanged`).
+- A newer save by another *Omnisonic* device (tagged client name) means takeover → `PlaybackTakenOver` → the view model pauses. Other apps' saves are ignored.
+- **Bluetooth** (opt-in, Settings > This device): `ble/` holds a `HandoffTransport` on `universal_ble` (BSD-3; not `flutter_blue_plus`, whose licence is not open source). The playing device advertises a GATT service; the one starting to play scans briefly and writes a `HandoffMessage` signed with a PBKDF2 key derived from the shared account credentials (`handoff_crypto.dart`). Conditional import keeps it out of the web build. Best effort only — the server check stays the source of truth.
+
 ### Web
 
 Built with `flutter build web --base-href /app/` and deployed under `/app/` of the Pages site by `.github/workflows/pages.yml`.

@@ -80,6 +80,10 @@ import 'package:omnisonic/features/playback/data/datasources/audio_player_data_s
     as _i516;
 import 'package:omnisonic/features/playback/data/datasources/audio_service_handler.dart'
     as _i648;
+import 'package:omnisonic/features/playback/data/datasources/ble/ble_handoff_controller.dart'
+    as _i217;
+import 'package:omnisonic/features/playback/data/datasources/handoff_keyring.dart'
+    as _i478;
 import 'package:omnisonic/features/playback/data/datasources/handoff_service.dart'
     as _i931;
 import 'package:omnisonic/features/playback/data/datasources/media_library_browser.dart'
@@ -200,6 +204,9 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i253.ServerStatusMonitor>(),
       ),
     );
+    gh.lazySingleton<_i478.HandoffKeyring>(
+      () => _i478.HandoffKeyring(gh<_i296.ServerRepository>()),
+    );
     gh.lazySingleton<_i989.PlaybackTrackingService>(
       () => _i989.PlaybackTrackingService(
         gh<_i79.SubsonicApiClient>(),
@@ -249,6 +256,13 @@ extension GetItInjectableX on _i174.GetIt {
         serverPlaylistDataSource: gh<_i835.ServerPlaylistDataSource>(),
         serverRepository: gh<_i296.ServerRepository>(),
         musicRepository: gh<_i102.MusicRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i217.BleHandoffController>(
+      () => _i217.BleHandoffController(
+        gh<_i691.DeviceIdentity>(),
+        gh<_i931.HandoffService>(),
+        gh<_i478.HandoffKeyring>(),
       ),
     );
     gh.lazySingleton<_i984.PlaybackViewModel>(

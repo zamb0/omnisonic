@@ -10,6 +10,7 @@ import 'core/design_system/theme_mode_controller.dart';
 import 'features/playback/data/datasources/playback_service.dart';
 import 'core/services/device_identity.dart';
 import 'core/services/subsonic_api_client.dart';
+import 'features/playback/data/datasources/ble/ble_handoff_controller.dart';
 import 'features/playback/data/datasources/handoff_service.dart';
 
 // ViewModels
@@ -45,6 +46,9 @@ void main() async {
     final apiClient = getIt<SubsonicApiClient>();
     apiClient.clientName = identity.clientName;
     identity.addListener(() => apiClient.clientName = identity.clientName);
+
+    // Bluetooth handoff follows its setting (off unless turned on).
+    getIt<BleHandoffController>().init();
 
     // Initialize audio service for background playback
     // Use a timeout to prevent hanging on iOS if AudioService.init() blocks

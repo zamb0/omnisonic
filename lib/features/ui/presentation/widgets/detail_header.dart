@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/design_system/design_system.dart';
+import 'top_wash.dart';
 
 /// The header of an album, artist or playlist page: artwork, an eyebrow, the
 /// title, a subtitle, metadata chips and the primary actions.
@@ -15,7 +16,8 @@ import '../../../../core/design_system/design_system.dart';
 /// - Narrow and not [forceNarrow] (a phone): a 120px cover beside the title,
 ///   the actions on one full-width row below. Stacked, the 160px cover and
 ///   the wrapped actions pushed the first track below the fold. Icon-only
-///   actions ([IconButton]) keep their size; the others share the row.
+///   actions ([IconButton], [OmnisonicIconButton]) keep their size; the
+///   others share the row.
 /// - Short windows (landscape phones) get a smaller cover when wide.
 ///
 /// v2 (docs/design-system.md §9.5): the cover's [tint], +15 % saturation,
@@ -24,7 +26,12 @@ import '../../../../core/design_system/design_system.dart';
 /// [circularArtwork]); the eyebrow is `primary`; the title is the hero
 /// style, at most two lines, with the whole name in a tooltip when it was
 /// cut.
-class DetailHeader extends StatelessWidget {
+///
+/// The header always takes the full width it is given, so the wash spans
+/// the page: inside a `crossAxisAlignment.start` column it used to shrink
+/// to its text, and the tint stopped in a hard vertical edge just past the
+/// title.
+class DetailHeader extends StatefulWidget {
   const DetailHeader({
     super.key,
     required this.title,
@@ -39,6 +46,7 @@ class DetailHeader extends StatelessWidget {
     this.tint,
     this.circularArtwork = false,
     this.bleedTop = 0,
+    this.bleedEnd = 0,
   });
 
   final String title;
@@ -75,8 +83,16 @@ class DetailHeader extends StatelessWidget {
   /// How far the tint wash reaches up past the header's top edge, at full
   /// strength. A detail page passes [pageBleed]: starting at the header, the
   /// wash met the bare canvas behind the transparent top bar in a hard
-  /// horizontal line.
+  /// horizontal line. Where the top bar is outside the scroll view (the
+  /// desktop shell), the shell's [TopWashStrip] carries on from the
+  /// scroll view's edge.
   final double bleedTop;
+
+  /// How far past the page gutter the wash reaches on the trailing side.
+  /// A header in the first of two columns (the desktop album page) passes
+  /// the width of the column beside it, so the tint does not stop at the
+  /// column boundary.
+  final double bleedEnd;
 
   /// Enough to cover any top bar plus status bar; the scroll view clips the
   /// rest.
@@ -104,97 +120,202 @@ class DetailHeader extends StatelessWidget {
   }
 
   @override
+  State<DetailHeader> createState() => _DetailHeaderState();
+}
+
+class _DetailHeaderState extends State<DetailHeader> implements TopWashSource {
+  /// The wash's box, measured against the scroll view for [edgeColor].
+  final GlobalKey _washKey = GlobalKey();
+
+  TopWash? _topWash;
+  ScrollableState? _scrollable;
+
+  /// The wash at full strength, as last built.
+  Color? _full;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _attach();
+  }
+
+  @override
+  void didUpdateWidget(DetailHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.bleedTop != widget.bleedTop) _attach();
+  }
+
+  @override
+  void dispose() {
+    _topWash?.detach(this);
+    _topWash = null;
+    _scrollable?.position.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  /// Only a header whose wash bleeds upwards has anything to carry onto the
+  /// chrome above the page.
+  void _attach() {
+    final wash = widget.bleedTop > 0 ? TopWash.maybeOf(context) : null;
+    if (wash != _topWash) {
+      _topWash?.detach(this);
+      _topWash = wash?..attach(this);
+    }
+    final scrollable = wash == null ? null : Scrollable.maybeOf(context);
+    if (scrollable != _scrollable) {
+      _scrollable?.position.removeListener(_onScroll);
+      _scrollable = scrollable?..position.addListener(_onScroll);
+    }
+  }
+
+  void _onScroll() => _topWash?.sourceChanged();
+
+  @override
+  Color? edgeColor() {
+    final full = _full;
+    final box = _washKey.currentContext?.findRenderObject();
+    final viewport = _scrollable?.context.findRenderObject();
+    if (full == null ||
+        box is! RenderBox ||
+        viewport is! RenderBox ||
+        !box.attached ||
+        !viewport.attached ||
+        !box.hasSize) {
+      return null;
+    }
+    final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
+    final height = box.size.height;
+    // The wash starts below the scroll view's top edge: nothing to carry.
+    if (height <= 0 || top > 0) return null;
+    // Where the edge falls along the gradient built below.
+    final t = -top / height;
+    final start = (widget.bleedTop / height).clamp(0.0, 1.0);
+    if (t <= start) return full;
+    if (t >= 1) return null;
+    return full.withValues(alpha: full.a * (1 - (t - start) / (1 - start)));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final wash = washColor(
-      tint ?? Theme.of(context).colorScheme.primary,
+    final wash = DetailHeader.washColor(
+      widget.tint ?? Theme.of(context).colorScheme.primary,
       isDark: isDark,
     );
     final gutter = PageGutter.of(context);
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Full-bleed: reaches past the page gutter on both sides.
-        Positioned(
-          left: -gutter,
-          right: -gutter,
-          top: -bleedTop,
-          bottom: 0,
-          child: IgnorePointer(
-            child: ExcludeSemantics(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final full = wash.withValues(
-                    alpha: isDark ? washAlphaDark : washAlphaLight,
-                  );
-                  // Full strength over the bleed, then the fade across the
-                  // header itself, exactly as without a bleed.
-                  final height = constraints.maxHeight;
-                  final start = height.isFinite && height > 0
-                      ? (bleedTop / height).clamp(0.0, 1.0)
-                      : 0.0;
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [full, full, wash.withValues(alpha: 0)],
-                        stops: [0, start, 1],
+    final full = wash.withValues(
+      alpha: isDark ? DetailHeader.washAlphaDark : DetailHeader.washAlphaLight,
+    );
+    if (_topWash != null) {
+      _full = full;
+      // The header's size or tint may have changed without a scroll.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _topWash?.sourceChanged(),
+      );
+    }
+    // Full width even where the parent would let it shrink to its text.
+    return SizedBox(
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Full-bleed: reaches past the page gutter on both sides.
+          Positioned(
+            left: -gutter,
+            right: -gutter - widget.bleedEnd,
+            top: -widget.bleedTop,
+            bottom: 0,
+            child: IgnorePointer(
+              key: _washKey,
+              child: ExcludeSemantics(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Full strength over the bleed, then the fade across the
+                    // header itself, exactly as without a bleed.
+                    final height = constraints.maxHeight;
+                    final start = height.isFinite && height > 0
+                        ? (widget.bleedTop / height).clamp(0.0, 1.0)
+                        : 0.0;
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [full, full, wash.withValues(alpha: 0)],
+                          stops: [0, start, 1],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
-        ),
-        _buildLayout(context),
-      ],
+          _buildLayout(context),
+        ],
+      ),
     );
   }
 
   /// The cover, lifted by its own colour.
   Widget _cover(BuildContext context, double size) {
-    final glow = tint ?? Theme.of(context).colorScheme.primary;
+    final glow = widget.tint ?? Theme.of(context).colorScheme.primary;
     return DecoratedBox(
       decoration: BoxDecoration(
-        shape: circularArtwork ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: circularArtwork
+        shape: widget.circularArtwork ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: widget.circularArtwork
             ? null
             : BorderRadius.circular(OmnisonicRadius.artHero),
         boxShadow: OmnisonicShadows.artGlow(glow),
       ),
-      child: SizedBox.square(dimension: size, child: artwork),
+      child: SizedBox.square(dimension: size, child: widget.artwork),
     );
   }
 
   Widget _buildLayout(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final narrow = forceNarrow || constraints.maxWidth < narrowBreakpoint;
+        final narrow =
+            widget.forceNarrow ||
+            constraints.maxWidth < DetailHeader.narrowBreakpoint;
         final short = MediaQuery.sizeOf(context).height < 500;
-        if (narrow && !forceNarrow) {
-          return _buildCompact(context, artworkSize ?? 120);
+        if (narrow && !widget.forceNarrow) {
+          return _buildCompact(context, widget.artworkSize ?? 120);
         }
-        final size = artworkSize ?? (narrow ? 160.0 : (short ? 140.0 : 240.0));
+        final size =
+            widget.artworkSize ?? (narrow ? 160.0 : (short ? 140.0 : 240.0));
         final art = _cover(context, size);
-        final text = _buildText(context, narrow: narrow);
         if (narrow) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               art,
               const SizedBox(height: OmnisonicSpacing.md),
-              text,
+              _buildText(context, narrow: true),
             ],
           );
         }
-        return Row(
+        // [below] goes under the cover and the text, not in the text column:
+        // there it made the column taller than the cover, and the
+        // bottom-aligned cover sank beside it, leaving a hole above it.
+        final below = widget.below;
+        final row = Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             art,
             const SizedBox(width: OmnisonicSpacing.lg),
-            Expanded(child: text),
+            Expanded(
+              child: _buildText(context, narrow: false, withBelow: false),
+            ),
+          ],
+        );
+        if (below == null) return row;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            row,
+            const SizedBox(height: OmnisonicSpacing.lg),
+            below,
           ],
         );
       },
@@ -215,23 +336,24 @@ class DetailHeader extends StatelessWidget {
             ),
           ],
         ),
-        if (actions.isNotEmpty) ...[
+        if (widget.actions.isNotEmpty) ...[
           const SizedBox(height: OmnisonicSpacing.md),
           Row(
             children: [
-              for (var i = 0; i < actions.length; i++) ...[
+              for (var i = 0; i < widget.actions.length; i++) ...[
                 if (i > 0) const SizedBox(width: OmnisonicSpacing.sm),
-                if (actions[i] is IconButton)
-                  actions[i]
+                if (widget.actions[i] is IconButton ||
+                    widget.actions[i] is OmnisonicIconButton)
+                  widget.actions[i]
                 else
-                  Expanded(child: actions[i]),
+                  Expanded(child: widget.actions[i]),
               ],
             ],
           ),
         ],
-        if (below != null) ...[
+        if (widget.below != null) ...[
           const SizedBox(height: OmnisonicSpacing.md),
-          below!,
+          widget.below!,
         ],
       ],
     );
@@ -241,6 +363,7 @@ class DetailHeader extends StatelessWidget {
     BuildContext context, {
     required bool narrow,
     bool withActions = true,
+    bool withBelow = true,
   }) {
     final scheme = Theme.of(context).colorScheme;
     // Hero 56 wide, 40 stacked on a phone; beside a 120 px cover there is
@@ -257,44 +380,44 @@ class DetailHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (eyebrow != null) ...[
+        if (widget.eyebrow != null) ...[
           Text(
-            eyebrow!.toUpperCase(),
+            widget.eyebrow!.toUpperCase(),
             style: OmnisonicTypography.eyebrow.copyWith(color: scheme.primary),
           ),
           const SizedBox(height: OmnisonicSpacing.ms),
         ],
-        _HeroTitle(title: title, style: titleStyle),
-        if (subtitle != null) ...[
+        _HeroTitle(title: widget.title, style: titleStyle),
+        if (widget.subtitle != null) ...[
           const SizedBox(height: OmnisonicSpacing.sm),
           DefaultTextStyle.merge(
             style: OmnisonicTypography.bodyMedium.copyWith(
               color: scheme.onSurface,
               fontWeight: OmnisonicTypography.semiBold,
             ),
-            child: subtitle!,
+            child: widget.subtitle!,
           ),
         ],
-        if (chips.isNotEmpty) ...[
+        if (widget.chips.isNotEmpty) ...[
           const SizedBox(height: OmnisonicSpacing.md),
           Wrap(
             spacing: OmnisonicSpacing.sm,
             runSpacing: OmnisonicSpacing.sm,
-            children: chips,
+            children: widget.chips,
           ),
         ],
-        if (withActions && actions.isNotEmpty) ...[
+        if (withActions && widget.actions.isNotEmpty) ...[
           const SizedBox(height: OmnisonicSpacing.ml),
           Wrap(
             spacing: OmnisonicSpacing.sm,
             runSpacing: OmnisonicSpacing.sm,
             crossAxisAlignment: WrapCrossAlignment.center,
-            children: actions,
+            children: widget.actions,
           ),
         ],
-        if (withActions && below != null) ...[
+        if (withActions && withBelow && widget.below != null) ...[
           const SizedBox(height: OmnisonicSpacing.md),
-          below!,
+          widget.below!,
         ],
       ],
     );

@@ -273,15 +273,24 @@ class _HomePageState extends State<HomePage> {
         // where the user left off. The play history lags it, so the card
         // said "Opening" while the mini player showed "Midnight Drive".
         final current = playback.currentTrack;
-        if (current == null && recent.isEmpty) {
+        // Another of the user's devices playing beats this one's paused
+        // deck: that is where the music is, and the card offers to bring
+        // it here.
+        final remote = !playback.isPlaying && playback.isPlayingElsewhere
+            ? playback.remoteSession
+            : null;
+        if (remote == null && current == null && recent.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
-        final track = current ?? recent.first;
+        final track = remote?.currentTrack ?? current ?? recent.first;
         final scheme = Theme.of(context).colorScheme;
 
         final gutter = PageGutter.of(context);
-        // Resumes a paused deck; while it plays, opens the player.
-        void play() => current != null
+        // Takes over from the other device; resumes a paused deck; while it
+        // plays, opens the player.
+        void play() => remote != null
+            ? playback.continueRemoteSession()
+            : current != null
             ? playback.isPlaying
                   ? context.push(AppRouter.nowPlaying)
                   : playback.resume()
@@ -317,13 +326,18 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Row(
                               children: [
-                                if (current != null && playback.isPlaying) ...[
+                                if (remote != null ||
+                                    (current != null &&
+                                        playback.isPlaying)) ...[
                                   const NowPlayingEqualizer(playing: true),
                                   const SizedBox(width: OmnisonicSpacing.sm),
                                 ],
                                 Flexible(
                                   child: Text(
-                                    'PICK UP WHERE YOU LEFT OFF',
+                                    remote != null
+                                        ? 'PLAYING ON '
+                                              '${remote.deviceName.toUpperCase()}'
+                                        : 'PICK UP WHERE YOU LEFT OFF',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: OmnisonicTypography.eyebrow.copyWith(
@@ -370,7 +384,9 @@ class _HomePageState extends State<HomePage> {
                       // The page's one Aurora control.
                       PlayDisc(
                         onPressed: play,
-                        tooltip: current != null && playback.isPlaying
+                        tooltip: remote != null
+                            ? 'Continue here'
+                            : current != null && playback.isPlaying
                             ? 'Open player'
                             : 'Play ${track.title}',
                       ),

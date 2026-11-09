@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/design_system/design_system.dart';
 import '../../../../core/design_system/theme_mode_controller.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../../core/services/device_identity.dart';
 import '../../../../core/services/download_preferences_service.dart';
 import '../../../playback/presentation/viewmodels/playback_view_model.dart';
 import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
@@ -50,6 +51,8 @@ class SettingsPage extends StatelessWidget {
                 _buildThemeModeCard(context),
                 _buildSectionHeader('Playback'),
                 _buildPlaybackCard(context),
+                _buildSectionHeader('This device'),
+                _buildDeviceCard(context),
                 _buildSectionHeader('Library & Cache'),
                 _buildLibraryCard(context),
                 _buildSectionHeader('Account'),
@@ -175,6 +178,39 @@ class SettingsPage extends StatelessWidget {
         },
       ),
     ]);
+  }
+
+  /// How this device appears to the user's other devices, which hand
+  /// playback over to each other (see HandoffService).
+  Widget _buildDeviceCard(BuildContext context) {
+    if (!getIt.isRegistered<DeviceIdentity>()) return const SizedBox.shrink();
+    final identity = getIt<DeviceIdentity>();
+    return AnimatedBuilder(
+      animation: identity,
+      builder: (context, child) => _group([
+        ListTile(
+          leading: const Icon(OmnisonicIcons.devices),
+          title: const Text('Device name'),
+          subtitle: Text(
+            '${identity.name} — shown on your other devices when this one '
+            'is playing',
+          ),
+          trailing: const Icon(OmnisonicIcons.chevronRight),
+          onTap: () async {
+            final name = await showTextInputDialog(
+              context,
+              title: 'Device name',
+              label: 'Name',
+              confirmLabel: 'Save',
+              initialValue: identity.name,
+              validator: (value) =>
+                  value.length > 40 ? 'Use 40 characters or fewer' : null,
+            );
+            if (name != null) await identity.rename(name);
+          },
+        ),
+      ]),
+    );
   }
 
   Widget _buildLibraryCard(BuildContext context) {

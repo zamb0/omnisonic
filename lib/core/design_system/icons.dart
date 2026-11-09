@@ -66,6 +66,8 @@ class OmnisonicIcons {
   static const IconData favorite = Icons.favorite_rounded;
   static const IconData favoriteOutline = Icons.favorite_border;
   static const IconData textSnippetOutline = Icons.text_snippet_outlined;
+  static const IconData devices = Icons.devices_rounded;
+  static const IconData bluetooth = Icons.bluetooth_rounded;
   static const IconData calendarToday = Icons.calendar_today_rounded;
 
   // --------------------------------------------------------------------

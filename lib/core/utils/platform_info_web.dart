@@ -11,4 +11,7 @@ class AppPlatform {
   static bool get isWindows => false;
   static bool get isLinux => false;
   static bool get isWeb => true;
+
+  /// A browser has no host name to report.
+  static String? get hostName => null;
 }

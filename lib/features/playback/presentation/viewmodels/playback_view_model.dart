@@ -12,6 +12,7 @@ import '../../../../core/utils/app_log.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../data/datasources/playback_tracking_service.dart';
 import '../../data/datasources/adaptive_streaming_service.dart';
+import '../../data/datasources/handoff_service.dart';
 
 /// ViewModel for managing audio playback state
 ///
@@ -30,6 +31,7 @@ class PlaybackViewModel extends ChangeNotifier {
     this._serverRepository,
     this._adaptiveStreamingService,
     this._database,
+    this._handoff,
   ) {
     _initialize();
   }
@@ -41,6 +43,12 @@ class PlaybackViewModel extends ChangeNotifier {
   final ServerRepository _serverRepository;
   final AdaptiveStreamingService _adaptiveStreamingService;
   final AppDatabase _database;
+  final HandoffService _handoff;
+
+  StreamSubscription<HandoffEvent>? _handoffSubscription;
+  StreamSubscription<RemoteSession?>? _remoteSubscription;
+  RemoteSession? _remoteSession;
+  String? _handoffNotice;
 
   StreamSubscription<PlaybackState>? _playbackStateSubscription;
   StreamSubscription<Duration>? _positionSubscription;
@@ -123,6 +131,7 @@ class PlaybackViewModel extends ChangeNotifier {
       _subscribeToQueue();
       _subscribeToQuality();
       _subscribeToScrobbles();
+      _subscribeToHandoff();
       _loadCurrentState();
 
       // Restore the queue saved on the server as early as possible. At
@@ -225,15 +234,20 @@ class PlaybackViewModel extends ChangeNotifier {
               );
               _previousTrack = state.currentTrack;
               _hasScrobbledCurrentTrack = false;
-
-              // Start periodic queue saving
-              _trackingService.startPeriodicQueueSave(
-                () async => queue,
-                () async => currentIndex,
-                () async => position,
-              );
             } else if (state.isPlaying != _wasPlaying && !_isRestoring) {
               _trackingService.setPlaying(state.isPlaying);
+            }
+
+            // The queue is saved by the handoff, which owns when saving is
+            // safe: only while this device is the one playing.
+            if (!_isRestoring) {
+              if (state.isPlaying && !_wasPlaying) {
+                unawaited(_handoff.localPlaybackStarted());
+              } else if (!state.isPlaying && _wasPlaying) {
+                unawaited(_handoff.localPlaybackPaused());
+              } else if (trackChanged && state.isPlaying) {
+                _handoff.localStateChanged();
+              }
             }
             _wasPlaying = state.isPlaying;
 
@@ -246,6 +260,73 @@ class PlaybackViewModel extends ChangeNotifier {
             );
           },
         );
+  }
+
+  void _subscribeToHandoff() {
+    _handoff.attach(
+      () => (queue: queue, index: currentIndex, position: position),
+    );
+    _handoffSubscription = _handoff.events.listen((event) {
+      switch (event) {
+        case PlaybackTakenOver(:final deviceName):
+          if (isPlaying) unawaited(pause());
+          _handoffNotice = 'Now playing on $deviceName';
+          notifyListeners();
+      }
+    });
+    _remoteSubscription = _handoff.remoteSessions.listen((session) {
+      _remoteSession = session;
+      notifyListeners();
+    });
+  }
+
+  /// Playback on another of the user's devices, as last saved there; null
+  /// when this device was the last to play.
+  RemoteSession? get remoteSession => _remoteSession;
+
+  /// Whether [remoteSession] is most likely still playing over there.
+  bool get isPlayingElsewhere =>
+      _remoteSession?.isLikelyPlaying(_handoff.now()) ?? false;
+
+  /// Where the other device most likely is in its current track.
+  Duration get remotePosition =>
+      _remoteSession?.estimatedPosition(_handoff.now()) ?? Duration.zero;
+
+  /// "Now playing on MacBook" after another device took over; shown once.
+  String? get handoffNotice => _handoffNotice;
+
+  void clearHandoffNotice() {
+    if (_handoffNotice == null) return;
+    _handoffNotice = null;
+    notifyListeners();
+  }
+
+  /// Picks up [remoteSession] here: same queue, same track, where the other
+  /// device most likely is. Starting to play is the takeover: the other
+  /// device stops on its next check.
+  Future<void> continueRemoteSession() async {
+    final remote = _remoteSession;
+    if (remote == null) return;
+    final position = remote.estimatedPosition(_handoff.now());
+
+    final loaded =
+        currentTrack?.id == remote.currentTrack.id &&
+        currentIndex == remote.currentIndex &&
+        queue.length == remote.tracks.length;
+    if (!loaded) {
+      final result = await _playbackRepository.setQueue(
+        remote.tracks,
+        startIndex: remote.currentIndex,
+      );
+      if (result.isFailure) {
+        _setError(
+          describeFailure(result.failureOrNull!, action: 'continue here'),
+        );
+        return;
+      }
+    }
+    if (position > Duration.zero) await _playbackRepository.seek(position);
+    await resume();
   }
 
   void _subscribeToQuality() {
@@ -536,6 +617,7 @@ class PlaybackViewModel extends ChangeNotifier {
 
   /// Seeks to a specific position in the current track
   Future<void> seek(Duration position) async {
+    _handoff.localStateChanged();
     // Moved to the target straight away. A scrubber shows its own drag value
     // only until release and then falls back to this position — which, until
     // the player reported back, was still the pre-seek one: the thumb jumped
@@ -964,6 +1046,8 @@ class PlaybackViewModel extends ChangeNotifier {
     _qualitySubscription?.cancel();
     _scrobbleSubscription?.cancel();
     _serversSubscription?.cancel();
+    _handoffSubscription?.cancel();
+    _remoteSubscription?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

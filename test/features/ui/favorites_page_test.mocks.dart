@@ -264,6 +264,30 @@ class MockPlaybackViewModel extends _i1.Mock implements _i3.PlaybackViewModel {
           as bool);
 
   @override
+  bool get isPlayingElsewhere =>
+      (super.noSuchMethod(
+            Invocation.getter(#isPlayingElsewhere),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  Duration get remotePosition =>
+      (super.noSuchMethod(
+            Invocation.getter(#remotePosition),
+            returnValue: _FakeDuration_1(
+              this,
+              Invocation.getter(#remotePosition),
+            ),
+            returnValueForMissingStub: _FakeDuration_1(
+              this,
+              Invocation.getter(#remotePosition),
+            ),
+          )
+          as Duration);
+
+  @override
   bool get hasListeners =>
       (super.noSuchMethod(
             Invocation.getter(#hasListeners),
@@ -271,6 +295,21 @@ class MockPlaybackViewModel extends _i1.Mock implements _i3.PlaybackViewModel {
             returnValueForMissingStub: false,
           )
           as bool);
+
+  @override
+  void clearHandoffNotice() => super.noSuchMethod(
+    Invocation.method(#clearHandoffNotice, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i5.Future<void> continueRemoteSession() =>
+      (super.noSuchMethod(
+            Invocation.method(#continueRemoteSession, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
 
   @override
   _i5.Future<void> playTrack(

@@ -189,11 +189,17 @@ class PlaybackTrackingService {
   /// A Subsonic play queue lives on one server and can only reference that
   /// server's tracks, so the queue is saved on the server of the current
   /// track, keeping only that server's tracks (see [queueToSave]).
-  Future<void> savePlayQueue(
+  ///
+  /// An unchanged queue is not saved again unless [force]d: a save is also
+  /// how this device tells the others it has taken over playback, and that
+  /// has to reach the server even when nothing else moved. Returns whether
+  /// the server has the queue.
+  Future<bool> savePlayQueue(
     List<Track> queue,
     int currentIndex,
-    Duration position,
-  ) async {
+    Duration position, {
+    bool force = false,
+  }) async {
     try {
       AppLog.debug(
         'savePlayQueue called: queue=${queue.length}, index=$currentIndex, position=${position.inSeconds}s',
@@ -201,14 +207,14 @@ class PlaybackTrackingService {
 
       if (queue.isEmpty) {
         AppLog.debug('Queue is empty, not saving');
-        return;
+        return false;
       }
 
       if (currentIndex < 0 || currentIndex >= queue.length) {
         AppLog.warn(
           'Invalid current index: $currentIndex (queue size: ${queue.length})',
         );
-        return;
+        return false;
       }
 
       final toSave = queueToSave(queue, currentIndex);
@@ -223,15 +229,15 @@ class PlaybackTrackingService {
       // change because the reported position wobbled by a few milliseconds.
       final signature =
           '$serverId|$currentTrackId|${position.inSeconds}|${trackIds.join(',')}';
-      if (signature == _lastSavedQueueSignature) {
+      if (!force && signature == _lastSavedQueueSignature) {
         AppLog.debug('Play queue unchanged since last save, skipping');
-        return;
+        return true;
       }
 
       final credentials = await _credentialsFor(serverId);
       if (credentials == null) {
         AppLog.warn('No server credentials available for saving play queue');
-        return;
+        return false;
       }
 
       AppLog.debug(
@@ -250,8 +256,10 @@ class PlaybackTrackingService {
       AppLog.info(
         'Play queue saved on ${credentials.server.name}: ${trackIds.length} tracks at ${position.inSeconds}s',
       );
+      return true;
     } catch (e, stackTrace) {
       AppLog.warn('Failed to save play queue: $e\n$stackTrace');
+      return false;
     }
   }
 
@@ -343,6 +351,15 @@ class PlaybackTrackingService {
     }
   }
 
+  /// The play queue saved on the server with [serverId], or null when it has
+  /// none or cannot be reached.
+  Future<PlayQueueState?> getPlayQueueFrom(String serverId) async {
+    final server = (await _serverRepository.getServerById(
+      serverId,
+    )).valueOrNull;
+    return server == null ? null : _fetchPlayQueue(server);
+  }
+
   Future<PlayQueueState?> _fetchPlayQueue(MusicServer server) async {
     try {
       final credentials = await _credentialsFor(server.id);
@@ -394,6 +411,7 @@ class PlaybackTrackingService {
         position: position,
         serverId: server.id,
         changed: playQueue.changed,
+        changedBy: playQueue.changedBy,
       );
     } catch (e) {
       // Navidrome answers "not found" when nothing has been saved yet.
@@ -452,12 +470,16 @@ class PlayQueueState {
   /// When the server says the queue was last saved.
   final DateTime? changed;
 
+  /// The client that saved it (the Subsonic `c` of that device).
+  final String? changedBy;
+
   const PlayQueueState({
     required this.tracks,
     this.currentIndex,
     this.position,
     this.serverId,
     this.changed,
+    this.changedBy,
   });
 }
 

@@ -8,7 +8,9 @@ import 'core/routing/app_router.dart';
 import 'core/design_system/theme.dart';
 import 'core/design_system/theme_mode_controller.dart';
 import 'features/playback/data/datasources/playback_service.dart';
-import 'features/playback/data/datasources/playback_tracking_service.dart';
+import 'core/services/device_identity.dart';
+import 'core/services/subsonic_api_client.dart';
+import 'features/playback/data/datasources/handoff_service.dart';
 
 // ViewModels
 import 'features/music/presentation/viewmodels/music_library_view_model.dart';
@@ -34,6 +36,15 @@ void main() async {
   try {
     // Initialize dependency injection
     await configureDependencies();
+
+    // Each device has its own client name on the servers, so the play queue
+    // it saves can be told apart from the other devices' (playback handoff).
+    // Loaded before anything talks to a server.
+    final identity = getIt<DeviceIdentity>();
+    await identity.load();
+    final apiClient = getIt<SubsonicApiClient>();
+    apiClient.clientName = identity.clientName;
+    identity.addListener(() => apiClient.clientName = identity.clientName);
 
     // Initialize audio service for background playback
     // Use a timeout to prevent hanging on iOS if AudioService.init() blocks
@@ -64,8 +75,6 @@ class OmnisonicApp extends StatefulWidget {
 
 class _OmnisonicAppState extends State<OmnisonicApp>
     with WidgetsBindingObserver {
-  PlaybackViewModel? _playbackViewModel;
-
   @override
   void initState() {
     super.initState();
@@ -84,35 +93,28 @@ class _OmnisonicAppState extends State<OmnisonicApp>
 
     debugPrint('App lifecycle changed to: $state');
 
-    // Save queue when app goes to background or is about to close
+    // Save queue when app goes to background or is about to close. Only
+    // the device that is playing saves: a device that merely shows the
+    // restored queue saving it would stop the one actually playing.
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.detached) {
-      debugPrint('Saving queue due to lifecycle state: $state');
-      _saveCurrentQueue();
+      _handoff()?.saveIfActive();
+    }
+    // Back in front: show what the other devices are doing now.
+    if (state == AppLifecycleState.resumed) {
+      _handoff()?.refresh();
     }
   }
 
-  void _saveCurrentQueue() async {
+  HandoffService? _handoff() {
     try {
-      _playbackViewModel ??= getIt<PlaybackViewModel>();
-
-      if (_playbackViewModel!.hasQueue &&
-          _playbackViewModel!.currentIndex >= 0) {
-        final trackingService = getIt<PlaybackTrackingService>();
-        await trackingService.savePlayQueue(
-          _playbackViewModel!.queue,
-          _playbackViewModel!.currentIndex,
-          _playbackViewModel!.position,
-        );
-        debugPrint('✓ Queue saved successfully on lifecycle change');
-      } else {
-        debugPrint(
-          'No queue to save (hasQueue: ${_playbackViewModel!.hasQueue}, index: ${_playbackViewModel!.currentIndex})',
-        );
-      }
+      // Constructing the view model wires the handoff to the player.
+      getIt<PlaybackViewModel>();
+      return getIt<HandoffService>();
     } catch (e) {
-      debugPrint('✗ Failed to save queue: $e');
+      debugPrint('Handoff unavailable: $e');
+      return null;
     }
   }
 

@@ -3,13 +3,13 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i6;
 
 import 'package:dartz/dartz.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i7;
+import 'package:mockito/src/dummies.dart' as _i5;
 import 'package:omnisonic/core/entities/entities.dart' as _i10;
-import 'package:omnisonic/core/entities/music_server.dart' as _i6;
+import 'package:omnisonic/core/entities/music_server.dart' as _i7;
 import 'package:omnisonic/core/errors/failures.dart' as _i9;
 import 'package:omnisonic/core/repositories/server_repository.dart' as _i8;
 import 'package:omnisonic/core/services/server_connection_service.dart' as _i11;
@@ -52,25 +52,42 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
   }
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> ping(
-    _i6.MusicServer? server,
+  String get clientName =>
+      (super.noSuchMethod(
+            Invocation.getter(#clientName),
+            returnValue: _i5.dummyValue<String>(
+              this,
+              Invocation.getter(#clientName),
+            ),
+          )
+          as String);
+
+  @override
+  set clientName(String? value) => super.noSuchMethod(
+    Invocation.setter(#clientName, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> ping(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#ping, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(#ping, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>> getAlbums(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>> getAlbums(
+    _i7.MusicServer? server,
     String? password, {
     String? type,
     int? size,
@@ -83,7 +100,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#type: type, #size: size, #offset: offset},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.AlbumsResponse>(
                     this,
                     Invocation.method(
@@ -94,46 +111,46 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.AlbumsResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>> getArtists(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>> getArtists(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getArtists, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.ArtistsResponse>(
                     this,
                     Invocation.method(#getArtists, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.ArtistsResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.AlbumResponse>> getAlbum(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.AlbumResponse>> getAlbum(
+    _i7.MusicServer? server,
     String? password,
     String? albumId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getAlbum, [server, password, albumId]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.AlbumResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.AlbumResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.AlbumResponse>(
                     this,
                     Invocation.method(#getAlbum, [server, password, albumId]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.AlbumResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.AlbumResponse>>);
 
   @override
   String getStreamUrl(
-    _i6.MusicServer? server,
+    _i7.MusicServer? server,
     String? password,
     String? trackId, {
     int? maxBitRate,
@@ -145,7 +162,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               [server, password, trackId],
               {#maxBitRate: maxBitRate, #format: format},
             ),
-            returnValue: _i7.dummyValue<String>(
+            returnValue: _i5.dummyValue<String>(
               this,
               Invocation.method(
                 #getStreamUrl,
@@ -158,7 +175,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
 
   @override
   String getCoverArtUrl(
-    _i6.MusicServer? server,
+    _i7.MusicServer? server,
     String? password,
     String? coverArtId, {
     int? size,
@@ -169,7 +186,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               [server, password, coverArtId],
               {#size: size},
             ),
-            returnValue: _i7.dummyValue<String>(
+            returnValue: _i5.dummyValue<String>(
               this,
               Invocation.method(
                 #getCoverArtUrl,
@@ -181,8 +198,8 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
           as String);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> scrobble(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> scrobble(
+    _i7.MusicServer? server,
     String? password,
     String? trackId, {
     DateTime? time,
@@ -195,7 +212,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#time: time, #submission: submission},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(
@@ -206,11 +223,11 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> savePlayQueue(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> savePlayQueue(
+    _i7.MusicServer? server,
     String? password,
     List<String>? trackIds, {
     String? current,
@@ -223,7 +240,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#current: current, #position: position},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(
@@ -234,28 +251,28 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>> getPlayQueue(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>> getPlayQueue(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getPlayQueue, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PlayQueueResponse>(
                     this,
                     Invocation.method(#getPlayQueue, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PlayQueueResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> star(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> star(
+    _i7.MusicServer? server,
     String? password, {
     String? id,
     String? albumId,
@@ -268,7 +285,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#id: id, #albumId: albumId, #artistId: artistId},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(
@@ -279,11 +296,11 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> unstar(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> unstar(
+    _i7.MusicServer? server,
     String? password, {
     String? id,
     String? albumId,
@@ -296,7 +313,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#id: id, #albumId: albumId, #artistId: artistId},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(
@@ -307,52 +324,52 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.StarredResponse>> getStarred2(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.StarredResponse>> getStarred2(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getStarred2, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.StarredResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.StarredResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.StarredResponse>(
                     this,
                     Invocation.method(#getStarred2, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.StarredResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.StarredResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>> getPlaylists(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>> getPlaylists(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getPlaylists, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PlaylistsResponse>(
                     this,
                     Invocation.method(#getPlaylists, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>> getPlaylist(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>> getPlaylist(
+    _i7.MusicServer? server,
     String? password,
     String? playlistId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getPlaylist, [server, password, playlistId]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>.value(
                   _FakeSubsonicResponse_0<_i2.SubsonicPlaylist>(
                     this,
                     Invocation.method(#getPlaylist, [
@@ -363,11 +380,11 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>> createPlaylist(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>> createPlaylist(
+    _i7.MusicServer? server,
     String? password, {
     String? name,
     String? playlistId,
@@ -380,7 +397,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               {#name: name, #playlistId: playlistId, #songIds: songIds},
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>.value(
                   _FakeSubsonicResponse_0<_i2.SubsonicPlaylist?>(
                     this,
                     Invocation.method(
@@ -391,11 +408,11 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> updatePlaylist(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> updatePlaylist(
+    _i7.MusicServer? server,
     String? password,
     String? playlistId, {
     String? name,
@@ -417,7 +434,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
               },
             ),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(
@@ -434,18 +451,18 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> deletePlaylist(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> deletePlaylist(
+    _i7.MusicServer? server,
     String? password,
     String? playlistId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#deletePlaylist, [server, password, playlistId]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(#deletePlaylist, [
@@ -456,11 +473,11 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> setRating(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>> setRating(
+    _i7.MusicServer? server,
     String? password,
     String? id,
     int? rating,
@@ -468,7 +485,7 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
       (super.noSuchMethod(
             Invocation.method(#setRating, [server, password, id, rating]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.PingResponse>(
                     this,
                     Invocation.method(#setRating, [
@@ -480,24 +497,24 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
 
   @override
-  _i5.Future<_i2.SubsonicResponse<_i2.GenresResponse>> getGenres(
-    _i6.MusicServer? server,
+  _i6.Future<_i2.SubsonicResponse<_i2.GenresResponse>> getGenres(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getGenres, [server, password]),
             returnValue:
-                _i5.Future<_i2.SubsonicResponse<_i2.GenresResponse>>.value(
+                _i6.Future<_i2.SubsonicResponse<_i2.GenresResponse>>.value(
                   _FakeSubsonicResponse_0<_i2.GenresResponse>(
                     this,
                     Invocation.method(#getGenres, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i2.SubsonicResponse<_i2.GenresResponse>>);
+          as _i6.Future<_i2.SubsonicResponse<_i2.GenresResponse>>);
 }
 
 /// A class which mocks [ServerRepository].
@@ -509,95 +526,95 @@ class MockServerRepository extends _i1.Mock implements _i8.ServerRepository {
   }
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> addServer(
-    _i6.MusicServer? server,
+  _i6.Future<_i3.Either<_i9.Failure, void>> addServer(
+    _i7.MusicServer? server,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addServer, [server]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#addServer, [server]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> removeServer(String? serverId) =>
+  _i6.Future<_i3.Either<_i9.Failure, void>> removeServer(String? serverId) =>
       (super.noSuchMethod(
             Invocation.method(#removeServer, [serverId]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#removeServer, [serverId]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> updateServer(
-    _i6.MusicServer? server,
+  _i6.Future<_i3.Either<_i9.Failure, void>> updateServer(
+    _i7.MusicServer? server,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateServer, [server]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#updateServer, [server]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>> getAllServers() =>
+  _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>> getAllServers() =>
       (super.noSuchMethod(
             Invocation.method(#getAllServers, []),
             returnValue:
-                _i5.Future<
-                  _i3.Either<_i9.Failure, List<_i6.MusicServer>>
+                _i6.Future<
+                  _i3.Either<_i9.Failure, List<_i7.MusicServer>>
                 >.value(
-                  _FakeEither_1<_i9.Failure, List<_i6.MusicServer>>(
+                  _FakeEither_1<_i9.Failure, List<_i7.MusicServer>>(
                     this,
                     Invocation.method(#getAllServers, []),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>>);
+          as _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer?>> getServerById(
+  _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer?>> getServerById(
     String? serverId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getServerById, [serverId]),
             returnValue:
-                _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer?>>.value(
-                  _FakeEither_1<_i9.Failure, _i6.MusicServer?>(
+                _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer?>>.value(
+                  _FakeEither_1<_i9.Failure, _i7.MusicServer?>(
                     this,
                     Invocation.method(#getServerById, [serverId]),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer?>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer?>>);
 
   @override
-  _i5.Stream<List<_i6.MusicServer>> observeServers() =>
+  _i6.Stream<List<_i7.MusicServer>> observeServers() =>
       (super.noSuchMethod(
             Invocation.method(#observeServers, []),
-            returnValue: _i5.Stream<List<_i6.MusicServer>>.empty(),
+            returnValue: _i6.Stream<List<_i7.MusicServer>>.empty(),
           )
-          as _i5.Stream<List<_i6.MusicServer>>);
+          as _i6.Stream<List<_i7.MusicServer>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>
-  testConnection(_i6.MusicServer? server) =>
+  _i6.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>
+  testConnection(_i7.MusicServer? server) =>
       (super.noSuchMethod(
             Invocation.method(#testConnection, [server]),
             returnValue:
-                _i5.Future<
+                _i6.Future<
                   _i3.Either<_i9.Failure, _i8.ServerConnectionResult>
                 >.value(
                   _FakeEither_1<_i9.Failure, _i8.ServerConnectionResult>(
@@ -606,10 +623,10 @@ class MockServerRepository extends _i1.Mock implements _i8.ServerRepository {
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>
+  _i6.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>
   testConnectionWithCredentials({
     required String? url,
     required String? username,
@@ -622,7 +639,7 @@ class MockServerRepository extends _i1.Mock implements _i8.ServerRepository {
               #password: password,
             }),
             returnValue:
-                _i5.Future<
+                _i6.Future<
                   _i3.Either<_i9.Failure, _i8.ServerConnectionResult>
                 >.value(
                   _FakeEither_1<_i9.Failure, _i8.ServerConnectionResult>(
@@ -635,132 +652,132 @@ class MockServerRepository extends _i1.Mock implements _i8.ServerRepository {
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i8.ServerConnectionResult>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> updateServerStatus(
+  _i6.Future<_i3.Either<_i9.Failure, void>> updateServerStatus(
     String? serverId,
     _i10.ServerStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateServerStatus, [serverId, status]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#updateServerStatus, [serverId, status]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> updateLastSync(
+  _i6.Future<_i3.Either<_i9.Failure, void>> updateLastSync(
     String? serverId,
     DateTime? lastSync,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateLastSync, [serverId, lastSync]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#updateLastSync, [serverId, lastSync]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> startMonitoringAllServers() =>
+  _i6.Future<_i3.Either<_i9.Failure, void>> startMonitoringAllServers() =>
       (super.noSuchMethod(
             Invocation.method(#startMonitoringAllServers, []),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#startMonitoringAllServers, []),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>>
+  _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>>
   getOnlineServers() =>
       (super.noSuchMethod(
             Invocation.method(#getOnlineServers, []),
             returnValue:
-                _i5.Future<
-                  _i3.Either<_i9.Failure, List<_i6.MusicServer>>
+                _i6.Future<
+                  _i3.Either<_i9.Failure, List<_i7.MusicServer>>
                 >.value(
-                  _FakeEither_1<_i9.Failure, List<_i6.MusicServer>>(
+                  _FakeEither_1<_i9.Failure, List<_i7.MusicServer>>(
                     this,
                     Invocation.method(#getOnlineServers, []),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>>);
+          as _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>>
+  _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>>
   getOfflineServers() =>
       (super.noSuchMethod(
             Invocation.method(#getOfflineServers, []),
             returnValue:
-                _i5.Future<
-                  _i3.Either<_i9.Failure, List<_i6.MusicServer>>
+                _i6.Future<
+                  _i3.Either<_i9.Failure, List<_i7.MusicServer>>
                 >.value(
-                  _FakeEither_1<_i9.Failure, List<_i6.MusicServer>>(
+                  _FakeEither_1<_i9.Failure, List<_i7.MusicServer>>(
                     this,
                     Invocation.method(#getOfflineServers, []),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, List<_i6.MusicServer>>>);
+          as _i6.Future<_i3.Either<_i9.Failure, List<_i7.MusicServer>>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> storeCredentials(
+  _i6.Future<_i3.Either<_i9.Failure, void>> storeCredentials(
     String? serverId,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#storeCredentials, [serverId, password]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#storeCredentials, [serverId, password]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, String?>> getCredentials(
+  _i6.Future<_i3.Either<_i9.Failure, String?>> getCredentials(
     String? serverId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getCredentials, [serverId]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, String?>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, String?>>.value(
               _FakeEither_1<_i9.Failure, String?>(
                 this,
                 Invocation.method(#getCredentials, [serverId]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, String?>>);
+          as _i6.Future<_i3.Either<_i9.Failure, String?>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> removeCredentials(
+  _i6.Future<_i3.Either<_i9.Failure, void>> removeCredentials(
     String? serverId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#removeCredentials, [serverId]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#removeCredentials, [serverId]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 }
 
 /// A class which mocks [ServerConnectionService].
@@ -773,84 +790,84 @@ class MockServerConnectionService extends _i1.Mock
   }
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>> testConnection(
-    _i6.MusicServer? server,
+  _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>> testConnection(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#testConnection, [server, password]),
             returnValue:
-                _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>>.value(
-                  _FakeEither_1<_i9.Failure, _i6.MusicServer>(
+                _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>>.value(
+                  _FakeEither_1<_i9.Failure, _i7.MusicServer>(
                     this,
                     Invocation.method(#testConnection, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> storeServerPassword(
+  _i6.Future<_i3.Either<_i9.Failure, void>> storeServerPassword(
     String? serverId,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#storeServerPassword, [serverId, password]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#storeServerPassword, [serverId, password]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, String>> getServerPassword(
+  _i6.Future<_i3.Either<_i9.Failure, String>> getServerPassword(
     String? serverId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getServerPassword, [serverId]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, String>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, String>>.value(
               _FakeEither_1<_i9.Failure, String>(
                 this,
                 Invocation.method(#getServerPassword, [serverId]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, String>>);
+          as _i6.Future<_i3.Either<_i9.Failure, String>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, void>> removeServerPassword(
+  _i6.Future<_i3.Either<_i9.Failure, void>> removeServerPassword(
     String? serverId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#removeServerPassword, [serverId]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, void>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, void>>.value(
               _FakeEither_1<_i9.Failure, void>(
                 this,
                 Invocation.method(#removeServerPassword, [serverId]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, void>>);
+          as _i6.Future<_i3.Either<_i9.Failure, void>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>> validateServer(
-    _i6.MusicServer? server,
+  _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>> validateServer(
+    _i7.MusicServer? server,
     String? password,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#validateServer, [server, password]),
             returnValue:
-                _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>>.value(
-                  _FakeEither_1<_i9.Failure, _i6.MusicServer>(
+                _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>>.value(
+                  _FakeEither_1<_i9.Failure, _i7.MusicServer>(
                     this,
                     Invocation.method(#validateServer, [server, password]),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i6.MusicServer>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i7.MusicServer>>);
 
   @override
   void startConnectionMonitoring(String? serverId) => super.noSuchMethod(
@@ -865,17 +882,17 @@ class MockServerConnectionService extends _i1.Mock
   );
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, bool>> checkSecureStorageAvailability() =>
+  _i6.Future<_i3.Either<_i9.Failure, bool>> checkSecureStorageAvailability() =>
       (super.noSuchMethod(
             Invocation.method(#checkSecureStorageAvailability, []),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, bool>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, bool>>.value(
               _FakeEither_1<_i9.Failure, bool>(
                 this,
                 Invocation.method(#checkSecureStorageAvailability, []),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, bool>>);
+          as _i6.Future<_i3.Either<_i9.Failure, bool>>);
 
   @override
   Map<String, dynamic> getSecureStorageDiagnostics() =>
@@ -908,22 +925,22 @@ class MockSourceSelectionService extends _i1.Mock
   }
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i10.Track>> selectBestSource(
+  _i6.Future<_i3.Either<_i9.Failure, _i10.Track>> selectBestSource(
     List<_i10.Track>? duplicateTracks,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#selectBestSource, [duplicateTracks]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, _i10.Track>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, _i10.Track>>.value(
               _FakeEither_1<_i9.Failure, _i10.Track>(
                 this,
                 Invocation.method(#selectBestSource, [duplicateTracks]),
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i10.Track>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i10.Track>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, _i10.Track>> selectFallbackSource(
+  _i6.Future<_i3.Either<_i9.Failure, _i10.Track>> selectFallbackSource(
     List<_i10.Track>? duplicateTracks,
     String? failedTrackId,
   ) =>
@@ -932,7 +949,7 @@ class MockSourceSelectionService extends _i1.Mock
               duplicateTracks,
               failedTrackId,
             ]),
-            returnValue: _i5.Future<_i3.Either<_i9.Failure, _i10.Track>>.value(
+            returnValue: _i6.Future<_i3.Either<_i9.Failure, _i10.Track>>.value(
               _FakeEither_1<_i9.Failure, _i10.Track>(
                 this,
                 Invocation.method(#selectFallbackSource, [
@@ -942,34 +959,34 @@ class MockSourceSelectionService extends _i1.Mock
               ),
             ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, _i10.Track>>);
+          as _i6.Future<_i3.Either<_i9.Failure, _i10.Track>>);
 
   @override
-  _i5.Future<_i3.Either<_i9.Failure, List<_i10.Track>>> getAvailableSources(
+  _i6.Future<_i3.Either<_i9.Failure, List<_i10.Track>>> getAvailableSources(
     List<_i10.Track>? duplicateTracks,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getAvailableSources, [duplicateTracks]),
             returnValue:
-                _i5.Future<_i3.Either<_i9.Failure, List<_i10.Track>>>.value(
+                _i6.Future<_i3.Either<_i9.Failure, List<_i10.Track>>>.value(
                   _FakeEither_1<_i9.Failure, List<_i10.Track>>(
                     this,
                     Invocation.method(#getAvailableSources, [duplicateTracks]),
                   ),
                 ),
           )
-          as _i5.Future<_i3.Either<_i9.Failure, List<_i10.Track>>>);
+          as _i6.Future<_i3.Either<_i9.Failure, List<_i10.Track>>>);
 
   @override
-  _i5.Future<bool> checkServerAvailability(String? serverId) =>
+  _i6.Future<bool> checkServerAvailability(String? serverId) =>
       (super.noSuchMethod(
             Invocation.method(#checkServerAvailability, [serverId]),
-            returnValue: _i5.Future<bool>.value(false),
+            returnValue: _i6.Future<bool>.value(false),
           )
-          as _i5.Future<bool>);
+          as _i6.Future<bool>);
 
   @override
-  _i5.Future<void> updateServerAvailability(
+  _i6.Future<void> updateServerAvailability(
     String? serverId,
     bool? isAvailable,
   ) =>
@@ -978,8 +995,8 @@ class MockSourceSelectionService extends _i1.Mock
               serverId,
               isAvailable,
             ]),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
           )
-          as _i5.Future<void>);
+          as _i6.Future<void>);
 }

@@ -11,10 +11,12 @@ import 'package:omnisonic/core/services/subsonic_api_client.dart';
 import 'package:omnisonic/core/services/subsonic_models.dart';
 import 'package:omnisonic/core/usecases/usecases.dart';
 import 'package:omnisonic/features/playback/data/datasources/adaptive_streaming_service.dart';
+import 'package:omnisonic/features/playback/data/datasources/handoff_service.dart';
 import 'package:omnisonic/features/playback/data/datasources/playback_tracking_service.dart';
 import 'package:omnisonic/features/playback/presentation/viewmodels/playback_view_model.dart';
 
 import '../../helpers/entity_factories.dart';
+import '../../helpers/fake_handoff.dart';
 
 void main() {
   late _FakePlaybackRepository repository;
@@ -22,6 +24,7 @@ void main() {
   late _FakeTrackingService tracking;
   late _FakeServerRepository servers;
   late AppDatabase database;
+  late FakeHandoffService handoff;
   late PlaybackViewModel viewModel;
 
   PlaybackViewModel buildViewModel() => PlaybackViewModel(
@@ -32,6 +35,7 @@ void main() {
     servers,
     _FakeAdaptiveStreamingService(),
     database,
+    handoff,
   );
 
   setUp(() {
@@ -43,6 +47,7 @@ void main() {
       testServer(id: 'server2', name: 'Second'),
     ]);
     database = AppDatabase.forTesting(NativeDatabase.memory());
+    handoff = FakeHandoffService();
     viewModel = buildViewModel();
   });
 
@@ -81,6 +86,55 @@ void main() {
 
     await seeking;
     expect(repository.seeks, [const Duration(seconds: 90)]);
+  });
+
+  group('handoff', () {
+    test('play, pause and track changes are reported', () async {
+      final first = testTrack(id: 'server1_a');
+      final second = testTrack(id: 'server1_b');
+
+      await emitTrack(first, isPlaying: true);
+      await emitTrack(first);
+      await emitTrack(first, isPlaying: true);
+      await emitTrack(second, isPlaying: true);
+
+      expect(handoff.calls, ['started', 'paused', 'started', 'changed']);
+      expect(handoff.snapshot!().queue, [second]);
+    });
+
+    test('another device taking over pauses this one, with a notice', () async {
+      await emitTrack(testTrack(), isPlaying: true);
+
+      handoff.emit(const PlaybackTakenOver('MacBook'));
+      await pumpEventQueue();
+
+      expect(repository.pauses, 1);
+      expect(viewModel.handoffNotice, 'Now playing on MacBook');
+    });
+
+    test('continue here loads the other device\'s queue where it is', () async {
+      final tracks = testTracks(3);
+      handoff.emitRemote(
+        RemoteSession(
+          deviceName: 'MacBook',
+          isOmnisonic: true,
+          tracks: tracks,
+          currentIndex: 1,
+          position: const Duration(seconds: 30),
+          // Saved 10s ago while playing: it has moved on since.
+          changed: handoff.now().subtract(const Duration(seconds: 10)),
+          serverId: 'server1',
+        ),
+      );
+      await pumpEventQueue();
+      expect(viewModel.isPlayingElsewhere, isTrue);
+
+      await viewModel.continueRemoteSession();
+
+      expect(repository.queuesSet.single, tracks);
+      expect(repository.seeks, [const Duration(seconds: 40)]);
+      expect(repository.resumes, 1);
+    });
   });
 
   test('a starred track stays starred when the player reports again', () async {
@@ -189,6 +243,20 @@ class _FakePlaybackRepository implements PlaybackRepository {
   final _states = StreamController<PlaybackState>.broadcast();
   final seeks = <Duration>[];
   final queuesSet = <List<Track>>[];
+  var pauses = 0;
+  var resumes = 0;
+
+  @override
+  Future<Result<void>> pause() async {
+    pauses++;
+    return ResultHelper.success(null);
+  }
+
+  @override
+  Future<Result<void>> resume() async {
+    resumes++;
+    return ResultHelper.success(null);
+  }
 
   @override
   Future<Result<void>> setQueue(

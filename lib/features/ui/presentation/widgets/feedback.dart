@@ -85,7 +85,12 @@ class ActionErrorListener extends StatefulWidget {
     required this.message,
     required this.clear,
     required this.child,
+    this.kind = FeedbackKind.error,
   });
+
+  /// How the message is shown: an error unless said otherwise (a notice
+  /// such as "Now playing on MacBook" is [FeedbackKind.info]).
+  final FeedbackKind kind;
 
   /// Resolves the notifier lazily; returning null (no DI in a test, say)
   /// makes this a pass-through.
@@ -125,7 +130,7 @@ class _ActionErrorListenerState extends State<ActionErrorListener> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || widget.message() != message) return;
       widget.clear();
-      showFeedback(context, message, kind: FeedbackKind.error);
+      showFeedback(context, message, kind: widget.kind);
     });
   }
 

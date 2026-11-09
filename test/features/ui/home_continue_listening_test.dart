@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/features/ui/presentation/pages/home_page.dart';
 
+import 'package:omnisonic/features/playback/data/datasources/handoff_service.dart';
+
 import '../../helpers/entity_factories.dart';
 import '../../helpers/widget_harness.dart';
 
@@ -68,5 +70,35 @@ void main() {
     await tester.pump();
 
     expect(models.playback.playTrackCalls.single.track.id, 'server1_recent');
+  });
+
+  testWidgets('another device playing is offered here', (tester) async {
+    final tracks = [
+      testTrack(id: 'server1_m1', title: 'On The Mac'),
+      testTrack(id: 'server1_m2', title: 'Next On The Mac'),
+    ];
+    final models = await pumpHome(
+      tester,
+      arrange: (models) => models.playback.emitRemote(
+        RemoteSession(
+          deviceName: 'MacBook',
+          isOmnisonic: true,
+          tracks: tracks,
+          currentIndex: 0,
+          position: const Duration(seconds: 12),
+          changed: DateTime(2026),
+          serverId: 'server1',
+        ),
+      ),
+    );
+
+    expect(find.text('PLAYING ON MACBOOK'), findsOneWidget);
+    expect(find.text('On The Mac'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Continue here'));
+    await tester.pump();
+
+    expect(models.playback.continueRemoteCalls, 1);
+    expect(models.playback.currentTrack, tracks.first);
   });
 }

@@ -34,6 +34,7 @@ import 'package:omnisonic/core/repositories/repositories.dart' as _i331;
 import 'package:omnisonic/core/repositories/server_repository.dart' as _i296;
 import 'package:omnisonic/core/services/cache_manager.dart' as _i868;
 import 'package:omnisonic/core/services/deduplication_engine.dart' as _i566;
+import 'package:omnisonic/core/services/device_identity.dart' as _i691;
 import 'package:omnisonic/core/services/download_manager.dart' as _i218;
 import 'package:omnisonic/core/services/offline_mode_service.dart' as _i120;
 import 'package:omnisonic/core/services/server_connection_service.dart'
@@ -79,6 +80,8 @@ import 'package:omnisonic/features/playback/data/datasources/audio_player_data_s
     as _i516;
 import 'package:omnisonic/features/playback/data/datasources/audio_service_handler.dart'
     as _i648;
+import 'package:omnisonic/features/playback/data/datasources/handoff_service.dart'
+    as _i931;
 import 'package:omnisonic/features/playback/data/datasources/media_library_browser.dart'
     as _i417;
 import 'package:omnisonic/features/playback/data/datasources/mpris_handler.dart'
@@ -118,6 +121,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i120.OfflineModeService>(
       () => appModule.offlineModeService(),
     );
+    gh.lazySingleton<_i691.DeviceIdentity>(() => _i691.DeviceIdentity());
     gh.lazySingleton<_i895.Connectivity>(() => connectivityModule.connectivity);
     gh.lazySingleton<_i516.AudioPlayerDataSource>(
       () => appModule.audioPlayerDataSource(
@@ -211,6 +215,13 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i759.SourceSelectionService>(
       () => appModule.sourceSelectionService(gh<_i296.ServerRepository>()),
     );
+    gh.lazySingleton<_i931.HandoffService>(
+      () => _i931.HandoffService(
+        gh<_i989.PlaybackTrackingService>(),
+        gh<_i296.ServerRepository>(),
+        gh<_i691.DeviceIdentity>(),
+      ),
+    );
     gh.lazySingleton<_i102.MusicRepository>(
       () => appModule.musicRepository(
         gh<_i963.LocalMusicDataSource>(),
@@ -249,6 +260,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i331.ServerRepository>(),
         gh<_i1002.AdaptiveStreamingService>(),
         gh<_i350.AppDatabase>(),
+        gh<_i931.HandoffService>(),
       ),
     );
     gh.factory<_i106.SearchBloc>(

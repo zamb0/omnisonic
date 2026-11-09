@@ -5,6 +5,7 @@ import 'package:omnisonic/core/repositories/playback_repository.dart';
 import 'package:omnisonic/core/usecases/search_music_use_case.dart';
 import 'package:omnisonic/features/music/presentation/viewmodels/music_library_view_model.dart';
 import 'package:omnisonic/features/music/presentation/viewmodels/playlist_view_model.dart';
+import 'package:omnisonic/features/playback/data/datasources/handoff_service.dart';
 import 'package:omnisonic/features/playback/presentation/viewmodels/playback_view_model.dart';
 import 'package:omnisonic/features/servers/presentation/viewmodels/server_management_view_model.dart';
 
@@ -418,6 +419,56 @@ class FakePlaybackViewModel extends ChangeNotifier
 
   @override
   bool isFavoritePending(String trackId) => false;
+
+  RemoteSession? _remoteSession;
+  bool _playingElsewhere = false;
+  String? _handoffNotice;
+  var continueRemoteCalls = 0;
+
+  /// Puts playback on "another device".
+  void emitRemote(RemoteSession? session, {bool playing = true}) {
+    _remoteSession = session;
+    _playingElsewhere = session != null && playing;
+    notifyListeners();
+  }
+
+  void emitHandoffNotice(String notice) {
+    _handoffNotice = notice;
+    notifyListeners();
+  }
+
+  @override
+  RemoteSession? get remoteSession => _remoteSession;
+
+  @override
+  bool get isPlayingElsewhere => _playingElsewhere;
+
+  @override
+  Duration get remotePosition => _remoteSession?.position ?? Duration.zero;
+
+  @override
+  String? get handoffNotice => _handoffNotice;
+
+  @override
+  void clearHandoffNotice() {
+    _handoffNotice = null;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> continueRemoteSession() async {
+    continueRemoteCalls++;
+    final remote = _remoteSession;
+    if (remote == null) return;
+    _remoteSession = null;
+    _playingElsewhere = false;
+    emitPlaying(
+      remote.currentTrack,
+      queue: remote.tracks,
+      currentIndex: remote.currentIndex,
+      position: remote.position,
+    );
+  }
 
   /// Every `setRating` call, in order, for assertions.
   final ratingCalls = <({String trackId, int rating})>[];

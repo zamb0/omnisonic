@@ -10,7 +10,10 @@ import 'subsonic_models.dart';
 /// Subsonic API client for communicating with Subsonic-compatible servers
 class SubsonicApiClient {
   final Dio _dio;
-  final String _clientName = 'Omnisonic';
+
+  /// The Subsonic client name (`c`). Each device sets its own (see
+  /// DeviceIdentity), which servers record with a saved play queue.
+  String clientName = 'Omnisonic';
   final String _apiVersion = '1.16.1';
 
   SubsonicApiClient({Dio? dio}) : _dio = dio ?? Dio() {
@@ -135,7 +138,7 @@ class SubsonicApiClient {
       't': token,
       's': salt,
       'v': _apiVersion,
-      'c': _clientName,
+      'c': clientName,
       'f': 'json',
     };
 
@@ -168,7 +171,7 @@ class SubsonicApiClient {
       't': token,
       's': salt,
       'v': _apiVersion,
-      'c': _clientName,
+      'c': clientName,
     };
 
     if (size != null) queryParams['size'] = size.toString();
@@ -590,7 +593,7 @@ class SubsonicApiClient {
       't': token,
       's': salt,
       'v': _apiVersion,
-      'c': _clientName,
+      'c': clientName,
       'f': 'json',
       ...?queryParams,
     };
@@ -671,7 +674,7 @@ class SubsonicApiClient {
       't=${Uri.encodeComponent(token)}',
       's=${Uri.encodeComponent(salt)}',
       'v=$_apiVersion',
-      'c=$_clientName',
+      'c=${Uri.encodeComponent(clientName)}',
       'f=json',
     ];
 

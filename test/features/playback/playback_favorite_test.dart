@@ -14,6 +14,7 @@ import 'package:omnisonic/features/playback/data/datasources/playback_tracking_s
 import 'package:omnisonic/features/playback/presentation/viewmodels/playback_view_model.dart';
 
 import '../../helpers/entity_factories.dart';
+import '../../helpers/fake_handoff.dart';
 
 /// Regression for #53 point 1: the player heart must star the track on the
 /// server it belongs to, flip immediately, and roll back on failure.
@@ -39,6 +40,7 @@ void main() {
       servers,
       _FakeAdaptiveStreaming(),
       db,
+      FakeHandoffService(),
     );
     // Let _loadCurrentState seed the current track.
     await pumpEventQueue();

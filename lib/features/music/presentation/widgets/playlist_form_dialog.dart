@@ -6,6 +6,7 @@ import '../../../../core/entities/entities.dart';
 import '../../../ui/presentation/widgets/chips.dart';
 import '../../../ui/presentation/widgets/dialogs.dart';
 import '../../../ui/presentation/widgets/feedback.dart';
+import '../../../servers/presentation/viewmodels/server_management_view_model.dart';
 import '../viewmodels/playlist_view_model.dart';
 
 /// Creates a playlist, or edits [playlist] when given.
@@ -43,10 +44,18 @@ class _PlaylistFormDialogState extends State<PlaylistFormDialog> {
     text: widget.playlist?.description ?? '',
   );
   late bool _isPublic = widget.playlist?.isPublic ?? false;
+
+  /// Where a new playlist is created: a server's ID, or null for this
+  /// device only. Defaults to the first reachable server, so playlists show
+  /// up in the server's other clients unless asked otherwise.
+  late String? _serverId = _servers.where((s) => s.isAvailable).firstOrNull?.id;
   bool _saving = false;
   String? _error;
 
   bool get _editing => widget.playlist != null;
+
+  List<MusicServer> get _servers =>
+      context.read<ServerManagementViewModel>().servers;
 
   @override
   void dispose() {
@@ -91,6 +100,7 @@ class _PlaylistFormDialogState extends State<PlaylistFormDialog> {
             name: name,
             description: description,
             isPublic: _isPublic,
+            serverId: _serverId,
           );
     if (!mounted) return;
 
@@ -160,6 +170,34 @@ class _PlaylistFormDialogState extends State<PlaylistFormDialog> {
                     ? 'Use 500 characters or fewer'
                     : null,
               ),
+              if (!_editing && _servers.isNotEmpty) ...[
+                const SizedBox(height: OmnisonicSpacing.md),
+                DropdownButtonFormField<String?>(
+                  initialValue: _serverId,
+                  decoration: const InputDecoration(labelText: 'Save on'),
+                  items: [
+                    for (final server in _servers)
+                      DropdownMenuItem(
+                        value: server.id,
+                        // A playlist can only be created on a server that
+                        // answers.
+                        enabled: server.isAvailable,
+                        child: Text(
+                          server.isAvailable
+                              ? server.name
+                              : '${server.name} (${server.status.toString().toLowerCase()})',
+                        ),
+                      ),
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('This device only'),
+                    ),
+                  ],
+                  onChanged: _saving
+                      ? null
+                      : (value) => setState(() => _serverId = value),
+                ),
+              ],
               const SizedBox(height: OmnisonicSpacing.sm),
               SwitchListTile(
                 title: const Text('Public'),

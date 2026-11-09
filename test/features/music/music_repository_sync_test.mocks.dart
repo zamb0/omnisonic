@@ -327,6 +327,162 @@ class MockSubsonicApiClient extends _i1.Mock implements _i4.SubsonicApiClient {
           as _i5.Future<_i2.SubsonicResponse<_i2.StarredResponse>>);
 
   @override
+  _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>> getPlaylists(
+    _i6.MusicServer? server,
+    String? password,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPlaylists, [server, password]),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>.value(
+                  _FakeSubsonicResponse_0<_i2.PlaylistsResponse>(
+                    this,
+                    Invocation.method(#getPlaylists, [server, password]),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.PlaylistsResponse>>);
+
+  @override
+  _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>> getPlaylist(
+    _i6.MusicServer? server,
+    String? password,
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPlaylist, [server, password, playlistId]),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>.value(
+                  _FakeSubsonicResponse_0<_i2.SubsonicPlaylist>(
+                    this,
+                    Invocation.method(#getPlaylist, [
+                      server,
+                      password,
+                      playlistId,
+                    ]),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist>>);
+
+  @override
+  _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>> createPlaylist(
+    _i6.MusicServer? server,
+    String? password, {
+    String? name,
+    String? playlistId,
+    List<String>? songIds = const [],
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #createPlaylist,
+              [server, password],
+              {#name: name, #playlistId: playlistId, #songIds: songIds},
+            ),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>.value(
+                  _FakeSubsonicResponse_0<_i2.SubsonicPlaylist?>(
+                    this,
+                    Invocation.method(
+                      #createPlaylist,
+                      [server, password],
+                      {#name: name, #playlistId: playlistId, #songIds: songIds},
+                    ),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.SubsonicPlaylist?>>);
+
+  @override
+  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> updatePlaylist(
+    _i6.MusicServer? server,
+    String? password,
+    String? playlistId, {
+    String? name,
+    String? comment,
+    bool? isPublic,
+    List<String>? songIdsToAdd = const [],
+    List<int>? songIndexesToRemove = const [],
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #updatePlaylist,
+              [server, password, playlistId],
+              {
+                #name: name,
+                #comment: comment,
+                #isPublic: isPublic,
+                #songIdsToAdd: songIdsToAdd,
+                #songIndexesToRemove: songIndexesToRemove,
+              },
+            ),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                  _FakeSubsonicResponse_0<_i2.PingResponse>(
+                    this,
+                    Invocation.method(
+                      #updatePlaylist,
+                      [server, password, playlistId],
+                      {
+                        #name: name,
+                        #comment: comment,
+                        #isPublic: isPublic,
+                        #songIdsToAdd: songIdsToAdd,
+                        #songIndexesToRemove: songIndexesToRemove,
+                      },
+                    ),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+
+  @override
+  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> deletePlaylist(
+    _i6.MusicServer? server,
+    String? password,
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#deletePlaylist, [server, password, playlistId]),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                  _FakeSubsonicResponse_0<_i2.PingResponse>(
+                    this,
+                    Invocation.method(#deletePlaylist, [
+                      server,
+                      password,
+                      playlistId,
+                    ]),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+
+  @override
+  _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>> setRating(
+    _i6.MusicServer? server,
+    String? password,
+    String? id,
+    int? rating,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#setRating, [server, password, id, rating]),
+            returnValue:
+                _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>.value(
+                  _FakeSubsonicResponse_0<_i2.PingResponse>(
+                    this,
+                    Invocation.method(#setRating, [
+                      server,
+                      password,
+                      id,
+                      rating,
+                    ]),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.SubsonicResponse<_i2.PingResponse>>);
+
+  @override
   _i5.Future<_i2.SubsonicResponse<_i2.GenresResponse>> getGenres(
     _i6.MusicServer? server,
     String? password,

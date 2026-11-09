@@ -71,7 +71,19 @@ class PlaylistViewModel extends ChangeNotifier {
 
   void _initialize() {
     _subscribeToPlaylists();
-    _loadPlaylists();
+    // What is stored shows straight away; the servers' playlists follow
+    // through the subscription once they have been fetched.
+    _loadPlaylists().then((_) => _syncFromServers());
+  }
+
+  /// Fetches the servers' playlists. Failures are logged by the repository
+  /// and do not replace what is already shown.
+  Future<void> _syncFromServers() async {
+    try {
+      await _playlistRepository.syncFromServers();
+    } catch (e) {
+      AppLog.warn('Playlist sync failed: $e');
+    }
   }
 
   void _subscribeToPlaylists() {
@@ -110,10 +122,14 @@ class PlaylistViewModel extends ChangeNotifier {
   }
 
   /// Creates a new playlist
+  ///
+  /// [serverId] picks the server it is created on; null keeps it on this
+  /// device only.
   Future<bool> createPlaylist({
     required String name,
     String? description,
     bool isPublic = false,
+    String? serverId,
   }) async {
     if (_isOperating) return false;
 
@@ -127,6 +143,7 @@ class PlaylistViewModel extends ChangeNotifier {
         name: name,
         description: description,
         isPublic: isPublic,
+        serverId: serverId,
       );
 
       final result = await _managePlaylistUseCase(params);
@@ -665,6 +682,7 @@ class PlaylistViewModel extends ChangeNotifier {
 
   /// Refreshes the playlist list
   Future<void> refreshPlaylists() async {
+    await _syncFromServers();
     await _loadPlaylists();
   }
 

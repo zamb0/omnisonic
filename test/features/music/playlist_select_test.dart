@@ -110,6 +110,9 @@ class _FakePlaylistRepository extends Fake implements PlaylistRepository {
   Stream<List<Playlist>> observePlaylists() => const Stream.empty();
 
   @override
+  Future<Result<void>> syncFromServers() async => ResultHelper.success(null);
+
+  @override
   Future<Result<List<Playlist>>> getAllPlaylists() async =>
       ResultHelper.success([playlist]);
 

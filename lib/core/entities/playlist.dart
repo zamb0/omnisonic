@@ -25,6 +25,22 @@ class Playlist extends Equatable {
   final String? coverArtUrl;
   final String? owner;
 
+  /// Prefix of the IDs of playlists that exist only on this device.
+  ///
+  /// A server playlist's ID is `{serverId}_{subsonicId}` like every other
+  /// entity's. Server IDs are digits, so they can never start with this.
+  static const String localIdPrefix = 'playlist_';
+
+  /// Whether this playlist lives only on this device rather than on a server.
+  bool get isLocal => id.startsWith(localIdPrefix);
+
+  /// The server this playlist lives on, or null for a local playlist.
+  String? get serverId {
+    if (isLocal) return null;
+    final separator = id.indexOf('_');
+    return separator <= 0 ? null : id.substring(0, separator);
+  }
+
   /// Validates that the playlist has all required fields
   bool get isValid {
     return id.isNotEmpty && name.isNotEmpty;

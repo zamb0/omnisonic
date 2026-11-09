@@ -214,6 +214,7 @@ SubsonicSong _$SubsonicSongFromJson(Map<String, dynamic> json) => SubsonicSong(
   bookmarkPosition: _parseIntFromDynamic(json['bookmarkPosition']),
   originalWidth: _parseIntFromDynamic(json['originalWidth']),
   originalHeight: _parseIntFromDynamic(json['originalHeight']),
+  userRating: _parseIntFromDynamic(json['userRating']),
 );
 
 Map<String, dynamic> _$SubsonicSongToJson(SubsonicSong instance) =>
@@ -244,6 +245,7 @@ Map<String, dynamic> _$SubsonicSongToJson(SubsonicSong instance) =>
       'bookmarkPosition': instance.bookmarkPosition,
       'originalWidth': instance.originalWidth,
       'originalHeight': instance.originalHeight,
+      'userRating': instance.userRating,
     };
 
 PlayQueueResponse _$PlayQueueResponseFromJson(Map<String, dynamic> json) =>
@@ -268,6 +270,54 @@ Map<String, dynamic> _$PlayQueueResponseToJson(PlayQueueResponse instance) =>
       'changed': instance.changed?.toIso8601String(),
       'changedBy': instance.changedBy,
       'entry': instance.entries,
+    };
+
+PlaylistsResponse _$PlaylistsResponseFromJson(Map<String, dynamic> json) =>
+    PlaylistsResponse(
+      playlist: (json['playlist'] as List<dynamic>?)
+          ?.map((e) => SubsonicPlaylist.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$PlaylistsResponseToJson(PlaylistsResponse instance) =>
+    <String, dynamic>{'playlist': instance.playlist};
+
+SubsonicPlaylist _$SubsonicPlaylistFromJson(Map<String, dynamic> json) =>
+    SubsonicPlaylist(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      comment: json['comment'] as String?,
+      owner: json['owner'] as String?,
+      public: json['public'] as bool?,
+      songCount: _parseIntFromDynamic(json['songCount']),
+      duration: _parseIntFromDynamic(json['duration']),
+      created: json['created'] == null
+          ? null
+          : DateTime.parse(json['created'] as String),
+      changed: json['changed'] == null
+          ? null
+          : DateTime.parse(json['changed'] as String),
+      coverArt: json['coverArt'] as String?,
+      readonly: json['readonly'] as bool?,
+      entry: (json['entry'] as List<dynamic>?)
+          ?.map((e) => SubsonicSong.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$SubsonicPlaylistToJson(SubsonicPlaylist instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'comment': instance.comment,
+      'owner': instance.owner,
+      'public': instance.public,
+      'songCount': instance.songCount,
+      'duration': instance.duration,
+      'created': instance.created?.toIso8601String(),
+      'changed': instance.changed?.toIso8601String(),
+      'coverArt': instance.coverArt,
+      'readonly': instance.readonly,
+      'entry': instance.entry,
     };
 
 StarredResponse _$StarredResponseFromJson(Map<String, dynamic> json) =>

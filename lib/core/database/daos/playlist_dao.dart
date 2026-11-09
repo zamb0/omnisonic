@@ -112,6 +112,32 @@ class PlaylistDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// Inserts [playlist] or overwrites every column of the stored one, then
+  /// replaces its tracks.
+  Future<void> upsertPlaylist(Playlist playlist) async {
+    await transaction(() async {
+      await into(playlistsTable).insertOnConflictUpdate(
+        PlaylistsTableCompanion(
+          id: Value(playlist.id),
+          name: Value(playlist.name),
+          createdAt: Value(playlist.createdAt),
+          updatedAt: Value(playlist.updatedAt),
+          // Explicit nulls: a description cleared on the server has to clear
+          // here too, which an absent value would not.
+          description: Value(playlist.description),
+          durationMs: Value(playlist.duration?.inMilliseconds),
+          isPublic: Value(playlist.isPublic),
+          coverArtUrl: Value(playlist.coverArtUrl),
+          owner: Value(playlist.owner),
+        ),
+      );
+      await (delete(
+        playlistTracksTable,
+      )..where((tbl) => tbl.playlistId.equals(playlist.id))).go();
+      await _insertPlaylistTracks(playlist.id, playlist.trackIds);
+    });
+  }
+
   Future<void> _insertPlaylistTracks(
     String playlistId,
     List<String> trackIds,

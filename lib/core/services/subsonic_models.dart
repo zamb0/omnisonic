@@ -75,6 +75,10 @@ class SubsonicResponseData<T> {
       data = fromJsonT(json['starred2']);
     } else if (json.containsKey('genres')) {
       data = fromJsonT(json['genres']);
+    } else if (json.containsKey('playlists')) {
+      data = fromJsonT(json['playlists']);
+    } else if (json.containsKey('playlist')) {
+      data = fromJsonT(json['playlist']);
     } else if (json['status'] == 'ok') {
       // For ping and other simple responses
       data = fromJsonT(<String, dynamic>{});
@@ -369,6 +373,10 @@ class SubsonicSong {
   @JsonKey(fromJson: _parseIntFromDynamic)
   final int? originalHeight;
 
+  /// The user's 1-5 star rating, absent when unrated.
+  @JsonKey(fromJson: _parseIntFromDynamic)
+  final int? userRating;
+
   const SubsonicSong({
     required this.id,
     this.parent,
@@ -396,6 +404,7 @@ class SubsonicSong {
     this.bookmarkPosition,
     this.originalWidth,
     this.originalHeight,
+    this.userRating,
   });
 
   factory SubsonicSong.fromJson(Map<String, dynamic> json) =>
@@ -507,6 +516,63 @@ class PlayQueueResponse {
       _$PlayQueueResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlayQueueResponseToJson(this);
+}
+
+/// `getPlaylists` response.
+@JsonSerializable()
+class PlaylistsResponse {
+  final List<SubsonicPlaylist>? playlist;
+
+  const PlaylistsResponse({this.playlist});
+
+  factory PlaylistsResponse.fromJson(Map<String, dynamic> json) =>
+      _$PlaylistsResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PlaylistsResponseToJson(this);
+}
+
+/// A server playlist, as returned by `getPlaylists` (without [entry]) and
+/// `getPlaylist` / `createPlaylist` (with it).
+@JsonSerializable()
+class SubsonicPlaylist {
+  final String id;
+  final String name;
+  final String? comment;
+  final String? owner;
+  final bool? public;
+  @JsonKey(fromJson: _parseIntFromDynamic)
+  final int? songCount;
+
+  /// Total length in seconds.
+  @JsonKey(fromJson: _parseIntFromDynamic)
+  final int? duration;
+  final DateTime? created;
+  final DateTime? changed;
+  final String? coverArt;
+
+  /// OpenSubsonic: smart playlists and other server-managed ones.
+  final bool? readonly;
+  final List<SubsonicSong>? entry;
+
+  const SubsonicPlaylist({
+    required this.id,
+    required this.name,
+    this.comment,
+    this.owner,
+    this.public,
+    this.songCount,
+    this.duration,
+    this.created,
+    this.changed,
+    this.coverArt,
+    this.readonly,
+    this.entry,
+  });
+
+  factory SubsonicPlaylist.fromJson(Map<String, dynamic> json) =>
+      _$SubsonicPlaylistFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SubsonicPlaylistToJson(this);
 }
 
 /// Starred content response (albums, artists, songs)

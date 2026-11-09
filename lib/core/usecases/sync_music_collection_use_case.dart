@@ -19,10 +19,12 @@ class SyncMusicCollectionUseCase
   const SyncMusicCollectionUseCase(
     this._musicRepository,
     this._serverRepository,
+    this._playlistRepository,
   );
 
   final MusicRepository _musicRepository;
   final ServerRepository _serverRepository;
+  final PlaylistRepository _playlistRepository;
 
   static const Duration _collectionTimeout = Duration(seconds: 30);
 
@@ -70,6 +72,11 @@ class SyncMusicCollectionUseCase
           return Left(syncResult.failureOrNull!);
         }
       }
+
+      // Server playlists after the library, so the tracks they list are
+      // already there. A playlist failure is not a failed library sync: the
+      // repository logs it and the next sync tries again.
+      await _playlistRepository.syncFromServers();
 
       // The repository rebuilds and publishes the unified collection at the
       // end of a sync, so read that instead of materialising the whole library

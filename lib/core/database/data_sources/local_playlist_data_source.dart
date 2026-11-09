@@ -191,6 +191,20 @@ class LocalPlaylistDataSource {
     }
   }
 
+  /// Stores [playlist] as given, inserting it or replacing the stored copy
+  /// and its tracks. Used for playlists mirrored from a server, whose ID and
+  /// details come from there.
+  Future<Result<void>> savePlaylist(Playlist playlist) async {
+    try {
+      await _database.playlistDao.upsertPlaylist(playlist);
+      return ResultHelper.success(null);
+    } catch (e) {
+      return ResultHelper.failure(
+        DatabaseFailure('Failed to save playlist: $e'),
+      );
+    }
+  }
+
   /// Create a new playlist with tracks
   Future<Result<Playlist>> createPlaylistWithTracks(
     String name,
@@ -287,7 +301,7 @@ class LocalPlaylistDataSource {
 
   /// Generate a unique playlist ID
   String _generatePlaylistId() {
-    return 'playlist_${DateTime.now().millisecondsSinceEpoch}_${_generateRandomString(8)}';
+    return '${Playlist.localIdPrefix}${DateTime.now().millisecondsSinceEpoch}_${_generateRandomString(8)}';
   }
 
   /// Generate a random string for ID uniqueness

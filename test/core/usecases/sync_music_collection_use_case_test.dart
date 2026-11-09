@@ -10,16 +10,21 @@ import '../../helpers/entity_factories.dart';
 import 'sync_music_collection_use_case_test.mocks.dart';
 
 /// #72: a fresh install has nothing to sync, which is not an error.
-@GenerateMocks([MusicRepository, ServerRepository])
+@GenerateMocks([MusicRepository, ServerRepository, PlaylistRepository])
 void main() {
   late MockMusicRepository music;
   late MockServerRepository servers;
+  late MockPlaylistRepository playlists;
   late SyncMusicCollectionUseCase useCase;
 
   setUp(() {
     music = MockMusicRepository();
     servers = MockServerRepository();
-    useCase = SyncMusicCollectionUseCase(music, servers);
+    playlists = MockPlaylistRepository();
+    when(
+      playlists.syncFromServers(),
+    ).thenAnswer((_) async => ResultHelper.success(null));
+    useCase = SyncMusicCollectionUseCase(music, servers, playlists);
     when(
       servers.getOnlineServers(),
     ).thenAnswer((_) async => ResultHelper.success(<MusicServer>[]));

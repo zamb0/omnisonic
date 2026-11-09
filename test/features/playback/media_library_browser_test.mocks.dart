@@ -546,12 +546,14 @@ class MockPlaylistRepository extends _i1.Mock
     required String? name,
     String? description,
     bool? isPublic = false,
+    String? serverId,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createPlaylist, [], {
               #name: name,
               #description: description,
               #isPublic: isPublic,
+              #serverId: serverId,
             }),
             returnValue:
                 _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
@@ -561,11 +563,25 @@ class MockPlaylistRepository extends _i1.Mock
                       #name: name,
                       #description: description,
                       #isPublic: isPublic,
+                      #serverId: serverId,
                     }),
                   ),
                 ),
           )
           as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> syncFromServers() =>
+      (super.noSuchMethod(
+            Invocation.method(#syncFromServers, []),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#syncFromServers, []),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
 
   @override
   _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> updatePlaylist(

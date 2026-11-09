@@ -66,12 +66,13 @@ class ManagePlaylistUseCase
       name: params.name!,
       description: params.description,
       isPublic: params.isPublic ?? false,
+      serverId: params.serverId,
     );
 
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to create playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -93,9 +94,9 @@ class ManagePlaylistUseCase
 
     final result = await _playlistRepository.updatePlaylist(params.playlist!);
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to update playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -117,9 +118,9 @@ class ManagePlaylistUseCase
 
     final result = await _playlistRepository.deletePlaylist(params.playlistId!);
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to delete playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -146,9 +147,9 @@ class ManagePlaylistUseCase
       params.trackId!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to add track to playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -175,11 +176,9 @@ class ManagePlaylistUseCase
       params.trackId!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure(
-          'Failed to remove track from playlist: ${result.failureOrNull}',
-        ),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -206,11 +205,9 @@ class ManagePlaylistUseCase
       params.trackIds!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure(
-          'Failed to reorder playlist tracks: ${result.failureOrNull}',
-        ),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -240,11 +237,9 @@ class ManagePlaylistUseCase
       params.toIndex!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure(
-          'Failed to move track in playlist: ${result.failureOrNull}',
-        ),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -271,9 +266,9 @@ class ManagePlaylistUseCase
       params.name!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to duplicate playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -298,9 +293,9 @@ class ManagePlaylistUseCase
       format: params.exportFormat ?? 'm3u',
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to export playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -328,9 +323,9 @@ class ManagePlaylistUseCase
       params.name!,
     );
     if (result.isFailure) {
-      return Left(
-        DataFailure('Failed to import playlist: ${result.failureOrNull}'),
-      );
+      // The repository's own failure: its type and message are what
+      // tell the user why (offline, read-only, not on that server, …).
+      return Left(result.failureOrNull!);
     }
 
     return Right(
@@ -358,6 +353,7 @@ class ManagePlaylistParams extends Params {
     this.exportFormat,
     this.importFormat,
     this.importData,
+    this.serverId,
   });
 
   final PlaylistOperation operation;
@@ -374,6 +370,10 @@ class ManagePlaylistParams extends Params {
   final String? importFormat;
   final String? importData;
 
+  /// For [PlaylistOperation.create]: the server to create the playlist on,
+  /// or null for a playlist only on this device.
+  final String? serverId;
+
   @override
   List<Object?> get props => [
     operation,
@@ -389,6 +389,7 @@ class ManagePlaylistParams extends Params {
     exportFormat,
     importFormat,
     importData,
+    serverId,
   ];
 }
 

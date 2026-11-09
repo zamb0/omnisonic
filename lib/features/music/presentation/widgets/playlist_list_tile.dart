@@ -4,6 +4,7 @@ import '../../../../core/design_system/design_system.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../ui/presentation/widgets/cover_art.dart';
+import '../../../ui/presentation/widgets/server_dot.dart';
 
 /// A list tile widget for displaying playlist information in management views
 class PlaylistListTile extends StatelessWidget {
@@ -67,6 +68,17 @@ class PlaylistListTile extends StatelessWidget {
                 runSpacing: OmnisonicSpacing.xxs,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
+                  // Where it lives: a server's dot (named for screen
+                  // readers), or this device for a local playlist.
+                  if (playlist.serverId != null)
+                    ServerDot(serverId: playlist.serverId!, size: 6)
+                  else
+                    Text(
+                      'This device ·',
+                      style: OmnisonicTypography.bodySmall.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
                   Icon(
                     playlist.isPublic
                         ? OmnisonicIcons.public

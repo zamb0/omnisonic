@@ -492,6 +492,15 @@ class MockPlaybackViewModel extends _i1.Mock implements _i3.PlaybackViewModel {
   );
 
   @override
+  bool isFavoritePending(String? trackId) =>
+      (super.noSuchMethod(
+            Invocation.method(#isFavoritePending, [trackId]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
   _i5.Future<void> toggleFavorite(_i4.Track? track) =>
       (super.noSuchMethod(
             Invocation.method(#toggleFavorite, [track]),
@@ -552,6 +561,15 @@ class MockMusicLibraryViewModel extends _i1.Mock
   List<_i4.Artist> get artists =>
       (super.noSuchMethod(
             Invocation.getter(#artists),
+            returnValue: <_i4.Artist>[],
+            returnValueForMissingStub: <_i4.Artist>[],
+          )
+          as List<_i4.Artist>);
+
+  @override
+  List<_i4.Artist> get allArtists =>
+      (super.noSuchMethod(
+            Invocation.getter(#allArtists),
             returnValue: <_i4.Artist>[],
             returnValueForMissingStub: <_i4.Artist>[],
           )
@@ -778,6 +796,23 @@ class MockMusicLibraryViewModel extends _i1.Mock
             returnValueForMissingStub: false,
           )
           as bool);
+
+  @override
+  List<String> artistMemberIds(String? artistId) =>
+      (super.noSuchMethod(
+            Invocation.method(#artistMemberIds, [artistId]),
+            returnValue: <String>[],
+            returnValueForMissingStub: <String>[],
+          )
+          as List<String>);
+
+  @override
+  _i4.Artist? artistById(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#artistById, [id]),
+            returnValueForMissingStub: null,
+          )
+          as _i4.Artist?);
 
   @override
   _i5.Future<bool> syncCollection({

@@ -598,13 +598,18 @@ class FakePlaylistViewModel extends ChangeNotifier
     return true;
   }
 
+  /// The server each `createPlaylist` asked for (null: this device only).
+  final createdOnServers = <String?>[];
+
   @override
   Future<bool> createPlaylist({
     required String name,
     String? description,
     bool isPublic = false,
+    String? serverId,
   }) async {
     savedNames.add(name);
+    createdOnServers.add(serverId);
     return true;
   }
 

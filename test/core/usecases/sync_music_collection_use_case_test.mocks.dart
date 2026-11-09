@@ -10,6 +10,7 @@ import 'package:mockito/mockito.dart' as _i1;
 import 'package:omnisonic/core/entities/entities.dart' as _i6;
 import 'package:omnisonic/core/errors/failures.dart' as _i5;
 import 'package:omnisonic/core/repositories/music_repository.dart' as _i3;
+import 'package:omnisonic/core/repositories/playlist_repository.dart' as _i8;
 import 'package:omnisonic/core/repositories/server_repository.dart' as _i7;
 
 // ignore_for_file: type=lint
@@ -793,4 +794,370 @@ class MockServerRepository extends _i1.Mock implements _i7.ServerRepository {
             ),
           )
           as _i4.Future<_i2.Either<_i5.Failure, void>>);
+}
+
+/// A class which mocks [PlaylistRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockPlaylistRepository extends _i1.Mock
+    implements _i8.PlaylistRepository {
+  MockPlaylistRepository() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> createPlaylist({
+    required String? name,
+    String? description,
+    bool? isPublic = false,
+    String? serverId,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#createPlaylist, [], {
+              #name: name,
+              #description: description,
+              #isPublic: isPublic,
+              #serverId: serverId,
+            }),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#createPlaylist, [], {
+                      #name: name,
+                      #description: description,
+                      #isPublic: isPublic,
+                      #serverId: serverId,
+                    }),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> syncFromServers() =>
+      (super.noSuchMethod(
+            Invocation.method(#syncFromServers, []),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#syncFromServers, []),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> updatePlaylist(
+    _i6.Playlist? playlist,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#updatePlaylist, [playlist]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#updatePlaylist, [playlist]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> deletePlaylist(
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#deletePlaylist, [playlistId]),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#deletePlaylist, [playlistId]),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>> getAllPlaylists() =>
+      (super.noSuchMethod(
+            Invocation.method(#getAllPlaylists, []),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>.value(
+                  _FakeEither_0<_i5.Failure, List<_i6.Playlist>>(
+                    this,
+                    Invocation.method(#getAllPlaylists, []),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist?>> getPlaylistById(
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPlaylistById, [playlistId]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist?>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist?>(
+                    this,
+                    Invocation.method(#getPlaylistById, [playlistId]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist?>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.Track>>> getPlaylistTracks(
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPlaylistTracks, [playlistId]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, List<_i6.Track>>>.value(
+                  _FakeEither_0<_i5.Failure, List<_i6.Track>>(
+                    this,
+                    Invocation.method(#getPlaylistTracks, [playlistId]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Track>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> addTrackToPlaylist(
+    String? playlistId,
+    String? trackId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#addTrackToPlaylist, [playlistId, trackId]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#addTrackToPlaylist, [
+                      playlistId,
+                      trackId,
+                    ]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> removeTrackFromPlaylist(
+    String? playlistId,
+    String? trackId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeTrackFromPlaylist, [playlistId, trackId]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#removeTrackFromPlaylist, [
+                      playlistId,
+                      trackId,
+                    ]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> reorderPlaylistTracks(
+    String? playlistId,
+    List<String>? trackIds,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#reorderPlaylistTracks, [playlistId, trackIds]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#reorderPlaylistTracks, [
+                      playlistId,
+                      trackIds,
+                    ]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> moveTrackInPlaylist(
+    String? playlistId,
+    int? fromIndex,
+    int? toIndex,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#moveTrackInPlaylist, [
+              playlistId,
+              fromIndex,
+              toIndex,
+            ]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#moveTrackInPlaylist, [
+                      playlistId,
+                      fromIndex,
+                      toIndex,
+                    ]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Stream<List<_i6.Playlist>> observePlaylists() =>
+      (super.noSuchMethod(
+            Invocation.method(#observePlaylists, []),
+            returnValue: _i4.Stream<List<_i6.Playlist>>.empty(),
+          )
+          as _i4.Stream<List<_i6.Playlist>>);
+
+  @override
+  _i4.Stream<_i6.Playlist?> observePlaylist(String? playlistId) =>
+      (super.noSuchMethod(
+            Invocation.method(#observePlaylist, [playlistId]),
+            returnValue: _i4.Stream<_i6.Playlist?>.empty(),
+          )
+          as _i4.Stream<_i6.Playlist?>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>> searchPlaylists(
+    String? query,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#searchPlaylists, [query]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>.value(
+                  _FakeEither_0<_i5.Failure, List<_i6.Playlist>>(
+                    this,
+                    Invocation.method(#searchPlaylists, [query]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>> getRecentPlaylists({
+    int? limit = 10,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getRecentPlaylists, [], {#limit: limit}),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>.value(
+                  _FakeEither_0<_i5.Failure, List<_i6.Playlist>>(
+                    this,
+                    Invocation.method(#getRecentPlaylists, [], {#limit: limit}),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>
+  getFavoritePlaylists() =>
+      (super.noSuchMethod(
+            Invocation.method(#getFavoritePlaylists, []),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>.value(
+                  _FakeEither_0<_i5.Failure, List<_i6.Playlist>>(
+                    this,
+                    Invocation.method(#getFavoritePlaylists, []),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Playlist>>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> markPlaylistAsFavorite(
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#markPlaylistAsFavorite, [playlistId]),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#markPlaylistAsFavorite, [playlistId]),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, void>> removePlaylistFromFavorites(
+    String? playlistId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#removePlaylistFromFavorites, [playlistId]),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#removePlaylistFromFavorites, [playlistId]),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> duplicatePlaylist(
+    String? playlistId,
+    String? newName,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#duplicatePlaylist, [playlistId, newName]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#duplicatePlaylist, [
+                      playlistId,
+                      newName,
+                    ]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, String>> exportPlaylist(
+    String? playlistId, {
+    String? format = 'm3u',
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#exportPlaylist, [playlistId], {#format: format}),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, String>>.value(
+              _FakeEither_0<_i5.Failure, String>(
+                this,
+                Invocation.method(
+                  #exportPlaylist,
+                  [playlistId],
+                  {#format: format},
+                ),
+              ),
+            ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, String>>);
+
+  @override
+  _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>> importPlaylist(
+    String? content,
+    String? format,
+    String? name,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#importPlaylist, [content, format, name]),
+            returnValue:
+                _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>.value(
+                  _FakeEither_0<_i5.Failure, _i6.Playlist>(
+                    this,
+                    Invocation.method(#importPlaylist, [content, format, name]),
+                  ),
+                ),
+          )
+          as _i4.Future<_i2.Either<_i5.Failure, _i6.Playlist>>);
 }

@@ -55,6 +55,8 @@ import 'package:omnisonic/features/lyrics/data/datasources/lyrics_remote_data_so
     as _i91;
 import 'package:omnisonic/features/lyrics/presentation/viewmodels/lyrics_view_model.dart'
     as _i359;
+import 'package:omnisonic/features/music/data/datasources/server_playlist_data_source.dart'
+    as _i835;
 import 'package:omnisonic/features/music/data/repositories/playlist_repository_impl.dart'
     as _i238;
 import 'package:omnisonic/features/music/presentation/bloc/search_bloc.dart'
@@ -178,15 +180,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i350.AppDatabase>(),
       ),
     );
-    gh.lazySingleton<_i293.PlaylistRepository>(
-      () => _i238.PlaylistRepositoryImpl(
-        localPlaylistDataSource: gh<_i2.LocalPlaylistDataSource>(),
-        localMusicDataSource: gh<_i963.LocalMusicDataSource>(),
-      ),
-    );
-    gh.factory<_i631.ManagePlaylistUseCase>(
-      () => _i631.ManagePlaylistUseCase(gh<_i331.PlaylistRepository>()),
-    );
     gh.lazySingleton<_i902.OfflineContentFilter>(
       () => appModule.offlineContentFilter(gh<_i763.OfflineRepository>()),
     );
@@ -195,12 +188,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i253.ServerStatusMonitor>(
       () => appModule.serverStatusMonitor(gh<_i632.ServerConnectionService>()),
-    );
-    gh.lazySingleton<_i693.PlaylistViewModel>(
-      () => _i693.PlaylistViewModel(
-        gh<_i331.PlaylistRepository>(),
-        gh<_i503.ManagePlaylistUseCase>(),
-      ),
     );
     gh.lazySingleton<_i296.ServerRepository>(
       () => appModule.serverRepository(
@@ -211,6 +198,12 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i989.PlaybackTrackingService>(
       () => _i989.PlaybackTrackingService(
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i296.ServerRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i835.ServerPlaylistDataSource>(
+      () => _i835.ServerPlaylistDataSource(
         gh<_i79.SubsonicApiClient>(),
         gh<_i296.ServerRepository>(),
       ),
@@ -228,17 +221,44 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i759.SourceSelectionService>(),
       ),
     );
-    gh.factory<_i882.SyncMusicCollectionUseCase>(
-      () => _i882.SyncMusicCollectionUseCase(
-        gh<_i331.MusicRepository>(),
-        gh<_i331.ServerRepository>(),
-      ),
-    );
     gh.factory<_i896.PlayTrackUseCase>(
       () => _i896.PlayTrackUseCase(
         gh<_i331.PlaybackRepository>(),
         gh<_i331.MusicRepository>(),
         gh<_i331.ServerRepository>(),
+      ),
+    );
+    gh.factory<_i1063.SearchMusicUseCase>(
+      () => _i1063.SearchMusicUseCase(gh<_i331.MusicRepository>()),
+    );
+    gh.lazySingleton<_i293.PlaylistRepository>(
+      () => _i238.PlaylistRepositoryImpl(
+        localPlaylistDataSource: gh<_i2.LocalPlaylistDataSource>(),
+        localMusicDataSource: gh<_i963.LocalMusicDataSource>(),
+        serverPlaylistDataSource: gh<_i835.ServerPlaylistDataSource>(),
+        serverRepository: gh<_i296.ServerRepository>(),
+        musicRepository: gh<_i102.MusicRepository>(),
+      ),
+    );
+    gh.lazySingleton<_i984.PlaybackViewModel>(
+      () => _i984.PlaybackViewModel(
+        gh<_i331.PlaybackRepository>(),
+        gh<_i503.PlayTrackUseCase>(),
+        gh<_i989.PlaybackTrackingService>(),
+        gh<_i79.SubsonicApiClient>(),
+        gh<_i331.ServerRepository>(),
+        gh<_i1002.AdaptiveStreamingService>(),
+        gh<_i350.AppDatabase>(),
+      ),
+    );
+    gh.factory<_i106.SearchBloc>(
+      () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
+    );
+    gh.factory<_i882.SyncMusicCollectionUseCase>(
+      () => _i882.SyncMusicCollectionUseCase(
+        gh<_i331.MusicRepository>(),
+        gh<_i331.ServerRepository>(),
+        gh<_i331.PlaylistRepository>(),
       ),
     );
     gh.lazySingleton<_i840.ManageOfflineModeUseCase>(
@@ -263,9 +283,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i417.MediaLibraryBrowser>(),
       ),
     );
-    gh.factory<_i1063.SearchMusicUseCase>(
-      () => _i1063.SearchMusicUseCase(gh<_i331.MusicRepository>()),
-    );
     gh.lazySingleton<_i942.OfflineModeViewModel>(
       () => _i942.OfflineModeViewModel(
         offlineModeService: gh<_i120.OfflineModeService>(),
@@ -281,21 +298,19 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i670.MprisHandler>(),
       ),
     );
+    gh.factory<_i631.ManagePlaylistUseCase>(
+      () => _i631.ManagePlaylistUseCase(gh<_i331.PlaylistRepository>()),
+    );
     gh.lazySingleton<_i502.ServerManagementViewModel>(
       () => _i502.ServerManagementViewModel(
         gh<_i331.ServerRepository>(),
         gh<_i503.SyncMusicCollectionUseCase>(),
       ),
     );
-    gh.lazySingleton<_i984.PlaybackViewModel>(
-      () => _i984.PlaybackViewModel(
-        gh<_i331.PlaybackRepository>(),
-        gh<_i503.PlayTrackUseCase>(),
-        gh<_i989.PlaybackTrackingService>(),
-        gh<_i79.SubsonicApiClient>(),
-        gh<_i331.ServerRepository>(),
-        gh<_i1002.AdaptiveStreamingService>(),
-        gh<_i350.AppDatabase>(),
+    gh.lazySingleton<_i693.PlaylistViewModel>(
+      () => _i693.PlaylistViewModel(
+        gh<_i331.PlaylistRepository>(),
+        gh<_i503.ManagePlaylistUseCase>(),
       ),
     );
     gh.lazySingleton<_i780.MusicLibraryViewModel>(
@@ -304,9 +319,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i503.SyncMusicCollectionUseCase>(),
         gh<_i503.SearchMusicUseCase>(),
       ),
-    );
-    gh.factory<_i106.SearchBloc>(
-      () => _i106.SearchBloc(gh<_i503.SearchMusicUseCase>()),
     );
     return this;
   }

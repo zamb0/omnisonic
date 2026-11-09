@@ -387,6 +387,167 @@ class SubsonicApiClient {
     }
   }
 
+  /// Lists the playlists the user can see: their own and other users'
+  /// public ones. Entries are not included; see [getPlaylist].
+  Future<SubsonicResponse<PlaylistsResponse>> getPlaylists(
+    MusicServer server,
+    String password,
+  ) async {
+    try {
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'getPlaylists',
+      );
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => PlaylistsResponse.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// One playlist with its entries, in order.
+  Future<SubsonicResponse<SubsonicPlaylist>> getPlaylist(
+    MusicServer server,
+    String password,
+    String playlistId,
+  ) async {
+    try {
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'getPlaylist',
+        queryParams: {'id': playlistId},
+      );
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => SubsonicPlaylist.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Creates a playlist named [name] holding [songIds], or — with
+  /// [playlistId] — replaces that playlist's entries with [songIds].
+  ///
+  /// Since API 1.14 the server answers with the playlist; older servers send
+  /// an empty response, in which case [SubsonicResponse.data] has no entries.
+  Future<SubsonicResponse<SubsonicPlaylist?>> createPlaylist(
+    MusicServer server,
+    String password, {
+    String? name,
+    String? playlistId,
+    List<String> songIds = const [],
+  }) async {
+    assert(name != null || playlistId != null);
+    try {
+      final response = await _makeRequestWithRepeatedParams(
+        server: server,
+        password: password,
+        endpoint: 'createPlaylist',
+        repeated: {'songId': songIds},
+        additionalParams: {'name': ?name, 'playlistId': ?playlistId},
+      );
+      return SubsonicResponse.fromJson(response.data as Map<String, dynamic>, (
+        json,
+      ) {
+        final map = json as Map<String, dynamic>;
+        return map.containsKey('id') ? SubsonicPlaylist.fromJson(map) : null;
+      });
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Changes a playlist's details and/or adds and removes entries.
+  ///
+  /// [songIndexesToRemove] are positions in the playlist as the server has
+  /// it, before this call.
+  Future<SubsonicResponse<PingResponse>> updatePlaylist(
+    MusicServer server,
+    String password,
+    String playlistId, {
+    String? name,
+    String? comment,
+    bool? isPublic,
+    List<String> songIdsToAdd = const [],
+    List<int> songIndexesToRemove = const [],
+  }) async {
+    try {
+      final response = await _makeRequestWithRepeatedParams(
+        server: server,
+        password: password,
+        endpoint: 'updatePlaylist',
+        repeated: {
+          'songIdToAdd': songIdsToAdd,
+          'songIndexToRemove': [for (final i in songIndexesToRemove) '$i'],
+        },
+        additionalParams: {
+          'playlistId': playlistId,
+          'name': ?name,
+          'comment': ?comment,
+          if (isPublic != null) 'public': '$isPublic',
+        },
+      );
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => const PingResponse(),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Deletes a playlist the user owns.
+  Future<SubsonicResponse<PingResponse>> deletePlaylist(
+    MusicServer server,
+    String password,
+    String playlistId,
+  ) async {
+    try {
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'deletePlaylist',
+        queryParams: {'id': playlistId},
+      );
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => const PingResponse(),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  /// Sets the user's rating of a song, album or artist: 1-5 stars, or 0 to
+  /// remove the rating.
+  Future<SubsonicResponse<PingResponse>> setRating(
+    MusicServer server,
+    String password,
+    String id,
+    int rating,
+  ) async {
+    assert(rating >= 0 && rating <= 5);
+    try {
+      final response = await _makeRequest(
+        server: server,
+        password: password,
+        endpoint: 'setRating',
+        queryParams: {'id': id, 'rating': '$rating'},
+      );
+      return SubsonicResponse.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => const PingResponse(),
+      );
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   /// Gets all music genres available on the server
   /// Returns a [GenresResponse] containing a list of genres with their statistics
   Future<SubsonicResponse<GenresResponse>> getGenres(
@@ -483,7 +644,24 @@ class SubsonicApiClient {
     required String endpoint,
     required List<String> ids,
     Map<String, dynamic>? additionalParams,
+  }) => _makeRequestWithRepeatedParams(
+    server: server,
+    password: password,
+    endpoint: endpoint,
+    repeated: {'id': ids},
+    additionalParams: additionalParams,
+  );
+
+  /// Makes a request where each key of [repeated] is sent once per value
+  /// (`songId=a&songId=b`), which Dio's query map cannot express.
+  Future<Response> _makeRequestWithRepeatedParams({
+    required MusicServer server,
+    required String password,
+    required String endpoint,
+    required Map<String, List<String>> repeated,
+    Map<String, dynamic>? additionalParams,
   }) async {
+    final ids = [for (final values in repeated.values) ...values];
     final salt = _generateSalt();
     final token = _generateToken(password, salt);
 
@@ -497,9 +675,13 @@ class SubsonicApiClient {
       'f=json',
     ];
 
-    // Add multiple 'id' parameters
-    for (final id in ids) {
-      queryParts.add('id=${Uri.encodeComponent(id)}');
+    // Repeated parameters, one entry per value
+    for (final entry in repeated.entries) {
+      for (final value in entry.value) {
+        queryParts.add(
+          '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(value)}',
+        );
+      }
     }
 
     // Add additional parameters

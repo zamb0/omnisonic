@@ -3,12 +3,19 @@ import '../errors/result.dart';
 
 /// Repository interface for playlist management operations
 abstract class PlaylistRepository {
-  /// Creates a new playlist
+  /// Creates a new playlist on the server with [serverId], or only on this
+  /// device when it is null.
   Future<Result<Playlist>> createPlaylist({
     required String name,
     String? description,
     bool isPublic = false,
+    String? serverId,
   });
+
+  /// Brings in the playlists of every reachable server: new and changed
+  /// ones are stored, ones deleted on the server are dropped. Local
+  /// playlists are left alone.
+  Future<Result<void>> syncFromServers();
 
   /// Updates an existing playlist
   Future<Result<Playlist>> updatePlaylist(Playlist playlist);

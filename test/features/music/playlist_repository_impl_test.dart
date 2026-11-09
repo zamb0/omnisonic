@@ -8,6 +8,10 @@ import 'package:omnisonic/core/entities/music_server.dart';
 import 'package:omnisonic/core/entities/server_status.dart';
 import 'package:omnisonic/core/entities/track.dart';
 import 'package:omnisonic/core/errors/result.dart';
+import 'package:omnisonic/core/repositories/music_repository.dart';
+import 'package:omnisonic/core/repositories/server_repository.dart';
+import 'package:omnisonic/core/services/subsonic_api_client.dart';
+import 'package:omnisonic/features/music/data/datasources/server_playlist_data_source.dart';
 import 'package:omnisonic/features/music/data/repositories/playlist_repository_impl.dart';
 
 void main() {
@@ -30,9 +34,17 @@ void main() {
   setUp(() async {
     database = AppDatabase.forTesting(NativeDatabase.memory());
     musicDataSource = LocalMusicDataSource(database);
+    // Local playlists only: nothing here may reach a server.
+    final servers = _NoServers();
     repository = PlaylistRepositoryImpl(
       localPlaylistDataSource: LocalPlaylistDataSource(database),
       localMusicDataSource: musicDataSource,
+      serverPlaylistDataSource: ServerPlaylistDataSource(
+        SubsonicApiClient(),
+        servers,
+      ),
+      serverRepository: servers,
+      musicRepository: _NoMusic(),
     );
 
     await database.serverDao.insertServer(
@@ -106,3 +118,7 @@ void main() {
     });
   });
 }
+
+class _NoServers extends Fake implements ServerRepository {}
+
+class _NoMusic extends Fake implements MusicRepository {}

@@ -88,6 +88,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
   }
 
   Future<void> _loadTracks() async {
+    final requestedId = _album.id;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -98,9 +99,11 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
 
       // Use proper getAlbumTracks method which queries by albumId
       // and fetches from server if not found locally
-      final albumTracks = await musicRepository.getAlbumTracks(_album.id);
-      // The user may have left while the server was answering.
-      if (!mounted) return;
+      final albumTracks = await musicRepository.getAlbumTracks(requestedId);
+      // The user may have left while the server was answering — or picked
+      // another source, whose tracks the slower, now unselected, response
+      // must not replace.
+      if (!mounted || requestedId != _album.id) return;
 
       setState(() {
         _tracks = albumTracks;
@@ -109,8 +112,8 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
         _rebuildSourceNotes();
       });
     } catch (e) {
-      AppLog.error('Loading tracks for ${_album.id} failed: $e');
-      if (!mounted) return;
+      AppLog.error('Loading tracks for $requestedId failed: $e');
+      if (!mounted || requestedId != _album.id) return;
       setState(() {
         _errorMessage = describeUnexpected(action: "load this album's tracks");
         _isLoading = false;

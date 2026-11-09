@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_router.dart';
 
 import '../../../../core/design_system/design_system.dart';
+import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/entities/entities.dart';
 import '../../../../core/utils/album_grouping.dart';
 import '../../../../core/utils/web_support.dart';
@@ -387,37 +388,22 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
       ),
     );
 
-    // Frosted rather than an opaque surface slab: the rows still have to
-    // be hidden as they scroll under the pinned labels, but a flat block of
-    // `surface` broke the glass backdrop.
-    return GlassSurface(
-      borderRadius: BorderRadius.zero,
-      intensity: GlassIntensity.pill,
-      highlight: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    // Only the labels: the delegate puts glass behind them once rows
+    // scroll underneath. A permanent square slab with a hard divider looked
+    // like a stock data table dropped onto the glass page.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: OmnisonicSpacing.md,
+        vertical: OmnisonicSpacing.sm,
+      ),
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: OmnisonicSpacing.md,
-              vertical: OmnisonicSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                SizedBox(width: 32, child: label('#')),
-                Expanded(flex: 3, child: label('TITLE')),
-                if (_showSourceColumn)
-                  Expanded(flex: 2, child: label('SOURCE')),
-                SizedBox(width: _formatColumnWidth, child: label('FORMAT')),
-                SizedBox(
-                  width: 48,
-                  child: label('TIME', align: TextAlign.right),
-                ),
-                const SizedBox(width: 40),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
+          SizedBox(width: 32, child: label('#')),
+          Expanded(flex: 3, child: label('TITLE')),
+          if (_showSourceColumn) Expanded(flex: 2, child: label('SOURCE')),
+          SizedBox(width: _formatColumnWidth, child: label('FORMAT')),
+          SizedBox(width: 48, child: label('TIME', align: TextAlign.right)),
+          const SizedBox(width: 40),
         ],
       ),
     );
@@ -1151,7 +1137,7 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   /// The header's height for the current text scale.
   static double extentFor(BuildContext context) =>
-      // 2 × 8px padding, a 1px divider and the glass's 2 × 1px border are
+      // 2 × 8px padding, the 1px hairline and the glass's 2 × 1px border are
       // fixed; the label line (11px at a 1.6 line height, plus rounding
       // slack) scales.
       19 + OmnisonicTextScale.textExtent(context, 19);
@@ -1167,7 +1153,52 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) => SizedBox(height: extent, child: child);
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final pinnedOverRows = overlapsContent || shrinkOffset > 0;
+    // At rest the labels sit on the page with a hairline under them, like
+    // the rows' own spacing. Once rows scroll under the pinned labels they
+    // have to be hidden, so a rounded glass pane — the rows' own radius —
+    // fades in behind them.
+    return SizedBox(
+      height: extent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedOpacity(
+            opacity: pinnedOverRows ? 1 : 0,
+            duration: AnimationUtils.adjustedDuration(
+              context,
+              const Duration(milliseconds: 150),
+            ),
+            child: GlassSurface(
+              borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
+              intensity: GlassIntensity.pill,
+              highlight: false,
+              child: const SizedBox.expand(),
+            ),
+          ),
+          Align(alignment: Alignment.centerLeft, child: child),
+          Positioned(
+            left: OmnisonicSpacing.md,
+            right: OmnisonicSpacing.md,
+            bottom: 0,
+            child: AnimatedOpacity(
+              opacity: pinnedOverRows ? 0 : 1,
+              duration: AnimationUtils.adjustedDuration(
+                context,
+                const Duration(milliseconds: 150),
+              ),
+              child: Container(
+                height: 1,
+                color: scheme.outlineVariant.withValues(alpha: 0.35),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   bool shouldRebuild(_TrackTableHeaderDelegate oldDelegate) =>

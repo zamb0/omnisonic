@@ -97,6 +97,24 @@ void main() {
     expect(strip.wash.color, isNull);
   });
 
+  testWidgets('the header tint continues behind the sidebar', (tester) async {
+    await pumpAlbum(tester);
+    // The tint used to start at the content column, in a hard vertical edge
+    // against the sidebar's glass, with bare canvas around its corners.
+    final side = tester.renderObject<RenderBox>(find.byType(TopWashSide));
+    final content = tester.getTopLeft(find.byType(DetailHeader));
+    expect(side.size.width, greaterThan(200));
+    expect(side.localToGlobal(Offset.zero).dx, 0);
+    expect(side.size.width, lessThan(content.dx));
+
+    final geometry = TopWash.maybeOf(
+      tester.element(find.byType(DetailHeader)),
+    )!.geometry!;
+    // Same colour at the scroll view's top edge on both sides of the seam.
+    expect(geometry.edgeColor, isNotNull);
+    expect(geometry.colorAt(geometry.viewportTop - 1), isNotNull);
+  });
+
   testWidgets('a single-server album has no SOURCE column of dashes', (
     tester,
   ) async {

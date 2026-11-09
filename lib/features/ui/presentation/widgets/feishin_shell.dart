@@ -35,6 +35,17 @@ class FeishinShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _ShellWash(
+      // The sidebar column: the inset plus the glass, up to where the content
+      // column (and the page's own wash) begins.
+      sideWidth:
+          OmnisonicLayout.chromeInset +
+          (extended ? _extendedWidth : _railWidth),
+      child: _buildPanes(context),
+    );
+  }
+
+  Widget _buildPanes(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -412,6 +423,47 @@ class FeishinShell extends StatelessWidget {
 /// The page and, on wide windows, the top bar above it. Watches the page's
 /// vertical scroll so the bar can turn from transparent into glass once
 /// content passes under it (docs/design-system.md §9.4).
+/// Owns the page's [TopWash] for the whole shell, and continues it behind the
+/// sidebar column so a detail page's tint does not stop at the glass.
+class _ShellWash extends StatefulWidget {
+  const _ShellWash({required this.sideWidth, required this.child});
+
+  final double sideWidth;
+  final Widget child;
+
+  @override
+  State<_ShellWash> createState() => _ShellWashState();
+}
+
+class _ShellWashState extends State<_ShellWash> {
+  final TopWash _topWash = TopWash();
+
+  @override
+  void dispose() {
+    _topWash.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TopWashScope(
+      wash: _topWash,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: widget.sideWidth,
+            child: IgnorePointer(child: TopWashSide(wash: _topWash)),
+          ),
+          Positioned.fill(child: widget.child),
+        ],
+      ),
+    );
+  }
+}
+
 class _ContentWithTopBar extends StatefulWidget {
   const _ContentWithTopBar({required this.showTopBar, required this.child});
 
@@ -425,13 +477,6 @@ class _ContentWithTopBar extends StatefulWidget {
 class _ContentWithTopBarState extends State<_ContentWithTopBar> {
   bool _scrolled = false;
   String? _path;
-  final TopWash _topWash = TopWash();
-
-  @override
-  void dispose() {
-    _topWash.dispose();
-    super.dispose();
-  }
 
   @override
   void didChangeDependencies() {
@@ -455,30 +500,29 @@ class _ContentWithTopBarState extends State<_ContentWithTopBar> {
 
   @override
   Widget build(BuildContext context) {
+    final topWash = TopWash.maybeOf(context);
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
-      child: TopWashScope(
-        wash: _topWash,
-        child: Column(
-          children: [
-            // The page's header tint, continued behind the inset and the top
-            // bar: both sit above the page's scroll view, which clips it.
-            Stack(
-              children: [
-                Positioned.fill(child: TopWashStrip(wash: _topWash)),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: OmnisonicLayout.chromeInset,
-                  ),
-                  child: widget.showTopBar
-                      ? DesktopTopBar(scrolled: _scrolled)
-                      : const SizedBox(width: double.infinity),
+      child: Column(
+        children: [
+          // The page's header tint, continued behind the inset and the top
+          // bar: both sit above the page's scroll view, which clips it.
+          Stack(
+            children: [
+              if (topWash != null)
+                Positioned.fill(child: TopWashStrip(wash: topWash)),
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: OmnisonicLayout.chromeInset,
                 ),
-              ],
-            ),
-            Expanded(child: widget.child),
-          ],
-        ),
+                child: widget.showTopBar
+                    ? DesktopTopBar(scrolled: _scrolled)
+                    : const SizedBox(width: double.infinity),
+              ),
+            ],
+          ),
+          Expanded(child: widget.child),
+        ],
       ),
     );
   }

@@ -124,7 +124,7 @@ class DetailHeader extends StatefulWidget {
 }
 
 class _DetailHeaderState extends State<DetailHeader> implements TopWashSource {
-  /// The wash's box, measured against the scroll view for [edgeColor].
+  /// The wash's box, measured against the scroll view for [geometry].
   final GlobalKey _washKey = GlobalKey();
 
   TopWash? _topWash;
@@ -171,7 +171,7 @@ class _DetailHeaderState extends State<DetailHeader> implements TopWashSource {
   void _onScroll() => _topWash?.sourceChanged();
 
   @override
-  Color? edgeColor() {
+  TopWashGeometry? geometry() {
     final full = _full;
     final box = _washKey.currentContext?.findRenderObject();
     final viewport = _scrollable?.context.findRenderObject();
@@ -183,16 +183,16 @@ class _DetailHeaderState extends State<DetailHeader> implements TopWashSource {
         !box.hasSize) {
       return null;
     }
-    final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
     final height = box.size.height;
-    // The wash starts below the scroll view's top edge: nothing to carry.
-    if (height <= 0 || top > 0) return null;
-    // Where the edge falls along the gradient built below.
-    final t = -top / height;
-    final start = (widget.bleedTop / height).clamp(0.0, 1.0);
-    if (t <= start) return full;
-    if (t >= 1) return null;
-    return full.withValues(alpha: full.a * (1 - (t - start) / (1 - start)));
+    if (height <= 0) return null;
+    return TopWashGeometry(
+      viewportTop: viewport.localToGlobal(Offset.zero).dy,
+      washTop: box.localToGlobal(Offset.zero).dy,
+      washHeight: height,
+      full: full,
+      // Matches the gradient built below.
+      fadeStart: (widget.bleedTop / height).clamp(0.0, 1.0),
+    );
   }
 
   @override

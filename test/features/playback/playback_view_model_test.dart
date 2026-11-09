@@ -98,6 +98,37 @@ void main() {
     expect(viewModel.queue.single.isStarred, isTrue);
   });
 
+  test('a rating goes to the track\'s server and sticks', () async {
+    final track = testTrack(id: 'server2_t1', serverId: 'server2');
+    await database.serverDao.insertServer(
+      testServer(id: 'server2', name: 'Second'),
+      'pw',
+    );
+    await database.musicDao.insertTracks([track]);
+    await emitTrack(track);
+
+    await viewModel.setRating(viewModel.currentTrack!, 4);
+
+    expect(apiClient.ratingCalls, [('server2', 't1', 4)]);
+    expect(viewModel.currentTrack!.rating, 4);
+    expect(viewModel.ratingOf(track), 4);
+    // The player re-emits the track it loaded, unrated.
+    await emitTrack(track);
+    expect(viewModel.currentTrack!.rating, 4);
+    expect((await database.musicDao.getTrackById(track.id))!.rating, 4);
+  });
+
+  test('a refused rating goes back to what it was', () async {
+    final track = testTrack(id: 'server1_t1', serverId: 'server1');
+    await emitTrack(track);
+    apiClient.refuseRating = true;
+
+    await viewModel.setRating(viewModel.currentTrack!, 2);
+
+    expect(viewModel.currentTrack!.rating, 0);
+    expect(viewModel.errorMessage, contains('First'));
+  });
+
   test('scrobble tracking follows play and pause', () async {
     final track = testTrack();
 
@@ -233,6 +264,26 @@ class _FakeServerRepository implements ServerRepository {
 
 class _FakeApiClient implements SubsonicApiClient {
   final starCalls = <(String, String?)>[];
+  final ratingCalls = <(String, String, int)>[];
+  bool refuseRating = false;
+
+  @override
+  Future<SubsonicResponse<PingResponse>> setRating(
+    MusicServer server,
+    String password,
+    String id,
+    int rating,
+  ) async {
+    ratingCalls.add((server.id, id, rating));
+    return refuseRating
+        ? const SubsonicResponse<PingResponse>(
+            subsonicResponse: SubsonicResponseData(
+              status: 'failed',
+              version: '1.16.1',
+            ),
+          )
+        : _ok;
+  }
 
   static const _ok = SubsonicResponse<PingResponse>(
     subsonicResponse: SubsonicResponseData(status: 'ok', version: '1.16.1'),

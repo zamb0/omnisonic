@@ -532,6 +532,28 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             textAlign: TextAlign.center,
           ),
         ],
+        // Rated where the music is: this is where people decide.
+        Selector<PlaybackViewModel, (int, bool)>(
+          selector: (_, viewModel) {
+            final current = viewModel.currentTrack;
+            return (
+              current?.rating ?? 0,
+              current != null && viewModel.isRatingPending(current.id),
+            );
+          },
+          builder: (context, value, child) {
+            final (rating, pending) = value;
+            return RatingStars(
+              rating: rating,
+              onChanged: pending
+                  ? null
+                  : (stars) => context.read<PlaybackViewModel>().setRating(
+                      track,
+                      stars,
+                    ),
+            );
+          },
+        ),
       ],
     );
   }

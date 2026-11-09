@@ -467,6 +467,7 @@ class SubsonicSong {
       fileSize: size,
       coverArtUrl: coverArtUrl,
       isStarred: starred != null,
+      rating: (userRating ?? 0).clamp(0, 5),
     );
   }
 }

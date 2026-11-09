@@ -7,6 +7,7 @@ export 'media_card.dart';
 export 'media_actions.dart';
 export 'cover_art.dart';
 export 'server_dot.dart';
+export 'rating_stars.dart';
 export 'chips.dart';
 export 'search_field.dart';
 

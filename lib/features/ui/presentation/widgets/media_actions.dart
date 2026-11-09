@@ -16,6 +16,7 @@ import '../../../servers/presentation/viewmodels/server_management_view_model.da
 import 'cover_art.dart';
 import 'dialogs.dart';
 import 'feedback.dart';
+import 'rating_stars.dart';
 
 /// One entry in an actions sheet.
 class MediaAction {
@@ -92,6 +93,14 @@ Future<void> showTrackActions(
             ? OmnisonicIcons.favorite
             : OmnisonicIcons.favoriteOutline,
         (_) => playback.toggleFavorite(track),
+      ),
+      MediaAction(
+        switch (playback.ratingOf(track)) {
+          0 => 'Rate',
+          final stars => 'Rated $stars of 5',
+        },
+        OmnisonicIcons.starOutline,
+        (context) => showRatingDialog(context, track),
       ),
       if (offline != null && !isDownloading)
         MediaAction(
@@ -230,6 +239,35 @@ Future<void> playAlbum(
 }
 
 /// A dialog with a track's details.
+/// Asks for a 1-5 star rating of [track] and saves it on its server.
+Future<void> showRatingDialog(BuildContext context, Track track) async {
+  final playback = context.read<PlaybackViewModel>();
+  final rating = await showDialog<int>(
+    context: context,
+    useRootNavigator: true,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(track.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+      content: Center(
+        heightFactor: 1,
+        child: RatingStars(
+          rating: playback.ratingOf(track),
+          size: OmnisonicIconSizes.lg,
+          onChanged: (value) => Navigator.pop(dialogContext, value),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+  if (rating == null) return;
+  // Failures reach the user through the app-wide error listener.
+  await playback.setRating(track, rating);
+}
+
 Future<void> showTrackInfo(BuildContext context, Track track) {
   final servers = _maybeRead<ServerManagementViewModel>(context);
   final rows = <(String, String)>[
@@ -240,6 +278,7 @@ Future<void> showTrackInfo(BuildContext context, Track track) {
     if (track.genre != null) ('Genre', track.genre!),
     if (track.trackNumber != null) ('Track', '${track.trackNumber}'),
     ('Format', track.quality.displayName),
+    if (track.rating > 0) ('Rating', '${track.rating} of 5'),
     ('Server', servers?.serverNameFor(track.serverId) ?? track.serverId),
   ];
   return showDetailsDialog(context, title: track.title, rows: rows);

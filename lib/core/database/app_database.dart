@@ -33,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -70,6 +70,10 @@ class AppDatabase extends _$AppDatabase {
           for (final index in allSchemaEntities.whereType<Index>()) {
             await m.create(index);
           }
+        }
+        if (from < 5) {
+          // Migration for version 5: the user's star rating of each track.
+          await m.addColumn(tracksTable, tracksTable.rating);
         }
       },
       beforeOpen: (details) async {

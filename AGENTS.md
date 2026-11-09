@@ -48,6 +48,8 @@ Clean Architecture, `core/` + `features/`. Feature folders follow `data/` (repos
 
 - **IDs**: every entity ID is `"{serverId}_{subsonicId}"`, built by `IdGenerator` (`lib/core/utils/id_generator.dart`). Never pass a unique ID to the Subsonic API — call `IdGenerator.extractSubsonicId` first. Subsonic IDs may themselves contain `_`, so only split on the first underscore (the helper does this).
 - **Deduplication**: `DeduplicationEngine` groups tracks by fuzzy similarity (threshold `0.85`, duration tolerance 10s). `MusicRepositoryImpl` caches duplicate groups in memory and re-computes them on sync.
+- **Playlists**: server playlists are mirrored locally with the same `{serverId}_{subsonicId}` IDs and the server stays the source of truth — `PlaylistRepositoryImpl` writes there first, then reads the playlist back. Local-only playlists have IDs starting with `Playlist.localIdPrefix` (`playlist_`). A server playlist can only hold that server's tracks.
+- **Writes go to the item's own server**: star, rating, scrobble, play queue and playlist calls resolve the server from the entity's `serverId`, never "the first online server".
 - **Source selection**: `SourceSelectionService` picks which copy of a duplicated track to stream, based on audio quality and live server availability (`ServerStatusMonitor`). Playback should go through this, not straight to a `Track.streamUrl`.
 
 ### Error handling
@@ -91,7 +93,7 @@ go_router in `lib/core/routing/app_router.dart`. A `ShellRoute` wraps the tab pa
 - Logging goes through `AppLog` (`debug`/`info`/`warn`/`error`), not `print`. `debug` is stripped in release.
 - Import via barrels where they exist: `core/entities/entities.dart`, `core/errors/errors.dart`, `core/usecases/usecases.dart`, `core/design_system/design_system.dart`, `features/ui/presentation/widgets/widgets.dart`.
 - Entities use `equatable`; keep `props` in sync when adding fields.
-- Drift schema changes require bumping `schemaVersion` in `app_database.dart` and adding an `onUpgrade` branch (currently at version 3).
+- Drift schema changes require bumping `schemaVersion` in `app_database.dart` and adding an `onUpgrade` branch (currently at version 5).
 - Tests use `AppDatabase.forTesting(NativeDatabase.memory())` for DB work and mockito `@GenerateMocks` for repository doubles.
 
 ## Repo notes

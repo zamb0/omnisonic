@@ -751,6 +751,15 @@ class $TracksTableTable extends TracksTable
     defaultValue: const Constant(false),
   );
   @override
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     serverId,
@@ -772,6 +781,7 @@ class $TracksTableTable extends TracksTable
     isCached,
     cachePath,
     isStarred,
+    rating,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -866,6 +876,10 @@ class $TracksTableTable extends TracksTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_starred'],
       )!,
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      )!,
     );
   }
 
@@ -899,6 +913,9 @@ class TrackData extends DataClass implements Insertable<TrackData> {
   final bool isCached;
   final String? cachePath;
   final bool isStarred;
+
+  /// The user's 1-5 star rating on the track's server, 0 when unrated.
+  final int rating;
   const TrackData({
     required this.id,
     required this.serverId,
@@ -920,6 +937,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     required this.isCached,
     this.cachePath,
     required this.isStarred,
+    required this.rating,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -966,6 +984,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       map['cache_path'] = Variable<String>(cachePath);
     }
     map['is_starred'] = Variable<bool>(isStarred);
+    map['rating'] = Variable<int>(rating);
     return map;
   }
 
@@ -1007,6 +1026,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
           ? const Value.absent()
           : Value(cachePath),
       isStarred: Value(isStarred),
+      rating: Value(rating),
     );
   }
 
@@ -1038,6 +1058,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       isCached: serializer.fromJson<bool>(json['isCached']),
       cachePath: serializer.fromJson<String?>(json['cachePath']),
       isStarred: serializer.fromJson<bool>(json['isStarred']),
+      rating: serializer.fromJson<int>(json['rating']),
     );
   }
   @override
@@ -1066,6 +1087,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       'isCached': serializer.toJson<bool>(isCached),
       'cachePath': serializer.toJson<String?>(cachePath),
       'isStarred': serializer.toJson<bool>(isStarred),
+      'rating': serializer.toJson<int>(rating),
     };
   }
 
@@ -1090,6 +1112,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     bool? isCached,
     Value<String?> cachePath = const Value.absent(),
     bool? isStarred,
+    int? rating,
   }) => TrackData(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -1111,6 +1134,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     isCached: isCached ?? this.isCached,
     cachePath: cachePath.present ? cachePath.value : this.cachePath,
     isStarred: isStarred ?? this.isStarred,
+    rating: rating ?? this.rating,
   );
   TrackData copyWithCompanion(TracksTableCompanion data) {
     return TrackData(
@@ -1144,6 +1168,7 @@ class TrackData extends DataClass implements Insertable<TrackData> {
       isCached: data.isCached.present ? data.isCached.value : this.isCached,
       cachePath: data.cachePath.present ? data.cachePath.value : this.cachePath,
       isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
+      rating: data.rating.present ? data.rating.value : this.rating,
     );
   }
 
@@ -1169,13 +1194,14 @@ class TrackData extends DataClass implements Insertable<TrackData> {
           ..write('coverArtUrl: $coverArtUrl, ')
           ..write('isCached: $isCached, ')
           ..write('cachePath: $cachePath, ')
-          ..write('isStarred: $isStarred')
+          ..write('isStarred: $isStarred, ')
+          ..write('rating: $rating')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     serverId,
     title,
@@ -1196,7 +1222,8 @@ class TrackData extends DataClass implements Insertable<TrackData> {
     isCached,
     cachePath,
     isStarred,
-  );
+    rating,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1220,7 +1247,8 @@ class TrackData extends DataClass implements Insertable<TrackData> {
           other.coverArtUrl == this.coverArtUrl &&
           other.isCached == this.isCached &&
           other.cachePath == this.cachePath &&
-          other.isStarred == this.isStarred);
+          other.isStarred == this.isStarred &&
+          other.rating == this.rating);
 }
 
 class TracksTableCompanion extends UpdateCompanion<TrackData> {
@@ -1244,6 +1272,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
   final Value<bool> isCached;
   final Value<String?> cachePath;
   final Value<bool> isStarred;
+  final Value<int> rating;
   final Value<int> rowid;
   const TracksTableCompanion({
     this.id = const Value.absent(),
@@ -1266,6 +1295,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
     this.isCached = const Value.absent(),
     this.cachePath = const Value.absent(),
     this.isStarred = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TracksTableCompanion.insert({
@@ -1289,6 +1319,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
     this.isCached = const Value.absent(),
     this.cachePath = const Value.absent(),
     this.isStarred = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        serverId = Value(serverId),
@@ -1320,6 +1351,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
     Expression<bool>? isCached,
     Expression<String>? cachePath,
     Expression<bool>? isStarred,
+    Expression<int>? rating,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1343,6 +1375,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
       if (isCached != null) 'is_cached': isCached,
       if (cachePath != null) 'cache_path': cachePath,
       if (isStarred != null) 'is_starred': isStarred,
+      if (rating != null) 'rating': rating,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1368,6 +1401,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
     Value<bool>? isCached,
     Value<String?>? cachePath,
     Value<bool>? isStarred,
+    Value<int>? rating,
     Value<int>? rowid,
   }) {
     return TracksTableCompanion(
@@ -1391,6 +1425,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
       isCached: isCached ?? this.isCached,
       cachePath: cachePath ?? this.cachePath,
       isStarred: isStarred ?? this.isStarred,
+      rating: rating ?? this.rating,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1460,6 +1495,9 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
     if (isStarred.present) {
       map['is_starred'] = Variable<bool>(isStarred.value);
     }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1489,6 +1527,7 @@ class TracksTableCompanion extends UpdateCompanion<TrackData> {
           ..write('isCached: $isCached, ')
           ..write('cachePath: $cachePath, ')
           ..write('isStarred: $isStarred, ')
+          ..write('rating: $rating, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4993,6 +5032,7 @@ typedef $$TracksTableTableCreateCompanionBuilder =
       Value<bool> isCached,
       Value<String?> cachePath,
       Value<bool> isStarred,
+      Value<int> rating,
       Value<int> rowid,
     });
 typedef $$TracksTableTableUpdateCompanionBuilder =
@@ -5017,6 +5057,7 @@ typedef $$TracksTableTableUpdateCompanionBuilder =
       Value<bool> isCached,
       Value<String?> cachePath,
       Value<bool> isStarred,
+      Value<int> rating,
       Value<int> rowid,
     });
 
@@ -5257,6 +5298,11 @@ class $$TracksTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ServersTableTableFilterComposer get serverId {
     final $$ServersTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5487,6 +5533,11 @@ class $$TracksTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ServersTableTableOrderingComposer get serverId {
     final $$ServersTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5586,6 +5637,9 @@ class $$TracksTableTableAnnotationComposer
 
   GeneratedColumn<bool> get isStarred =>
       $composableBuilder(column: $table.isStarred, builder: (column) => column);
+
+  GeneratedColumn<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
 
   $$ServersTableTableAnnotationComposer get serverId {
     final $$ServersTableTableAnnotationComposer composer = $composerBuilder(
@@ -5772,6 +5826,7 @@ class $$TracksTableTableTableManager
                 Value<bool> isCached = const Value.absent(),
                 Value<String?> cachePath = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
+                Value<int> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TracksTableCompanion(
                 id: id,
@@ -5794,6 +5849,7 @@ class $$TracksTableTableTableManager
                 isCached: isCached,
                 cachePath: cachePath,
                 isStarred: isStarred,
+                rating: rating,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5818,6 +5874,7 @@ class $$TracksTableTableTableManager
                 Value<bool> isCached = const Value.absent(),
                 Value<String?> cachePath = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
+                Value<int> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TracksTableCompanion.insert(
                 id: id,
@@ -5840,6 +5897,7 @@ class $$TracksTableTableTableManager
                 isCached: isCached,
                 cachePath: cachePath,
                 isStarred: isStarred,
+                rating: rating,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

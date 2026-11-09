@@ -36,6 +36,7 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       isCached: data.isCached,
       cachePath: data.cachePath,
       isStarred: data.isStarred,
+      rating: data.rating,
     );
   }
 
@@ -61,6 +62,7 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       isCached: Value(track.isCached),
       cachePath: Value.absentIfNull(track.cachePath),
       isStarred: Value(track.isStarred),
+      rating: Value(track.rating),
     );
   }
 
@@ -268,6 +270,9 @@ class MusicDao extends DatabaseAccessor<AppDatabase> with _$MusicDaoMixin {
       genre: Value(track.genre),
       fileSize: Value(track.fileSize),
       coverArtUrl: Value(track.coverArtUrl),
+      // Ratings are only ever set on the server (see setTrackRating), so its
+      // value is the current one, unlike stars and downloads.
+      rating: Value(track.rating),
     );
   }
 

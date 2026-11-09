@@ -419,6 +419,27 @@ class FakePlaybackViewModel extends ChangeNotifier
   @override
   bool isFavoritePending(String trackId) => false;
 
+  /// Every `setRating` call, in order, for assertions.
+  final ratingCalls = <({String trackId, int rating})>[];
+
+  @override
+  bool isRatingPending(String trackId) => false;
+
+  @override
+  int ratingOf(Track track) => track.rating;
+
+  @override
+  Future<void> setRating(Track track, int rating) async {
+    ratingCalls.add((trackId: track.id, rating: rating));
+    if (_state.currentTrack?.id == track.id) {
+      emitState(
+        _state.copyWith(
+          currentTrack: _state.currentTrack!.copyWith(rating: rating),
+        ),
+      );
+    }
+  }
+
   @override
   void clearError() {}
 }

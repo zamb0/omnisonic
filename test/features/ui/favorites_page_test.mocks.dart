@@ -510,6 +510,33 @@ class MockPlaybackViewModel extends _i1.Mock implements _i3.PlaybackViewModel {
           as _i5.Future<void>);
 
   @override
+  int ratingOf(_i4.Track? track) =>
+      (super.noSuchMethod(
+            Invocation.method(#ratingOf, [track]),
+            returnValue: 0,
+            returnValueForMissingStub: 0,
+          )
+          as int);
+
+  @override
+  bool isRatingPending(String? trackId) =>
+      (super.noSuchMethod(
+            Invocation.method(#isRatingPending, [trackId]),
+            returnValue: false,
+            returnValueForMissingStub: false,
+          )
+          as bool);
+
+  @override
+  _i5.Future<void> setRating(_i4.Track? track, int? rating) =>
+      (super.noSuchMethod(
+            Invocation.method(#setRating, [track, rating]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,

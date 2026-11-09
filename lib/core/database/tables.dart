@@ -52,6 +52,9 @@ class TracksTable extends Table {
   TextColumn get cachePath => text().nullable()();
   BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
 
+  /// The user's 1-5 star rating on the track's server, 0 when unrated.
+  IntColumn get rating => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

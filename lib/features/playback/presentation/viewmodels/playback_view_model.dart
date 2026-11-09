@@ -856,14 +856,98 @@ class PlaybackViewModel extends ChangeNotifier {
     _playbackState = _applyStarOverrides(_playbackState);
   }
 
+  /// Ratings set from this view model, keyed by track ID, for the same
+  /// reason as [_starredOverrides].
+  final Map<String, int> _ratingOverrides = {};
+
+  bool get _hasOverrides =>
+      _starredOverrides.isNotEmpty || _ratingOverrides.isNotEmpty;
+
   Track _withStarOverride(Track track) {
-    final starred = _starredOverrides[track.id];
-    if (starred == null || starred == track.isStarred) return track;
-    return track.copyWith(isStarred: starred);
+    final starred = _starredOverrides[track.id] ?? track.isStarred;
+    final rating = _ratingOverrides[track.id] ?? track.rating;
+    if (starred == track.isStarred && rating == track.rating) return track;
+    return track.copyWith(isStarred: starred, rating: rating);
+  }
+
+  /// Track ids with a rating request in flight.
+  final Set<String> _pendingRatings = {};
+
+  /// [track]'s rating, including one just set here that the list showing
+  /// [track] does not know about yet.
+  int ratingOf(Track track) => _ratingOverrides[track.id] ?? track.rating;
+
+  /// Whether a rating for [trackId] is still waiting on its server.
+  bool isRatingPending(String trackId) => _pendingRatings.contains(trackId);
+
+  /// Rates [track] 1-5 stars on its own server, or clears its rating with 0.
+  ///
+  /// Like [toggleFavorite], the stars change at once and go back if the
+  /// server refuses.
+  Future<void> setRating(Track track, int rating) async {
+    if (_pendingRatings.contains(track.id)) return;
+    final target = rating.clamp(0, 5);
+    final previous = _ratingOverrides[track.id] ?? track.rating;
+    if (target == previous) return;
+
+    _pendingRatings.add(track.id);
+    _ratingOverrides[track.id] = target;
+    _playbackState = _applyStarOverrides(_playbackState);
+    notifyListeners();
+
+    final failure = await _sendRating(track, target);
+    _pendingRatings.remove(track.id);
+    if (failure != null) {
+      _ratingOverrides[track.id] = previous;
+      _playbackState = _applyStarOverrides(_playbackState);
+      _setError(failure);
+      return;
+    }
+
+    try {
+      await _database.musicDao.updateTrack(track.copyWith(rating: target));
+    } catch (e) {
+      // The next sync brings the server's rating back anyway.
+      AppLog.warn('Failed to update track rating in local database: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<String?> _sendRating(Track track, int rating) async {
+    try {
+      final serverId = track.serverId.isNotEmpty
+          ? track.serverId
+          : IdGenerator.extractServerId(track.id);
+      final server = (await _serverRepository.getServerById(
+        serverId,
+      )).valueOrNull;
+      if (server == null) {
+        return "Couldn't rate the track: its server is unavailable";
+      }
+      final password = (await _serverRepository.getCredentials(
+        server.id,
+      )).valueOrNull;
+      if (password == null) {
+        return "Couldn't rate the track: sign in to ${server.name} again";
+      }
+      final response = await _apiClient.setRating(
+        server,
+        password,
+        IdGenerator.extractSubsonicId(track.id),
+        rating,
+      );
+      if (!response.isSuccess) {
+        return "Couldn't rate the track on ${server.name}";
+      }
+      return null;
+    } catch (e) {
+      AppLog.error('Failed to rate track: $e');
+      return "Couldn't rate the track. Check your connection and try again.";
+    }
   }
 
   PlaybackState _applyStarOverrides(PlaybackState state) {
-    if (_starredOverrides.isEmpty) return state;
+    if (!_hasOverrides) return state;
     final current = state.currentTrack;
     return state.copyWith(
       currentTrack: current == null ? null : _withStarOverride(current),
@@ -872,7 +956,7 @@ class PlaybackViewModel extends ChangeNotifier {
   }
 
   List<Track> _applyStarOverridesToQueue(List<Track> queue) {
-    if (_starredOverrides.isEmpty) return queue;
+    if (!_hasOverrides) return queue;
     return [for (final track in queue) _withStarOverride(track)];
   }
 

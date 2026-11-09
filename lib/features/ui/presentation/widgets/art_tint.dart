@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../../core/services/cover_palette_service.dart';
@@ -21,6 +22,21 @@ mixin ArtTintMixin<T extends StatefulWidget> on State<T> {
   void updateArtTint(String? coverArtUrl) {
     if (coverArtUrl == _artTintUrl) return;
     _artTintUrl = coverArtUrl;
+    // A colour extracted before applies on this frame. Waiting for the
+    // future — which never completes synchronously — opened Now Playing and
+    // every detail page on the fallback and jumped to the cover a frame
+    // later.
+    final cached = CoverPaletteService.instance.cachedColor(coverArtUrl);
+    if (cached != null) {
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        // Inside build: this frame already uses the new value.
+        _artTint = cached;
+      } else if (cached != _artTint) {
+        setState(() => _artTint = cached);
+      }
+      return;
+    }
     CoverPaletteService.instance.extractColor(coverArtUrl).then((color) {
       // A newer cover may have been asked for while this one was decoding.
       if (mounted && _artTintUrl == coverArtUrl && color != _artTint) {

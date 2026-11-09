@@ -87,23 +87,41 @@ class AnimatedTintSwitcher extends ImplicitlyAnimatedWidget {
 
 class _AnimatedTintSwitcherState
     extends AnimatedWidgetBaseState<AnimatedTintSwitcher> {
-  ColorTween? _seed;
+  ColorTween? _cover;
+  Tween<double>? _fallback;
 
+  /// The last cover colour seen, kept while fading to the fallback mesh so
+  /// the washes have something to fade out.
+  Color? _lastCover;
+
+  /// Tweens the cover colour and, separately, how much of the Aurora
+  /// fallback shows. A single colour tween cannot express "no cover": going
+  /// to or from the mesh used to cut on the first or last frame.
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
-    _seed =
+    final cover = widget.seed ?? _lastCover;
+    _cover =
         visitor(
-              _seed,
-              widget.seed,
+              _cover,
+              cover,
               (dynamic value) => ColorTween(begin: value as Color?),
             )
             as ColorTween?;
+    _fallback =
+        visitor(
+              _fallback,
+              widget.seed == null ? 1.0 : 0.0,
+              (dynamic value) => Tween<double>(begin: value as double),
+            )
+            as Tween<double>?;
+    _lastCover = cover;
   }
 
   @override
   Widget build(BuildContext context) {
     return ArtTintBackground(
-      seed: _seed?.evaluate(animation),
+      seed: _cover?.evaluate(animation),
+      fallbackOpacity: _fallback?.evaluate(animation),
       child: widget.child,
     );
   }

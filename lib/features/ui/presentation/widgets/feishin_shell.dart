@@ -84,7 +84,7 @@ class FeishinShell extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       OmnisonicLayout.chromeInset,
-                      OmnisonicSpacing.sm,
+                      0,
                       OmnisonicLayout.chromeInset,
                       OmnisonicLayout.chromeInset,
                     ),
@@ -92,6 +92,9 @@ class FeishinShell extends StatelessWidget {
                       context,
                       AnimatedNowPlayingBar(
                         onTap: () => context.push(AppRouter.nowPlaying),
+                        spacing: const EdgeInsets.only(
+                          top: OmnisonicSpacing.sm,
+                        ),
                       ),
                     ),
                   ),

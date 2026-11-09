@@ -89,33 +89,38 @@ class _NowPlayingEqualizerState extends State<NowPlayingEqualizer>
     const range =
         NowPlayingEqualizer.maxBarHeight - NowPlayingEqualizer.minBarHeight;
 
-    final bars = SizedBox(
-      width:
-          NowPlayingEqualizer.barCount * NowPlayingEqualizer.barWidth +
-          (NowPlayingEqualizer.barCount - 1) * NowPlayingEqualizer.barGap,
-      height: NowPlayingEqualizer.maxBarHeight,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < NowPlayingEqualizer.barCount; i++) ...[
-            if (i > 0) const SizedBox(width: NowPlayingEqualizer.barGap),
-            AnimatedBuilder(
-              animation: _controllers[i],
-              builder: (context, _) => DecoratedBox(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(OmnisonicRadius.xs / 4),
-                ),
-                child: SizedBox(
-                  width: NowPlayingEqualizer.barWidth,
-                  height:
-                      NowPlayingEqualizer.minBarHeight +
-                      _controllers[i].value * range,
+    // Its own layer: the bars move on every frame while playing, and without
+    // the boundary each frame repainted whatever holds them — the mini
+    // player's whole glass pane, or the track list around a live row.
+    final bars = RepaintBoundary(
+      child: SizedBox(
+        width:
+            NowPlayingEqualizer.barCount * NowPlayingEqualizer.barWidth +
+            (NowPlayingEqualizer.barCount - 1) * NowPlayingEqualizer.barGap,
+        height: NowPlayingEqualizer.maxBarHeight,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (var i = 0; i < NowPlayingEqualizer.barCount; i++) ...[
+              if (i > 0) const SizedBox(width: NowPlayingEqualizer.barGap),
+              AnimatedBuilder(
+                animation: _controllers[i],
+                builder: (context, _) => DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(OmnisonicRadius.xs / 4),
+                  ),
+                  child: SizedBox(
+                    width: NowPlayingEqualizer.barWidth,
+                    height:
+                        NowPlayingEqualizer.minBarHeight +
+                        _controllers[i].value * range,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 

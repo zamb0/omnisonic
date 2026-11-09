@@ -9,6 +9,7 @@ import '../../../ui/presentation/widgets/server_dot.dart';
 import '../viewmodels/playback_view_model.dart';
 import '../../../ui/presentation/pages/main_shell.dart';
 import 'full_screen_player.dart' show NowPlayingPanel;
+import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../ui/presentation/widgets/cover_art.dart';
@@ -23,9 +24,18 @@ import '../../../ui/presentation/widgets/art_tint.dart';
 /// - Center: playback controls + progress slider with timestamps
 /// - Right: utility icons (queue, favorite, volume)
 class AnimatedNowPlayingBar extends StatefulWidget {
-  const AnimatedNowPlayingBar({super.key, this.onTap});
+  const AnimatedNowPlayingBar({
+    super.key,
+    this.onTap,
+    this.spacing = EdgeInsets.zero,
+  });
 
   final VoidCallback? onTap;
+
+  /// Space around the bar that belongs to it — and so collapses with it when
+  /// nothing is playing. The shells used to put this gap outside the bar,
+  /// which left an empty strip above the nav pills with no track loaded.
+  final EdgeInsets spacing;
 
   @override
   State<AnimatedNowPlayingBar> createState() => _AnimatedNowPlayingBarState();
@@ -34,10 +44,20 @@ class AnimatedNowPlayingBar extends StatefulWidget {
 class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     with TickerProviderStateMixin, ArtTintMixin {
   bool _hoveringVolume = false;
-  late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
+  late final AnimationController _revealController = AnimationController(
+    duration: AnimationManager.normalDuration,
+    vsync: this,
+  )..addStatusListener(_onRevealStatus);
+  late final CurvedAnimation _reveal = CurvedAnimation(
+    parent: _revealController,
+    curve: AnimationManager.standardCurve,
+  );
 
-  Track? _previousTrack;
+  /// The track the bar is drawing. Outlives `currentTrack` by the length of
+  /// the exit animation, so the bar collapses showing what was playing
+  /// instead of vanishing the moment the queue is cleared.
+  Track? _displayedTrack;
+  bool _revealInitialised = false;
 
   /// Volume to restore when un-muting from the bar's volume icon.
   double _volumeBeforeMute = 1.0;
@@ -49,45 +69,53 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   Duration? _scrub;
 
   @override
-  void initState() {
-    super.initState();
-    _slideController = AnimationController(
-      duration: AnimationManager.normalDuration,
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _slideController,
-            curve: AnimationManager.standardCurve,
-          ),
-        );
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _slideController.duration = MediaQuery.disableAnimationsOf(context)
-        ? Duration.zero
-        : AnimationManager.normalDuration;
-    final playbackViewModel = Provider.of<PlaybackViewModel>(context);
-    _handleTrackChange(playbackViewModel.currentTrack);
+    _revealController.duration = AnimationUtils.adjustedDuration(
+      context,
+      AnimationManager.normalDuration,
+    );
   }
 
+  /// Grows the bar in when a track arrives and collapses it when playback is
+  /// cleared.
+  ///
+  /// The bar used to slide up from below its own slot. On the phone that
+  /// slot is right above the nav pills, so the bar slid in *over* them while
+  /// the pills had already jumped to make room; and on the way out it skipped
+  /// the animation altogether, because the build returned an empty box as
+  /// soon as the track was gone.
   void _handleTrackChange(Track? currentTrack) {
-    if (_previousTrack?.id != currentTrack?.id) {
+    if (!_revealInitialised) {
+      _revealInitialised = true;
+      // Already playing when the bar mounts — the window crossed a breakpoint
+      // and the other shell built a fresh bar. Nothing arrived, so nothing
+      // animates.
       if (currentTrack != null) {
-        _slideController.forward();
-      } else {
-        _slideController.reverse();
+        _displayedTrack = currentTrack;
+        _revealController.value = 1;
+        return;
       }
-      _previousTrack = currentTrack;
+    }
+    if (currentTrack != null) {
+      _displayedTrack = currentTrack;
+      if (!_revealController.isForwardOrCompleted) _revealController.forward();
+    } else if (_displayedTrack != null &&
+        _revealController.isForwardOrCompleted) {
+      _revealController.reverse();
+    }
+  }
+
+  void _onRevealStatus(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && mounted) {
+      setState(() => _displayedTrack = null);
     }
   }
 
   @override
   void dispose() {
-    _slideController.dispose();
+    _reveal.dispose();
+    _revealController.dispose();
     super.dispose();
   }
 
@@ -106,58 +134,65 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         !ShellLayout.hasSidebar(context) ||
         MediaQuery.sizeOf(context).height < _compactBarMaxHeight;
 
-    return Consumer<PlaybackViewModel>(
-      builder: (context, vm, child) {
-        final track = vm.currentTrack;
+    // Only what the bar's chrome shows. The position ticks four times a
+    // second while playing, and the bar used to rebuild — glass, artwork,
+    // every control — on each tick, twice over: a listening Provider.of in
+    // didChangeDependencies and a Consumer. The progress line and the
+    // scrubber follow the position on their own.
+    final currentTrack = context.select<PlaybackViewModel, Track?>(
+      (vm) => vm.currentTrack,
+    );
+    context.select<PlaybackViewModel, Object>(
+      (vm) => (
+        vm.isPlaying,
+        vm.hasNext,
+        vm.hasPrevious,
+        vm.shuffleEnabled,
+        vm.repeatMode,
+        vm.volume,
+      ),
+    );
+    final vm = context.read<PlaybackViewModel>();
 
-        if (track == null) {
-          return const SizedBox.shrink();
-        }
+    _handleTrackChange(currentTrack);
+    final track = currentTrack ?? _displayedTrack;
+    if (track == null) {
+      return const SizedBox.shrink();
+    }
 
-        updateArtTint(track.coverArtUrl);
-        final tint = artTint ?? scheme.primary;
+    updateArtTint(track.coverArtUrl);
+    final tint = artTint ?? scheme.primary;
 
-        final position = vm.position;
-        final duration = vm.duration;
-        final progress = vm.progress;
+    final bar = isMobile
+        ? _buildMobileBar(context, vm, track, scheme, tint)
+        // The bar's own width, not the window's: beside a sidebar the
+        // two differ by up to 234pt.
+        : LayoutBuilder(
+            builder: (context, constraints) =>
+                constraints.maxWidth < _desktopBarMinWidth
+                ? _buildTabletBar(context, vm, track, scheme, tint)
+                : _buildDesktopBar(context, vm, track, scheme),
+          );
 
-        return SlideTransition(
-          position: _slideAnimation,
-          child: isMobile
-              ? _buildMobileBar(
-                  context,
-                  vm,
-                  track,
-                  scheme,
-                  position,
-                  duration,
-                  progress,
-                  tint,
-                )
-              // The bar's own width, not the window's: beside a sidebar the
-              // two differ by up to 234pt.
-              : LayoutBuilder(
-                  builder: (context, constraints) =>
-                      constraints.maxWidth < _desktopBarMinWidth
-                      ? _buildTabletBar(
-                          context,
-                          vm,
-                          track,
-                          scheme,
-                          progress,
-                          tint,
-                        )
-                      : _buildDesktopBar(
-                          context,
-                          vm,
-                          track,
-                          scheme,
-                          position,
-                          duration,
-                        ),
-                ),
+    return AnimatedBuilder(
+      animation: _reveal,
+      builder: (context, child) {
+        final t = _reveal.value.clamp(0.0, 1.0);
+        // Clipped only while growing or collapsing: at rest the glass pane's
+        // shadow reaches past the bar's bounds and a permanent clip would cut
+        // it off. Only the clip behaviour changes, never the widgets, so the
+        // subtree is kept.
+        return ClipRect(
+          clipBehavior: t >= 1 ? Clip.none : Clip.hardEdge,
+          child: Align(
+            // Anchored to the edge nearest the nav: the bar rises out of it.
+            alignment: Alignment.bottomCenter,
+            heightFactor: t,
+            child: Opacity(opacity: t, child: child),
+          ),
         );
       },
+      child: Padding(padding: widget.spacing, child: bar),
     );
   }
 
@@ -190,9 +225,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     PlaybackViewModel vm,
     Track track,
     ColorScheme scheme,
-    Duration position,
-    Duration duration,
-    double progress,
     Color tint,
   ) {
     // Below this width four 44px targets plus artwork leave the title unreadable.
@@ -360,7 +392,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                     ),
                   ),
                   // Progress on the bottom edge, 2 px, Aurora.
-                  AuroraProgressLine(fraction: progress),
+                  const _LiveProgressLine(),
                 ],
               ),
             ),
@@ -379,7 +411,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     PlaybackViewModel vm,
     Track track,
     ColorScheme scheme,
-    double progress,
     Color tint,
   ) {
     return GlassPanel(
@@ -426,7 +457,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                 ),
               ),
             ),
-            AuroraProgressLine(fraction: progress),
+            const _LiveProgressLine(),
           ],
         ),
       ),
@@ -445,8 +476,6 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     PlaybackViewModel vm,
     Track track,
     ColorScheme scheme,
-    Duration position,
-    Duration duration,
   ) {
     return GlassPanel(
       borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
@@ -487,12 +516,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       const SizedBox(width: OmnisonicSpacing.md),
                       SizedBox(
                         width: centre,
-                        child: _buildCenterSection(
-                          vm,
-                          scheme,
-                          position,
-                          duration,
-                        ),
+                        child: _buildCenterSection(vm, scheme),
                       ),
                       const SizedBox(width: OmnisonicSpacing.md),
                       Expanded(
@@ -638,12 +662,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
 
   /// Transport row over a scrubber as wide as the column, its timestamps in
   /// fixed slots so the line does not shift as the numbers change.
-  Widget _buildCenterSection(
-    PlaybackViewModel vm,
-    ColorScheme scheme,
-    Duration position,
-    Duration duration,
-  ) {
+  Widget _buildCenterSection(PlaybackViewModel vm, ColorScheme scheme) {
     final timeStyle = OmnisonicTypography.technical.copyWith(
       color: scheme.onSurfaceVariant,
     );
@@ -663,21 +682,31 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       children: [
         _buildTransport(vm, withModes: true),
         const SizedBox(height: OmnisonicSpacing.xs),
-        Row(
-          children: [
-            time(_scrub ?? position, Alignment.centerRight),
-            const SizedBox(width: OmnisonicSpacing.ms),
-            Expanded(
-              child: AuroraProgress(
-                position: position,
-                duration: duration,
-                onChanged: (value) => setState(() => _scrub = value),
-                onSeek: vm.seek,
-              ),
-            ),
-            const SizedBox(width: OmnisonicSpacing.ms),
-            time(duration, Alignment.centerLeft),
-          ],
+        // The only part of the bar that follows the position, so the only
+        // part that listens for it.
+        Builder(
+          builder: (context) {
+            final (position, duration) = context
+                .select<PlaybackViewModel, (Duration, Duration)>(
+                  (vm) => (vm.position, vm.duration),
+                );
+            return Row(
+              children: [
+                time(_scrub ?? position, Alignment.centerRight),
+                const SizedBox(width: OmnisonicSpacing.ms),
+                Expanded(
+                  child: AuroraProgress(
+                    position: position,
+                    duration: duration,
+                    onChanged: (value) => setState(() => _scrub = value),
+                    onSeek: vm.seek,
+                  ),
+                ),
+                const SizedBox(width: OmnisonicSpacing.ms),
+                time(duration, Alignment.centerLeft),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -911,5 +940,19 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     } else {
       vm.setVolume(_volumeBeforeMute);
     }
+  }
+}
+
+/// The bar's 2 px Aurora progress line: the one part of the phone and tablet
+/// bars that changes with the position, so the only part that listens for it.
+class _LiveProgressLine extends StatelessWidget {
+  const _LiveProgressLine();
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = context.select<PlaybackViewModel, double>(
+      (vm) => vm.progress,
+    );
+    return RepaintBoundary(child: AuroraProgressLine(fraction: progress));
   }
 }

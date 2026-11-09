@@ -176,8 +176,8 @@ class MainShell extends StatelessWidget {
             children: [
               AnimatedNowPlayingBar(
                 onTap: () => context.push(AppRouter.nowPlaying),
+                spacing: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
               ),
-              const SizedBox(height: OmnisonicSpacing.sm),
               _buildBottomNavigation(context),
             ],
           ),

@@ -65,14 +65,39 @@ class DownloadManager {
       _activeDownloads.remove(track.id);
 
       if (response.statusCode == 200) {
+        final contentType =
+            response.headers.value(Headers.contentTypeHeader)?.toLowerCase() ??
+            '';
+
+        // A Subsonic server reports errors (wrong credentials, missing file,
+        // not allowed to download) as HTTP 200 with a JSON or XML body: that
+        // body used to be saved as the "audio" file.
+        if (contentType.contains('json') || contentType.contains('xml')) {
+          final body = await _readSmallFile(filePath);
+          await _cleanupFailedDownload(filePath);
+          return ResultHelper.failure(
+            ServerFailure('The server refused the download: $body'),
+          );
+        }
+
+        // The stream URL has no file extension, so every download was named
+        // .mp3 — a FLAC under that name fails to open on players that go by
+        // the extension (AVFoundation on iOS and macOS).
+        var savedPath = filePath;
+        final extension = _extensionForContentType(contentType);
+        if (extension != null && path.extension(filePath) != extension) {
+          savedPath = path.setExtension(filePath, extension);
+          await File(filePath).rename(savedPath);
+        }
+
         // Get file info
-        final file = File(filePath);
+        final file = File(savedPath);
         final fileSize = await file.length();
 
         // Create cache entry
         final cacheEntry = CacheEntry(
           trackId: track.id,
-          filePath: filePath,
+          filePath: savedPath,
           fileSize: fileSize,
           cachedAt: DateTime.now(),
           lastAccessed: DateTime.now(),
@@ -211,6 +236,34 @@ class DownloadManager {
     }
 
     return '.mp3'; // Default extension
+  }
+
+  /// The file extension for an audio [contentType], or null when unknown.
+  static String? _extensionForContentType(String contentType) {
+    final mime = contentType.split(';').first.trim();
+    return switch (mime) {
+      'audio/flac' || 'audio/x-flac' => '.flac',
+      'audio/mpeg' || 'audio/mp3' => '.mp3',
+      'audio/ogg' || 'application/ogg' || 'audio/vorbis' => '.ogg',
+      'audio/opus' => '.opus',
+      'audio/mp4' || 'audio/x-m4a' || 'audio/m4a' || 'audio/aac' => '.m4a',
+      'audio/wav' || 'audio/x-wav' || 'audio/wave' => '.wav',
+      'audio/aiff' || 'audio/x-aiff' => '.aiff',
+      'audio/x-ms-wma' => '.wma',
+      'audio/x-ape' || 'audio/ape' => '.ape',
+      'audio/x-wavpack' || 'audio/wavpack' => '.wv',
+      _ => null,
+    };
+  }
+
+  /// The start of a small text file, for an error message.
+  Future<String> _readSmallFile(String filePath) async {
+    try {
+      final text = await File(filePath).readAsString();
+      return text.length > 300 ? '${text.substring(0, 300)}…' : text;
+    } catch (_) {
+      return 'no details';
+    }
   }
 
   /// Cleans up a failed download

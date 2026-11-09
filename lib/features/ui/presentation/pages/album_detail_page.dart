@@ -1169,7 +1169,7 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
             opacity: pinnedOverRows ? 1 : 0,
             duration: AnimationUtils.adjustedDuration(
               context,
-              const Duration(milliseconds: 150),
+              AnimationManager.fastDuration,
             ),
             child: GlassSurface(
               borderRadius: BorderRadius.circular(OmnisonicRadius.tile),
@@ -1187,7 +1187,7 @@ class _TrackTableHeaderDelegate extends SliverPersistentHeaderDelegate {
               opacity: pinnedOverRows ? 0 : 1,
               duration: AnimationUtils.adjustedDuration(
                 context,
-                const Duration(milliseconds: 150),
+                AnimationManager.fastDuration,
               ),
               child: Container(
                 height: 1,

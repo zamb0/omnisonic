@@ -17,9 +17,9 @@ jobs:
   # Tags carry no branch, so check that a release tag points at a commit on main.
   guard:
     name: Tag on main
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'push'
         with:
           fetch-depth: 0
@@ -33,11 +33,11 @@ jobs:
   android:
     name: Android
     needs: guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -72,7 +72,7 @@ jobs:
       - run: flutter build apk --release --split-per-abi
       - run: flutter build apk --release
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: omnisonic-android
           path: build/app/outputs/flutter-apk/*-release.apk
@@ -81,9 +81,9 @@ jobs:
   linux:
     name: Linux
     needs: guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Linux build dependencies
         run: |
@@ -110,7 +110,7 @@ jobs:
           cp -r build/linux/x64/release/bundle dist/omnisonic-linux-x64
           tar -C dist -czf "dist/omnisonic-$VERSION-linux-x64.tar.gz" omnisonic-linux-x64
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: omnisonic-linux
           path: dist/*.tar.gz
@@ -120,16 +120,16 @@ jobs:
     name: GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [android, linux]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
           generate_release_notes: true

@@ -37,7 +37,8 @@ class LibraryPage extends StatefulWidget {
   State<LibraryPage> createState() => _LibraryPageState();
 }
 
-class _LibraryPageState extends State<LibraryPage> {
+class _LibraryPageState extends State<LibraryPage>
+    with SingleTickerProviderStateMixin {
   final LibrarySortState _sortState = _LibraryMemory.sort;
   final Map<LibraryTab, TextEditingController> _searchControllers = {
     for (final tab in LibraryTab.values)
@@ -58,6 +59,20 @@ class _LibraryPageState extends State<LibraryPage> {
   // only re-run when the view model hands back a different album list or the
   // sort changes, not on every rebuild.
   List<Album>? _albumsSortInputCache;
+
+  List<Artist>? _artistsSortInputCache;
+  SortOption? _artistSortOptionCache;
+  List<Artist> _sortedArtistsCache = const [];
+
+  /// Owned here rather than a DefaultTabController keyed on the tab:
+  /// rebuilding the controller on every `?tab=` change threw away the
+  /// indicator animation the TabBar had just started, so a tap slid the
+  /// underline a few pixels and then snapped it into place.
+  late final TabController _tabController = TabController(
+    length: LibraryTab.count,
+    vsync: this,
+  );
+  bool _tabControllerSynced = false;
   SortOption? _sortOptionCache;
   List<Album> _sortedAlbumsCache = const [];
   int _originalAlbumCountCache = 0;
@@ -68,6 +83,7 @@ class _LibraryPageState extends State<LibraryPage> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     for (final entry in _scrollControllers.entries) {
       if (entry.value.hasClients) {
         _LibraryMemory.offsets[entry.key] = entry.value.offset;
@@ -99,6 +115,39 @@ class _LibraryPageState extends State<LibraryPage> {
     return _sortedAlbumsCache;
   }
 
+  /// Sorted like the albums: only when the list or the option changed, not
+  /// on every view-model notification.
+  List<Artist> _sortedArtists(List<Artist> artists, SortOption option) {
+    if (identical(artists, _artistsSortInputCache) &&
+        option == _artistSortOptionCache) {
+      return _sortedArtistsCache;
+    }
+    _artistsSortInputCache = artists;
+    _artistSortOptionCache = option;
+    return _sortedArtistsCache = LibrarySortService.sortArtists(
+      artists,
+      option,
+    );
+  }
+
+  /// Moves the underline to [tab] when the query parameter changed from
+  /// somewhere other than the TabBar itself (sidebar, deep link, back).
+  void _syncTabController(LibraryTab tab) {
+    if (_tabController.index == tab.index || _tabController.indexIsChanging) {
+      _tabControllerSynced = true;
+      return;
+    }
+    if (!_tabControllerSynced) {
+      _tabController.index = tab.index;
+      _tabControllerSynced = true;
+    } else {
+      _tabController.animateTo(
+        tab.index,
+        duration: AnimationUtils.adjustedDuration(context, kTabScrollDuration),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabName = GoRouterState.of(context).uri.queryParameters['tab'];
@@ -107,6 +156,7 @@ class _LibraryPageState extends State<LibraryPage> {
     // only way between them when there is no sidebar. Asking the shell rather
     // than MediaQuery, because the shell decides from its own constraints.
     final showTabBar = !ShellLayout.hasSidebar(context);
+    _syncTabController(activeTab);
 
     return Scaffold(
       appBar: PageHeaderAppBar(
@@ -161,19 +211,15 @@ class _LibraryPageState extends State<LibraryPage> {
   PreferredSizeWidget _buildTabBar(LibraryTab activeTab) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kTextTabBarHeight),
-      // Keyed on the active tab so the controller is rebuilt whenever the
-      // query parameter changes from elsewhere.
-      child: DefaultTabController(
-        key: ValueKey(activeTab),
-        length: LibraryTab.count,
-        initialIndex: activeTab.index,
-        child: Builder(
-          builder: (context) => PageHeaderAppBar.tabBar(
-            context,
-            tabs: [for (final tab in LibraryTab.values) Tab(text: tab.label)],
-            onTap: (index) =>
-                context.go('/library?tab=${LibraryTab.fromIndex(index).name}'),
-          ),
+      child: Builder(
+        builder: (context) => PageHeaderAppBar.tabBar(
+          context,
+          controller: _tabController,
+          tabs: [for (final tab in LibraryTab.values) Tab(text: tab.label)],
+          onTap: (index) {
+            final tab = LibraryTab.fromIndex(index);
+            if (tab != activeTab) context.go('/library?tab=${tab.name}');
+          },
         ),
       ),
     );
@@ -346,7 +392,7 @@ class _LibraryPageState extends State<LibraryPage> {
     return Consumer<MusicLibraryViewModel>(
       builder: (context, viewModel, child) {
         final artists = viewModel.artists;
-        final sorted = LibrarySortService.sortArtists(
+        final sorted = _sortedArtists(
           artists,
           _sortState.getOption(LibraryTab.artists),
         );

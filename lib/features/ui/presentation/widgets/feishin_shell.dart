@@ -84,7 +84,7 @@ class FeishinShell extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       OmnisonicLayout.chromeInset,
-                      OmnisonicSpacing.sm,
+                      0,
                       OmnisonicLayout.chromeInset,
                       OmnisonicLayout.chromeInset,
                     ),
@@ -92,6 +92,9 @@ class FeishinShell extends StatelessWidget {
                       context,
                       AnimatedNowPlayingBar(
                         onTap: () => context.push(AppRouter.nowPlaying),
+                        spacing: const EdgeInsets.only(
+                          top: OmnisonicSpacing.sm,
+                        ),
                       ),
                     ),
                   ),
@@ -206,7 +209,13 @@ class FeishinShell extends StatelessWidget {
   List<Widget> _buildNavItems(BuildContext context) {
     final location = GoRouterState.of(context).uri;
     final path = location.path;
-    final library = context.watch<MusicLibraryViewModel>();
+    // Only the two counts. Watching the whole view model rebuilt the shell —
+    // sidebar, top bar and the player bar beside them — on every library
+    // notification, which during a sync is many times a second.
+    final (albumCount, artistCount) = context
+        .select<MusicLibraryViewModel, (int, int)>(
+          (library) => (library.albumCount, library.artistCount),
+        );
 
     final libraryDestination = AppDestinations.primary.firstWhere(
       (d) => d.route == AppRouter.library,
@@ -239,7 +248,7 @@ class FeishinShell extends StatelessWidget {
         icon: OmnisonicIcons.albumOutline,
         activeIcon: OmnisonicIcons.album,
         label: 'Albums',
-        count: library.albumCount,
+        count: albumCount,
         selected: isLibrary && activeLibraryTab == LibraryTab.albums,
         onTap: () => _goToLibraryTab(context, LibraryTab.albums),
       ),
@@ -248,7 +257,7 @@ class FeishinShell extends StatelessWidget {
         icon: OmnisonicIcons.personOutline,
         activeIcon: OmnisonicIcons.person,
         label: 'Artists',
-        count: library.artistCount,
+        count: artistCount,
         selected: isLibrary && activeLibraryTab == LibraryTab.artists,
         onTap: () => _goToLibraryTab(context, LibraryTab.artists),
       ),
@@ -493,10 +502,13 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final library = context.watch<MusicLibraryViewModel>();
+    final (tracks, duplicateGroupCount) = context
+        .select<MusicLibraryViewModel, (List<Track>, int)>(
+          (library) => (library.tracks, library.duplicateGroupCount),
+        );
     // "0% lossless · 0 dupes merged" describes no library at all.
-    if (library.tracks.isEmpty) return const SizedBox.shrink();
-    _retally(library.tracks);
+    if (tracks.isEmpty) return const SizedBox.shrink();
+    _retally(tracks);
 
     final losslessShare = _losslessShare;
     final highShare = _highShare;
@@ -551,7 +563,7 @@ class _LibraryHealthCardState extends State<_LibraryHealthCard> {
           const SizedBox(height: OmnisonicSpacing.sm),
           Text(
             '${(losslessShare * 100).round()}% lossless · '
-            '${library.duplicateGroupCount} dupes merged',
+            '$duplicateGroupCount dupes merged',
             style: OmnisonicTypography.technicalSmall.copyWith(
               color: scheme.onSurfaceVariant,
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../../core/design_system/design_system.dart';
 import 'empty_state.dart';
@@ -299,8 +300,23 @@ class _SkeletonBoxState extends State<SkeletonBox>
       // hold the sweep at a static midpoint instead.
       _controller.value = 0.5;
     } else {
+      // Every box starts from one shared phase rather than from zero at its
+      // own mount. Grids and lists mount their placeholders lazily, a few per
+      // frame as they scroll in, so per-box phases left neighbouring boxes
+      // sweeping out of step with each other.
+      _controller.value = _sharedPhase();
       _controller.repeat();
     }
+  }
+
+  /// Where in the sweep every skeleton on screen currently is, from the
+  /// frame clock — not the wall clock, so tests pumping a fake clock render
+  /// the same frame every run.
+  static double _sharedPhase() {
+    final periodUs = AnimationManager.loadingDuration.inMicroseconds;
+    final nowUs =
+        SchedulerBinding.instance.currentSystemFrameTimeStamp.inMicroseconds;
+    return (nowUs % periodUs) / periodUs;
   }
 
   @override

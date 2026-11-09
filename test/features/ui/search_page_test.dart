@@ -142,6 +142,35 @@ void main() {
     });
   });
 
+  group('the query listener', () {
+    testWidgets('moving the cursor keeps an expanded section open', (
+      tester,
+    ) async {
+      await pumpSearch(
+        tester,
+        state: SearchStates.success(tracks: distinctTracks(30)),
+      );
+      final field = tester.widget<TextField>(find.byType(TextField));
+      field.controller!.value = const TextEditingValue(
+        text: 'blue',
+        selection: TextSelection.collapsed(offset: 4),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('See all').first);
+      await tester.pump();
+      expect(find.text('Show less'), findsOneWidget);
+
+      // Tapping into the field to fix a typo moves the cursor and nothing
+      // else. The controller notifies for that too, and the page used to
+      // treat it as a new query.
+      field.controller!.selection = const TextSelection.collapsed(offset: 2);
+      await tester.pump();
+
+      expect(find.text('Show less'), findsOneWidget);
+    });
+  });
+
   group('memoization', () {
     testWidgets('expanding a section does not re-run the dedup engine', (
       tester,

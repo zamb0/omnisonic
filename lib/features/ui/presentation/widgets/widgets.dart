@@ -23,6 +23,7 @@ export 'art_tint.dart';
 export 'desktop_top_bar.dart';
 export 'library_stats_rail.dart';
 export 'shell_art_tint.dart';
+export 'shell_page_transition.dart';
 
 // State Components
 export 'empty_state.dart';

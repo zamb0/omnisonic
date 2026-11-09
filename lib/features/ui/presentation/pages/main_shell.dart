@@ -9,6 +9,7 @@ import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 import '../widgets/account_menu.dart';
 import '../widgets/feishin_shell.dart';
 import '../widgets/shell_art_tint.dart';
+import '../widgets/shell_page_transition.dart';
 import '../../../../core/utils/animation_utils.dart';
 import '../../../../core/utils/haptics.dart';
 
@@ -92,51 +93,53 @@ class MainShell extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: ShellArtTint(
-        child: Theme(
-          data: Theme.of(context).copyWith(
-            scaffoldBackgroundColor: Colors.transparent,
-            canvasColor: Colors.transparent,
-            // The theme's AppBar is opaque, which paints a solid band over the
-            // wash on every in-shell page that has one. Overriding it here fixes
-            // all of them at once instead of page by page.
-            //
-            // Transparent only while nothing is under it: once content scrolls
-            // beneath a pinned bar it gets a near-opaque surface, otherwise
-            // titles and controls draw on top of the rows.
-            appBarTheme: Theme.of(context).appBarTheme.copyWith(
-              backgroundColor: scrolledUnderSurface(context),
-              surfaceTintColor: Colors.transparent,
-              elevation: 0,
-              scrolledUnderElevation: 0,
+        child: ShellTransitionScope(
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              scaffoldBackgroundColor: Colors.transparent,
+              canvasColor: Colors.transparent,
+              // The theme's AppBar is opaque, which paints a solid band over the
+              // wash on every in-shell page that has one. Overriding it here fixes
+              // all of them at once instead of page by page.
+              //
+              // Transparent only while nothing is under it: once content scrolls
+              // beneath a pinned bar it gets a near-opaque surface, otherwise
+              // titles and controls draw on top of the rows.
+              appBarTheme: Theme.of(context).appBarTheme.copyWith(
+                backgroundColor: scrolledUnderSurface(context),
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+              ),
             ),
-          ),
-          // The sidebar shell needs room for a 72-234px rail plus content, so it
-          // only takes over from the tablet breakpoint up. Below that the phone
-          // shell with the bottom bar is used, including on landscape phones.
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              if (width >= ResponsiveBreakpoints.desktop) {
+            // The sidebar shell needs room for a 72-234px rail plus content, so it
+            // only takes over from the tablet breakpoint up. Below that the phone
+            // shell with the bottom bar is used, including on landscape phones.
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                if (width >= ResponsiveBreakpoints.desktop) {
+                  return const ShellLayout(
+                    mode: ShellMode.extendedSidebar,
+                  ).wrap(_buildSidebarShell(context, extended: true));
+                }
+                // A phone on its side is wide but very short: the bottom bar, the
+                // mini player and the margins took ~140 of ~390px. The icon rail
+                // costs width instead, which landscape has to spare.
+                final landscapePhone =
+                    width > constraints.maxHeight &&
+                    width >= 560 &&
+                    constraints.maxHeight < 500;
+                if (width >= ResponsiveBreakpoints.tablet || landscapePhone) {
+                  return const ShellLayout(
+                    mode: ShellMode.collapsedSidebar,
+                  ).wrap(_buildSidebarShell(context, extended: false));
+                }
                 return const ShellLayout(
-                  mode: ShellMode.extendedSidebar,
-                ).wrap(_buildSidebarShell(context, extended: true));
-              }
-              // A phone on its side is wide but very short: the bottom bar, the
-              // mini player and the margins took ~140 of ~390px. The icon rail
-              // costs width instead, which landscape has to spare.
-              final landscapePhone =
-                  width > constraints.maxHeight &&
-                  width >= 560 &&
-                  constraints.maxHeight < 500;
-              if (width >= ResponsiveBreakpoints.tablet || landscapePhone) {
-                return const ShellLayout(
-                  mode: ShellMode.collapsedSidebar,
-                ).wrap(_buildSidebarShell(context, extended: false));
-              }
-              return const ShellLayout(
-                mode: ShellMode.bottomBar,
-              ).wrap(_buildMobileShell(context));
-            },
+                  mode: ShellMode.bottomBar,
+                ).wrap(_buildMobileShell(context));
+              },
+            ),
           ),
         ),
       ),
@@ -173,8 +176,8 @@ class MainShell extends StatelessWidget {
             children: [
               AnimatedNowPlayingBar(
                 onTap: () => context.push(AppRouter.nowPlaying),
+                spacing: const EdgeInsets.only(bottom: OmnisonicSpacing.sm),
               ),
-              const SizedBox(height: OmnisonicSpacing.sm),
               _buildBottomNavigation(context),
             ],
           ),

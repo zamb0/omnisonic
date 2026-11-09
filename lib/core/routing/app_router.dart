@@ -23,6 +23,7 @@ import '../../features/servers/presentation/pages/server_management_page.dart';
 import '../../features/music/presentation/pages/playlist_management_page.dart';
 import '../../features/music/presentation/pages/playlist_detail_page.dart';
 import '../../features/ui/presentation/pages/main_shell.dart';
+import '../../features/ui/presentation/widgets/shell_page_transition.dart';
 import 'entity_route.dart';
 
 /// Application routing configuration
@@ -74,7 +75,7 @@ class AppRouter {
           GoRoute(
             path: home,
             name: 'home',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const HomePage(),
@@ -83,7 +84,7 @@ class AppRouter {
           GoRoute(
             path: library,
             name: 'library',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const LibraryPage(),
@@ -92,7 +93,7 @@ class AppRouter {
           GoRoute(
             path: search,
             name: 'search',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const SearchPage(),
@@ -101,7 +102,7 @@ class AppRouter {
           GoRoute(
             path: favorites,
             name: 'favorites',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const FavoritesPage(),
@@ -110,7 +111,7 @@ class AppRouter {
           GoRoute(
             path: servers,
             name: 'servers',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const ServerManagementPage(),
@@ -119,7 +120,7 @@ class AppRouter {
           GoRoute(
             path: downloads,
             name: 'downloads',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const OfflineModePage(),
@@ -128,7 +129,7 @@ class AppRouter {
           GoRoute(
             path: settings,
             name: 'settings',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const SettingsPage(),
@@ -141,7 +142,7 @@ class AppRouter {
               // `extra` is null for anything that isn't an in-app tap, so
               // the id in the URL is what makes this route linkable.
               final album = state.extra is Album ? state.extra as Album : null;
-              return _fadePage(
+              return shellPage(
                 context: context,
                 state: state,
                 child: EntityRoute<Album>(
@@ -164,7 +165,7 @@ class AppRouter {
               final artist = state.extra is Artist
                   ? state.extra as Artist
                   : null;
-              return _fadePage(
+              return shellPage(
                 context: context,
                 state: state,
                 child: EntityRoute<Artist>(
@@ -182,7 +183,7 @@ class AppRouter {
           GoRoute(
             path: playlistManagement,
             name: 'playlistManagement',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const PlaylistManagementPage(),
@@ -193,7 +194,7 @@ class AppRouter {
             name: 'playlistDetail',
             pageBuilder: (context, state) {
               final playlistId = state.uri.queryParameters['id'] ?? '';
-              return _fadePage(
+              return shellPage(
                 context: context,
                 state: state,
                 child: PlaylistDetailPage(playlistId: playlistId),
@@ -206,7 +207,7 @@ class AppRouter {
           GoRoute(
             path: queue,
             name: 'queue',
-            pageBuilder: (context, state) => _fadePage(
+            pageBuilder: (context, state) => shellPage(
               context: context,
               state: state,
               child: const QueuePage(),
@@ -256,7 +257,9 @@ class AppRouter {
     ],
   );
 
-  static CustomTransitionPage<void> _fadePage({
+  /// The page every in-shell route uses: a short cross-fade with the page it
+  /// replaces. Public so tests can build the same transition as the app.
+  static CustomTransitionPage<void> shellPage({
     required BuildContext context,
     required GoRouterState state,
     required Widget child,
@@ -270,15 +273,9 @@ class AppRouter {
       child: child,
       transitionDuration: duration,
       reverseTransitionDuration: duration,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: AnimationManager.standardCurve,
-          ),
-          child: child,
-        );
-      },
+      // Fades the page being left as well as this one; see ShellPageFade.
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          ShellPageFade(animation: animation, child: child),
     );
   }
 }

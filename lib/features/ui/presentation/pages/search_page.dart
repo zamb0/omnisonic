@@ -94,6 +94,8 @@ class _SearchPageState extends State<SearchPage> {
         selection: TextSelection.collapsed(offset: query.length),
       );
     }
+    // The restored query is already the one on screen, not a new one.
+    _lastQueryText = _searchController.text;
     _searchController.addListener(_onSearchChanged);
     SearchFocusRequest.requests.addListener(_focusField);
     if (SearchFocusRequest.takePending()) {
@@ -130,7 +132,18 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  /// The text the last [_onSearchChanged] acted on.
+  String _lastQueryText = '';
+
   void _onSearchChanged() {
+    // The controller notifies on every cursor move and selection change as
+    // well as on edits — focusing the field selects its text, and tapping
+    // into it to fix a typo moves the cursor. Both used to collapse every
+    // expanded section and re-send the same query.
+    final text = _searchController.text;
+    if (text == _lastQueryText) return;
+    _lastQueryText = text;
+
     // A new query means new sections; keep them collapsed to their preview.
     if (_expandedSections.isNotEmpty) {
       setState(_expandedSections.clear);

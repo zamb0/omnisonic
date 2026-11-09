@@ -47,6 +47,7 @@ class PlaybackViewModel extends ChangeNotifier {
   StreamSubscription<List<Track>>? _queueSubscription;
   StreamSubscription<AudioQuality>? _qualitySubscription;
   StreamSubscription<Track>? _scrobbleSubscription;
+  StreamSubscription<List<MusicServer>>? _serversSubscription;
   Timer? _positionTicker;
   DateTime? _lastPositionUpdate;
   Duration _lastObservedPosition = Duration.zero;
@@ -67,6 +68,13 @@ class PlaybackViewModel extends ChangeNotifier {
   String? _errorMessage;
   Track? _previousTrack; // Track previous track for scrobbling
   bool _isRestoring = false; // Flag to prevent auto-play during restoration
+  bool _wasPlaying = false;
+
+  /// Set once a restore has actually been able to ask a server for the saved
+  /// queue. Until then, every server coming online triggers another attempt:
+  /// at launch the servers' reachability is often not known yet.
+  bool _restoreAttempted = false;
+  bool _isDisposed = false;
   AudioQuality _streamingQuality = AudioQuality.ultra;
   AudioQuality _maxStreamingQuality = AudioQuality.ultra;
   bool _hasScrobbledCurrentTrack = false;
@@ -117,14 +125,21 @@ class PlaybackViewModel extends ChangeNotifier {
       _subscribeToScrobbles();
       _loadCurrentState();
 
-      // Restore queue as early as possible, with a delayed retry to
-      // catch cases where subscriptions set up state slightly later.
+      // Restore the queue saved on the server as early as possible. At
+      // launch no server may be known to be reachable yet, so the attempt is
+      // repeated whenever the server list reports one online, until a server
+      // has actually been asked.
       _restorePlayQueueIfNeeded();
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!hasQueue && !_isRestoring) {
-          _restorePlayQueueIfNeeded();
-        }
-      });
+      _serversSubscription = _serverRepository.observeServers().listen(
+        (servers) {
+          if (!_restoreAttempted && servers.any((s) => s.isAvailable)) {
+            _restorePlayQueueIfNeeded();
+          }
+        },
+        onError: (Object error) {
+          AppLog.warn('Server list stream error: $error');
+        },
+      );
       AppLog.info('PlaybackViewModel initialized successfully');
     } catch (e, stackTrace) {
       AppLog.warn(
@@ -136,16 +151,32 @@ class PlaybackViewModel extends ChangeNotifier {
   /// Restores the play queue from the server only if there's no current queue
   Future<void> _restorePlayQueueIfNeeded() async {
     try {
-      if (_isRestoring) {
+      if (_isRestoring || _restoreAttempted) {
         return;
       }
       // Don't restore if we already have an active queue
       if (hasQueue && currentTrack != null) {
         AppLog.info('Active queue found, skipping restore from server');
+        _restoreAttempted = true;
+        return;
+      }
+
+      // Nothing to ask yet: retried from the server stream once one is up.
+      final serversResult = await _serverRepository.getAllServers();
+      final anyAvailable = (serversResult.valueOrNull ?? const <MusicServer>[])
+          .any((s) => s.isAvailable);
+      if (!anyAvailable) {
+        AppLog.debug('No server online yet, deferring play queue restore');
+        return;
+      }
+      if (_isDisposed || _isRestoring || _restoreAttempted) return;
+      if (hasQueue && currentTrack != null) {
+        _restoreAttempted = true;
         return;
       }
 
       AppLog.info('No active queue, attempting restore from server');
+      _restoreAttempted = true;
       await _restorePlayQueue();
     } catch (e, stackTrace) {
       AppLog.warn('Error in _restorePlayQueueIfNeeded: $e\n$stackTrace');
@@ -158,12 +189,14 @@ class PlaybackViewModel extends ChangeNotifier {
         .observePlaybackState()
         .listen(
           (state) {
-            // Check if track changed
+            // Check if track changed. Compared by ID: starring the current
+            // track yields an unequal copy of the same track, which must not
+            // restart its scrobble tracking.
             final trackChanged =
                 state.currentTrack != null &&
-                state.currentTrack != _previousTrack;
+                state.currentTrack!.id != _previousTrack?.id;
 
-            _playbackState = state;
+            _playbackState = _applyStarOverrides(state);
             if (state.isPlaying) {
               _startPositionTicker();
             } else {
@@ -171,14 +204,19 @@ class PlaybackViewModel extends ChangeNotifier {
             }
             _clearError();
 
-            // Start tracking when track changes (but not during restoration)
+            // Start tracking when track changes (but not during restoration).
+            // Scrobbling only counts time spent playing, so the tracker is
+            // told about every play/pause transition as well.
             if (trackChanged && !_isRestoring) {
               _maxStreamingQuality = state.currentTrack!.quality;
               _streamingQuality = _clampQuality(
                 _streamingQuality,
                 _maxStreamingQuality,
               );
-              _trackingService.startTrackingTrack(state.currentTrack!);
+              _trackingService.startTrackingTrack(
+                state.currentTrack!,
+                isPlaying: state.isPlaying,
+              );
               _previousTrack = state.currentTrack;
               _hasScrobbledCurrentTrack = false;
 
@@ -188,7 +226,10 @@ class PlaybackViewModel extends ChangeNotifier {
                 () async => currentIndex,
                 () async => position,
               );
+            } else if (state.isPlaying != _wasPlaying && !_isRestoring) {
+              _trackingService.setPlaying(state.isPlaying);
             }
+            _wasPlaying = state.isPlaying;
 
             notifyListeners();
           },
@@ -300,7 +341,9 @@ class PlaybackViewModel extends ChangeNotifier {
   void _subscribeToQueue() {
     _queueSubscription = _playbackRepository.observeQueue().listen(
       (queue) {
-        _playbackState = _playbackState.copyWith(queue: queue);
+        _playbackState = _playbackState.copyWith(
+          queue: _applyStarOverridesToQueue(queue),
+        );
         notifyListeners();
       },
       onError: (error) {
@@ -331,6 +374,13 @@ class PlaybackViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final savedState = await _trackingService.getPlayQueue();
+      if (_isDisposed) return;
+      // The user may have started something while the servers were being
+      // asked; their choice wins over the saved session.
+      if (hasQueue && currentTrack != null) {
+        AppLog.info('Playback started during restore, keeping it');
+        return;
+      }
       if (savedState == null || savedState.tracks.isEmpty) {
         AppLog.debug('No saved play queue to restore');
         return;
@@ -389,7 +439,7 @@ class PlaybackViewModel extends ChangeNotifier {
       AppLog.warn('Error restoring play queue: $e\n$stackTrace');
     } finally {
       _isRestoring = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -792,18 +842,43 @@ class PlaybackViewModel extends ChangeNotifier {
     }
   }
 
-  /// Rewrites the starred flag of [trackId] in the current track and queue.
+  /// Star state set from this view model, keyed by track ID.
+  ///
+  /// The audio data source keeps the [Track] it was handed when the track was
+  /// loaded and re-emits it with every state update (several per second while
+  /// playing), so without this the heart flipped back a moment after a toggle.
+  final Map<String, bool> _starredOverrides = {};
+
+  /// Rewrites the starred flag of [trackId] in the current track and queue,
+  /// and keeps it that way across later playback state updates.
   void _applyStarred(String trackId, bool starred) {
-    Track update(Track t) =>
-        t.id == trackId ? t.copyWith(isStarred: starred) : t;
-    _playbackState = _playbackState.copyWith(
-      currentTrack: currentTrack == null ? null : update(currentTrack!),
-      queue: queue.map(update).toList(),
+    _starredOverrides[trackId] = starred;
+    _playbackState = _applyStarOverrides(_playbackState);
+  }
+
+  Track _withStarOverride(Track track) {
+    final starred = _starredOverrides[track.id];
+    if (starred == null || starred == track.isStarred) return track;
+    return track.copyWith(isStarred: starred);
+  }
+
+  PlaybackState _applyStarOverrides(PlaybackState state) {
+    if (_starredOverrides.isEmpty) return state;
+    final current = state.currentTrack;
+    return state.copyWith(
+      currentTrack: current == null ? null : _withStarOverride(current),
+      queue: _applyStarOverridesToQueue(state.queue),
     );
+  }
+
+  List<Track> _applyStarOverridesToQueue(List<Track> queue) {
+    if (_starredOverrides.isEmpty) return queue;
+    return [for (final track in queue) _withStarOverride(track)];
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     // Don't save here - it's async and won't complete before app closes
     // Queue saving is handled by:
     // 1. Periodic timer (every 30s)
@@ -814,6 +889,7 @@ class PlaybackViewModel extends ChangeNotifier {
     _queueSubscription?.cancel();
     _qualitySubscription?.cancel();
     _scrobbleSubscription?.cancel();
+    _serversSubscription?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

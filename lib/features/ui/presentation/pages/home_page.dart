@@ -200,9 +200,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// "Pick up where you left off" card: the single most recently played track,
-  /// presented as a glass panel over its own art. Purely a shortcut into
-  /// existing playback — there's no persisted resume position to restore.
   /// What a section shows when it has nothing in it.
   ///
   /// A skeleton while the library is still arriving, and nothing at all
@@ -262,6 +259,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// "Pick up where you left off" card, a glass panel over the track's art.
+  ///
+  /// It follows the deck: at launch that is the play queue restored from the
+  /// server (`getPlayQueue`), already seeked to its saved position, so a tap
+  /// resumes exactly where playback stopped. Only with nothing loaded does it
+  /// fall back to the recently played list, which starts from the top.
   Widget _buildContinueListeningSection() {
     return Consumer2<MusicLibraryViewModel, PlaybackViewModel>(
       builder: (context, viewModel, playback, child) {

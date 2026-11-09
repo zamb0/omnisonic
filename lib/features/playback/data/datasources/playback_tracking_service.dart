@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math';
+
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/entities/entities.dart';
@@ -6,8 +8,14 @@ import '../../../../core/errors/result.dart';
 import '../../../../core/repositories/server_repository.dart';
 import '../../../../core/services/subsonic_api_client.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/id_generator.dart';
 
-/// Service for tracking playback and saving play queue state
+/// Reports playback back to the Subsonic servers: "now playing", scrobbles and
+/// the saved play queue (`savePlayQueue` / `getPlayQueue`).
+///
+/// Every write goes to the server that owns the track being reported. A track
+/// ID is only meaningful on its own server, so sending it anywhere else either
+/// fails or, worse, touches an unrelated item that happens to share the ID.
 @lazySingleton
 class PlaybackTrackingService {
   PlaybackTrackingService(this._apiClient, this._serverRepository);
@@ -15,10 +23,32 @@ class PlaybackTrackingService {
   final SubsonicApiClient _apiClient;
   final ServerRepository _serverRepository;
 
+  /// Upper bound on the number of tracks sent to `savePlayQueue`.
+  ///
+  /// The IDs travel in the query string, and reverse proxies commonly put
+  /// Navidrome behind an 8 KB request-line limit (nginx's default). A
+  /// shuffled library of thousands of tracks would be rejected outright, so
+  /// only a window around the current track is saved.
+  static const int maxSavedQueueLength = 200;
+
+  /// How many already-played tracks the saved window keeps before the
+  /// current one, so "previous" still works after a restore.
+  static const int _maxSavedTracksBeforeCurrent = 20;
+
+  // Scrobble bookkeeping for the track currently being tracked.
+  Track? _trackedTrack;
   Timer? _scrobbleTimer;
-  Timer? _saveQueueTimer;
   DateTime? _trackStartTime;
+  DateTime? _playRunStartedAt;
+  Duration _playedBeforeCurrentRun = Duration.zero;
   bool _hasScrobbled = false;
+  bool _hasSentNowPlaying = false;
+
+  Timer? _saveQueueTimer;
+
+  /// What was last written with `savePlayQueue`, so the periodic save does not
+  /// rewrite an unchanged queue every 30 seconds while playback is paused.
+  String? _lastSavedQueueSignature;
 
   final _scrobbledController = StreamController<Track>.broadcast();
 
@@ -27,31 +57,62 @@ class PlaybackTrackingService {
   /// of guessing from elapsed time.
   Stream<Track> get onScrobbled => _scrobbledController.stream;
 
-  /// Starts tracking a track for scrobbling
-  /// Scrobbles after 50% of duration or 4 minutes, whichever comes first
-  void startTrackingTrack(Track track) {
+  /// How long [track] has to be *listened to* before it counts as played:
+  /// half its duration, capped at 4 minutes (the Last.fm rule servers follow).
+  static Duration scrobbleThreshold(Track track) {
+    if (track.duration <= Duration.zero) return const Duration(seconds: 30);
+    final half = track.duration * 0.5;
+    const cap = Duration(minutes: 4);
+    return half > cap ? cap : half;
+  }
+
+  /// Starts tracking [track] for scrobbling.
+  ///
+  /// Only time spent actually playing counts towards the scrobble, so a track
+  /// loaded paused (a restored session, say) is not reported until the user
+  /// presses play, and pausing halfway holds the scrobble back. Report
+  /// play/pause transitions with [setPlaying].
+  void startTrackingTrack(Track track, {bool isPlaying = true}) {
     _stopTracking();
+    _trackedTrack = track;
+    if (isPlaying) _onPlaybackStarted();
+  }
 
-    _trackStartTime = DateTime.now();
-    _hasScrobbled = false;
+  /// Tells the tracker whether the tracked track is currently playing.
+  void setPlaying(bool isPlaying) {
+    if (_trackedTrack == null || _hasScrobbled) return;
 
-    // Calculate when to scrobble (50% of duration or 4 minutes)
-    final scrobbleDelay = track.duration * 0.5;
-    final maxScrobbleDelay = const Duration(minutes: 4);
-    final actualDelay = scrobbleDelay > maxScrobbleDelay
-        ? maxScrobbleDelay
-        : scrobbleDelay;
+    if (isPlaying) {
+      if (_playRunStartedAt == null) _onPlaybackStarted();
+      return;
+    }
 
-    AppLog.debug(
-      'Will scrobble track ${track.title} in ${actualDelay.inSeconds}s',
-    );
+    final runStartedAt = _playRunStartedAt;
+    if (runStartedAt == null) return;
+    _playedBeforeCurrentRun += DateTime.now().difference(runStartedAt);
+    _playRunStartedAt = null;
+    _scrobbleTimer?.cancel();
+    _scrobbleTimer = null;
+  }
 
-    _scrobbleTimer = Timer(actualDelay, () {
-      _scrobbleTrack(track);
-    });
+  void _onPlaybackStarted() {
+    final track = _trackedTrack!;
+    final now = DateTime.now();
+    _playRunStartedAt = now;
+    _trackStartTime ??= now;
 
-    // Also send "now playing" notification immediately
-    _sendNowPlaying(track);
+    if (!_hasSentNowPlaying) {
+      _hasSentNowPlaying = true;
+      _sendNowPlaying(track);
+    }
+
+    if (_hasScrobbled) return;
+    var remaining = scrobbleThreshold(track) - _playedBeforeCurrentRun;
+    if (remaining.isNegative) remaining = Duration.zero;
+
+    AppLog.debug('Will scrobble ${track.title} in ${remaining.inSeconds}s');
+    _scrobbleTimer?.cancel();
+    _scrobbleTimer = Timer(remaining, () => _scrobbleTrack(track));
   }
 
   /// Stops tracking the current track
@@ -62,14 +123,18 @@ class PlaybackTrackingService {
   void _stopTracking() {
     _scrobbleTimer?.cancel();
     _scrobbleTimer = null;
+    _trackedTrack = null;
     _trackStartTime = null;
+    _playRunStartedAt = null;
+    _playedBeforeCurrentRun = Duration.zero;
     _hasScrobbled = false;
+    _hasSentNowPlaying = false;
   }
 
   /// Sends "now playing" notification
   Future<void> _sendNowPlaying(Track track) async {
     try {
-      final credentials = await _getServerCredentials();
+      final credentials = await _credentialsFor(_serverIdOf(track));
       if (credentials == null) {
         AppLog.warn(
           'No server credentials available for now playing notification',
@@ -80,7 +145,7 @@ class PlaybackTrackingService {
       await _apiClient.scrobble(
         credentials.server,
         credentials.password,
-        _extractSubsonicId(track.id),
+        IdGenerator.extractSubsonicId(track.id),
         submission: false, // not a submission, just "now playing"
       );
 
@@ -93,9 +158,12 @@ class PlaybackTrackingService {
   /// Scrobbles the track (registers the play)
   Future<void> _scrobbleTrack(Track track) async {
     if (_hasScrobbled) return;
+    // Claimed up front so a pause/resume while the request is in flight
+    // cannot schedule a second submission.
+    _hasScrobbled = true;
 
     try {
-      final credentials = await _getServerCredentials();
+      final credentials = await _credentialsFor(_serverIdOf(track));
       if (credentials == null) {
         AppLog.warn('No server credentials available for scrobbling');
         return;
@@ -104,20 +172,23 @@ class PlaybackTrackingService {
       await _apiClient.scrobble(
         credentials.server,
         credentials.password,
-        _extractSubsonicId(track.id),
+        IdGenerator.extractSubsonicId(track.id),
         time: _trackStartTime ?? DateTime.now(),
         submission: true,
       );
 
-      _hasScrobbled = true;
-      _scrobbledController.add(track);
+      if (!_scrobbledController.isClosed) _scrobbledController.add(track);
       AppLog.info('Scrobbled track: ${track.title}');
     } catch (e) {
       AppLog.warn('Failed to scrobble track: $e');
     }
   }
 
-  /// Saves the current play queue state
+  /// Saves the current play queue state.
+  ///
+  /// A Subsonic play queue lives on one server and can only reference that
+  /// server's tracks, so the queue is saved on the server of the current
+  /// track, keeping only that server's tracks (see [queueToSave]).
   Future<void> savePlayQueue(
     List<Track> queue,
     int currentIndex,
@@ -127,12 +198,6 @@ class PlaybackTrackingService {
       AppLog.debug(
         'savePlayQueue called: queue=${queue.length}, index=$currentIndex, position=${position.inSeconds}s',
       );
-
-      final credentials = await _getServerCredentials();
-      if (credentials == null) {
-        AppLog.warn('No server credentials available for saving play queue');
-        return;
-      }
 
       if (queue.isEmpty) {
         AppLog.debug('Queue is empty, not saving');
@@ -146,11 +211,31 @@ class PlaybackTrackingService {
         return;
       }
 
-      final trackIds = queue.map((t) => _extractSubsonicId(t.id)).toList();
-      final currentTrackId = _extractSubsonicId(queue[currentIndex].id);
+      final toSave = queueToSave(queue, currentIndex);
+      final currentTrack = queue[currentIndex];
+      final serverId = _serverIdOf(currentTrack);
+      final trackIds = [
+        for (final track in toSave) IdGenerator.extractSubsonicId(track.id),
+      ];
+      final currentTrackId = IdGenerator.extractSubsonicId(currentTrack.id);
+
+      // Whole seconds: the periodic save while paused should not count as a
+      // change because the reported position wobbled by a few milliseconds.
+      final signature =
+          '$serverId|$currentTrackId|${position.inSeconds}|${trackIds.join(',')}';
+      if (signature == _lastSavedQueueSignature) {
+        AppLog.debug('Play queue unchanged since last save, skipping');
+        return;
+      }
+
+      final credentials = await _credentialsFor(serverId);
+      if (credentials == null) {
+        AppLog.warn('No server credentials available for saving play queue');
+        return;
+      }
 
       AppLog.debug(
-        'Saving to server: ${trackIds.length} tracks, current=$currentTrackId',
+        'Saving to ${credentials.server.name}: ${trackIds.length} tracks, current=$currentTrackId',
       );
 
       await _apiClient.savePlayQueue(
@@ -161,12 +246,35 @@ class PlaybackTrackingService {
         position: position.inMilliseconds,
       );
 
+      _lastSavedQueueSignature = signature;
       AppLog.info(
-        '✓ Play queue saved successfully: ${queue.length} tracks at ${position.inSeconds}s',
+        'Play queue saved on ${credentials.server.name}: ${trackIds.length} tracks at ${position.inSeconds}s',
       );
     } catch (e, stackTrace) {
       AppLog.warn('Failed to save play queue: $e\n$stackTrace');
     }
+  }
+
+  /// The part of [queue] that can be saved on the current track's server:
+  /// that server's tracks only, in queue order, limited to a window of at
+  /// most [maxSavedQueueLength] tracks that always contains the current one.
+  static List<Track> queueToSave(List<Track> queue, int currentIndex) {
+    final serverId = _serverIdOf(queue[currentIndex]);
+
+    final sameServer = <Track>[];
+    var currentPosition = 0;
+    for (var i = 0; i < queue.length; i++) {
+      if (_serverIdOf(queue[i]) != serverId) continue;
+      if (i == currentIndex) currentPosition = sameServer.length;
+      sameServer.add(queue[i]);
+    }
+
+    if (sameServer.length <= maxSavedQueueLength) return sameServer;
+
+    var start = max(0, currentPosition - _maxSavedTracksBeforeCurrent);
+    final end = min(sameServer.length, start + maxSavedQueueLength);
+    start = max(0, end - maxSavedQueueLength);
+    return sameServer.sublist(start, end);
   }
 
   /// Starts periodic saving of play queue (every 30 seconds)
@@ -190,116 +298,140 @@ class PlaybackTrackingService {
     _saveQueueTimer = null;
   }
 
-  /// Retrieves the saved play queue
+  /// Retrieves the most recently saved play queue across all reachable
+  /// servers.
+  ///
+  /// Each server keeps its own queue, and the queue is saved on whichever
+  /// server the current track came from, so the newest one (by the server's
+  /// `changed` timestamp) is the session to pick up.
   Future<PlayQueueState?> getPlayQueue() async {
     try {
-      final credentials = await _getServerCredentials();
-      if (credentials == null) {
-        AppLog.warn('No server credentials available for getting play queue');
+      final serversResult = await _serverRepository.getAllServers();
+      final servers = (serversResult.valueOrNull ?? const <MusicServer>[])
+          .where((s) => s.isAvailable)
+          .toList();
+      if (servers.isEmpty) {
+        AppLog.warn('No online servers to restore the play queue from');
         return null;
       }
 
-      final response = await _apiClient.getPlayQueue(
-        credentials.server,
-        credentials.password,
-      );
-
-      if (!response.isSuccess || response.data == null) {
+      final candidates = (await Future.wait(
+        servers.map(_fetchPlayQueue),
+      )).whereType<PlayQueueState>().toList();
+      if (candidates.isEmpty) {
         AppLog.debug('No saved play queue found');
         return null;
       }
 
-      final playQueue = response.data!;
-      if (playQueue.entries == null || playQueue.entries!.isEmpty) {
-        AppLog.debug('Play queue is empty');
-        return null;
-      }
+      // Newest first; a server that does not report `changed` loses ties.
+      candidates.sort((a, b) {
+        final ac = a.changed, bc = b.changed;
+        if (ac == null && bc == null) return 0;
+        if (ac == null) return 1;
+        if (bc == null) return -1;
+        return bc.compareTo(ac);
+      });
 
-      // Convert SubsonicSong to Track
-      final tracks = playQueue.entries!.map((song) {
-        final streamUrl = _apiClient.getStreamUrl(
-          credentials.server,
-          credentials.password,
-          song.id,
-        );
-        return song.toDomainTrack(
-          credentials.server.id,
-          streamUrl,
-          credentials.server,
-          credentials.password,
-          _apiClient,
-        );
-      }).toList();
-
-      // Find current track index
-      int? currentIndex;
-      if (playQueue.current != null) {
-        currentIndex = tracks.indexWhere(
-          (t) => _extractSubsonicId(t.id) == playQueue.current,
-        );
-        if (currentIndex == -1) currentIndex = null;
-      }
-
-      final position = playQueue.position != null
-          ? Duration(milliseconds: playQueue.position!)
-          : null;
-
+      final state = candidates.first;
       AppLog.info(
-        'Loaded play queue: ${tracks.length} tracks, position: ${position?.inSeconds ?? 0}s',
+        'Loaded play queue from ${state.serverId}: ${state.tracks.length} tracks, position: ${state.position?.inSeconds ?? 0}s',
       );
-
-      return PlayQueueState(
-        tracks: tracks,
-        currentIndex: currentIndex,
-        position: position,
-      );
+      return state;
     } catch (e) {
       AppLog.warn('Failed to get play queue: $e');
       return null;
     }
   }
 
-  /// Gets server credentials for API calls
-  /// Returns the first online server with stored credentials
-  Future<_ServerCredentials?> _getServerCredentials() async {
+  Future<PlayQueueState?> _fetchPlayQueue(MusicServer server) async {
     try {
-      final serversResult = await _serverRepository.getOnlineServers();
-      if (serversResult.isFailure || serversResult.valueOrNull == null) {
-        AppLog.warn('No online servers available');
+      final credentials = await _credentialsFor(server.id);
+      if (credentials == null) return null;
+
+      final response = await _apiClient.getPlayQueue(
+        credentials.server,
+        credentials.password,
+      );
+
+      final playQueue = response.data;
+      final entries = playQueue?.entries;
+      if (!response.isSuccess || playQueue == null || entries == null) {
+        return null;
+      }
+      if (entries.isEmpty) return null;
+
+      final tracks = [
+        for (final song in entries)
+          song.toDomainTrack(
+            server.id,
+            _apiClient.getStreamUrl(
+              credentials.server,
+              credentials.password,
+              song.id,
+            ),
+            credentials.server,
+            credentials.password,
+            _apiClient,
+          ),
+      ];
+
+      // `current` is the raw ID on that server. When it is missing or no
+      // longer in the queue, start the queue from the top rather than
+      // dropping the whole session.
+      var currentIndex = playQueue.current == null
+          ? -1
+          : entries.indexWhere((song) => song.id == playQueue.current);
+      Duration? position;
+      if (currentIndex == -1) {
+        currentIndex = 0;
+      } else if (playQueue.position != null) {
+        position = Duration(milliseconds: playQueue.position!);
+      }
+
+      return PlayQueueState(
+        tracks: tracks,
+        currentIndex: currentIndex,
+        position: position,
+        serverId: server.id,
+        changed: playQueue.changed,
+      );
+    } catch (e) {
+      // Navidrome answers "not found" when nothing has been saved yet.
+      AppLog.debug('No play queue on ${server.name}: $e');
+      return null;
+    }
+  }
+
+  /// Credentials for the server with [serverId], or null when the server is
+  /// unknown or has no stored password.
+  Future<_ServerCredentials?> _credentialsFor(String serverId) async {
+    try {
+      final serverResult = await _serverRepository.getServerById(serverId);
+      final server = serverResult.valueOrNull;
+      if (server == null) {
+        AppLog.warn('Server $serverId not found');
         return null;
       }
 
-      final servers = serversResult.valueOrNull!;
-      if (servers.isEmpty) {
-        AppLog.warn('No online servers found');
-        return null;
-      }
-
-      // Try first online server
-      final server = servers.first;
       final passwordResult = await _serverRepository.getCredentials(server.id);
-
-      if (passwordResult.isFailure || passwordResult.valueOrNull == null) {
+      final password = passwordResult.valueOrNull;
+      if (password == null) {
         AppLog.warn('No password stored for server ${server.name}');
         return null;
       }
 
-      return _ServerCredentials(
-        server: server,
-        password: passwordResult.valueOrNull!,
-      );
+      return _ServerCredentials(server: server, password: password);
     } catch (e) {
       AppLog.warn('Failed to get server credentials: $e');
       return null;
     }
   }
 
-  /// Extracts the original Subsonic ID from our composite ID
-  String _extractSubsonicId(String compositeId) {
-    // Our IDs are in format "serverId_subsonicId"
-    final parts = compositeId.split('_');
-    return parts.length > 1 ? parts.sublist(1).join('_') : compositeId;
-  }
+  /// The server a track lives on. [Track.serverId] is authoritative; the ID
+  /// prefix is the fallback for tracks built without it.
+  static String _serverIdOf(Track track) => track.serverId.isNotEmpty
+      ? track.serverId
+      : IdGenerator.extractServerId(track.id);
 
   void dispose() {
     _stopTracking();
@@ -314,10 +446,18 @@ class PlayQueueState {
   final int? currentIndex;
   final Duration? position;
 
+  /// The server the queue was read from.
+  final String? serverId;
+
+  /// When the server says the queue was last saved.
+  final DateTime? changed;
+
   const PlayQueueState({
     required this.tracks,
     this.currentIndex,
     this.position,
+    this.serverId,
+    this.changed,
   });
 }
 

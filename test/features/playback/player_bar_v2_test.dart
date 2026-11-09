@@ -162,6 +162,43 @@ void main() {
       );
     });
 
+    testWidgets('as much glass above the disc as under the seek line', (
+      tester,
+    ) async {
+      await pumpBar(tester, size: TestSizes.desktop);
+      final bar = tester.getRect(find.byType(AnimatedNowPlayingBar));
+      final play = tester.getRect(find.byType(PlayDisc));
+      // The visible line is centred in the scrubber's taller hit area.
+      final seek = tester.getRect(find.byType(AuroraProgress));
+      final lineBottom = seek.center.dy + AuroraProgress.trackHeight / 2;
+      // Centred by its box, the column left the disc 4 px under the top
+      // edge and ~18 px of empty glass under the line.
+      expect(play.top - bar.top, closeTo(bar.bottom - lineBottom, 1));
+      expect(play.top - bar.top, greaterThanOrEqualTo(12));
+    });
+
+    testWidgets('the volume slider is an even grey line, not an ink pill', (
+      tester,
+    ) async {
+      await pumpBar(tester, size: const Size(2000, 900));
+      final theme = SliderTheme.of(tester.element(find.byType(Slider)));
+      final scheme = Theme.of(tester.element(find.byType(Slider))).colorScheme;
+      expect(theme.activeTrackColor, scheme.onSurfaceVariant);
+      expect(theme.trackHeight, AuroraProgress.trackHeight);
+      // Material draws the fill 2 px taller than the rest by default.
+      final heights = <double>[];
+      expect(
+        tester.renderObject(find.byType(Slider)),
+        paints..everything((method, args) {
+          if (method == #drawRRect) heights.add((args[0] as RRect).height);
+          if (method == #drawDRRect) heights.add((args[0] as RRect).height);
+          return true;
+        }),
+      );
+      expect(heights, isNotEmpty);
+      expect(heights.toSet(), {AuroraProgress.trackHeight});
+    });
+
     testWidgets('has a 48 PlayDisc and the Aurora seek bar', (tester) async {
       await pumpBar(tester, size: TestSizes.desktop);
       expect(tester.getSize(find.byType(PlayDisc)), const Size(48, 48));

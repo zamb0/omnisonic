@@ -13,6 +13,7 @@ import '../widgets/account_menu.dart';
 import '../widgets/desktop_top_bar.dart';
 import 'nav_selection.dart';
 import '../widgets/server_dot.dart';
+import '../widgets/top_wash.dart';
 import '../../../playback/presentation/widgets/animated_now_playing_bar.dart';
 
 /// Desktop / tablet shell: a floating glass sidebar down the left, and a
@@ -71,14 +72,9 @@ class FeishinShell extends StatelessWidget {
               child: Column(
                 children: [
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        top: OmnisonicLayout.chromeInset,
-                      ),
-                      child: _ContentWithTopBar(
-                        showTopBar: extended,
-                        child: child,
-                      ),
+                    child: _ContentWithTopBar(
+                      showTopBar: extended,
+                      child: child,
                     ),
                   ),
                   Padding(
@@ -265,8 +261,8 @@ class FeishinShell extends StatelessWidget {
     ];
   }
 
-  /// SERVERS section: one glass row per connected server (dot + name + a
-  /// short ID fragment) instead of a single generic "Servers" nav item, plus
+  /// SERVERS section: one glass row per connected server (dot + name, and
+  /// its status when it is not online) instead of a single generic "Servers" nav item, plus
   /// a trailing `+` to open full server management.
   Widget _buildServersSection(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -363,12 +359,18 @@ class FeishinShell extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  _shortId(server.id),
-                  style: OmnisonicTypography.technicalSmall.copyWith(
-                    color: scheme.onSurfaceVariant,
+                // Only when it needs attention. This used to be the last six
+                // characters of the server's ID, which next to the Albums
+                // and Artists counts above read as a track count.
+                if (!server.isAvailable)
+                  Text(
+                    server.status.toString().toLowerCase(),
+                    style: OmnisonicTypography.technicalSmall.copyWith(
+                      color: server.hasError
+                          ? scheme.error
+                          : scheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -376,9 +378,6 @@ class FeishinShell extends StatelessWidget {
       ),
     );
   }
-
-  String _shortId(String id) =>
-      id.length <= 6 ? id : id.substring(id.length - 6);
 
   Widget _buildLibraryHealthCard(BuildContext context) {
     if (!extended) {
@@ -426,6 +425,13 @@ class _ContentWithTopBar extends StatefulWidget {
 class _ContentWithTopBarState extends State<_ContentWithTopBar> {
   bool _scrolled = false;
   String? _path;
+  final TopWash _topWash = TopWash();
+
+  @override
+  void dispose() {
+    _topWash.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -451,11 +457,28 @@ class _ContentWithTopBarState extends State<_ContentWithTopBar> {
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
-      child: Column(
-        children: [
-          if (widget.showTopBar) DesktopTopBar(scrolled: _scrolled),
-          Expanded(child: widget.child),
-        ],
+      child: TopWashScope(
+        wash: _topWash,
+        child: Column(
+          children: [
+            // The page's header tint, continued behind the inset and the top
+            // bar: both sit above the page's scroll view, which clips it.
+            Stack(
+              children: [
+                Positioned.fill(child: TopWashStrip(wash: _topWash)),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: OmnisonicLayout.chromeInset,
+                  ),
+                  child: widget.showTopBar
+                      ? DesktopTopBar(scrolled: _scrolled)
+                      : const SizedBox(width: double.infinity),
+                ),
+              ],
+            ),
+            Expanded(child: widget.child),
+          ],
+        ),
       ),
     );
   }

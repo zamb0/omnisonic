@@ -15,6 +15,7 @@ export 'responsive_grid.dart';
 export 'section_header.dart';
 export 'page_header.dart';
 export 'detail_header.dart';
+export 'top_wash.dart';
 export 'header_collapse.dart';
 export 'nav_selection.dart';
 export 'server_health.dart';

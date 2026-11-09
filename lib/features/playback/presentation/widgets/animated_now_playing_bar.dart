@@ -209,11 +209,31 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   /// Height of the tablet bar's row, progress line excluded.
   static const double _tabletBarHeight = 72;
 
-  /// What sits under the desktop bar's transport row: the gap and the
-  /// scrubber. The side sections are lifted by this much so their icons
-  /// share the transport's centre line instead of the bar's.
-  static const double _scrubberBlock =
-      OmnisonicSpacing.xs + AuroraProgress.hitHeight;
+  /// Height of the desktop bar.
+  static const double _desktopBarHeight = 96;
+
+  /// Space between the desktop bar's top edge and the play disc.
+  ///
+  /// The centre column used to be centred by its box, but the bottom half
+  /// of the scrubber's hit area is invisible: the disc sat 4 px under the
+  /// bar's top edge with ~18 px of empty glass under the seek line. This
+  /// puts the disc's top and the line's bottom equally far from the edges.
+  static const double _desktopTopInset =
+      (_desktopBarHeight - _desktopVisibleCentre) / 2;
+
+  /// From the play disc's top to the seek line's bottom edge.
+  static const double _desktopVisibleCentre =
+      _transportHeight +
+      OmnisonicSpacing.xs +
+      (AuroraProgress.hitHeight + AuroraProgress.trackHeight) / 2;
+
+  /// The transport row: as tall as the play disc ([PlayDiscSize.s48]).
+  static const double _transportHeight = 48;
+
+  /// How far the side sections are lifted so their icons share the transport
+  /// row's centre line instead of the bar's.
+  static const double _sideLift =
+      _desktopBarHeight - 2 * (_desktopTopInset + _transportHeight / 2);
 
   /// Flick speed, in logical pixels per second, that counts as a gesture
   /// rather than a stray drag while scrolling the page behind.
@@ -481,7 +501,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       borderRadius: BorderRadius.circular(OmnisonicRadius.panel),
       padding: EdgeInsets.zero,
       child: SizedBox(
-        height: 88,
+        height: _desktopBarHeight,
         child: Stack(
           children: [
             const Positioned.fill(child: GlassSheen()),
@@ -499,7 +519,7 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                   final showTextActions = side >= 330;
                   final showVolumeSlider =
                       side >= (showTextActions ? 420 : 320);
-                  final lift = EdgeInsets.only(bottom: _scrubberBlock);
+                  const lift = EdgeInsets.only(bottom: _sideLift);
                   return Row(
                     children: [
                       Expanded(
@@ -516,7 +536,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                       const SizedBox(width: OmnisonicSpacing.md),
                       SizedBox(
                         width: centre,
-                        child: _buildCenterSection(vm, scheme),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              top: _desktopTopInset,
+                            ),
+                            child: _buildCenterSection(vm, scheme),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: OmnisonicSpacing.md),
                       Expanded(
@@ -677,8 +705,9 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
       ),
     );
 
+    // Top-aligned: the desktop bar places it with [_desktopTopInset].
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         _buildTransport(vm, withModes: true),
         const SizedBox(height: OmnisonicSpacing.xs),
@@ -726,8 +755,8 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
   }) {
     final radius = active ? 6.0 : 0.0;
     return SliderTheme.of(context).copyWith(
-      trackHeight: 4,
-      trackShape: const RoundedRectSliderTrackShape(),
+      trackHeight: AuroraProgress.trackHeight,
+      trackShape: const _EvenSliderTrackShape(),
       thumbShape: RoundSliderThumbShape(
         enabledThumbRadius: radius,
         disabledThumbRadius: radius,
@@ -823,9 +852,12 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
                         onEnter: (_) => setState(() => _hoveringVolume = true),
                         onExit: (_) => setState(() => _hoveringVolume = false),
                         child: SliderTheme(
+                          // The icons' grey, not ink: at full volume a solid
+                          // onSurface bar was the heaviest thing in the bar.
+                          // The empty part is the seek line's track.
                           data: _hairlineSliderTheme(
                             context,
-                            activeColor: scheme.onSurface,
+                            activeColor: scheme.onSurfaceVariant,
                             inactiveColor: scheme.onSurface.withValues(
                               alpha: 0.14,
                             ),
@@ -954,5 +986,42 @@ class _LiveProgressLine extends StatelessWidget {
       (vm) => vm.progress,
     );
     return RepaintBoundary(child: AuroraProgressLine(fraction: progress));
+  }
+}
+
+/// [RoundedRectSliderTrackShape] with the filled part as thick as the rest.
+///
+/// Material draws the active track 2 px taller, so the volume slider's fill
+/// was 6 px beside the seek line's 4 and read as a solid black pill.
+class _EvenSliderTrackShape extends RoundedRectSliderTrackShape {
+  const _EvenSliderTrackShape();
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset offset, {
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required Animation<double> enableAnimation,
+    required TextDirection textDirection,
+    required Offset thumbCenter,
+    Offset? secondaryOffset,
+    bool isDiscrete = false,
+    bool isEnabled = false,
+    double additionalActiveTrackHeight = 2,
+  }) {
+    super.paint(
+      context,
+      offset,
+      parentBox: parentBox,
+      sliderTheme: sliderTheme,
+      enableAnimation: enableAnimation,
+      textDirection: textDirection,
+      thumbCenter: thumbCenter,
+      secondaryOffset: secondaryOffset,
+      isDiscrete: isDiscrete,
+      isEnabled: isEnabled,
+      additionalActiveTrackHeight: 0,
+    );
   }
 }

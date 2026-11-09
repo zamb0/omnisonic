@@ -199,7 +199,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
                 ),
               ),
               SliverConstrainedCrossAxis(
-                maxExtent: 340 + OmnisonicSpacing.xl,
+                maxExtent: _resolutionPanelExtent,
                 sliver: SliverPadding(
                   padding: const EdgeInsets.only(left: OmnisonicSpacing.xl),
                   sliver: SliverToBoxAdapter(
@@ -213,6 +213,19 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
       ],
     );
   }
+
+  /// The desktop right column, padding included. The header's tint reaches
+  /// across it ([DetailHeader.bleedEnd]).
+  static const double _resolutionPanelExtent = 340 + OmnisonicSpacing.xl;
+
+  /// The FORMAT column fits the longest [AudioQuality.displayName]
+  /// ("FLAC · Lossless"); at 96 every lossless row read "FLAC · Loss…".
+  static const double _formatColumnWidth = 132;
+
+  /// The SOURCE column only earns its space when the album is merged from
+  /// more than one server; with one, every row read "—" and the server is
+  /// already named in the header's chips.
+  bool get _showSourceColumn => _albumVariants.length > 1;
 
   SliverAppBar _buildSliverAppBar() {
     return collapsingAppBar(
@@ -393,8 +406,9 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
               children: [
                 SizedBox(width: 32, child: label('#')),
                 Expanded(flex: 3, child: label('TITLE')),
-                Expanded(flex: 2, child: label('SOURCE')),
-                SizedBox(width: 96, child: label('FORMAT')),
+                if (_showSourceColumn)
+                  Expanded(flex: 2, child: label('SOURCE')),
+                SizedBox(width: _formatColumnWidth, child: label('FORMAT')),
                 SizedBox(
                   width: 48,
                   child: label('TIME', align: TextAlign.right),
@@ -412,7 +426,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
   Widget _buildTrackTableRow(BuildContext context, Track track, int index) {
     final scheme = Theme.of(context).colorScheme;
     final note = _sourceNotes?[track.id];
-    final showSource = _albumVariants.length > 1;
+    final showSource = _showSourceColumn;
 
     return InkWell(
       onTap: () => _onTrackTapped(track, index),
@@ -459,37 +473,10 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
                 ],
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  if (showSource) ...[
-                    ServerDot(serverId: track.serverId, size: 8),
-                    const SizedBox(
-                      width: OmnisonicSpacing.xs + OmnisonicSpacing.xxs,
-                    ),
-                  ],
-                  Expanded(
-                    child: Text(
-                      note ??
-                          (showSource ? _serverNameFor(track.serverId) : '—'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: OmnisonicTypography.metadata.copyWith(
-                        color: note != null
-                            ? scheme.tertiary
-                            : scheme.onSurfaceVariant,
-                        fontStyle: note != null
-                            ? FontStyle.italic
-                            : FontStyle.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            if (showSource)
+              Expanded(flex: 2, child: _buildSourceCell(track, note, scheme)),
             SizedBox(
-              width: 96,
+              width: _formatColumnWidth,
               child: Text(
                 track.quality.displayName,
                 maxLines: 1,
@@ -520,6 +507,33 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
           ],
         ),
       ),
+    );
+  }
+
+  /// A dot per server that has this track, then the cross-source note or
+  /// the servers' names. It used to name only the copy being shown, so a
+  /// track on two servers read as if it lived on one.
+  Widget _buildSourceCell(Track track, String? note, ColorScheme scheme) {
+    final serverIds = _trackSources[track.id] ?? [track.serverId];
+    return Row(
+      children: [
+        for (final serverId in serverIds) ...[
+          ServerDot(serverId: serverId, size: 8),
+          const SizedBox(width: OmnisonicSpacing.xxs),
+        ],
+        const SizedBox(width: OmnisonicSpacing.xs),
+        Expanded(
+          child: Text(
+            note ?? serverIds.map(_serverNameFor).join(' · '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: OmnisonicTypography.metadata.copyWith(
+              color: note != null ? scheme.tertiary : scheme.onSurfaceVariant,
+              fontStyle: note != null ? FontStyle.italic : FontStyle.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -695,6 +709,7 @@ class _AlbumDetailPageState extends State<AlbumDetailPage>
 
     return DetailHeader(
       bleedTop: DetailHeader.pageBleed,
+      bleedEnd: desktop ? _resolutionPanelExtent : 0,
       forceNarrow: desktop,
       artworkSize: desktop ? 240 : null,
       tint: artTint,

@@ -24,6 +24,11 @@ class FullScreenPlayer extends StatefulWidget {
   /// Strength of the Aurora mesh over the cover tint (§9.6: 30 %).
   static const double meshOpacity = 0.3;
 
+  /// Edge of the player bar's artwork (44 on the phone, 48 on the wider
+  /// bars — the same cache bucket at every pixel ratio), which the hero cover
+  /// shows while its own size loads.
+  static const double barArtworkSize = 48;
+
   /// Which of Queue/Lyrics/Visualizer to open on, so callers (e.g. the
   /// desktop transport bar's Lyrics quick action) can deep-link straight to
   /// a panel instead of always landing on Queue.
@@ -64,14 +69,35 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     }
   }
 
+  /// Everything the player shows except the playback position.
+  ///
+  /// The player rebuilt in full — background, mesh, artwork, the queue list
+  /// — on every position tick, four times a second. Selecting this record
+  /// rebuilds it only when one of these changes; the seek bar and the lyrics,
+  /// which follow the position, listen for it themselves.
+  static Object _chromeOf(PlaybackViewModel vm) => (
+    vm.currentTrack,
+    vm.isPlaying,
+    vm.hasNext,
+    vm.hasPrevious,
+    vm.shuffleEnabled,
+    vm.repeatMode,
+    vm.queue,
+    vm.currentIndex,
+    vm.currentQuality,
+    vm.maxQuality,
+    vm.hasScrobbledCurrentTrack,
+    vm.isRestoring,
+    vm.duration,
+  );
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlaybackViewModel>(
-      builder: (context, playbackViewModel, child) {
+    context.select<PlaybackViewModel, Object>(_chromeOf);
+    final playbackViewModel = context.read<PlaybackViewModel>();
+    return Builder(
+      builder: (context) {
         final currentTrack = playbackViewModel.currentTrack;
-        final position = playbackViewModel.position;
-        final duration = playbackViewModel.duration;
-        final progress = playbackViewModel.progress;
 
         if (currentTrack == null) {
           return const NothingPlayingView();
@@ -126,20 +152,34 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                         // The cover's tint fills the screen, with the Aurora mesh
                         // over it at 30 % so a dark or flat cover still has a
                         // glow behind it.
-                        body: ArtTintBackground(
+                        // Cross-faded on a track change: the whole screen
+                        // used to snap to the next cover's colour, and the
+                        // mesh over it popped in once the colour arrived.
+                        body: AnimatedTintSwitcher(
                           seed: artTint,
+                          duration: AnimationUtils.adjustedDuration(
+                            context,
+                            AnimatedTintSwitcher.defaultDuration,
+                          ),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
                               // Without a cover tint the background already
                               // is the (drifting) mesh: do not double it.
-                              if (artTint != null)
-                                Positioned.fill(
-                                  child: AuroraMesh(
-                                    brand: OmnisonicBrand.dark,
-                                    opacity: FullScreenPlayer.meshOpacity,
+                              Positioned.fill(
+                                child: AnimatedSwitcher(
+                                  duration: AnimationUtils.adjustedDuration(
+                                    context,
+                                    AnimatedTintSwitcher.defaultDuration,
                                   ),
+                                  child: artTint == null
+                                      ? const SizedBox.shrink()
+                                      : AuroraMesh(
+                                          brand: OmnisonicBrand.dark,
+                                          opacity: FullScreenPlayer.meshOpacity,
+                                        ),
                                 ),
+                              ),
                               SafeArea(
                                 // Two columns from the shell's tablet breakpoint (768),
                                 // not ResponsiveLayout's 480: between the two, the side
@@ -152,17 +192,11 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                                           context,
                                           currentTrack,
                                           playbackViewModel,
-                                          position,
-                                          duration,
-                                          progress,
                                         )
                                       : _buildMobileLayout(
                                           context,
                                           currentTrack,
                                           playbackViewModel,
-                                          position,
-                                          duration,
-                                          progress,
                                         ),
                                 ),
                               ),
@@ -185,9 +219,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     BuildContext context,
     Track track,
     PlaybackViewModel playbackViewModel,
-    Duration position,
-    Duration duration,
-    double progress,
   ) {
     return Column(
       children: [
@@ -209,13 +240,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                   const SizedBox(height: OmnisonicSpacing.lg),
                   _buildTrackInfo(context, track),
                   const SizedBox(height: OmnisonicSpacing.lg),
-                  _buildSeekBar(
-                    context,
-                    playbackViewModel,
-                    position,
-                    duration,
-                    progress,
-                  ),
+                  _buildSeekBar(context, playbackViewModel),
                   const SizedBox(height: OmnisonicSpacing.md),
                   _buildPrimaryControls(context, playbackViewModel),
                   const SizedBox(height: OmnisonicSpacing.md),
@@ -240,9 +265,6 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     BuildContext context,
     Track track,
     PlaybackViewModel playbackViewModel,
-    Duration position,
-    Duration duration,
-    double progress,
   ) {
     return Column(
       children: [
@@ -267,13 +289,7 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                         const SizedBox(height: OmnisonicSpacing.lg),
                         _buildTrackInfo(context, track),
                         const SizedBox(height: OmnisonicSpacing.lg),
-                        _buildSeekBar(
-                          context,
-                          playbackViewModel,
-                          position,
-                          duration,
-                          progress,
-                        ),
+                        _buildSeekBar(context, playbackViewModel),
                         const SizedBox(height: OmnisonicSpacing.lg),
                         _buildPrimaryControls(context, playbackViewModel),
                         const SizedBox(height: OmnisonicSpacing.md),
@@ -434,6 +450,16 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
                   url: track.coverArtUrl,
                   seed: track.albumId ?? track.id,
                   radius: OmnisonicRadius.artHero,
+                  // Pinned to the resting size. Sized from the layout, the
+                  // request followed the Hero flight from 44 to 360pt and
+                  // fetched and decoded a new bucket on the way up.
+                  requestSize: CoverArt.requestSizeFor(context, maxSize),
+                  // The player bar's thumbnail, already decoded, until the
+                  // large copy arrives — not a gradient square mid-flight.
+                  previewRequestSize: CoverArt.requestSizeFor(
+                    context,
+                    FullScreenPlayer.barArtworkSize,
+                  ),
                 ),
               ),
             ),
@@ -510,12 +536,35 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     );
   }
 
+  /// The part of the layout that follows the playback position, so it
+  /// listens for it on its own instead of rebuilding the whole player.
   Widget _buildSeekBar(
+    BuildContext context,
+    PlaybackViewModel playbackViewModel,
+  ) {
+    return Builder(
+      builder: (context) {
+        final (position, duration) = context
+            .select<PlaybackViewModel, (Duration, Duration)>(
+              (vm) => (vm.position, vm.duration),
+            );
+        return RepaintBoundary(
+          child: _buildSeekBarContent(
+            context,
+            playbackViewModel,
+            position,
+            duration,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSeekBarContent(
     BuildContext context,
     PlaybackViewModel playbackViewModel,
     Duration position,
     Duration duration,
-    double progress,
   ) {
     final scheme = Theme.of(context).colorScheme;
     if (playbackViewModel.isRestoring && position == Duration.zero) {
@@ -753,9 +802,12 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
             padding: const EdgeInsets.all(OmnisonicSpacing.sm),
             child: _buildPanel(
               sheetContext,
-              // Watched here: the sheet is its own route, so the player's
-              // rebuilds do not reach it.
-              sheetContext.watch<PlaybackViewModel>(),
+              // Selected here: the sheet is its own route, so the player's
+              // rebuilds do not reach it. Not watched outright, which rebuilt
+              // the queue list on every position tick; the lyrics follow the
+              // position on their own.
+              (sheetContext..select<PlaybackViewModel, Object>(_chromeOf))
+                  .read<PlaybackViewModel>(),
               compact: true,
               onPanelChanged: (value) => setSheetState(() => _panel = value),
             ),
@@ -893,9 +945,13 @@ class _FullScreenPlayerState extends State<FullScreenPlayer> with ArtTintMixin {
     BuildContext context,
     PlaybackViewModel playbackViewModel,
   ) {
-    return LyricsPanel(
-      track: playbackViewModel.currentTrack,
-      position: playbackViewModel.position,
+    return Builder(
+      builder: (context) => LyricsPanel(
+        track: playbackViewModel.currentTrack,
+        position: context.select<PlaybackViewModel, Duration>(
+          (vm) => vm.position,
+        ),
+      ),
     );
   }
 }

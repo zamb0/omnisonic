@@ -30,6 +30,7 @@ class CoverArt extends StatelessWidget {
     this.fallbackIcon = OmnisonicIcons.musicNote,
     this.elevated = false,
     this.seed,
+    this.previewRequestSize,
   });
 
   final String? url;
@@ -56,6 +57,23 @@ class CoverArt extends StatelessWidget {
   /// title — so two covers without art are told apart. Falls back to [url].
   final String? seed;
 
+  /// A smaller request size of the same art that is already on screen
+  /// somewhere — and so already decoded in the image cache. Shown while this
+  /// cover's own size loads, instead of the gradient placeholder.
+  ///
+  /// For a cover that grows out of a thumbnail: Now Playing's artwork flies
+  /// up from the player bar's, and its large size is rarely cached the first
+  /// time, so the flight used to turn into a gradient square mid-air.
+  final int? previewRequestSize;
+
+  /// The request size a cover of [edge] logical pixels resolves to, for a
+  /// caller that has to match another cover's cache entry
+  /// ([previewRequestSize]) or pin a size ([requestSize]).
+  static int requestSizeFor(BuildContext context, double edge) {
+    final needed = edge * MediaQuery.devicePixelRatioOf(context);
+    return _buckets.firstWhere((b) => b >= needed, orElse: () => 1000);
+  }
+
   /// From this edge up, art is a hero cover and takes the `artHero` radius.
   static const double heroThreshold = 200;
 
@@ -67,8 +85,7 @@ class CoverArt extends StatelessWidget {
   int _resolveRequestSize(BuildContext context, double? edge) {
     if (requestSize != null) return requestSize!;
     if (edge == null || !edge.isFinite) return 400;
-    final needed = edge * MediaQuery.devicePixelRatioOf(context);
-    return _buckets.firstWhere((b) => b >= needed, orElse: () => 1000);
+    return requestSizeFor(context, edge);
   }
 
   BorderRadius get _borderRadius {
@@ -121,8 +138,7 @@ class CoverArt extends StatelessWidget {
       },
     );
 
-    Widget network(String source, double? edge) {
-      final px = _resolveRequestSize(context, edge);
+    Widget cached(String source, int px, Widget Function() whileLoading) {
       final art = SubsonicCoverArt.of(source, px);
       return CachedNetworkImage(
         imageUrl: art.url,
@@ -136,9 +152,21 @@ class CoverArt extends StatelessWidget {
           AnimationManager.fastDuration,
         ),
         useOldImageOnUrlChange: true,
-        placeholder: (context, url) => placeholder(),
+        placeholder: (context, url) => whileLoading(),
         errorWidget: (context, url, error) =>
             coverArtErrorWidget(placeholder(), url, error),
+      );
+    }
+
+    Widget network(String source, double? edge) {
+      final px = _resolveRequestSize(context, edge);
+      final preview = previewRequestSize;
+      return cached(
+        source,
+        px,
+        preview == null || preview == px
+            ? placeholder
+            : () => cached(source, preview, placeholder),
       );
     }
 

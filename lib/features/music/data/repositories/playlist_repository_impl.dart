@@ -146,6 +146,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
   @override
   Future<Result<void>> syncFromServers() async {
     final servers = (await _serverRepository.getAllServers()).valueOrNull;
+    if (servers != null) await _dropPlaylistsOfRemovedServers(servers);
     final available = [
       for (final server in servers ?? const <MusicServer>[])
         if (server.isAvailable) server,
@@ -164,6 +165,21 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
     return failures.length == results.length
         ? Left(failures.first)
         : const Right(null);
+  }
+
+  /// Deletes the stored playlists of servers that are no longer set up.
+  /// Their tracks went with the server, so they would otherwise linger as
+  /// empty playlists that no sync ever touches again.
+  Future<void> _dropPlaylistsOfRemovedServers(List<MusicServer> servers) async {
+    final ids = {for (final server in servers) server.id};
+    final stored =
+        (await _localPlaylistDataSource.getAllPlaylists()).valueOrNull;
+    for (final playlist in stored ?? const <Playlist>[]) {
+      final serverId = playlist.serverId;
+      if (serverId != null && !ids.contains(serverId)) {
+        await _localPlaylistDataSource.deletePlaylist(playlist.id);
+      }
+    }
   }
 
   /// Mirrors one server's playlists: new and changed ones are fetched and

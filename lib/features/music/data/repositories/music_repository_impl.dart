@@ -63,7 +63,33 @@ class MusicRepositoryImpl implements MusicRepository {
        _serverRepository = serverRepository,
        _connectionService = connectionService,
        _deduplicationEngine = deduplicationEngine,
-       _sourceSelectionService = sourceSelectionService;
+       _sourceSelectionService = sourceSelectionService {
+    _serversSubscription = _serverRepository.observeServers().listen(
+      _onServersChanged,
+      onError: (Object e) => AppLog.warn('Server list stream error: $e'),
+    );
+  }
+
+  StreamSubscription<List<MusicServer>>? _serversSubscription;
+  Set<String>? _knownServerIds;
+
+  /// Removing a server deletes its library rows (cascading from the
+  /// servers table), but the published collection and the duplicate groups
+  /// are only rebuilt on a sync: its albums and tracks stayed on screen,
+  /// and failed with "server not found" when played. Rebuilt here as soon
+  /// as a server disappears. Status changes, which arrive every couple of
+  /// minutes, do not trigger it.
+  void _onServersChanged(List<MusicServer> servers) {
+    final ids = {for (final server in servers) server.id};
+    final previous = _knownServerIds;
+    _knownServerIds = ids;
+    if (previous == null || previous.difference(ids).isEmpty) return;
+
+    AppLog.info('A server was removed, rebuilding the collection');
+    _invalidateDuplicateGroups();
+    _invalidateStarredContent();
+    _updateUnifiedCollection();
+  }
 
   @override
   Future<Result<List<Track>>> getAllTracks() async {
@@ -1269,6 +1295,7 @@ class MusicRepositoryImpl implements MusicRepository {
 
   /// Disposes resources
   void dispose() {
+    _serversSubscription?.cancel();
     _collectionController.close();
   }
 }

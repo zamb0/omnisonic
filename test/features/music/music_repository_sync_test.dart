@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -15,6 +17,7 @@ import 'package:omnisonic/core/services/subsonic_api_client.dart';
 import 'package:omnisonic/core/services/subsonic_models.dart';
 import 'package:omnisonic/features/music/data/repositories/music_repository_impl.dart';
 
+import '../../helpers/entity_factories.dart';
 import 'music_repository_sync_test.mocks.dart';
 
 @GenerateMocks([
@@ -71,6 +74,9 @@ void main() {
     apiClient = MockSubsonicApiClient();
     serverRepository = MockServerRepository();
     connectionService = MockServerConnectionService();
+    when(
+      serverRepository.observeServers(),
+    ).thenAnswer((_) => const Stream.empty());
 
     repository = MusicRepositoryImpl(
       localDataSource: LocalMusicDataSource(database),
@@ -238,5 +244,38 @@ void main() {
 
       expect(result.isFailure, isTrue);
     });
+  });
+
+  test('removing a server drops its music from the collection', () async {
+    final servers = StreamController<List<MusicServer>>.broadcast();
+    addTearDown(servers.close);
+    when(serverRepository.observeServers()).thenAnswer((_) => servers.stream);
+    final repo = MusicRepositoryImpl(
+      localDataSource: LocalMusicDataSource(database),
+      apiClient: apiClient,
+      serverRepository: serverRepository,
+      connectionService: connectionService,
+      deduplicationEngine: DeduplicationEngine(),
+      sourceSelectionService: MockSourceSelectionService(),
+    );
+    addTearDown(repo.dispose);
+    await LocalMusicDataSource(database).syncMusicData(
+      'server1',
+      tracks: [testTrack(id: 'server1_t1', serverId: 'server1')],
+    );
+    servers.add([server]);
+    final before = await repo.observeCollection().first;
+    expect(before.tracks, hasLength(1));
+
+    // The server's rows go with it (foreign keys cascade); the published
+    // collection used to keep showing them until the next sync.
+    await database.serverDao.deleteServer('server1');
+    servers.add(const []);
+
+    final after = await repo
+        .observeCollection()
+        .firstWhere((c) => c.tracks.isEmpty)
+        .timeout(const Duration(seconds: 5));
+    expect(after.tracks, isEmpty);
   });
 }

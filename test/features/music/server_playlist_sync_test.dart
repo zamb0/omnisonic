@@ -22,6 +22,7 @@ void main() {
   late LocalPlaylistDataSource localPlaylists;
   late _FakeSubsonicServer server;
   late _FakeMusicRepository musicRepository;
+  late _FakeServerRepository servers;
   late PlaylistRepositoryImpl repository;
 
   final home = testServer(id: 'srv1', name: 'Home', username: 'me');
@@ -51,7 +52,7 @@ void main() {
 
     server = _FakeSubsonicServer();
     musicRepository = _FakeMusicRepository();
-    final servers = _FakeServerRepository([home, other]);
+    servers = _FakeServerRepository([home, other]);
     repository = PlaylistRepositoryImpl(
       localPlaylistDataSource: localPlaylists,
       localMusicDataSource: music,
@@ -96,6 +97,17 @@ void main() {
 
       expect(await stored('srv1_p1'), isNull);
       expect(await stored(local.valueOrNull!.id), isNotNull);
+    });
+
+    test('playlists of a removed server are dropped', () async {
+      server.add('p1', 'Orphan', ['s1']);
+      await repository.syncFromServers();
+      expect(await stored('srv1_p1'), isNotNull);
+
+      servers.servers.removeWhere((s) => s.id == 'srv1');
+      await repository.syncFromServers();
+
+      expect(await stored('srv1_p1'), isNull);
     });
 
     test('does not refetch a playlist that has not changed', () async {

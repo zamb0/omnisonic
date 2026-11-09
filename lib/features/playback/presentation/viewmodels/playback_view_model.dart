@@ -202,7 +202,13 @@ class PlaybackViewModel extends ChangeNotifier {
             } else {
               _stopPositionTicker();
             }
-            _clearError();
+            // The player reports a track it had to skip, or the end of what
+            // it could play, with one state update.
+            if (state.error != null) {
+              _errorMessage = state.error;
+            } else {
+              _clearError();
+            }
 
             // Start tracking when track changes (but not during restoration).
             // Scrobbling only counts time spent playing, so the tracker is
@@ -465,27 +471,11 @@ class PlaybackViewModel extends ChangeNotifier {
     try {
       AppLog.debug('Play requested: ${track.title} (${track.id})');
 
-      final shouldDirectSwitch =
-          currentTrack != null &&
-          currentTrack!.id != track.id &&
-          queue != null &&
-          queue.isNotEmpty;
-
-      if (shouldDirectSwitch) {
-        AppLog.debug('Direct switch to: ${track.title}');
-        await _playbackRepository.stop();
-
-        await _playbackRepository.setQueue(queue, startIndex: startIndex ?? 0);
-
-        final playResult = await _playbackRepository.play(track);
-        playResult.fold(
-          (failure) =>
-              _setError(describeFailure(failure, action: 'play track')),
-          (_) => AppLog.info('Track playback started successfully'),
-        );
-        return;
-      }
-
+      // Always through the use case, also when switching from a playing
+      // track: a direct path here skipped source selection and the
+      // fallback to another server's copy, so any track picked while
+      // something was playing streamed from its own server even when that
+      // server was down.
       final params = PlayTrackParams(
         track: track,
         queue: queue,

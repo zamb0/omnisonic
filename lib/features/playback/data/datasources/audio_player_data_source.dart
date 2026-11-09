@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:rxdart/rxdart.dart';
 
 import '../../../../core/entities/entities.dart';
@@ -13,13 +15,16 @@ import 'platform_audio_player.dart';
 
 /// Data source for audio playback using platform-specific audio players
 class AudioPlayerDataSource {
-  AudioPlayerDataSource({AdaptiveStreamingService? adaptiveStreamingService})
-    : _adaptiveStreamingService =
-          adaptiveStreamingService ?? AdaptiveStreamingService() {
+  AudioPlayerDataSource({
+    AdaptiveStreamingService? adaptiveStreamingService,
+    @visibleForTesting PlatformAudioPlayer? audioPlayer,
+  }) : _adaptiveStreamingService =
+           adaptiveStreamingService ?? AdaptiveStreamingService(),
+       _audioPlayer = audioPlayer ?? PlatformAudioPlayer() {
     _init();
   }
 
-  final PlatformAudioPlayer _audioPlayer = PlatformAudioPlayer();
+  final PlatformAudioPlayer _audioPlayer;
   final AdaptiveStreamingService _adaptiveStreamingService;
   final BehaviorSubject<PlaybackState> _playbackStateController =
       BehaviorSubject<PlaybackState>.seeded(_getInitialState());
@@ -27,6 +32,7 @@ class AudioPlayerDataSource {
       BehaviorSubject<List<Track>>.seeded([]);
 
   List<Track> _currentQueue = [];
+  final Random _random = Random();
 
   /// Read-only copy of [_currentQueue] handed to listeners. Publishing the
   /// working list itself let them observe — and size indices against — the
@@ -41,6 +47,14 @@ class AudioPlayerDataSource {
   int _currentIndex = 0;
   RepeatMode _repeatMode = RepeatMode.none;
   bool _shuffleEnabled = false;
+
+  /// The queue in its order before shuffle was turned on, to go back to when
+  /// it is turned off.
+  List<Track>? _unshuffledQueue;
+
+  /// Why the last automatic move to another track failed, reported once with
+  /// the next state update.
+  String? _pendingError;
   double _volume = 1.0;
   Track? _currentTrack;
   late StreamSubscription<AudioQuality> _qualitySubscription;
@@ -173,13 +187,7 @@ class AudioPlayerDataSource {
   Future<Result<void>> skipToNext() async {
     try {
       final nextIndex = _getNextTrackIndex();
-      if (nextIndex != null) {
-        _currentIndex = nextIndex;
-        final nextTrack = _currentQueue[_currentIndex];
-        await _loadTrack(nextTrack);
-        await _audioPlayer.play();
-        _updatePlaybackState();
-      }
+      if (nextIndex != null) await _playFrom(nextIndex);
       return ResultHelper.success(null);
     } catch (e) {
       return ResultHelper.failure(UnknownFailure('Failed to skip to next: $e'));
@@ -190,13 +198,7 @@ class AudioPlayerDataSource {
   Future<Result<void>> skipToPrevious() async {
     try {
       final previousIndex = _getPreviousTrackIndex();
-      if (previousIndex != null) {
-        _currentIndex = previousIndex;
-        final previousTrack = _currentQueue[_currentIndex];
-        await _loadTrack(previousTrack);
-        await _audioPlayer.play();
-        _updatePlaybackState();
-      }
+      if (previousIndex != null) await _playFrom(previousIndex);
       return ResultHelper.success(null);
     } catch (e) {
       return ResultHelper.failure(
@@ -212,11 +214,17 @@ class AudioPlayerDataSource {
   }) async {
     try {
       _currentQueue = List.from(tracks);
-      _currentIndex = startIndex.clamp(0, tracks.length - 1);
+      // A new queue replaces the one shuffle would restore.
+      _unshuffledQueue = null;
+      // clamp(0, -1) throws: an empty queue simply has no current track.
+      _currentIndex = tracks.isEmpty
+          ? 0
+          : startIndex.clamp(0, tracks.length - 1);
+      if (_shuffleEnabled && tracks.isNotEmpty) _shuffleUpcoming();
       _publishQueue();
 
-      if (tracks.isNotEmpty && startIndex < tracks.length) {
-        await _loadTrack(tracks[startIndex]);
+      if (_currentQueue.isNotEmpty) {
+        await _loadTrack(_currentQueue[_currentIndex]);
       }
 
       _updatePlaybackState();
@@ -230,6 +238,7 @@ class AudioPlayerDataSource {
   Future<Result<void>> addToQueue(Track track) async {
     try {
       _currentQueue.add(track);
+      _unshuffledQueue?.add(track);
       _publishQueue();
       _updatePlaybackState();
       return ResultHelper.success(null);
@@ -241,11 +250,15 @@ class AudioPlayerDataSource {
   /// Inserts a track at a specific position in the queue
   Future<Result<void>> insertInQueue(Track track, int index) async {
     try {
+      final wasEmpty = _currentQueue.isEmpty;
       final insertIndex = index.clamp(0, _currentQueue.length);
       _currentQueue.insert(insertIndex, track);
+      _unshuffledQueue?.add(track);
 
-      // Adjust current index if insertion affects it
-      if (insertIndex <= _currentIndex) {
+      // Adjust current index if insertion affects it. Into an empty queue
+      // the track becomes the first one: bumping the index pointed it past
+      // the end of the queue.
+      if (!wasEmpty && insertIndex <= _currentIndex) {
         _currentIndex++;
       }
 
@@ -268,7 +281,8 @@ class AudioPlayerDataSource {
         );
       }
 
-      _currentQueue.removeAt(index);
+      final removed = _currentQueue.removeAt(index);
+      _unshuffledQueue?.remove(removed);
 
       // Adjust current index if removal affects it
       if (index < _currentIndex) {
@@ -276,7 +290,10 @@ class AudioPlayerDataSource {
       } else if (index == _currentIndex) {
         // If we removed the current track, stop playback
         await stop();
-        _currentIndex = _currentIndex.clamp(0, _currentQueue.length - 1);
+        // clamp(0, -1) throws once the last track is gone.
+        _currentIndex = _currentQueue.isEmpty
+            ? 0
+            : _currentIndex.clamp(0, _currentQueue.length - 1);
       }
 
       _publishQueue();
@@ -294,6 +311,7 @@ class AudioPlayerDataSource {
     try {
       await stop();
       _currentQueue.clear();
+      _unshuffledQueue = null;
       _currentIndex = 0;
       _publishQueue();
       _updatePlaybackState();
@@ -346,8 +364,21 @@ class AudioPlayerDataSource {
   }
 
   /// Sets the shuffle mode
+  ///
+  /// On, the tracks after the current one are put in a random order — every
+  /// track still plays once, and the queue shows what comes next. Off, the
+  /// order from before goes back, with the current track where it was.
   Future<Result<void>> setShuffleMode(bool enabled) async {
     try {
+      if (enabled != _shuffleEnabled && _currentQueue.isNotEmpty) {
+        if (enabled) {
+          _unshuffledQueue = List.of(_currentQueue);
+          _shuffleUpcoming();
+        } else {
+          _restoreUnshuffledOrder();
+        }
+        _publishQueue();
+      }
       _shuffleEnabled = enabled;
       _updatePlaybackState();
       return ResultHelper.success(null);
@@ -513,87 +544,129 @@ class AudioPlayerDataSource {
       repeatMode: _repeatMode,
       shuffleEnabled: _shuffleEnabled,
       volume: _volume,
+      error: _pendingError,
     );
+    _pendingError = null;
 
     _playbackStateController.add(state);
   }
 
   /// Handles track completion based on repeat mode
   Future<void> _handleTrackCompletion() async {
-    switch (_repeatMode) {
-      case RepeatMode.one:
-        // Repeat the current track
-        await _audioPlayer.seek(Duration.zero);
-        await _audioPlayer.play();
-        break;
-      case RepeatMode.all:
-        // Move to next track, or loop back to first
-        final nextIndex = _getNextTrackIndex() ?? 0;
-        _currentIndex = nextIndex;
-        if (_currentQueue.isNotEmpty) {
-          await _loadTrack(_currentQueue[_currentIndex]);
+    try {
+      switch (_repeatMode) {
+        case RepeatMode.one:
+          // Repeat the current track
+          await _audioPlayer.seek(Duration.zero);
           await _audioPlayer.play();
-        }
-        break;
-      case RepeatMode.none:
-        // Move to next track if available
-        final nextIndex = _getNextTrackIndex();
-        if (nextIndex != null) {
-          _currentIndex = nextIndex;
-          await _loadTrack(_currentQueue[_currentIndex]);
-          await _audioPlayer.play();
-        } else {
-          // No more tracks, stop playback
-          await stop();
-        }
-        break;
+          break;
+        case RepeatMode.all:
+        case RepeatMode.none:
+          // Next track (wrapping round with repeat all), or the end.
+          final nextIndex = _getNextTrackIndex();
+          if (nextIndex != null) {
+            await _playFrom(nextIndex);
+          } else {
+            await stop();
+          }
+          break;
+      }
+    } catch (e) {
+      // This runs from a stream listener: an exception here used to go
+      // unhandled and leave playback stuck on the finished track.
+      AppLog.error('Moving on after a finished track failed: $e');
+      _pendingError = "Couldn't play the next track.";
     }
     _updatePlaybackState();
+  }
+
+  /// Plays the queue from [index], moving on to the following tracks when
+  /// one cannot be loaded (its server is down, the file is gone), so one
+  /// bad track does not end playback. Stops once every track has failed.
+  Future<void> _playFrom(int index) async {
+    var candidate = index;
+    for (var attempt = 0; attempt < _currentQueue.length; attempt++) {
+      _currentIndex = candidate;
+      final track = _currentQueue[candidate];
+      try {
+        await _loadTrack(track);
+        await _audioPlayer.play();
+        _updatePlaybackState();
+        return;
+      } catch (e) {
+        AppLog.warn('Skipping "${track.title}", it could not be loaded: $e');
+        _pendingError = 'Skipped "${track.title}": it could not be played.';
+        final next = _getNextTrackIndex();
+        if (next == null || next == index) break;
+        candidate = next;
+      }
+    }
+    await stop();
+    _pendingError = "Couldn't play any of the remaining tracks.";
+    _updatePlaybackState();
+  }
+
+  /// Puts the tracks after the current one in a random order.
+  void _shuffleUpcoming() {
+    if (_currentIndex >= _currentQueue.length - 1) return;
+    final upcoming = _currentQueue.sublist(_currentIndex + 1)..shuffle(_random);
+    _currentQueue.replaceRange(
+      _currentIndex + 1,
+      _currentQueue.length,
+      upcoming,
+    );
+  }
+
+  /// Puts the queue back in the order it had before shuffle, keeping tracks
+  /// added since (at the end) and the current track as current.
+  void _restoreUnshuffledOrder() {
+    final original = _unshuffledQueue;
+    _unshuffledQueue = null;
+    if (original == null) return;
+
+    final remaining = List.of(_currentQueue);
+    final restored = <Track>[];
+    for (final track in original) {
+      if (remaining.remove(track)) restored.add(track);
+    }
+    restored.addAll(remaining);
+
+    final current = _currentTrack;
+    _currentQueue = restored;
+    if (current != null) {
+      final index = restored.indexWhere((t) => t.id == current.id);
+      if (index != -1) _currentIndex = index;
+    }
   }
 
   /// Gets the index of the next track based on current mode
   int? _getNextTrackIndex() {
     if (_currentQueue.isEmpty) return null;
 
-    if (_shuffleEnabled) {
-      // In shuffle mode, pick a random track (excluding current)
-      if (_currentQueue.length <= 1) return null;
-      int nextIndex;
-      do {
-        nextIndex =
-            DateTime.now().millisecondsSinceEpoch % _currentQueue.length;
-      } while (nextIndex == _currentIndex);
+    // Shuffle already put the queue in its random order (see
+    // setShuffleMode), so the next track is always the next one. Picking a
+    // random index here repeated tracks, skipped others and never reached
+    // an end, even with repeat off.
+    final nextIndex = _currentIndex + 1;
+    if (nextIndex < _currentQueue.length) {
       return nextIndex;
-    } else {
-      // Normal sequential playback
-      final nextIndex = _currentIndex + 1;
-      if (nextIndex < _currentQueue.length) {
-        return nextIndex;
-      } else if (_repeatMode == RepeatMode.all) {
-        return 0; // Loop back to first track
-      }
-      return null;
+    } else if (_repeatMode == RepeatMode.all) {
+      return 0; // Loop back to first track
     }
+    return null;
   }
 
   /// Gets the index of the previous track
   int? _getPreviousTrackIndex() {
     if (_currentQueue.isEmpty) return null;
 
-    if (_shuffleEnabled) {
-      // In shuffle mode, this is more complex - for now, just go to previous index
-      final previousIndex = _currentIndex - 1;
-      return previousIndex >= 0 ? previousIndex : null;
-    } else {
-      // Normal sequential playback
-      final previousIndex = _currentIndex - 1;
-      if (previousIndex >= 0) {
-        return previousIndex;
-      } else if (_repeatMode == RepeatMode.all) {
-        return _currentQueue.length - 1; // Loop to last track
-      }
-      return null;
+    final previousIndex = _currentIndex - 1;
+    if (previousIndex >= 0) {
+      return previousIndex;
+    } else if (_repeatMode == RepeatMode.all) {
+      return _currentQueue.length - 1; // Loop to last track
     }
+    return null;
   }
 
   /// Disposes of resources

@@ -70,12 +70,38 @@ class PlayTrackUseCase implements UseCase<void, PlayTrackParams> {
         }
       }
 
-      // Set up the queue if provided
+      // Set up the queue if provided, with the copy chosen above in place
+      // of the requested track. Setting the queue loads its current entry:
+      // with the requested track there, a track whose own server was down
+      // failed right here, before the fallback below was ever tried, and
+      // otherwise the track was loaded twice, once per copy.
       if (params.queue != null && params.queue!.isNotEmpty) {
-        final queueResult = await _playbackRepository.setQueue(
-          params.queue!,
-          startIndex: params.startIndex ?? 0,
+        final queue = List<Track>.of(params.queue!);
+        final startIndex = params.startIndex ?? 0;
+        final placed =
+            startIndex >= 0 &&
+            startIndex < queue.length &&
+            queue[startIndex].id == params.track.id;
+        if (placed) queue[startIndex] = trackToPlay;
+
+        var queueResult = await _playbackRepository.setQueue(
+          queue,
+          startIndex: startIndex,
         );
+        if (queueResult.isFailure && placed && params.allowFallback) {
+          final fallbackResult = await _musicRepository.getFallbackSource(
+            params.track.id,
+            trackToPlay.id,
+          );
+          if (fallbackResult.isSuccess) {
+            trackToPlay = fallbackResult.valueOrNull!;
+            queue[startIndex] = trackToPlay;
+            queueResult = await _playbackRepository.setQueue(
+              queue,
+              startIndex: startIndex,
+            );
+          }
+        }
         if (queueResult.isFailure) {
           return Left(
             PlaybackFailure(

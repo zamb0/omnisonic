@@ -12,10 +12,7 @@ void main() {
 
   Future<void> pump(WidgetTester tester, Color? seed) => tester.pumpWidget(
     MaterialApp(
-      home: AnimatedTintSwitcher(
-        seed: seed,
-        child: const SizedBox.expand(),
-      ),
+      home: AnimatedTintSwitcher(seed: seed, child: const SizedBox.expand()),
     ),
   );
 

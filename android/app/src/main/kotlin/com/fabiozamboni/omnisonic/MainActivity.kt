@@ -1,4 +1,4 @@
-package com.example.omnisonic
+package com.fabiozamboni.omnisonic
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

@@ -8,7 +8,7 @@
 PRODUCT_NAME = omnisonic
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.omnisonic
+PRODUCT_BUNDLE_IDENTIFIER = com.fabiozamboni.omnisonic
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Fabio Zamboni. All rights reserved.

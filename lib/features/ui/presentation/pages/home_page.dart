@@ -276,13 +276,11 @@ class _HomePageState extends State<HomePage> {
         // Another of the user's devices playing beats this one's paused
         // deck: that is where the music is, and the card offers to bring
         // it here.
-        final remote = !playback.isPlaying && playback.isPlayingElsewhere
-            ? playback.remoteSession
-            : null;
+        final remote = playback.isPlaying ? null : playback.remoteNowPlaying;
         if (remote == null && current == null && recent.isEmpty) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
-        final track = remote?.currentTrack ?? current ?? recent.first;
+        final track = remote?.track ?? current ?? recent.first;
         final scheme = Theme.of(context).colorScheme;
 
         final gutter = PageGutter.of(context);
@@ -326,7 +324,7 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             Row(
                               children: [
-                                if (remote != null ||
+                                if ((remote?.playing ?? false) ||
                                     (current != null &&
                                         playback.isPlaying)) ...[
                                   const NowPlayingEqualizer(playing: true),
@@ -335,8 +333,8 @@ class _HomePageState extends State<HomePage> {
                                 Flexible(
                                   child: Text(
                                     remote != null
-                                        ? 'PLAYING ON '
-                                              '${remote.deviceName.toUpperCase()}'
+                                        ? '${remote.playing ? 'PLAYING' : 'PAUSED'} '
+                                              'ON ${remote.deviceName.toUpperCase()}'
                                         : 'PICK UP WHERE YOU LEFT OFF',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

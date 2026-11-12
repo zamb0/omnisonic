@@ -17,6 +17,14 @@ const String handoffServiceUuid = 'a6f3e2c0-6d1b-4e7a-9a44-0e5c1a0b9d21';
 /// Written by a device that starts playing; carries a [HandoffMessage].
 const String handoffControlUuid = 'a6f3e2c1-6d1b-4e7a-9a44-0e5c1a0b9d21';
 
+/// Read (and notified on change) by devices following this one's playback;
+/// carries an encrypted [HandoffState]. The notification itself is one
+/// counter byte: notifications are cut at the link's MTU, reads are not.
+const String handoffStateUuid = 'a6f3e2c2-6d1b-4e7a-9a44-0e5c1a0b9d21';
+
+const String _clientConfigDescriptorUuid =
+    '00002902-0000-1000-8000-00805f9b34fb';
+
 /// Bluetooth exists in this build.
 bool get bleHandoffSupported => !AppPlatform.isWeb;
 
@@ -89,6 +97,24 @@ class BleHandoffTransport implements HandoffTransport {
   static const int _maxDevices = 4;
 
   final _takeovers = StreamController<String>.broadcast();
+  final _nearby = StreamController<NearbyPlayback?>.broadcast();
+
+  // Publishing (the playing device).
+  PublishedPlayback? _published;
+  DateTime _publishedAt = DateTime.now();
+  int _stateVersion = 0;
+
+  /// The sealed state handed out per reader, so the pieces of one long read
+  /// come from the same encryption.
+  final Map<String, Uint8List> _stateReads = {};
+
+  // Following (an idle device).
+  bool _following = false;
+  String? _followed;
+  StreamSubscription<Uint8List>? _followNotifications;
+  StreamSubscription<bool>? _followConnection;
+  Timer? _followRetry;
+  static const Duration _followRetryAfter = Duration(seconds: 15);
   List<HandoffKey> _keys = const [];
 
   /// The account keys messages are checked against (set by [start]).
@@ -107,6 +133,9 @@ class BleHandoffTransport implements HandoffTransport {
   @override
   Stream<String> get takeovers => _takeovers.stream;
 
+  @override
+  Stream<NearbyPlayback?> get nearbyPlayback => _nearby.stream;
+
   /// Loads the keys and, where supported, sets up the GATT server.
   Future<void> start() async {
     _keys = await keyring.keys();
@@ -115,6 +144,7 @@ class BleHandoffTransport implements HandoffTransport {
       final caps = await UniversalBlePeripheral.getCapabilities();
       if (!caps.supportsPeripheralMode) return;
       UniversalBlePeripheral.setWriteRequestHandlers(handleWrite);
+      UniversalBlePeripheral.setReadRequestHandlers(handleRead);
       await UniversalBlePeripheral.clearServices();
       await UniversalBlePeripheral.addService(
         BlePeripheralService(
@@ -124,6 +154,17 @@ class BleHandoffTransport implements HandoffTransport {
               uuid: handoffControlUuid,
               properties: [CharacteristicProperty.write],
               permissions: [PeripheralAttributePermission.writeable],
+            ),
+            BlePeripheralCharacteristic(
+              uuid: handoffStateUuid,
+              properties: [
+                CharacteristicProperty.read,
+                CharacteristicProperty.notify,
+              ],
+              permissions: [PeripheralAttributePermission.readable],
+              descriptors: [
+                BlePeripheralDescriptor(uuid: _clientConfigDescriptorUuid),
+              ],
             ),
           ],
         ),
@@ -205,6 +246,210 @@ class BleHandoffTransport implements HandoffTransport {
     _takeovers.add(message.senderName);
   }
 
+  // ---------------------------------------------------------------------
+  // Publishing: what this device plays, for the ones following it.
+  // ---------------------------------------------------------------------
+
+  @override
+  Future<void> publishState(PublishedPlayback? state) async {
+    _published = state;
+    _publishedAt = DateTime.now();
+    _stateReads.clear();
+    if (!_peripheralReady) return;
+    try {
+      // Followers read the new state when this changes.
+      _stateVersion = (_stateVersion + 1) & 0xff;
+      await UniversalBlePeripheral.updateCharacteristicValue(
+        characteristicId: handoffStateUuid,
+        value: Uint8List.fromList([_stateVersion]),
+      );
+    } catch (e) {
+      AppLog.debug('Could not notify followers: $e');
+    }
+  }
+
+  /// The current state, sealed for the account of the playing track's
+  /// server; empty when this device is not playing anything.
+  @visibleForTesting
+  Uint8List sealedState({DateTime? now}) {
+    final state = _published;
+    if (state == null) return Uint8List(0);
+    final key = _keys.where((k) => k.serverId == state.serverId);
+    if (key.isEmpty) return Uint8List(0);
+    final elapsed = (now ?? DateTime.now()).difference(_publishedAt);
+    var position = state.playing ? state.position + elapsed : state.position;
+    if (state.duration > Duration.zero && position > state.duration) {
+      position = state.duration;
+    }
+    return HandoffState(
+      senderTag: identity.tag,
+      deviceName: identity.name,
+      serverId: state.serverId,
+      trackId: state.trackId,
+      playing: state.playing,
+      position: position,
+      duration: state.duration,
+    ).encrypt(key.first);
+  }
+
+  /// A read of the state characteristic, possibly one piece of a long read.
+  @visibleForTesting
+  PeripheralReadRequestResult? handleRead(
+    String deviceId,
+    String characteristicId,
+    int offset,
+    Uint8List? value,
+  ) {
+    if (characteristicId.toLowerCase() != handoffStateUuid) return null;
+    final sealed = offset == 0
+        ? (_stateReads[deviceId] = sealedState())
+        : (_stateReads[deviceId] ?? sealedState());
+    final from = offset.clamp(0, sealed.length);
+    return PeripheralReadRequestResult(value: sealed.sublist(from));
+  }
+
+  // ---------------------------------------------------------------------
+  // Following: an idle device keeps up with a nearby playing one.
+  // ---------------------------------------------------------------------
+
+  @override
+  Future<void> setFollowing(bool following) async {
+    if (following == _following) return;
+    _following = following;
+    if (following) {
+      unawaited(_follow());
+    } else {
+      _followRetry?.cancel();
+      await _unfollow();
+    }
+  }
+
+  Future<void> _follow() async {
+    _followRetry?.cancel();
+    if (!_following || _followed != null) return;
+    if (_keys.isEmpty) _keys = await keyring.keys();
+
+    final device = await _findPlayingDevice();
+    if (!_following) return;
+    if (device == null) {
+      _scheduleFollowRetry();
+      return;
+    }
+
+    try {
+      await UniversalBle.connect(device, timeout: _connectTimeout);
+      _followed = device;
+      _followConnection = UniversalBle.connectionStream(device).listen((up) {
+        if (!up) unawaited(_lost());
+      });
+      try {
+        if (AppPlatform.isAndroid) {
+          await UniversalBle.requestMtu(device, 247);
+        }
+      } catch (_) {}
+      await UniversalBle.discoverServices(device);
+      _followNotifications = UniversalBle.characteristicValueStream(
+        device,
+        handoffStateUuid,
+      ).listen((_) => unawaited(_readState(device)));
+      await UniversalBle.subscribeNotifications(
+        device,
+        handoffServiceUuid,
+        handoffStateUuid,
+      );
+      await _readState(device);
+    } catch (e) {
+      AppLog.debug('Could not follow $device: $e');
+      await _lost();
+    }
+  }
+
+  Future<String?> _findPlayingDevice() async {
+    String? found;
+    StreamSubscription<BleDevice>? scan;
+    try {
+      scan = UniversalBle.scanStream.listen((device) {
+        found ??= device.deviceId;
+      });
+      await UniversalBle.startScan(
+        scanFilter: ScanFilter(withServices: [handoffServiceUuid]),
+        skipDuplicates: true,
+      );
+      final deadline = DateTime.now().add(_scanFor);
+      while (found == null && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    } catch (e) {
+      AppLog.debug('Scan for a playing device failed: $e');
+    } finally {
+      try {
+        await UniversalBle.stopScan();
+      } catch (_) {}
+      await scan?.cancel();
+    }
+    return found;
+  }
+
+  Future<void> _readState(String device) async {
+    try {
+      final bytes = await UniversalBle.read(
+        device,
+        handoffServiceUuid,
+        handoffStateUuid,
+        timeout: _connectTimeout,
+      );
+      final state = HandoffState.decrypt(bytes, _keys);
+      if (state == null) {
+        // Not playing, or another account: nothing to show.
+        _nearby.add(null);
+        return;
+      }
+      if (state.senderTag == identity.tag) return;
+      _nearby.add(
+        NearbyPlayback(
+          deviceName: state.deviceName,
+          serverId: state.serverId,
+          trackId: '${state.serverId}_${state.trackId}',
+          playing: state.playing,
+          position: state.position,
+          duration: state.duration,
+          receivedAt: DateTime.now(),
+        ),
+      );
+    } catch (e) {
+      AppLog.debug('Reading the nearby playback state failed: $e');
+    }
+  }
+
+  Future<void> _lost() async {
+    await _unfollow();
+    _scheduleFollowRetry();
+  }
+
+  void _scheduleFollowRetry() {
+    _followRetry?.cancel();
+    if (!_following) return;
+    _followRetry = Timer(_followRetryAfter, () => unawaited(_follow()));
+  }
+
+  Future<void> _unfollow() async {
+    final device = _followed;
+    _followed = null;
+    await _followNotifications?.cancel();
+    await _followConnection?.cancel();
+    _followNotifications = null;
+    _followConnection = null;
+    if (!_nearby.isClosed) _nearby.add(null);
+    if (device == null) return;
+    try {
+      await UniversalBle.disconnect(device);
+    } catch (_) {}
+  }
+
+  // ---------------------------------------------------------------------
+  // Takeover: this device starts playing and tells the others to stop.
+  // ---------------------------------------------------------------------
+
   @override
   Future<void> announceTakeover() async {
     if (_keys.isEmpty) _keys = await keyring.keys();
@@ -268,15 +513,20 @@ class BleHandoffTransport implements HandoffTransport {
 
   @override
   Future<void> dispose() async {
+    _following = false;
+    _followRetry?.cancel();
+    await _unfollow();
     try {
       if (_advertising) await UniversalBlePeripheral.stopAdvertising();
       if (_peripheralReady) {
         UniversalBlePeripheral.setWriteRequestHandlers(null);
+        UniversalBlePeripheral.setReadRequestHandlers(null);
         await UniversalBlePeripheral.clearServices();
       }
     } catch (_) {}
     _advertising = false;
     _peripheralReady = false;
     await _takeovers.close();
+    await _nearby.close();
   }
 }

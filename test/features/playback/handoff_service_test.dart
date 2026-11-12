@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omnisonic/core/entities/entities.dart';
 import 'package:omnisonic/core/errors/result.dart';
@@ -141,6 +143,78 @@ void main() {
     expect(tracking.saves, [(index: 2, force: true)]);
   });
 
+  group('nearby (Bluetooth)', () {
+    late _FakeTransport transport;
+
+    setUp(() {
+      transport = _FakeTransport();
+      handoff.addTransport(transport);
+    });
+
+    test('an idle device on screen follows; one that plays does not', () async {
+      expect(transport.following, isTrue);
+
+      await handoff.localPlaybackStarted();
+      expect(transport.following, isFalse);
+
+      handoff.setForeground(false);
+      await handoff.localPlaybackPaused();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(transport.following, isFalse);
+
+      handoff.setForeground(true);
+      expect(transport.following, isTrue);
+    });
+
+    test(
+      'the playing device publishes where it is, and when it pauses',
+      () async {
+        await handoff.localPlaybackStarted();
+        expect(transport.published.last, (
+          serverId: 'server1',
+          trackId: 't2',
+          playing: true,
+          position: Duration.zero,
+          duration: queue[1].duration,
+        ));
+
+        await handoff.localPlaybackPaused();
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+        expect(transport.published.last!.playing, isFalse);
+      },
+    );
+
+    test('a device that was taken over stops publishing', () async {
+      await handoff.localPlaybackStarted();
+
+      transport.takeover('MacBook');
+      await pumpEventQueue();
+
+      expect(transport.published.last, isNull);
+    });
+
+    test('nearby playback is passed on while this device is idle', () async {
+      final nearby = NearbyPlayback(
+        deviceName: 'iPhone',
+        serverId: 'server1',
+        trackId: 'server1_t3',
+        playing: true,
+        position: const Duration(seconds: 5),
+        duration: const Duration(minutes: 3),
+        receivedAt: now,
+      );
+
+      transport.nearby(nearby);
+      await pumpEventQueue();
+      expect(handoff.nearby, same(nearby));
+
+      await handoff.localPlaybackStarted();
+      transport.nearby(nearby);
+      await pumpEventQueue();
+      expect(handoff.nearby, isNull);
+    });
+  });
+
   group('remote session', () {
     test('shows what another device is playing, and where', () async {
       serverHas(otherDevice, now.subtract(const Duration(seconds: 10)));
@@ -212,4 +286,40 @@ class _Servers implements ServerRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeTransport implements HandoffTransport {
+  final _takeovers = StreamController<String>.broadcast();
+  final _nearby = StreamController<NearbyPlayback?>.broadcast();
+  final published = <PublishedPlayback?>[];
+  bool following = false;
+
+  void takeover(String device) => _takeovers.add(device);
+
+  void nearby(NearbyPlayback? state) => _nearby.add(state);
+
+  @override
+  Stream<String> get takeovers => _takeovers.stream;
+
+  @override
+  Stream<NearbyPlayback?> get nearbyPlayback => _nearby.stream;
+
+  @override
+  Future<void> announceTakeover() async {}
+
+  @override
+  Future<void> setPlaying(bool playing) async {}
+
+  @override
+  Future<void> publishState(PublishedPlayback? state) async =>
+      published.add(state);
+
+  @override
+  Future<void> setFollowing(bool following) async => this.following = following;
+
+  @override
+  Future<void> dispose() async {
+    await _takeovers.close();
+    await _nearby.close();
+  }
 }

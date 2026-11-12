@@ -421,14 +421,32 @@ class FakePlaybackViewModel extends ChangeNotifier
   bool isFavoritePending(String trackId) => false;
 
   RemoteSession? _remoteSession;
-  bool _playingElsewhere = false;
+  RemoteNowPlaying? _remoteNowPlaying;
   String? _handoffNotice;
   var continueRemoteCalls = 0;
 
-  /// Puts playback on "another device".
+  /// Puts playback on "another device", as saved on the server.
   void emitRemote(RemoteSession? session, {bool playing = true}) {
     _remoteSession = session;
-    _playingElsewhere = session != null && playing;
+    _remoteNowPlaying = session == null
+        ? null
+        : RemoteNowPlaying(
+            deviceName: session.deviceName,
+            track: session.currentTrack,
+            queue: session.tracks,
+            index: session.currentIndex,
+            playing: playing,
+            position: session.position,
+            duration: session.currentTrack.duration,
+            anchor: DateTime.now(),
+            live: false,
+          );
+    notifyListeners();
+  }
+
+  /// Puts playback on "another device" as seen live over Bluetooth.
+  void emitRemoteNowPlaying(RemoteNowPlaying? remote) {
+    _remoteNowPlaying = remote;
     notifyListeners();
   }
 
@@ -441,10 +459,14 @@ class FakePlaybackViewModel extends ChangeNotifier
   RemoteSession? get remoteSession => _remoteSession;
 
   @override
-  bool get isPlayingElsewhere => _playingElsewhere;
+  RemoteNowPlaying? get remoteNowPlaying => _remoteNowPlaying;
 
   @override
-  Duration get remotePosition => _remoteSession?.position ?? Duration.zero;
+  bool get isPlayingElsewhere => _remoteNowPlaying?.playing ?? false;
+
+  @override
+  Duration get remotePosition =>
+      _remoteNowPlaying?.positionAt(DateTime.now()) ?? Duration.zero;
 
   @override
   String? get handoffNotice => _handoffNotice;
@@ -458,15 +480,15 @@ class FakePlaybackViewModel extends ChangeNotifier
   @override
   Future<void> continueRemoteSession() async {
     continueRemoteCalls++;
-    final remote = _remoteSession;
+    final remote = _remoteNowPlaying;
     if (remote == null) return;
     _remoteSession = null;
-    _playingElsewhere = false;
+    _remoteNowPlaying = null;
     emitPlaying(
-      remote.currentTrack,
-      queue: remote.tracks,
-      currentIndex: remote.currentIndex,
-      position: remote.position,
+      remote.track,
+      queue: remote.queue,
+      currentIndex: remote.index,
+      position: remote.positionAt(DateTime.now()),
     );
   }
 

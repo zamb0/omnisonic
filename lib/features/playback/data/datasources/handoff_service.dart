@@ -8,6 +8,7 @@ import '../../../../core/errors/result.dart';
 import '../../../../core/repositories/server_repository.dart';
 import '../../../../core/services/device_identity.dart';
 import '../../../../core/utils/app_log.dart';
+import '../../../../core/utils/id_generator.dart';
 import 'playback_tracking_service.dart';
 
 /// What the local player is doing, as the handoff needs it.
@@ -56,6 +57,75 @@ class RemoteSession {
   }
 }
 
+/// What another device is playing, as this one shows it: followed live over
+/// Bluetooth ([live]) or estimated from the queue it saved on the server.
+class RemoteNowPlaying {
+  const RemoteNowPlaying({
+    required this.deviceName,
+    required this.track,
+    required this.queue,
+    required this.index,
+    required this.playing,
+    required this.position,
+    required this.duration,
+    required this.anchor,
+    required this.live,
+  });
+
+  final String deviceName;
+  final Track track;
+
+  /// The queue to continue with here, [track] at [index].
+  final List<Track> queue;
+  final int index;
+  final bool playing;
+
+  /// Where the other device was at [anchor] (this device's clock).
+  final Duration position;
+  final Duration duration;
+  final DateTime anchor;
+
+  /// Reported by the device itself over Bluetooth, rather than estimated:
+  /// exact, pauses included.
+  final bool live;
+
+  /// How often a view showing [positionAt] while it plays redraws.
+  static const Duration refreshEvery = Duration(milliseconds: 500);
+
+  /// Where the other device is at [now].
+  Duration positionAt(DateTime now) {
+    if (!playing) return position;
+    final at = position + now.difference(anchor);
+    return duration > Duration.zero && at > duration ? duration : at;
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is RemoteNowPlaying &&
+      other.deviceName == deviceName &&
+      other.track.id == track.id &&
+      other.index == index &&
+      other.queue.length == queue.length &&
+      other.playing == playing &&
+      other.position == position &&
+      other.duration == duration &&
+      other.anchor == anchor &&
+      other.live == live;
+
+  @override
+  int get hashCode => Object.hash(
+    deviceName,
+    track.id,
+    index,
+    queue.length,
+    playing,
+    position,
+    duration,
+    anchor,
+    live,
+  );
+}
+
 /// Something that happened to playback on another device.
 sealed class HandoffEvent {
   const HandoffEvent();
@@ -81,7 +151,67 @@ abstract interface class HandoffTransport {
   /// Whether this device is playing, so it can be found by the next one.
   Future<void> setPlaying(bool playing);
 
+  /// What this device is playing, for nearby devices to follow; null when
+  /// it is not the device that plays.
+  Future<void> publishState(PublishedPlayback? state);
+
+  /// Whether to follow a nearby playing device ([nearbyPlayback]): on while
+  /// this one is idle and on screen.
+  Future<void> setFollowing(bool following);
+
+  /// What the followed nearby device is doing; null when it is lost.
+  Stream<NearbyPlayback?> get nearbyPlayback;
+
   Future<void> dispose();
+}
+
+/// What the playing device tells nearby ones.
+typedef PublishedPlayback = ({
+  String serverId,
+  String trackId,
+  bool playing,
+  Duration position,
+  Duration duration,
+});
+
+/// Playback on a nearby device, as it last reported it.
+class NearbyPlayback {
+  const NearbyPlayback({
+    required this.deviceName,
+    required this.serverId,
+    required this.trackId,
+    required this.playing,
+    required this.position,
+    required this.duration,
+    required this.receivedAt,
+  });
+
+  final String deviceName;
+  final String serverId;
+
+  /// The track's app-wide ID (`{serverId}_{subsonicId}`).
+  final String trackId;
+  final bool playing;
+  final Duration position;
+  final Duration duration;
+
+  /// When this device received it: the position is counted from here, so
+  /// the two clocks never have to agree.
+  final DateTime receivedAt;
+
+  /// How long a playing report stays believable without the next one; the
+  /// playing device reports at least every [HandoffService.publishEvery].
+  static const Duration freshFor = Duration(seconds: 25);
+
+  bool isFresh(DateTime now) =>
+      !playing || now.difference(receivedAt) < freshFor;
+
+  /// Where the nearby device is at [now].
+  Duration positionAt(DateTime now) {
+    if (!playing) return position;
+    final at = position + now.difference(receivedAt);
+    return duration > Duration.zero && at > duration ? duration : at;
+  }
 }
 
 /// Moves playback between the user's devices through the server's saved
@@ -132,10 +262,16 @@ class HandoffService {
   /// While playing, the other servers are checked every this many checks.
   static const int _otherServersEvery = 6;
 
+  /// How often a playing device tells followers where it is, besides every
+  /// play, pause, seek and track change.
+  static const Duration publishEvery = Duration(seconds: 10);
+
   final _events = StreamController<HandoffEvent>.broadcast();
   final _remote = BehaviorSubject<RemoteSession?>.seeded(null);
+  final _nearby = BehaviorSubject<NearbyPlayback?>.seeded(null);
   final List<HandoffTransport> _transports = [];
-  final List<StreamSubscription<String>> _transportSubscriptions = [];
+  final List<StreamSubscription<Object?>> _transportSubscriptions = [];
+  bool _foreground = true;
 
   PlaybackSnapshot Function()? _snapshot;
   Timer? _timer;
@@ -155,6 +291,11 @@ class HandoffService {
   Stream<RemoteSession?> get remoteSessions => _remote.stream;
   RemoteSession? get remoteSession => _remote.value;
 
+  /// A nearby device's playback, followed over Bluetooth while this one is
+  /// idle and on screen; null when there is none.
+  Stream<NearbyPlayback?> get nearbyPlayback => _nearby.stream;
+  NearbyPlayback? get nearby => _nearby.value;
+
   /// Whether this device owns playback: it was the last to start playing.
   bool get isActive => _active;
 
@@ -169,21 +310,85 @@ class HandoffService {
   /// Adds a faster channel for takeovers (Bluetooth).
   void addTransport(HandoffTransport transport) {
     _transports.add(transport);
-    _transportSubscriptions.add(
-      transport.takeovers.listen((device) {
-        AppLog.info('Takeover by $device announced nearby');
-        _takenOver(device);
-      }),
-    );
+    _transportSubscriptions
+      ..add(
+        transport.takeovers.listen((device) {
+          AppLog.info('Takeover by $device announced nearby');
+          _takenOver(device);
+        }),
+      )
+      ..add(
+        transport.nearbyPlayback.listen((state) {
+          // Our own playback beats anything followed from elsewhere.
+          _nearby.add(_playing ? null : state);
+        }),
+      );
     unawaited(transport.setPlaying(_playing && _active));
+    unawaited(transport.publishState(_published()));
+    unawaited(transport.setFollowing(_shouldFollow));
   }
 
   Future<void> removeTransport(HandoffTransport transport) async {
     final index = _transports.indexOf(transport);
     if (index == -1) return;
     _transports.removeAt(index);
-    await _transportSubscriptions.removeAt(index).cancel();
+    // Two subscriptions per transport, in order.
+    for (final subscription in _transportSubscriptions.sublist(
+      index * 2,
+      index * 2 + 2,
+    )) {
+      await subscription.cancel();
+    }
+    _transportSubscriptions.removeRange(index * 2, index * 2 + 2);
     await transport.dispose();
+    if (_transports.isEmpty) _nearby.add(null);
+  }
+
+  /// The app came to the front or went to the back: a device in the
+  /// background does not follow nearby playback (nobody is looking, and
+  /// Bluetooth costs battery).
+  void setForeground(bool foreground) {
+    if (foreground == _foreground) return;
+    _foreground = foreground;
+    _updateFollowing();
+  }
+
+  bool get _shouldFollow => _foreground && !_playing;
+
+  void _updateFollowing() {
+    final follow = _shouldFollow;
+    if (!follow && _playing) _nearby.add(null);
+    for (final transport in _transports) {
+      unawaited(transport.setFollowing(follow));
+    }
+  }
+
+  /// What this device tells nearby ones, or null when it is not the one
+  /// playing.
+  PublishedPlayback? _published() {
+    if (!_active) return null;
+    final snapshot = _snapshot?.call();
+    if (snapshot == null ||
+        snapshot.index < 0 ||
+        snapshot.index >= snapshot.queue.length) {
+      return null;
+    }
+    final track = snapshot.queue[snapshot.index];
+    return (
+      serverId: track.serverId,
+      trackId: IdGenerator.extractSubsonicId(track.id),
+      playing: _playing,
+      position: snapshot.position,
+      duration: track.duration,
+    );
+  }
+
+  void _publish() {
+    if (_transports.isEmpty) return;
+    final state = _published();
+    for (final transport in _transports) {
+      unawaited(transport.publishState(state));
+    }
   }
 
   /// The local player started (or resumed) playing: this device takes over.
@@ -201,6 +406,8 @@ class HandoffService {
     _seen.clear();
     _remote.add(null);
     _schedule();
+    _updateFollowing();
+    _publish();
     for (final transport in _transports) {
       unawaited(transport.setPlaying(true));
       unawaited(transport.announceTakeover());
@@ -220,10 +427,14 @@ class HandoffService {
   Future<void> _settlePause() async {
     _pendingPause = null;
     if (_playing) return;
+    // Followers keep their connection after advertising stops, so they
+    // still see that it paused, and where.
+    _publish();
     for (final transport in _transports) {
       unawaited(transport.setPlaying(false));
     }
     _schedule();
+    _updateFollowing();
     if (_active) await _saveChecked(force: true);
   }
 
@@ -231,6 +442,7 @@ class HandoffService {
   /// of changes is one request.
   void localStateChanged() {
     if (!_active) return;
+    _publish();
     _saveDebounce?.cancel();
     _saveDebounce = Timer(const Duration(seconds: 1), () {
       unawaited(_saveChecked(force: true));
@@ -265,6 +477,9 @@ class HandoffService {
           if (!_active) await _refreshRemote();
           return;
         }
+        final publishesPerCheck =
+            publishEvery.inSeconds ~/ checkEvery.inSeconds;
+        if (_ticks % publishesPerCheck == 0) _publish();
         final savesPerCheck = activeSaveEvery.inSeconds ~/ checkEvery.inSeconds;
         if (_ticks % savesPerCheck == 0) await _save(force: false);
       } else {
@@ -315,6 +530,7 @@ class HandoffService {
     AppLog.info('Playback moved to $deviceName');
     _active = false;
     _saveDebounce?.cancel();
+    _publish();
     if (state != null) _remote.add(_toRemote(state));
     _events.add(PlaybackTakenOver(deviceName));
     _schedule();
@@ -394,5 +610,6 @@ class HandoffService {
     }
     await _events.close();
     await _remote.close();
+    await _nearby.close();
   }
 }

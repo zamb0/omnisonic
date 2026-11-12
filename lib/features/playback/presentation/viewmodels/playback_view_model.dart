@@ -47,7 +47,10 @@ class PlaybackViewModel extends ChangeNotifier {
 
   StreamSubscription<HandoffEvent>? _handoffSubscription;
   StreamSubscription<RemoteSession?>? _remoteSubscription;
+  StreamSubscription<NearbyPlayback?>? _nearbySubscription;
   RemoteSession? _remoteSession;
+  NearbyPlayback? _nearby;
+  RemoteNowPlaying? _remoteNowPlaying;
   String? _handoffNotice;
 
   StreamSubscription<PlaybackState>? _playbackStateSubscription;
@@ -249,6 +252,7 @@ class PlaybackViewModel extends ChangeNotifier {
                 _handoff.localStateChanged();
               }
             }
+            if (state.isPlaying != _wasPlaying) _updateRemoteNowPlaying();
             _wasPlaying = state.isPlaying;
 
             notifyListeners();
@@ -276,7 +280,11 @@ class PlaybackViewModel extends ChangeNotifier {
     });
     _remoteSubscription = _handoff.remoteSessions.listen((session) {
       _remoteSession = session;
-      notifyListeners();
+      _updateRemoteNowPlaying();
+    });
+    _nearbySubscription = _handoff.nearbyPlayback.listen((nearby) {
+      _nearby = nearby;
+      _updateRemoteNowPlaying();
     });
   }
 
@@ -284,13 +292,105 @@ class PlaybackViewModel extends ChangeNotifier {
   /// when this device was the last to play.
   RemoteSession? get remoteSession => _remoteSession;
 
-  /// Whether [remoteSession] is most likely still playing over there.
-  bool get isPlayingElsewhere =>
-      _remoteSession?.isLikelyPlaying(_handoff.now()) ?? false;
+  /// Whether another device is playing while this one is not.
+  bool get isPlayingElsewhere => _remoteNowPlaying?.playing ?? false;
 
-  /// Where the other device most likely is in its current track.
+  /// Where the other device is in its current track, now.
   Duration get remotePosition =>
-      _remoteSession?.estimatedPosition(_handoff.now()) ?? Duration.zero;
+      _remoteNowPlaying?.positionAt(_handoff.now()) ?? Duration.zero;
+
+  /// What another device is playing, while this one is not: followed live
+  /// over Bluetooth when one is near, otherwise estimated from the queue it
+  /// saved on the server. Null when there is nothing to show.
+  RemoteNowPlaying? get remoteNowPlaying => _remoteNowPlaying;
+
+  /// Tracks resolved from the library for nearby playback, by ID.
+  final Map<String, Track?> _nearbyTracks = {};
+  Timer? _remoteExpiry;
+
+  /// Recomputes [remoteNowPlaying] from its sources. Called when one of
+  /// them changes, never per position tick: the result carries its own
+  /// clock ([RemoteNowPlaying.positionAt]).
+  void _updateRemoteNowPlaying() {
+    final now = _handoff.now();
+    _remoteExpiry?.cancel();
+    RemoteNowPlaying? next;
+
+    final nearby = _nearby;
+    if (!isPlaying && nearby != null && nearby.isFresh(now)) {
+      final remote = _remoteSession;
+      final inRemote =
+          remote?.tracks.indexWhere((t) => t.id == nearby.trackId) ?? -1;
+      final track = inRemote >= 0
+          ? remote!.tracks[inRemote]
+          : _nearbyTrackFor(nearby.trackId);
+      if (track != null) {
+        next = RemoteNowPlaying(
+          deviceName: nearby.deviceName,
+          track: track,
+          queue: inRemote >= 0 ? remote!.tracks : [track],
+          index: inRemote >= 0 ? inRemote : 0,
+          playing: nearby.playing,
+          position: nearby.position,
+          duration: nearby.duration > Duration.zero
+              ? nearby.duration
+              : track.duration,
+          anchor: nearby.receivedAt,
+          live: true,
+        );
+        // A playing device that stops reporting has gone.
+        if (nearby.playing) {
+          _remoteExpiry = Timer(
+            NearbyPlayback.freshFor - now.difference(nearby.receivedAt),
+            _updateRemoteNowPlaying,
+          );
+        }
+      }
+    }
+
+    final remote = _remoteSession;
+    if (next == null &&
+        !isPlaying &&
+        remote != null &&
+        remote.isLikelyPlaying(now)) {
+      next = RemoteNowPlaying(
+        deviceName: remote.deviceName,
+        track: remote.currentTrack,
+        queue: remote.tracks,
+        index: remote.currentIndex,
+        playing: true,
+        position: remote.estimatedPosition(now),
+        duration: remote.currentTrack.duration,
+        anchor: now,
+        live: false,
+      );
+      _remoteExpiry = Timer(
+        RemoteSession.freshFor - now.difference(remote.changed),
+        _updateRemoteNowPlaying,
+      );
+    }
+
+    if (next != _remoteNowPlaying) {
+      _remoteNowPlaying = next;
+      notifyListeners();
+    }
+  }
+
+  Track? _nearbyTrackFor(String trackId) {
+    if (_nearbyTracks.containsKey(trackId)) return _nearbyTracks[trackId];
+    _nearbyTracks[trackId] = null;
+    unawaited(() async {
+      try {
+        final track = await _database.musicDao.getTrackById(trackId);
+        if (track == null) return;
+        _nearbyTracks[trackId] = track;
+        if (!_isDisposed) _updateRemoteNowPlaying();
+      } catch (e) {
+        AppLog.debug('Could not look up nearby track $trackId: $e');
+      }
+    }());
+    return null;
+  }
 
   /// "Now playing on MacBook" after another device took over; shown once.
   String? get handoffNotice => _handoffNotice;
@@ -301,22 +401,22 @@ class PlaybackViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Picks up [remoteSession] here: same queue, same track, where the other
-  /// device most likely is. Starting to play is the takeover: the other
-  /// device stops on its next check.
+  /// Picks up [remoteNowPlaying] here: same queue, same track, where the
+  /// other device is now. Starting to play is the takeover: the other
+  /// device stops at once over Bluetooth, or on its next server check.
   Future<void> continueRemoteSession() async {
-    final remote = _remoteSession;
+    final remote = _remoteNowPlaying;
     if (remote == null) return;
-    final position = remote.estimatedPosition(_handoff.now());
+    final position = remote.positionAt(_handoff.now());
 
     final loaded =
-        currentTrack?.id == remote.currentTrack.id &&
-        currentIndex == remote.currentIndex &&
-        queue.length == remote.tracks.length;
+        currentTrack?.id == remote.track.id &&
+        currentIndex == remote.index &&
+        queue.length == remote.queue.length;
     if (!loaded) {
       final result = await _playbackRepository.setQueue(
-        remote.tracks,
-        startIndex: remote.currentIndex,
+        remote.queue,
+        startIndex: remote.index,
       );
       if (result.isFailure) {
         _setError(
@@ -1048,6 +1148,8 @@ class PlaybackViewModel extends ChangeNotifier {
     _serversSubscription?.cancel();
     _handoffSubscription?.cancel();
     _remoteSubscription?.cancel();
+    _nearbySubscription?.cancel();
+    _remoteExpiry?.cancel();
     _stopPositionTicker();
     _trackingService.dispose();
     super.dispose();

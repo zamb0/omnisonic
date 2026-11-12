@@ -137,6 +137,118 @@ void main() {
     });
   });
 
+  group('nearby playback (Bluetooth)', () {
+    NearbyPlayback nearby({
+      required String trackId,
+      bool playing = true,
+      Duration position = const Duration(seconds: 20),
+      DateTime? receivedAt,
+    }) => NearbyPlayback(
+      deviceName: 'iPhone',
+      serverId: 'server1',
+      trackId: trackId,
+      playing: playing,
+      position: position,
+      duration: const Duration(minutes: 3),
+      receivedAt: receivedAt ?? handoff.now(),
+    );
+
+    test('shows the nearby device\'s track, live and labelled', () async {
+      final tracks = testTracks(3);
+      handoff.emitRemote(
+        RemoteSession(
+          deviceName: 'iPhone',
+          isOmnisonic: true,
+          tracks: tracks,
+          currentIndex: 0,
+          position: Duration.zero,
+          changed: handoff.now().subtract(const Duration(minutes: 1)),
+          serverId: 'server1',
+        ),
+      );
+      handoff.emitNearby(
+        nearby(
+          trackId: tracks[2].id,
+          receivedAt: handoff.now().subtract(const Duration(seconds: 4)),
+        ),
+      );
+      await pumpEventQueue();
+
+      final remote = viewModel.remoteNowPlaying!;
+      expect(remote.live, isTrue);
+      expect(remote.deviceName, 'iPhone');
+      // The track it reports, not the one in the older server save.
+      expect(remote.track, tracks[2]);
+      expect(remote.index, 2);
+      expect(viewModel.remotePosition, const Duration(seconds: 24));
+    });
+
+    test('a pause over there is shown as a pause, not as playing', () async {
+      final track = testTrack(id: 'server1_t9');
+      await database.serverDao.insertServer(testServer(), 'pw');
+      await database.musicDao.insertTracks([track]);
+
+      handoff.emitNearby(nearby(trackId: track.id, playing: false));
+      await pumpEventQueue();
+      // Looked up in the library.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final remote = viewModel.remoteNowPlaying!;
+      expect(remote.track.id, track.id);
+      expect(remote.playing, isFalse);
+      expect(viewModel.isPlayingElsewhere, isFalse);
+    });
+
+    test('continue here starts where the other device is now', () async {
+      final tracks = testTracks(2);
+      handoff.emitRemote(
+        RemoteSession(
+          deviceName: 'iPhone',
+          isOmnisonic: true,
+          tracks: tracks,
+          currentIndex: 1,
+          position: Duration.zero,
+          changed: handoff.now().subtract(const Duration(minutes: 1)),
+          serverId: 'server1',
+        ),
+      );
+      handoff.emitNearby(
+        nearby(
+          trackId: tracks[1].id,
+          position: const Duration(seconds: 90),
+          receivedAt: handoff.now().subtract(const Duration(seconds: 2)),
+        ),
+      );
+      await pumpEventQueue();
+
+      await viewModel.continueRemoteSession();
+
+      expect(repository.queuesSet.single, tracks);
+      expect(repository.seeks, [const Duration(seconds: 92)]);
+      expect(repository.resumes, 1);
+    });
+
+    test('nothing is shown from elsewhere while this device plays', () async {
+      final track = testTrack();
+      await emitTrack(track, isPlaying: true);
+      handoff.emitRemote(
+        RemoteSession(
+          deviceName: 'iPhone',
+          isOmnisonic: true,
+          tracks: [track],
+          currentIndex: 0,
+          position: Duration.zero,
+          changed: handoff.now(),
+          serverId: 'server1',
+        ),
+      );
+      handoff.emitNearby(nearby(trackId: track.id));
+      await pumpEventQueue();
+
+      expect(viewModel.remoteNowPlaying, isNull);
+    });
+  });
+
   test('a starred track stays starred when the player reports again', () async {
     final track = testTrack(id: 'server2_t1', serverId: 'server2');
     await emitTrack(track);

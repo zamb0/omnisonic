@@ -80,6 +80,7 @@ Playback moves between the user's devices through the Subsonic play queue (`Hand
 - **Only the active device saves the queue** — the one that last started playing. Never save it from elsewhere (restore, lifecycle, periodic timers): a save by an idle device looks like a takeover and stops the one playing. Go through `HandoffService` (`saveIfActive`, `localStateChanged`).
 - A newer save by another *Omnisonic* device (tagged client name) means takeover → `PlaybackTakenOver` → the view model pauses. Other apps' saves are ignored.
 - **Bluetooth** (opt-in, Settings > This device): `ble/` holds a `HandoffTransport` on `universal_ble` (BSD-3; not `flutter_blue_plus`, whose licence is not open source). The playing device advertises a GATT service; the one starting to play scans briefly and writes a `HandoffMessage` signed with a PBKDF2 key derived from the shared account credentials (`handoff_crypto.dart`). Conditional import keeps it out of the web build. Best effort only — the server check stays the source of truth.
+- **Live state nearby**: the playing device also publishes an encrypted `HandoffState` (track, position, playing) on a read/notify characteristic; an idle device that is on screen (`HandoffService.setForeground`) follows it. `PlaybackViewModel.remoteNowPlaying` merges that with the server's saved queue (estimated); `RemotePlaybackBar` replaces the player bar while another device plays, so it never reads as local playback.
 
 ### Web
 

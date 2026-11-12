@@ -89,6 +89,53 @@ void main() {
     });
   });
 
+  group('HandoffState', () {
+    final home = keyFor('home', 1);
+    final work = keyFor('work', 2);
+
+    HandoffState state() => const HandoffState(
+      senderTag: 'abc123',
+      deviceName: 'iPhone di Fabio',
+      serverId: '1731000000000',
+      trackId: 'tr-9f3a',
+      playing: true,
+      position: Duration(seconds: 83, milliseconds: 250),
+      duration: Duration(minutes: 4, seconds: 2),
+    );
+
+    test('a device of the same account reads it back', () {
+      final sealed = state().encrypt(home);
+
+      final read = HandoffState.decrypt(sealed, [work, home])!;
+
+      expect(read.deviceName, 'iPhone di Fabio');
+      expect(read.serverId, '1731000000000');
+      expect(read.trackId, 'tr-9f3a');
+      expect(read.playing, isTrue);
+      expect(read.position, const Duration(seconds: 83, milliseconds: 250));
+      expect(read.duration, const Duration(minutes: 4, seconds: 2));
+      expect(read.senderTag, 'abc123');
+    });
+
+    test('nothing about the track is readable without the key', () {
+      final sealed = state().encrypt(home);
+
+      expect(HandoffState.decrypt(sealed, [work]), isNull);
+      // Not even as plain text in the bytes.
+      expect(
+        utf8.decode(sealed, allowMalformed: true),
+        isNot(contains('tr-9f3a')),
+      );
+    });
+
+    test('a changed byte is refused', () {
+      final sealed = state().encrypt(home);
+      sealed[20] ^= 0x40;
+
+      expect(HandoffState.decrypt(sealed, [home]), isNull);
+    });
+  });
+
   group('receiver', () {
     late BleHandoffTransport transport;
     final key = keyFor('home', 1);
@@ -132,6 +179,56 @@ void main() {
       await pumpEventQueue();
 
       expect(takeovers, ['MacBook']);
+    });
+
+    test('hands out its state to readers, one long read in pieces', () async {
+      await transport.publishState((
+        serverId: 'home',
+        trackId: 't42',
+        playing: true,
+        position: const Duration(seconds: 10),
+        duration: const Duration(minutes: 3),
+      ));
+
+      final first = transport
+          .handleRead('central', handoffStateUuid, 0, null)!
+          .value;
+      final rest = transport
+          .handleRead('central', handoffStateUuid, 20, null)!
+          .value;
+      final read = HandoffState.decrypt(
+        [...first.sublist(0, 20), ...rest],
+        [key],
+      )!;
+
+      expect(read.trackId, 't42');
+      expect(read.playing, isTrue);
+      expect(read.position, greaterThanOrEqualTo(const Duration(seconds: 10)));
+    });
+
+    test('the position read later has moved on while playing', () async {
+      await transport.publishState((
+        serverId: 'home',
+        trackId: 't42',
+        playing: true,
+        position: const Duration(seconds: 10),
+        duration: const Duration(minutes: 3),
+      ));
+
+      final later = HandoffState.decrypt(
+        transport.sealedState(
+          now: DateTime.now().add(const Duration(seconds: 5)),
+        ),
+        [key],
+      )!;
+
+      expect(later.position.inSeconds, inInclusiveRange(15, 16));
+    });
+
+    test('nothing to read when it is not playing anything', () async {
+      await transport.publishState(null);
+
+      expect(transport.sealedState(), isEmpty);
     });
 
     test('ignores its own announcement', () async {

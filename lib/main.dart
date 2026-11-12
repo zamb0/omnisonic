@@ -105,9 +105,18 @@ class _OmnisonicAppState extends State<OmnisonicApp>
         state == AppLifecycleState.detached) {
       _handoff()?.saveIfActive();
     }
+    // Following a nearby device's playback over Bluetooth only while the app
+    // is on screen: nobody looks at it otherwise, and it costs battery.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _handoff()?.setForeground(false);
+    }
     // Back in front: show what the other devices are doing now.
     if (state == AppLifecycleState.resumed) {
-      _handoff()?.refresh();
+      _handoff()
+        ?..setForeground(true)
+        ..refresh();
     }
   }
 

@@ -11,10 +11,27 @@ class FakeHandoffService implements HandoffService {
   final calls = <String>[];
   final _events = StreamController<HandoffEvent>.broadcast();
   final _remote = StreamController<RemoteSession?>.broadcast();
+  final _nearby = StreamController<NearbyPlayback?>.broadcast();
+  NearbyPlayback? _nearbyValue;
+  bool? foreground;
   RemoteSession? _remoteSession;
   PlaybackSnapshot Function()? snapshot;
 
   void emit(HandoffEvent event) => _events.add(event);
+
+  void emitNearby(NearbyPlayback? nearby) {
+    _nearbyValue = nearby;
+    _nearby.add(nearby);
+  }
+
+  @override
+  Stream<NearbyPlayback?> get nearbyPlayback => _nearby.stream;
+
+  @override
+  NearbyPlayback? get nearby => _nearbyValue;
+
+  @override
+  void setForeground(bool foreground) => this.foreground = foreground;
 
   void emitRemote(RemoteSession? session) {
     _remoteSession = session;
@@ -63,6 +80,7 @@ class FakeHandoffService implements HandoffService {
   Future<void> dispose() async {
     await _events.close();
     await _remote.close();
+    await _nearby.close();
   }
 
   @override

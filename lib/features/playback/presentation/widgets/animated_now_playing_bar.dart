@@ -14,7 +14,9 @@ import '../../../../core/utils/haptics.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../ui/presentation/widgets/cover_art.dart';
 import '../../../ui/presentation/widgets/now_playing_equalizer.dart';
+import 'remote_playback_bar.dart';
 import 'transport_controls.dart';
+import '../../data/datasources/handoff_service.dart';
 import '../../../ui/presentation/widgets/art_tint.dart';
 
 /// Feishin-style now-playing bar at the bottom of the screen
@@ -152,10 +154,15 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
         vm.volume,
       ),
     );
+    // Another device playing while this one does not takes the bar over:
+    // its track and progress, and "Continue here" instead of the controls.
+    final remote = context.select<PlaybackViewModel, RemoteNowPlaying?>(
+      (vm) => vm.isPlaying ? null : vm.remoteNowPlaying,
+    );
     final vm = context.read<PlaybackViewModel>();
 
-    _handleTrackChange(currentTrack);
-    final track = currentTrack ?? _displayedTrack;
+    _handleTrackChange(remote?.track ?? currentTrack);
+    final track = remote?.track ?? currentTrack ?? _displayedTrack;
     if (track == null) {
       return const SizedBox.shrink();
     }
@@ -163,7 +170,13 @@ class _AnimatedNowPlayingBarState extends State<AnimatedNowPlayingBar>
     updateArtTint(track.coverArtUrl);
     final tint = artTint ?? scheme.primary;
 
-    final bar = isMobile
+    final bar = remote != null
+        ? RemotePlaybackBar(
+            remote: remote,
+            onContinue: vm.continueRemoteSession,
+            compact: isMobile,
+          )
+        : isMobile
         ? _buildMobileBar(context, vm, track, scheme, tint)
         // The bar's own width, not the window's: beside a sidebar the
         // two differ by up to 234pt.

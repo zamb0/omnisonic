@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:injectable/injectable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../core/services/device_identity.dart';
 import '../../../../../core/utils/app_log.dart';
@@ -20,6 +22,24 @@ class BleHandoffController {
 
   HandoffTransport? _transport;
   Future<void>? _syncing;
+
+  /// Set while the Bluetooth stack is being started, cleared once it is up.
+  /// Still set at the next launch means the start never finished: the
+  /// process died in native code, which Dart cannot catch.
+  static const _startingKey = 'handoff_ble_starting';
+
+  /// Replaces the real start in tests.
+  @visibleForTesting
+  Future<HandoffTransport> Function({
+    required DeviceIdentity identity,
+    required HandoffKeyring keyring,
+  })?
+  starter;
+
+  /// Whether the last start crashed and Bluetooth handoff was turned off
+  /// because of it; for a notice in Settings.
+  bool get disabledAfterCrash => _disabledAfterCrash;
+  bool _disabledAfterCrash = false;
 
   /// Whether this build can use Bluetooth at all (not on the web).
   bool get supported => bleHandoffSupported;
@@ -54,10 +74,29 @@ class BleHandoffController {
     final wanted = supported && _identity.bleHandoffEnabled;
     try {
       if (wanted && _transport == null) {
-        final transport = await startBleHandoffTransport(
-          identity: _identity,
-          keyring: _keyring,
-        );
+        final prefs = await SharedPreferences.getInstance();
+        // A start that crashed the app would crash it on every launch with
+        // the setting saved on, with no way to reach Settings and turn it
+        // off. Turn it off instead.
+        if (prefs.getBool(_startingKey) ?? false) {
+          await prefs.remove(_startingKey);
+          _disabledAfterCrash = true;
+          AppLog.error(
+            'Bluetooth handoff did not start last time; turned it off',
+          );
+          await _identity.setBleHandoffEnabled(false);
+          return;
+        }
+        await prefs.setBool(_startingKey, true);
+        final HandoffTransport transport;
+        try {
+          transport = await (starter ?? startBleHandoffTransport)(
+            identity: _identity,
+            keyring: _keyring,
+          );
+        } finally {
+          await prefs.remove(_startingKey);
+        }
         _transport = transport;
         _handoff.addTransport(transport);
         AppLog.info('Bluetooth handoff on');

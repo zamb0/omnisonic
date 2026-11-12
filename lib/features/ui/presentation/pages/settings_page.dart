@@ -223,7 +223,10 @@ class SettingsPage extends StatelessWidget {
       secondary: const Icon(OmnisonicIcons.bluetooth),
       title: const Text('Bluetooth handoff'),
       subtitle: Text(
-        controller.canBeStopped
+        controller.disabledAfterCrash
+            ? 'Turned off: Bluetooth failed to start on this device last '
+                  'time. You can try again.'
+            : controller.canBeStopped
             ? 'Pressing play here stops your nearby devices at once, and '
                   'they can stop this one. Without it, it takes a few '
                   'seconds through the server.'

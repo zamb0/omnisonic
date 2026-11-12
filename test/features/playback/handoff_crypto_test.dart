@@ -136,6 +136,19 @@ void main() {
     });
   });
 
+  test('the GATT service declares no descriptors (CoreBluetooth crash)', () {
+    // iOS and macOS abort the app on a hand-made 0x2902 descriptor; the
+    // platforms add the ones notifications need themselves.
+    final service = handoffGattService();
+    for (final characteristic in service.characteristics) {
+      expect(characteristic.descriptors, isEmpty, reason: characteristic.uuid);
+    }
+    expect(
+      service.characteristics.map((c) => c.uuid),
+      containsAll([handoffControlUuid, handoffStateUuid]),
+    );
+  });
+
   group('receiver', () {
     late BleHandoffTransport transport;
     final key = keyFor('home', 1);

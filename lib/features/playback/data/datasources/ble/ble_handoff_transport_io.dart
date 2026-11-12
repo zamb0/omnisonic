@@ -22,8 +22,29 @@ const String handoffControlUuid = 'a6f3e2c1-6d1b-4e7a-9a44-0e5c1a0b9d21';
 /// counter byte: notifications are cut at the link's MTU, reads are not.
 const String handoffStateUuid = 'a6f3e2c2-6d1b-4e7a-9a44-0e5c1a0b9d21';
 
-const String _clientConfigDescriptorUuid =
-    '00002902-0000-1000-8000-00805f9b34fb';
+/// The handoff GATT service a playing device publishes.
+///
+/// No descriptors, on purpose: the state characteristic's Client
+/// Characteristic Configuration descriptor (0x2902), which notifications
+/// need, is added by the platform — Android's plugin adds it, CoreBluetooth
+/// and WinRT create it themselves. Declaring it here crashed the app on iOS
+/// and macOS at launch: CoreBluetooth refuses a hand-made CCCD with an
+/// uncaught Objective-C exception, which no Dart code can catch.
+BlePeripheralService handoffGattService() => BlePeripheralService(
+  uuid: handoffServiceUuid,
+  characteristics: [
+    BlePeripheralCharacteristic(
+      uuid: handoffControlUuid,
+      properties: [CharacteristicProperty.write],
+      permissions: [PeripheralAttributePermission.writeable],
+    ),
+    BlePeripheralCharacteristic(
+      uuid: handoffStateUuid,
+      properties: [CharacteristicProperty.read, CharacteristicProperty.notify],
+      permissions: [PeripheralAttributePermission.readable],
+    ),
+  ],
+);
 
 /// Bluetooth exists in this build.
 bool get bleHandoffSupported => !AppPlatform.isWeb;
@@ -146,29 +167,7 @@ class BleHandoffTransport implements HandoffTransport {
       UniversalBlePeripheral.setWriteRequestHandlers(handleWrite);
       UniversalBlePeripheral.setReadRequestHandlers(handleRead);
       await UniversalBlePeripheral.clearServices();
-      await UniversalBlePeripheral.addService(
-        BlePeripheralService(
-          uuid: handoffServiceUuid,
-          characteristics: [
-            BlePeripheralCharacteristic(
-              uuid: handoffControlUuid,
-              properties: [CharacteristicProperty.write],
-              permissions: [PeripheralAttributePermission.writeable],
-            ),
-            BlePeripheralCharacteristic(
-              uuid: handoffStateUuid,
-              properties: [
-                CharacteristicProperty.read,
-                CharacteristicProperty.notify,
-              ],
-              permissions: [PeripheralAttributePermission.readable],
-              descriptors: [
-                BlePeripheralDescriptor(uuid: _clientConfigDescriptorUuid),
-              ],
-            ),
-          ],
-        ),
-      );
+      await UniversalBlePeripheral.addService(handoffGattService());
       _peripheralReady = true;
       if (_wantAdvertising) await _updateAdvertising();
     } catch (e) {

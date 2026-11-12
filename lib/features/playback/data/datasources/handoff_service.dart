@@ -23,6 +23,7 @@ class RemoteSession {
     required this.currentIndex,
     required this.position,
     required this.changed,
+    required this.heard,
     required this.serverId,
   });
 
@@ -34,24 +35,37 @@ class RemoteSession {
   final List<Track> tracks;
   final int currentIndex;
   final Duration position;
+
+  /// When the save happened, by the server's clock.
   final DateTime changed;
+
+  /// When the save happened, by this device's clock: [changed] corrected
+  /// for a server clock that is off (see [HandoffService]). How fresh the
+  /// session is goes by this, never by [changed] against the local clock.
+  final DateTime heard;
   final String serverId;
 
   /// How recent a save has to be for the device to count as still playing.
-  /// An active device saves at least every [HandoffService.activeSaveEvery].
-  static const Duration freshFor = Duration(seconds: 25);
+  /// An active device saves every [HandoffService.activeSaveEvery], and
+  /// while it plays the others look every [HandoffService.remoteCheckEvery]:
+  /// the next save has to be seen before this one goes stale, or the session
+  /// blinks between "playing on …" and not.
+  static const Duration freshFor = Duration(seconds: 30);
 
   Track get currentTrack => tracks[currentIndex];
 
   /// Whether the other device is most likely playing right now. Only an
   /// Omnisonic device's saves say so: other apps save while paused too.
   bool isLikelyPlaying(DateTime now) =>
-      isOmnisonic && now.difference(changed) < freshFor;
+      isOmnisonic && now.difference(heard) < freshFor;
+
+  /// When [isLikelyPlaying] stops being true, unless a newer save is seen.
+  DateTime get staleAt => heard.add(freshFor);
 
   /// Where the other device most likely is in the current track.
   Duration estimatedPosition(DateTime now) {
     if (!isLikelyPlaying(now)) return position;
-    final estimate = position + now.difference(changed);
+    final estimate = position + now.difference(heard);
     final length = currentTrack.duration;
     return length > Duration.zero && estimate > length ? length : estimate;
   }
@@ -259,6 +273,10 @@ class HandoffService {
   /// How often the others' playback is looked at while this one is idle.
   static const Duration idleCheckEvery = Duration(seconds: 30);
 
+  /// How often it is looked at while another device is playing, to see its
+  /// next save before the last one goes stale ([RemoteSession.freshFor]).
+  static const Duration remoteCheckEvery = Duration(seconds: 10);
+
   /// While playing, the other servers are checked every this many checks.
   static const int _otherServersEvery = 6;
 
@@ -275,7 +293,11 @@ class HandoffService {
 
   PlaybackSnapshot Function()? _snapshot;
   Timer? _timer;
+  Duration? _timerEvery;
+  Timer? _staleTimer;
   int _ticks = 0;
+  DateTime? _lastSavedAt;
+  DateTime? _lastPublishedAt;
   bool _active = false;
   bool _playing = false;
   bool _checking = false;
@@ -284,6 +306,13 @@ class HandoffService {
   /// The `changed` time of the newest save seen on each server: a save
   /// newer than this by another device is a takeover.
   final Map<String, DateTime> _seen = {};
+
+  /// The other devices' newest save seen on each server, with when it was
+  /// heard (see [RemoteSession.heard]).
+  final Map<String, ({DateTime changed, DateTime heard})> _heard = {};
+
+  /// When the others' playback was last looked at (the request's start).
+  DateTime? _lookedAt;
 
   Stream<HandoffEvent> get events => _events.stream;
 
@@ -385,6 +414,7 @@ class HandoffService {
 
   void _publish() {
     if (_transports.isEmpty) return;
+    _lastPublishedAt = _clock();
     final state = _published();
     for (final transport in _transports) {
       unawaited(transport.publishState(state));
@@ -404,7 +434,7 @@ class HandoffService {
     }
     _active = true;
     _seen.clear();
-    _remote.add(null);
+    _showRemote(null);
     _schedule();
     _updateFollowing();
     _publish();
@@ -458,10 +488,26 @@ class HandoffService {
   /// Looks at the server now rather than at the next tick (app resumed).
   Future<void> refresh() => _tick(force: true);
 
-  void _schedule() {
+  Duration get _checkInterval {
+    if (_playing && _active) return checkEvery;
+    final remote = _remote.value;
+    if (remote != null && remote.isLikelyPlaying(_clock())) {
+      return remoteCheckEvery;
+    }
+    return idleCheckEvery;
+  }
+
+  /// (Re)starts the periodic check at the pace the current state needs.
+  /// [restart] begins a new period even when the pace is unchanged.
+  void _schedule({bool restart = true}) {
+    if (_snapshot == null) {
+      _timer?.cancel();
+      return;
+    }
+    final every = _checkInterval;
+    if (!restart && _timer?.isActive == true && every == _timerEvery) return;
     _timer?.cancel();
-    if (_snapshot == null) return;
-    final every = _playing && _active ? checkEvery : idleCheckEvery;
+    _timerEvery = every;
     _timer = Timer.periodic(every, (_) => unawaited(_tick()));
   }
 
@@ -477,11 +523,19 @@ class HandoffService {
           if (!_active) await _refreshRemote();
           return;
         }
-        final publishesPerCheck =
-            publishEvery.inSeconds ~/ checkEvery.inSeconds;
-        if (_ticks % publishesPerCheck == 0) _publish();
-        final savesPerCheck = activeSaveEvery.inSeconds ~/ checkEvery.inSeconds;
-        if (_ticks % savesPerCheck == 0) await _save(force: false);
+        // By time, not by ticks: a skipped tick (a slow check) must not
+        // stretch the gaps the others use to tell this device still plays.
+        final now = _clock();
+        final published = _lastPublishedAt;
+        if (published == null ||
+            now.difference(published) >= publishEvery - checkEvery ~/ 2) {
+          _publish();
+        }
+        final saved = _lastSavedAt;
+        if (saved == null ||
+            now.difference(saved) >= activeSaveEvery - checkEvery ~/ 2) {
+          await _save(force: false);
+        }
       } else {
         await _refreshRemote();
       }
@@ -531,7 +585,7 @@ class HandoffService {
     _active = false;
     _saveDebounce?.cancel();
     _publish();
-    if (state != null) _remote.add(_toRemote(state));
+    if (state != null) _showRemote(_toRemote(state));
     _events.add(PlaybackTakenOver(deviceName));
     _schedule();
   }
@@ -548,12 +602,13 @@ class HandoffService {
     final snapshot = _snapshot?.call();
     if (snapshot == null || snapshot.queue.isEmpty) return;
     if (snapshot.index < 0 || snapshot.index >= snapshot.queue.length) return;
-    await _tracking.savePlayQueue(
+    final saved = await _tracking.savePlayQueue(
       snapshot.queue,
       snapshot.index,
       snapshot.position,
       force: force,
     );
+    if (saved) _lastSavedAt = _clock();
   }
 
   String? _currentServerId() {
@@ -569,15 +624,82 @@ class HandoffService {
   /// What another device is doing: the newest queue on any server, unless
   /// this device saved it.
   Future<void> _refreshRemote() async {
+    final lookingAt = _clock();
     final state = await _tracking.getPlayQueue();
-    if (state == null || _identity.isThisDevice(state.changedBy)) {
-      _remote.add(null);
+    final previousLook = _lookedAt;
+    _lookedAt = lookingAt;
+
+    final current = _remote.value;
+    final stillPlaying = current?.isLikelyPlaying(_clock()) ?? false;
+    if (state == null) {
+      // Nothing saved, or no server answered this time. A server that
+      // failed once does not mean the other device stopped: that is left
+      // to the session going stale.
+      if (!stillPlaying) _showRemote(null);
       return;
     }
-    _remote.add(_toRemote(state));
+    if (_identity.isThisDevice(state.changedBy)) {
+      _showRemote(null);
+      return;
+    }
+    final changed = state.changed;
+    if (current != null &&
+        stillPlaying &&
+        (changed == null || changed.isBefore(current.changed))) {
+      // An older queue, from another server, came out on top because the
+      // playing device's server did not answer.
+      return;
+    }
+    _showRemote(_toRemote(state, heard: _heardAt(state, previousLook)));
   }
 
-  RemoteSession? _toRemote(PlayQueueState state) {
+  /// When the save in [state] happened, by this device's clock.
+  ///
+  /// The server's `changed` is in the server's clock, which can be off from
+  /// this one by seconds or minutes; compared with the local clock, a device
+  /// that saves every 15 seconds could look stale (or a paused one fresh for
+  /// too long). So a save is dated by when it was first seen: one that was
+  /// not there at the previous look ([previousLook]) happened after it,
+  /// whatever the server's clock says. A save seen for the first time is
+  /// dated by the server's clock, never later than now.
+  DateTime? _heardAt(PlayQueueState state, DateTime? previousLook) {
+    final changed = state.changed;
+    final serverId = state.serverId;
+    if (changed == null) return null;
+    final known = serverId == null ? null : _heard[serverId];
+    if (known != null && known.changed == changed) return known.heard;
+
+    final now = _clock();
+    var heard = changed.isAfter(now) ? now : changed;
+    if (known != null &&
+        changed.isAfter(known.changed) &&
+        previousLook != null &&
+        heard.isBefore(previousLook)) {
+      heard = previousLook;
+    }
+    if (serverId != null) _heard[serverId] = (changed: changed, heard: heard);
+    return heard;
+  }
+
+  /// Shows [session], and makes sure the UI hears about it going stale
+  /// even when nothing new is fetched in between.
+  void _showRemote(RemoteSession? session) {
+    _staleTimer?.cancel();
+    _staleTimer = null;
+    _remote.add(session);
+    final now = _clock();
+    if (session != null && session.isLikelyPlaying(now)) {
+      _staleTimer = Timer(session.staleAt.difference(now), () {
+        _staleTimer = null;
+        // Same session, no longer "playing": listeners re-read it.
+        _remote.add(_remote.value);
+        _schedule(restart: false);
+      });
+    }
+    _schedule(restart: false);
+  }
+
+  RemoteSession? _toRemote(PlayQueueState state, {DateTime? heard}) {
     final changed = state.changed;
     final index = state.currentIndex ?? 0;
     if (changed == null ||
@@ -594,12 +716,14 @@ class HandoffService {
       currentIndex: index,
       position: state.position ?? Duration.zero,
       changed: changed,
+      heard: heard ?? (changed.isAfter(_clock()) ? _clock() : changed),
       serverId: state.serverId ?? state.tracks[index].serverId,
     );
   }
 
   Future<void> dispose() async {
     _timer?.cancel();
+    _staleTimer?.cancel();
     _saveDebounce?.cancel();
     _pendingPause?.cancel();
     for (final subscription in _transportSubscriptions) {

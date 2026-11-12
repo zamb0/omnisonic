@@ -123,6 +123,7 @@ void main() {
           position: const Duration(seconds: 30),
           // Saved 10s ago while playing: it has moved on since.
           changed: handoff.now().subtract(const Duration(seconds: 10)),
+          heard: handoff.now().subtract(const Duration(seconds: 10)),
           serverId: 'server1',
         ),
       );
@@ -163,6 +164,7 @@ void main() {
           currentIndex: 0,
           position: Duration.zero,
           changed: handoff.now().subtract(const Duration(minutes: 1)),
+          heard: handoff.now().subtract(const Duration(minutes: 1)),
           serverId: 'server1',
         ),
       );
@@ -209,6 +211,7 @@ void main() {
           currentIndex: 1,
           position: Duration.zero,
           changed: handoff.now().subtract(const Duration(minutes: 1)),
+          heard: handoff.now().subtract(const Duration(minutes: 1)),
           serverId: 'server1',
         ),
       );
@@ -239,6 +242,7 @@ void main() {
           currentIndex: 0,
           position: Duration.zero,
           changed: handoff.now(),
+          heard: handoff.now(),
           serverId: 'server1',
         ),
       );

@@ -87,6 +87,7 @@ void main() {
           currentIndex: 0,
           position: const Duration(seconds: 12),
           changed: DateTime(2026),
+          heard: DateTime(2026),
           serverId: 'server1',
         ),
       ),

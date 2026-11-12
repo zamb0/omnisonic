@@ -365,7 +365,7 @@ class PlaybackViewModel extends ChangeNotifier {
         live: false,
       );
       _remoteExpiry = Timer(
-        RemoteSession.freshFor - now.difference(remote.changed),
+        remote.staleAt.difference(now),
         _updateRemoteNowPlaying,
       );
     }

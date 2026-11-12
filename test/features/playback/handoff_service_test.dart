@@ -18,6 +18,8 @@ void main() {
   late HandoffService handoff;
   late List<HandoffEvent> events;
   final now = DateTime.utc(2026, 11, 9, 12);
+  // This device's clock; the tests move it on.
+  var time = now;
   final queue = testTracks(3);
   var playing = queue[1];
 
@@ -30,12 +32,13 @@ void main() {
     });
     identity = DeviceIdentity();
     await identity.load();
+    time = now;
     tracking = _FakeTracking();
     handoff = HandoffService(
       tracking,
       _Servers([testServer(id: 'server1')]),
       identity,
-      clock: () => now,
+      clock: () => time,
       pauseSettle: const Duration(milliseconds: 20),
     );
     playing = queue[1];
@@ -237,6 +240,73 @@ void main() {
       expect(remote.isLikelyPlaying(now), isFalse);
       expect(remote.estimatedPosition(now), const Duration(seconds: 30));
     });
+
+    test('a device that keeps saving stays "playing" between looks', () async {
+      serverHas(otherDevice, now.subtract(const Duration(seconds: 14)));
+      await handoff.refresh();
+
+      // Saves every 15s, looked at every 10s: whatever moment the UI
+      // rebuilds at, the session never blinks off in between.
+      for (var second = 1; second <= 60; second++) {
+        time = now.add(Duration(seconds: second));
+        if ((second + 14) % 15 == 0) serverHas(otherDevice, time);
+        if (second % 10 == 0) await handoff.refresh();
+        expect(
+          handoff.remoteSession!.isLikelyPlaying(time),
+          isTrue,
+          reason: 'at +${second}s',
+        );
+      }
+    });
+
+    test(
+      'a server clock behind this one does not make it look stale',
+      () async {
+        // The server's clock is two minutes behind this device's.
+        const skew = Duration(minutes: 2);
+        serverHas(otherDevice, now.subtract(skew));
+        await handoff.refresh();
+        expect(handoff.remoteSession!.isLikelyPlaying(time), isFalse);
+
+        // A save that was not there at the previous look is newer than it.
+        time = now.add(const Duration(seconds: 10));
+        serverHas(otherDevice, time.subtract(skew));
+        await handoff.refresh();
+        expect(handoff.remoteSession!.isLikelyPlaying(time), isTrue);
+        expect(
+          handoff.remoteSession!.estimatedPosition(time),
+          const Duration(seconds: 40),
+        );
+
+        // Nothing new since: still the same save, getting older.
+        time = now.add(const Duration(seconds: 20));
+        await handoff.refresh();
+        expect(handoff.remoteSession!.isLikelyPlaying(time), isTrue);
+      },
+    );
+
+    test('a server clock ahead of this one does not keep it fresh', () async {
+      serverHas(otherDevice, now.add(const Duration(minutes: 2)));
+      await handoff.refresh();
+
+      time = now.add(RemoteSession.freshFor);
+      expect(handoff.remoteSession!.isLikelyPlaying(time), isFalse);
+    });
+
+    test(
+      'a look that fails does not end the other device\'s session',
+      () async {
+        serverHas(otherDevice, now.subtract(const Duration(seconds: 5)));
+        await handoff.refresh();
+
+        tracking.queues.clear(); // the server did not answer
+        time = now.add(const Duration(seconds: 10));
+        await handoff.refresh();
+
+        expect(handoff.remoteSession!.deviceName, 'MacBook');
+        expect(handoff.remoteSession!.isLikelyPlaying(time), isTrue);
+      },
+    );
 
     test('this device\'s own save is no remote session', () async {
       serverHas(identity.clientName, now);
